@@ -258,7 +258,7 @@
   </div>
   
   <div id="authArea" style="position: absolute; top: 10px; right: 20px; z-index: 999; display: flex; align-items: center; gap: 15px;">
-  <button id="loginBtn" style="display: flex; align-items: center; background: none; border: 2px solid #9fc1d5; color: #9fc1d5; font-weight: bold; font-size: 18px; border-radius: 30px; padding: 10px 20px; cursor: pointer;">
+  <button id="loginBtn" style="display: flex; align-items: center; background: none; border: 2px solid #9fc1d5; color: #9fc1d5; font-weight: bold; font-size: 29px; border-radius: 30px; padding: 10px 20px; cursor: pointer;">
     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 48 48" width="24">
       <path fill="#4285F4" d="M24 9.5c3.54 0 6.36 1.38 8.32 3.19l6.14-6.14C34.9 2.52 29.88 0 24 0 14.96 0 7.18 5.72 3.74 13.85l7.36 5.73C13 12.33 18.12 9.5 24 9.5z"/>
       <path fill="#34A853" d="M46.36 24.6c0-1.74-.16-3.41-.45-5.03H24v9.52h12.57c-.55 3-2.2 5.51-4.71 7.19v5.98h7.62c4.46-4.12 6.98-10.18 6.98-17.66z"/>
@@ -268,7 +268,7 @@
     <span style="margin-left: 10px;">Masuk dengan Google</span>
   </button>
 
-  <button id="logoutBtn" style="display: none; background: none; border: 2px solid white; color: white; padding: 10px 15px; border-radius: 20px; font-size: 16px; cursor: pointer;">
+  <button id="logoutBtn" style="display: none; background: none; border: 2px solid white; color: white; padding: 10px 15px; border-radius: 20px; font-size: 29px; cursor: pointer;">
     Keluar
   </button>
 
@@ -330,6 +330,8 @@
 
 <!-- Halaman 2 - Arduino -->
   <div id="page2">
+   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
+
     <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;">Halaman Arduino</h1>
     <div class="line-box page2-content">
       <div class="page2-left">
@@ -432,6 +434,8 @@
 
   <!-- Halaman 3 - IoT -->
   <div id="page3">
+   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
+
     <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;">Halaman IoT</h1>
     <div class="line-box page2-content">
       <div class="page2-left">
@@ -608,7 +612,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword , s
         index = (index + 1) % phrases.length;
       }
       changePhrase();
-      setInterval(changePhrase, 4000);
+      setInterval(changePhrase, 20000);
     }
 
     loginBtn.style.display = "none";
