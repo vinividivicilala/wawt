@@ -680,55 +680,78 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword , s
 });
 
  
- 
- 
- 
- 
- 
- 
- 
-  
-   window.onload = function() {
-      const page1 = document.getElementById("page1");
-      const page2 = document.getElementById("page2");
-      const page3 = document.getElementById("page3");
+ window.onload = function() {
+  const page1 = document.getElementById("page1");
+  const page2 = document.getElementById("page2");
+  const page3 = document.getElementById("page3");
 
-      // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
-      function showPage(page) {
-        page1.style.display = "none";
-        page2.style.display = "none";
-        page3.style.display = "none";
-        page.style.display = "block";
-        
-        // Scroll ke atas ketika berpindah halaman
-        window.scrollTo(0, 0);
-      }
+  // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
+  function showPage(page) {
+    page1.style.display = "none";
+    page2.style.display = "none";
+    page3.style.display = "none";
+    page.style.display = "block";
+    window.scrollTo(0, 0);
+  }
 
-      // Event listener untuk card Arduino
-      document.getElementById("card-arduino").addEventListener("click", function() {
+  // Event listener klik kartu
+  document.getElementById("card-arduino").addEventListener("click", function() {
+    showPage(page2);
+    history.pushState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+  });
+
+  document.getElementById("card-iot").addEventListener("click", function() {
+    showPage(page3);
+    history.pushState({ page: "iot" }, "IoT", "/halaman-iot");
+  });
+
+  // Tombol kembali ke beranda
+  document.getElementById("back").addEventListener("click", function(e) {
+    e.preventDefault();
+    showPage(page1);
+    history.pushState({ page: "home" }, "Beranda", "/");
+  });
+
+  document.getElementById("back-iot").addEventListener("click", function(e) {
+    e.preventDefault();
+    showPage(page1);
+    history.pushState({ page: "home" }, "Beranda", "/");
+  });
+
+  // Navigasi tombol browser (Back/Forward)
+  window.addEventListener("popstate", function(event) {
+    if (event.state && event.state.page) {
+      if (event.state.page === "arduino") {
         showPage(page2);
-      });
-
-      // Event listener untuk card IoT
-      document.getElementById("card-iot").addEventListener("click", function() {
+      } else if (event.state.page === "iot") {
         showPage(page3);
-      });
-
-      // Event listener untuk tombol kembali dari halaman Arduino
-      document.getElementById("back").addEventListener("click", function(e) {
-        e.preventDefault();
+      } else {
         showPage(page1);
-      });
-
-      // Event listener untuk tombol kembali dari halaman IoT
-      document.getElementById("back-iot").addEventListener("click", function(e) {
-        e.preventDefault();
-        showPage(page1);
-      });
-
-      // Tampilkan halaman 1 secara default
+      }
+    } else {
       showPage(page1);
-    };
+    }
+  });
+
+  // ⬇️ Load langsung via URL /halaman-arduino atau /halaman-iot
+  const path = window.location.pathname;
+  if (path.includes("halaman-arduino")) {
+    showPage(page2);
+    history.replaceState({ page: "arduino" }, "Arduino", path);
+  } else if (path.includes("halaman-iot")) {
+    showPage(page3);
+    history.replaceState({ page: "iot" }, "IoT", path);
+  } else {
+    showPage(page1);
+    history.replaceState({ page: "home" }, "Beranda", "/");
+  }
+};
+
+ 
+ 
+ 
+ 
+ 
   </script>
 </body>
 </html>
