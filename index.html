@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Life Is What It Is Learn</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600&display=swap');
+
+   body {
+  margin: 0;
+  background-color: #000;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh; /* ganti dari height */
+  padding-top: 40px;
+}
+
+
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      background-color: #000;
+      color: white;
+      margin-bottom: 40px;
+      margin-right: 850px;
+    }
+
+    .logo {
+      width: 70px;
+      height: 70px;
+      margin-right: 12px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .title {
+      font-size: 29px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .line-box {
+      width: 1100px;
+      height: auto;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 30px;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 50px;
+      padding: 40px;
+	  margin-left: 150px;
+    }
+
+    /* Halaman 1 */
+    .card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 15px;
+      cursor: pointer;
+    }
+
+    .card img {
+      width: 400px;
+      height: auto;
+	   border-radius: 30px;
+    }
+
+    .card-title {
+      margin-top: 20px;
+      color: white;
+      font-size: 30px;
+      font-weight: 600;
+      padding: 10px 30px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 30px;
+      display: inline-block;
+      margin-right: 300px;
+    }
+
+    .bottom-line {
+      width: 100vw;
+      border-top: 2px solid rgba(255, 255, 255, 0.2);
+      margin-top: 90px;
+      position: relative;
+      left: 50%;
+      right: 50%;
+      margin-left: -50vw;
+      margin-right: -50vw;
+    }
+
+    .bottom-text {
+      color: white;
+      margin-top: 30px;
+      font-size: 18px;
+      text-align: left;
+      line-height: 1.6;
+      margin-right: 1000px;
+      margin-bottom: 40px;
+	  	  margin-left: 150px;
+
+    }
+
+    .bottom-text a {
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .bottom-text a:hover {
+      text-decoration: underline;
+    }
+
+    #page2 {
+      display: none;
+    }
+
+    .page2-content {
+      display: flex;
+      gap: 50px;
+      align-items: flex-start;
+    }
+
+    .page2-left {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .page2-left img {
+      width: 400px;
+      height: auto;
+	   border-radius: 30px;
+    }
+
+    .bab-cards {
+      display: flex;
+      flex-direction: column; /* ke bawah */
+      gap: 20px;
+    }
+
+    /* Kalau mau bab-babnya memanjang ke samping dalam satu baris, ubah ke flex-direction: row; */
+
+    .bab-card {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      align-items: flex-start;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+
+    .bab-title-box {
+      font-size: 20px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      flex-shrink: 0;
+    }
+
+    .bab-desc-box {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .page2-right {
+      color: white;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .title-box {
+      font-size: 36px;
+      padding: 10px 30px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    .desc-box {
+      font-size: 18px;
+      line-height: 1.6;
+      padding: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+    }
+	
+	.nav-link {
+  position: fixed;  /* atau absolute sesuai kebutuhan */
+  bottom: 20px;     /* jarak dari bawah halaman */
+  left: 20px;       /* jarak dari kiri halaman */
+}
+
+.nav-link a {
+  display: inline-flex;   /* agar icon dan teks sejajar */
+  align-items: center;    /* vertikal rata tengah */
+  color: white;           /* warna teks */
+  text-decoration: none;  /* hilangkan underline */
+  font-size: 16px;        /* ukuran teks */
+  font-weight: 500;       /* ketebalan teks */
+}
+
+.nav-link a:hover {
+  opacity: 0.8;  /* efek hover */
+}
+
+.nav-link svg {
+  margin-right: 8px;   /* jarak antara icon dan teks */
+}
+
+#page2, #page3 {
+      display: none;
+    }
+
+
+.bab-card svg {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+
+.logo-o {
+  stroke-dasharray: 251.2; /* keliling lingkaran 2 * π * r (≈ 2 * 3.14 * 40) */
+  stroke-dashoffset: 251.2;
+  animation: drawO 2s ease-out forwards;
+  margin-right: 12px;
+}
+
+@keyframes drawO {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+	
+	
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="images/5.jpg" alt="Logo" class="logo" />
+	<div class="title">Life Is What It Is Learn</div>
+  </div>
+  
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+  <img src="https://developers.google.com/identity/images/g-logo.png" style="width: 30px; height: 30px;" />
+  <button id="loginBtn" style="background: none; border: none; color: #9fc1d5; font-weight: bold; font-size: 16px; cursor: pointer;">LOGIN DENGAN GOOGLE</button>
+  <button id="logoutBtn" style="display: none; background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 10px; cursor: pointer;">Logout</button>
+  <span id="greeting" style="color: white; font-size: 16px; margin-left: 15px;"></span>
+</div>
+
+
+  <!-- Halaman 1 -->
+ <div id="page1">
+  <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px; ">Halaman Utama</h1>
+  <div class="line-box">
+
+    <div class="card" id="card-arduino">
+      <img src="images/5.jpg" alt="Foto Arduino" />
+      <div class="card-title">
+        Arduino 
+        <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card" id="card-iot">
+  <img src="images/5.jpg" alt="Foto IOT" />
+  <div class="card-title">
+    IOT 
+    <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+      <polyline points="12 5 19 12 12 19"></polyline>
+    </svg>
+  </div>
+</div>
+
+  </div>
+
+  <div class="bottom-line"></div>
+
+  <div class="bottom-text">
+    <div><a href="#">  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+	Tentang Kami</a></div>
+    <div><a href="#">  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>Masukan</a></div>
+    <div><a href="#">  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>Saran</a></div>
+  </div>
+</div>
+
+<!-- Halaman 2 - Arduino -->
+  <div id="page2">
+    <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;">Halaman Arduino</h1>
+    <div class="line-box page2-content">
+      <div class="page2-left">
+        <img src="images/5.jpg" alt="Foto Arduino Detail" />
+        <div class="bab-cards">
+          <div class="bab-card">
+            <div class="bab-title-box">Sejarah Arduino</div>
+            <div class="bab-desc-box">Arduino pertama kali dikembangkan pada tahun 2005 di Italia untuk mempermudah pengajaran elektronika dan pemrograman.</div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Project Arduino</div>
+            <div class="bab-desc-box">Dengan Arduino, banyak project dibuat seperti robotika, IoT, otomasi rumah, hingga alat bantu belajar interaktif.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Jenis Arduino</div>
+            <div class="bab-desc-box">Terdapat banyak jenis board Arduino seperti Uno, Mega, Nano, yang memiliki spesifikasi berbeda sesuai kebutuhan.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Bahasa Pemrograman</div>
+            <div class="bab-desc-box">Arduino menggunakan bahasa pemrograman C/C++ dengan IDE Arduino yang mudah dipelajari pemula.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Sensor & Modul</div>
+            <div class="bab-desc-box">Arduino mendukung berbagai sensor & modul seperti sensor suhu, cahaya, motor driver, WiFi, dan lainnya.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="page2-right">
+        <h1 class="title-box">Arduino</h1>
+        <p class="desc-box">
+          Arduino adalah papan mikrokontroler open-source yang digunakan untuk membuat proyek elektronik interaktif.
+          Dengan Arduino, Anda dapat mempelajari dasar-dasar pemrograman, sensor, dan aktuator dengan mudah.
+          Cocok untuk pemula maupun profesional yang ingin membuat prototipe cepat.
+        </p>
+      </div>
+    </div>
+    
+    <div class="bottom-line"></div>
+
+    <div class="bottom-text">
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Tentang Kami
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Masukan
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Saran
+        </a>
+      </div>
+    </div>
+
+    <div class="nav-link">
+      <a href="#" id="back">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 5 5 12 12 19"></polyline>
+        </svg>
+        Kembali
+      </a>
+    </div>
+  </div>
+
+  <!-- Halaman 3 - IoT -->
+  <div id="page3">
+    <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;">Halaman IoT</h1>
+    <div class="line-box page2-content">
+      <div class="page2-left">
+        <img src="images/5.jpg" alt="Foto IOT" />
+        <div class="bab-cards">
+          <div class="bab-card">
+            <div class="bab-title-box">Pengertian IoT</div>
+            <div class="bab-desc-box">Internet of Things (IoT) adalah konsep menghubungkan perangkat fisik ke internet agar dapat saling berkomunikasi dan bertukar data.</div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Contoh Penerapan</div>
+            <div class="bab-desc-box">Contoh umum IoT meliputi smart home, smart city, kendaraan pintar, dan perangkat wearable.</div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Komponen IoT</div>
+            <div class="bab-desc-box">IoT terdiri dari sensor, perangkat, konektivitas jaringan, dan sistem cloud untuk pemrosesan data.</div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Keamanan IoT</div>
+            <div class="bab-desc-box">Aspek penting dari IoT adalah menjaga keamanan dan privasi data yang dikirim antar perangkat.</div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Platform Populer</div>
+            <div class="bab-desc-box">Beberapa platform IoT yang populer adalah Blynk, Thingspeak, dan Google Cloud IoT Core.</div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="page2-right">
+        <h1 class="title-box">Internet of Things</h1>
+        <p class="desc-box">
+          IoT memungkinkan perangkat fisik terhubung ke jaringan internet untuk bertukar informasi dan memberikan kontrol secara jarak jauh.
+          Teknologi ini semakin berkembang dan digunakan di berbagai bidang seperti industri, pertanian, kesehatan, dan rumah tangga.
+        </p>
+      </div>
+    </div>
+
+    <div class="bottom-line"></div>
+
+    <div class="bottom-text">
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Tentang Kami
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Masukan
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Saran
+        </a>
+      </div>
+    </div>
+
+    <div class="nav-link">
+      <a href="#" id="back-iot">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 5 5 12 12 19"></polyline>
+        </svg>
+        Kembali
+      </a>
+    </div>
+  </div>
+
+
+
+
+   
+  
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, getDoc, writeBatch, setDoc, doc, updateDoc, where, getDocs, documentId, limit, increment, getCountFromServer,  arrayUnion, 
+    arrayRemove, deleteField, runTransaction  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword , signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider,  setPersistence,
+  browserLocalPersistence  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"; // Pastikan semua fungsi auth yang Anda butuhkan diimpor
+
+
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAzgMVdqZhrqQ3PqiSWapaCl6oglF3QP64",
+    authDomain: "life-is-what-it-is-learn.firebaseapp.com",
+    projectId: "life-is-what-it-is-learn",
+    storageBucket: "life-is-what-it-is-learn.firebasestorage.app",
+    messagingSenderId: "755474876167",
+    appId: "1:755474876167:web:205fb4ea8c7b8d5b66e7a2"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+   const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  
+  // DOM Element
+  const loginBtn = document.getElementById("loginBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const greeting = document.getElementById("greeting");
+
+  // Fungsi Login
+  loginBtn.addEventListener("click", () => {
+    signInWithPopup(auth, provider).catch(console.error);
+  });
+
+  // Fungsi Logout
+  logoutBtn.addEventListener("click", () => {
+    signOut(auth).catch(console.error);
+  });
+
+  // Deteksi User Login
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      const hours = new Date().getHours();
+      let greet = "Selamat malam";
+      if (hours >= 5 && hours < 11) greet = "Selamat pagi";
+      else if (hours >= 11 && hours < 15) greet = "Selamat siang";
+      else if (hours >= 15 && hours < 18) greet = "Selamat sore";
+      
+      greeting.textContent = `${greet}, ${user.displayName}`;
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "inline-block";
+    } else {
+      greeting.textContent = "";
+      loginBtn.style.display = "inline-block";
+      logoutBtn.style.display = "none";
+    }
+  });
+  
+  
+   window.onload = function() {
+      const page1 = document.getElementById("page1");
+      const page2 = document.getElementById("page2");
+      const page3 = document.getElementById("page3");
+
+      // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
+      function showPage(page) {
+        page1.style.display = "none";
+        page2.style.display = "none";
+        page3.style.display = "none";
+        page.style.display = "block";
+        
+        // Scroll ke atas ketika berpindah halaman
+        window.scrollTo(0, 0);
+      }
+
+      // Event listener untuk card Arduino
+      document.getElementById("card-arduino").addEventListener("click", function() {
+        showPage(page2);
+      });
+
+      // Event listener untuk card IoT
+      document.getElementById("card-iot").addEventListener("click", function() {
+        showPage(page3);
+      });
+
+      // Event listener untuk tombol kembali dari halaman Arduino
+      document.getElementById("back").addEventListener("click", function(e) {
+        e.preventDefault();
+        showPage(page1);
+      });
+
+      // Event listener untuk tombol kembali dari halaman IoT
+      document.getElementById("back-iot").addEventListener("click", function(e) {
+        e.preventDefault();
+        showPage(page1);
+      });
+
+      // Tampilkan halaman 1 secara default
+      showPage(page1);
+    };
+  </script>
+</body>
+</html>
