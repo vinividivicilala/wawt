@@ -257,16 +257,31 @@
 	<div class="title">Life Is What It Is Learn</div>
   </div>
   
-  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-  <img src="https://developers.google.com/identity/images/g-logo.png" style="width: 30px; height: 30px;" />
-  <button id="loginBtn" style="background: none; border: none; color: #9fc1d5; font-weight: bold; font-size: 16px; cursor: pointer;">LOGIN DENGAN GOOGLE</button>
-  <button id="logoutBtn" style="display: none; background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 10px; cursor: pointer;">Logout</button>
+  <div id="authArea" style="position: absolute; top: 10px; right: 20px; z-index: 999; display: flex; align-items: center; gap: 15px;">
+  <button id="loginBtn" style="display: flex; align-items: center; background: none; border: 2px solid #9fc1d5; color: #9fc1d5; font-weight: bold; font-size: 18px; border-radius: 30px; padding: 10px 20px; cursor: pointer;">
+    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 48 48" width="24">
+      <path fill="#4285F4" d="M24 9.5c3.54 0 6.36 1.38 8.32 3.19l6.14-6.14C34.9 2.52 29.88 0 24 0 14.96 0 7.18 5.72 3.74 13.85l7.36 5.73C13 12.33 18.12 9.5 24 9.5z"/>
+      <path fill="#34A853" d="M46.36 24.6c0-1.74-.16-3.41-.45-5.03H24v9.52h12.57c-.55 3-2.2 5.51-4.71 7.19v5.98h7.62c4.46-4.12 6.98-10.18 6.98-17.66z"/>
+      <path fill="#FBBC05" d="M10.59 28.45c-1.07-3.2-1.07-6.64 0-9.84v-6.02H3.23a23.91 23.91 0 000 21.88l7.36-5.73z"/>
+      <path fill="#EA4335" d="M24 48c6.48 0 11.92-2.13 15.9-5.78l-7.62-5.98C29.93 38.67 27.13 39.5 24 39.5c-5.88 0-10.98-3.84-12.9-9.14l-7.36 5.73C7.18 42.28 14.96 48 24 48z"/>
+    </svg>
+    <span style="margin-left: 10px;">Masuk dengan Google</span>
+  </button>
+
+  <button id="logoutBtn" style="display: none; background: none; border: 2px solid white; color: white; padding: 10px 15px; border-radius: 20px; font-size: 16px; cursor: pointer;">
+    Keluar
+  </button>
+
   <span id="greeting" style="color: white; font-size: 16px; margin-left: 15px;"></span>
 </div>
 
 
+
+
   <!-- Halaman 1 -->
  <div id="page1">
+ <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
+
   <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px; ">Halaman Utama</h1>
   <div class="line-box">
 
@@ -559,25 +574,62 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword , s
     signOut(auth).catch(console.error);
   });
 
-  // Deteksi User Login
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      const hours = new Date().getHours();
-      let greet = "Selamat malam";
-      if (hours >= 5 && hours < 11) greet = "Selamat pagi";
-      else if (hours >= 11 && hours < 15) greet = "Selamat siang";
-      else if (hours >= 15 && hours < 18) greet = "Selamat sore";
-      
-      greeting.textContent = `${greet}, ${user.displayName}`;
-      loginBtn.style.display = "none";
-      logoutBtn.style.display = "inline-block";
-    } else {
-      greeting.textContent = "";
-      loginBtn.style.display = "inline-block";
-      logoutBtn.style.display = "none";
+ 
+ 
+ 
+ onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Pastikan halaman utama aktif agar #dynamicText ada
+    document.getElementById("page1").style.display = "block";
+    document.getElementById("page2").style.display = "none";
+    document.getElementById("page3").style.display = "none";
+
+    const hours = new Date().getHours();
+    let greet = "Selamat malam";
+    if (hours >= 5 && hours < 11) greet = "Selamat pagi";
+    else if (hours >= 11 && hours < 15) greet = "Selamat siang";
+    else if (hours >= 15 && hours < 18) greet = "Selamat sore";
+    
+    greeting.textContent = `${greet}, ${user.displayName}`;
+
+    // Dapatkan dynamicText SETELAH elemen ada
+    const dynamicText = document.getElementById("dynamicText");
+    if (dynamicText) {
+      let phrases = [
+        "Ada apa kamu di sini, " + user.displayName + "?",
+        "Lagi nyari inspirasi ya, " + user.displayName + "?",
+        "Selamat datang kembali, " + user.displayName + "!",
+        "Semangat belajar, " + user.displayName + "!",
+        "Mau ngoprek Arduino lagi, " + user.displayName + "?"
+      ];
+      let index = 0;
+      function changePhrase() {
+        dynamicText.textContent = phrases[index];
+        index = (index + 1) % phrases.length;
+      }
+      changePhrase();
+      setInterval(changePhrase, 4000);
     }
-  });
-  
+
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+  } else {
+    greeting.textContent = "";
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+    const dynamicText = document.getElementById("dynamicText");
+    if (dynamicText) dynamicText.textContent = "";
+  }
+});
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
   
    window.onload = function() {
       const page1 = document.getElementById("page1");
