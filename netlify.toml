@@ -1,4 +1,4 @@
 [[redirects]]
-  from = "/__/auth/handler*"
-  to = "https://faridardiansyah.netlify.app/#/__/auth/handler" 
+  from = "/__/auth/handler"
+  to = "/"
   status = 200
