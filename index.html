@@ -642,7 +642,7 @@
   <div class="line-box" style="flex-wrap: wrap; gap: 30px;">
   <h1 class="title-box">Blog Berita Terkini</h1>
   
-  <a href="#" id="lihatSemuaBlog" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Lihat semua blog →</a>
+<a href="#" id="view-more" style="color: #4ea1ff; font-weight: bold; text-decoration: none; font-size: 16px;">Lihat lebih banyak →</a>
 
 
    <div class="bab-card" style="width: 100%;">
@@ -910,13 +910,13 @@ document.getElementById("back-blog").addEventListener("click", function (e) {
   history.pushState({ page: "home" }, "Beranda", "/");
 });
 
-
-document.getElementById("lihatSemuaBlog").addEventListener("click", function(e) {
+document.getElementById("view-more").addEventListener("click", function(e) {
   e.preventDefault();
-  showPage(page5);
-  updateBlogCount(); // ← Tambahkan ini
+  showPage(document.getElementById("page5"));
+  updateBlogCount();
   history.pushState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
 });
+
 
 
 // Tombol kembali di halaman 5
