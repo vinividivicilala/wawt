@@ -223,11 +223,9 @@
   margin-right: 8px;   /* jarak antara icon dan teks */
 }
 
-
-	
-	#page2, #page3, #page4, #page5 {
-  display: none;
-}
+#page2, #page3 {
+      display: none;
+    }
 
 
 .bab-card svg {
@@ -643,6 +641,9 @@
   <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;"> Halaman Blog</h1>
   <div class="line-box" style="flex-wrap: wrap; gap: 30px;">
   <h1 class="title-box">Blog Berita Terkini</h1>
+  
+  <a href="#" id="lihatSemuaBlog" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Lihat semua blog →</a>
+
 
    <div class="bab-card" style="width: 100%;">
   <img src="images/5.jpg" alt="BMKG Blog 1" style="width: 150px; border-radius: 20px;" />
@@ -677,14 +678,6 @@
   </div>
 </div>
 
-<div style="width: 100%; text-align: center; margin-top: 20px;">
-  <a href="#" id="view-more" style="color: #4ea1ff; font-weight: bold; text-decoration: none; font-size: 16px;">
-    Lihat lebih banyak →
-  </a>
-</div>
-
-
-
 
   <div class="nav-link">
     <a href="#" id="back-blog">
@@ -697,64 +690,71 @@
   </div>
 </div>
 
-<!-- Halaman 5 - Blog Lanjutan -->
+<!-- Halaman 5 - Kumpulan Blog -->
 <div id="page5">
-  <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;">Halaman Blog Lanjutan</h1>
-  <div class="line-box" style="flex-wrap: wrap; gap: 30px;">
-    <h1 class="title-box">Blog Berita Lanjutan</h1>
+  <h1 style="color: white; font-size: 28px; margin: 30px 0 10px 180px;">Halaman Kumpulan Blog</h1>
+  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 20px;">
 
+<div id="blogCountDisplay" style="color: white; font-size: 16px;">Menampilkan 0 dari 0 Blog</div>
+    
+    <!-- Daftar blog dummy -->
     <div class="bab-card" style="width: 100%;">
-      <img src="images/5.jpg" alt="BMKG Blog 4" style="width: 150px; border-radius: 20px;" />
+      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
       <div>
-        <div style="color: #ccc; font-size: 14px;">11 Juli 2025</div>
+        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
         <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-          BMKG: Waspada Gelombang Tinggi di Perairan Indonesia
+          Judul Blog Menarik #1
+        </div>
+        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
+      </div>
+    </div>
+	
+	 <!-- Daftar blog dummy -->
+    <div class="bab-card" style="width: 100%;">
+      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
+      <div>
+        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
+        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
+          Judul Blog Menarik #1
+        </div>
+        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
+      </div>
+    </div>
+	
+	
+	 <!-- Daftar blog dummy -->
+    <div class="bab-card" style="width: 100%;">
+      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
+      <div>
+        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
+        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
+          Judul Blog Menarik #1
+        </div>
+        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
+      </div>
+    </div>
+	
+	 <!-- Daftar blog dummy -->
+    <div class="bab-card" style="width: 100%;">
+      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
+      <div>
+        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
+        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
+          Judul Blog Menarik #1
         </div>
         <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
       </div>
     </div>
 
-    <div class="bab-card" style="width: 100%;">
-      <img src="images/5.jpg" alt="BMKG Blog 5" style="width: 150px; border-radius: 20px;" />
-      <div>
-        <div style="color: #ccc; font-size: 14px;">10 Juli 2025</div>
-        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-          BMKG: Prakiraan Musim Hujan 2025/2026
-        </div>
-        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
-      </div>
-    </div>
-
-    <div class="bab-card" style="width: 100%;">
-      <img src="images/5.jpg" alt="BMKG Blog 6" style="width: 150px; border-radius: 20px;" />
-      <div>
-        <div style="color: #ccc; font-size: 14px;">9 Juli 2025</div>
-        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-          BMKG: Update Terkini Gempa Bumi di Wilayah Indonesia
-        </div>
-        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
-      </div>
-    </div>
-
-    <!-- Pagination -->
-    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 30px;">
-      <a href="#" id="prev-page" style="color: white; text-decoration: none; font-size: 16px; padding: 8px 16px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 5px;">
-        ← Sebelumnya
-      </a>
-      <div style="color: white; font-size: 14px;">
-        Menampilkan 12 dari 922 Siaran Pers
-      </div>
-      <div style="color: white; font-size: 14px;">
-        1 dari 77
-      </div>
-      <a href="#" id="next-page" style="color: white; text-decoration: none; font-size: 16px; padding: 8px 16px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 5px;">
-        Selanjutnya →
-      </a>
+    <!-- Pagination seperti gambar -->
+    <div style="display: flex; justify-content: flex-end; width: 100%; gap: 10px; margin-top: 20px;">
+      <div style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 5px 12px; color: white; font-size: 14px;">1 dari 77</div>
+      <button style="padding: 6px 16px; background: transparent; border: 1px solid #ccc; border-radius: 8px; color: white; cursor: pointer;">Selanjutnya →</button>
     </div>
   </div>
 
   <div class="nav-link">
-    <a href="#" id="back-blog2">
+    <a href="#" id="back-page5">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="19" y1="12" x2="5" y2="12"></line>
         <polyline points="12 5 5 12 12 19"></polyline>
@@ -763,6 +763,7 @@
     </a>
   </div>
 </div>
+
 
 
    
@@ -854,121 +855,130 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword , s
 });
 
  
+ window.onload = function() {
+  const page1 = document.getElementById("page1");
+  const page2 = document.getElementById("page2");
+  const page3 = document.getElementById("page3");
+  const page4 = document.getElementById("page4");
+  const page5 = document.getElementById("page5");
 
-    window.onload = function() {
-        // Deklarasi semua halaman
-        const pages = {
-            page1: document.getElementById("page1"),
-            page2: document.getElementById("page2"),
-            page3: document.getElementById("page3"),
-            page4: document.getElementById("page4"),
-            page5: document.getElementById("page5")
-        };
 
-        // Fungsi untuk menampilkan halaman tertentu
-        function showPage(page) {
-            // Sembunyikan semua halaman
-            Object.values(pages).forEach(p => {
-                if (p) p.style.display = "none";
-            });
-            
-            // Tampilkan halaman yang diminta
-            if (page) {
-                page.style.display = "block";
-                window.scrollTo(0, 0);
-            }
-        }
 
-        // Fungsi untuk menangani navigasi
-        function navigateTo(pageId, title, url) {
-            const page = pages[pageId];
-            if (page) {
-                showPage(page);
-                history.pushState({ page: pageId }, title, url);
-            }
-        }
+  // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
+  function showPage(page) {
+  page1.style.display = "none";
+  page2.style.display = "none";
+  page3.style.display = "none";
+  page4.style.display = "none";
+  page5.style.display = "none";
+  page.style.display = "block";
+  window.scrollTo(0, 0);
+}
 
-        // Event listeners untuk navigasi
-        function setupNavigation() {
-            // Navigasi dari card utama
-            document.getElementById("card-arduino")?.addEventListener("click", () => 
-                navigateTo("page2", "Arduino", "/halaman-arduino"));
-                
-            document.getElementById("card-iot")?.addEventListener("click", () => 
-                navigateTo("page3", "IoT", "/halaman-iot"));
-                
-            document.getElementById("card-blog")?.addEventListener("click", () => 
-                navigateTo("page4", "Blog", "/halaman-blog"));
+  // Event listener klik kartu
+  document.getElementById("card-arduino").addEventListener("click", function() {
+    showPage(page2);
+    history.pushState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+  });
 
-            // Tombol kembali
-            document.getElementById("back")?.addEventListener("click", (e) => {
-                e.preventDefault();
-                navigateTo("page1", "Beranda", "/");
-            });
-            
-            document.getElementById("back-iot")?.addEventListener("click", (e) => {
-                e.preventDefault();
-                navigateTo("page1", "Beranda", "/");
-            });
-            
-            document.getElementById("back-blog")?.addEventListener("click", (e) => {
-                e.preventDefault();
-                navigateTo("page1", "Beranda", "/");
-            });
+  document.getElementById("card-iot").addEventListener("click", function() {
+    showPage(page3);
+    history.pushState({ page: "iot" }, "IoT", "/halaman-iot");
+  });
 
-            // Navigasi antara halaman blog
-            document.getElementById("view-more")?.addEventListener("click", (e) => {
-                e.preventDefault();
-                navigateTo("page5", "Blog Lanjutan", "/halaman-blog-lanjutan");
-            });
-            
-            document.getElementById("back-blog2")?.addEventListener("click", (e) => {
-                e.preventDefault();
-                navigateTo("page4", "Blog", "/halaman-blog");
-            });
+  // Tombol kembali ke beranda
+  document.getElementById("back").addEventListener("click", function(e) {
+    e.preventDefault();
+    showPage(page1);
+    history.pushState({ page: "home" }, "Beranda", "/");
+  });
 
-            // Tombol pagination (jika diperlukan)
-            document.getElementById("prev-page")?.addEventListener("click", (e) => {
-                e.preventDefault();
-                // Logika untuk halaman sebelumnya
-            });
-            
-            document.getElementById("next-page")?.addEventListener("click", (e) => {
-                e.preventDefault();
-                // Logika untuk halaman berikutnya
-            });
-        }
+  document.getElementById("back-iot").addEventListener("click", function(e) {
+    e.preventDefault();
+    showPage(page1);
+    history.pushState({ page: "home" }, "Beranda", "/");
+  });
+  
+  document.getElementById("card-blog").addEventListener("click", function () {
+  showPage(page4);
+  history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
+});
 
-        // Handler untuk tombol browser (back/forward)
-        window.addEventListener("popstate", function(event) {
-            const pageId = event.state?.page || "page1";
-            showPage(pages[pageId]);
-        });
+document.getElementById("back-blog").addEventListener("click", function (e) {
+  e.preventDefault();
+  showPage(page1);
+  history.pushState({ page: "home" }, "Beranda", "/");
+});
 
-        // Inisialisasi halaman berdasarkan URL saat ini
-        function initializePage() {
-            const path = window.location.pathname;
-            let pageId = "page1";
-            
-            if (path.includes("halaman-arduino")) pageId = "page2";
-            else if (path.includes("halaman-iot")) pageId = "page3";
-            else if (path.includes("halaman-blog-lanjutan")) pageId = "page5";
-            else if (path.includes("halaman-blog")) pageId = "page4";
-            
-            showPage(pages[pageId]);
-            history.replaceState({ page: pageId }, "", path);
-        }
 
-        // Jalankan inisialisasi
-        setupNavigation();
-        initializePage();
+document.getElementById("lihatSemuaBlog").addEventListener("click", function(e) {
+  e.preventDefault();
+  showPage(page5);
+  updateBlogCount(); // ← Tambahkan ini
+  history.pushState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
+});
 
-        // Debugging
-        console.log("Elemen halaman5:", pages.page5);
-        console.log("Tombol view-more:", document.getElementById("view-more"));
-    };
- 
- 
+
+// Tombol kembali di halaman 5
+document.getElementById("back-page5").addEventListener("click", function(e) {
+  e.preventDefault();
+  showPage(page4);
+  history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
+});
+
+// Hitung jumlah elemen blog di page5
+function updateBlogCount() {
+  const blogCards = page5.querySelectorAll(".bab-card");
+  const totalBlog = blogCards.length;
+  const tampilkan = totalBlog > 12 ? 12 : totalBlog;
+  const blogCountDisplay = document.getElementById("blogCountDisplay");
+  if (blogCountDisplay) {
+    blogCountDisplay.textContent = `Menampilkan ${tampilkan} dari ${totalBlog} Blog`;
+  }
+}
+
+
+
+ // Navigasi tombol browser (Back/Forward)
+window.addEventListener("popstate", function(event) {
+  if (event.state && event.state.page) {
+    if (event.state.page === "arduino") {
+      showPage(page2);
+    } else if (event.state.page === "iot") {
+      showPage(page3);
+    } else if (event.state.page === "blog") {
+      showPage(page4);
+    } else if (event.state.page === "kumpulan-blog") {
+      showPage(page5);
+    } else {
+      showPage(page1);
+    }
+  } else {
+    showPage(page1);
+  }
+});
+
+
+const path = window.location.pathname || "/";  // fallback kalau kosong
+
+if (path.includes("halaman-arduino")) {
+  showPage(page2);
+  history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+} else if (path.includes("halaman-iot")) {
+  showPage(page3);
+  history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
+} else if (path.includes("halaman-blog")) {
+  showPage(page4);
+  history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
+} else if (path.includes("halaman-kumpulan-blog")) {
+  showPage(page5);
+  history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
+} else {
+  showPage(page1);
+  history.replaceState({ page: "home" }, "Beranda", "/");
+}
+
+ }
  
   </script>
 </body>
