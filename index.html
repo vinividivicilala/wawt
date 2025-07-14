@@ -226,6 +226,12 @@
 #page2, #page3 {
       display: none;
     }
+	
+	
+	#page4, #page5 {
+      display: none;
+    }
+
 
 
 .bab-card svg {
@@ -335,7 +341,8 @@
   <div class="bottom-line"></div>
 
   <div class="bottom-text">
-    <div><a href="#">  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+    <div> <a href="#" class="tentangLink">
+ <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
       </svg>
@@ -434,7 +441,8 @@
 
     <div class="bottom-text">
       <div>
-        <a href="#">
+        <a href="#" class="tentangLink">
+
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
@@ -555,7 +563,8 @@
 
     <div class="bottom-text">
       <div>
-        <a href="#">
+        <a href="#" class="tentangLink">
+
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
@@ -636,48 +645,124 @@
   ">Saya Mengerti</button>
 </div>
 
+
+
+
+
+
 <!-- Halaman 4 - Blog -->
 <div id="page4">
-  <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;"> Halaman Blog</h1>
-  <div class="line-box" style="flex-wrap: wrap; gap: 30px;">
-  <h1 class="title-box">Blog Berita Terkini</h1>
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
   
-<a href="#" id="view-more" style="color: #4ea1ff; font-weight: bold; text-decoration: none; font-size: 16px;">Lihat lebih banyak →</a>
-
-
-   <div class="bab-card" style="width: 100%;">
-  <img src="images/5.jpg" alt="BMKG Blog 1" style="width: 150px; border-radius: 20px;" />
-  <div>
-    <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
-    <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-      BMKG: Cuaca Ekstrem Masih Mengintai, Musim Kemarau Belum Dominan
+  <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;">Halaman Blog</h1>
+  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px;">
+    <h1 class="title-box">Blog Terbaru</h1>
+    
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+      <p style="color: #ccc; margin: 0;">Artikel terbaru dari berbagai topik</p>
+      <a href="#" id="lihatSemuaBlog" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: flex; align-items: center;">
+        Lihat semua blog 
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
     </div>
-    <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
-  </div>
-</div>
-
-<div class="bab-card" style="width: 100%;">
-  <img src="images/5.jpg" alt="BMKG Blog 1" style="width: 150px; border-radius: 20px;" />
-  <div>
-    <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
-    <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-      BMKG: Cuaca Ekstrem Masih Mengintai, Musim Kemarau Belum Dominan
+    
+    <div class="bab-card" style="width: 100%; display: flex; gap: 20px; align-items: center;">
+      <img src="images/5.jpg" alt="Blog 1" style="width: 200px; height: 120px; object-fit: cover; border-radius: 15px;" />
+      <div style="flex: 1;">
+        <div style="color: #ccc; font-size: 14px;">14 Juli 2025 • 60 min read</div>
+        <h3 style="color: white; font-weight: bold; font-size: 20px; margin: 8px 0;">
+         Siapa Farid Ardiansyah?
+        </h3>
+        <p style="color: #ccc; margin: 8px 0; line-height: 1.5;">
+          Kalau Kamu tidak tau siapa farid ardiansyah, saya menjelaskan secara detail...
+        </p>
+        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center;">
+          Baca selengkapnya
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
     </div>
-    <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
-  </div>
-</div>
-
-<div class="bab-card" style="width: 100%;">
-  <img src="images/5.jpg" alt="BMKG Blog 1" style="width: 150px; border-radius: 20px;" />
-  <div>
-    <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
-    <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-      BMKG: Cuaca Ekstrem Masih Mengintai, Musim Kemarau Belum Dominan
+    
+    <div class="bab-card" style="width: 100%; display: flex; gap: 20px; align-items: center;">
+      <img src="images/5.jpg" alt="Blog 2" style="width: 200px; height: 120px; object-fit: cover; border-radius: 15px;" />
+      <div style="flex: 1;">
+        <div style="color: #ccc; font-size: 14px;">14 Juli 2025 • 60 min read</div>
+        <h3 style="color: white; font-weight: bold; font-size: 20px; margin: 8px 0;">
+          Apakah Kuliah di Universitas Gunadarma worth it sebanding harga UKT?
+        </h3>
+        <p style="color: #ccc; margin: 8px 0; line-height: 1.5;">
+          Saya adalah alumnie univrsitas gunadarma, saya menjelaskan secara detail sesuai pengalaman kuliah 4 tahun...
+        </p>
+        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center;">
+          Baca selengkapnya
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
     </div>
-    <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
+    
+    <div class="bab-card" style="width: 100%; display: flex; gap: 20px; align-items: center;">
+      <img src="images/5.jpg" alt="Blog 3" style="width: 200px; height: 120px; object-fit: cover; border-radius: 15px;" />
+      <div style="flex: 1;">
+        <div style="color: #ccc; font-size: 14px;">14 Juli 2025 • 60 min read</div>
+        <h3 style="color: white; font-weight: bold; font-size: 20px; margin: 8px 0;">
+          Apakah saya membutuhkan pasangan dalam hidup?
+        </h3>
+        <p style="color: #ccc; margin: 8px 0; line-height: 1.5;">
+          saya menjelaskan secara detail sesuai dengan pengalaman hidup...
+        </p>
+        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center;">
+          Baca selengkapnya
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
   </div>
-</div>
+  
+  
+  <div class="bottom-line"></div>
 
+    <div class="bottom-text">
+      <div>
+        <a href="#" class="tentangLink">
+
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Tentang Kami
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Masukan
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Saran
+        </a>
+      </div>
+    </div>
 
   <div class="nav-link">
     <a href="#" id="back-blog">
@@ -688,70 +773,346 @@
       Kembali
     </a>
   </div>
+  
+  <a href="https://faridardiansyah.netlify.app/#" target="_blank" style="
+    position: fixed;
+    bottom: 20px;
+    right: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 10px 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    z-index: 999;
+  ">
+    Powered by: Manusia
+  </a>
 </div>
+
+
+
+
+
+
 
 <!-- Halaman 5 - Kumpulan Blog -->
 <div id="page5">
-  <h1 style="color: white; font-size: 28px; margin: 30px 0 10px 180px;">Halaman Kumpulan Blog</h1>
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
+  
+  <h1 style="color: white; font-size: 28px; margin: 30px 0 10px 180px;">Kumpulan Blog</h1>
   <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 20px;">
-
-<div id="blogCountDisplay" style="color: white; font-size: 16px;">Menampilkan 0 dari 0 Blog</div>
+    <!-- Header dengan info jumlah blog -->
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div id="blogCountDisplay" style="color: #ccc; font-size: 16px;">
+        Menampilkan 6 dari 25 Blog
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="position: relative;">
+          <input type="text" id="blogSearch" placeholder="Cari blog..." style="
+            padding: 10px 15px;
+            padding-right: 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            width: 250px;
+          ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+          ">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <button id="searchBtn" style="
+          padding: 10px 15px;
+          background: rgba(78, 161, 255, 0.2);
+          border: 1px solid rgba(78, 161, 255, 0.5);
+          border-radius: 20px;
+          color: #4ea1ff;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.3s;
+        ">
+          Cari
+        </button>
+      </div>
+    </div>
     
-    <!-- Daftar blog dummy -->
-    <div class="bab-card" style="width: 100%;">
-      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
-      <div>
-        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
-        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-          Judul Blog Menarik #1
+    <!-- Daftar blog -->
+    <div id="blogList" style="width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+      <!-- Blog 1 -->
+      <div class="bab-card blog-item" style="display: flex; flex-direction: column; height: 100%; transition: transform 0.3s;" data-title="BMKG: Cuaca Ekstrem Masih Mengintai, Musim Kemarau Belum Dominan" data-date="2025-07-12" data-category="Berita" data-tags="cuaca, bmkg, iklim">
+        <img src="images/5.jpg" alt="Blog 1" style="width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px;" />
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: red; font-size: 12px; font-weight: bold; background: rgba(78, 161, 255, 0.1); padding: 4px 8px; border-radius: 10px;">Farid Ardiansyah</span>
+            <span style="color: #ccc; font-size: 12px;">14 Juli 2025</span>
+          </div>
+          <h3 style="color: white; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; line-height: 1.4;">
+            Siapa Farid Ardiansyah?
+          </h3>
+          <p style="color: #ccc; margin: 0 0 15px 0; line-height: 1.5; font-size: 14px; flex-grow: 1;">
+            Kalau Kamu tidak tau siapa farid ardiansyah, saya menjelaskan secara detail.....
+          </p>
+          <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; font-size: 14px; margin-top: auto;">
+            Baca selengkapnya
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
         </div>
-        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
       </div>
-    </div>
-	
-	 <!-- Daftar blog dummy -->
-    <div class="bab-card" style="width: 100%;">
-      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
-      <div>
-        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
-        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-          Judul Blog Menarik #1
+      
+      <!-- Blog 2 -->
+      <div class="bab-card blog-item" style="display: flex; flex-direction: column; height: 100%; transition: transform 0.3s;" data-title="Tutorial Arduino: Membuat Sistem Monitoring Suhu dan Kelembaban" data-date="2025-07-10" data-category="Tutorial" data-tags="arduino, sensor, pemrograman">
+        <img src="images/5.jpg" alt="Blog 2" style="width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px;" />
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: blue; font-size: 12px; font-weight: bold; background: rgba(78, 161, 255, 0.1); padding: 4px 8px; border-radius: 10px;">Universitas Gunadarma </span>
+            <span style="color: #ccc; font-size: 12px;">14 Juli 2025</span>
+          </div>
+          <h3 style="color: white; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; line-height: 1.4;">
+            Apakah Kuliah di Universitas Gunadarma worth it sebanding harga UKT?
+
+          </h3>
+          <p style="color: #ccc; margin: 0 0 15px 0; line-height: 1.5; font-size: 14px; flex-grow: 1;">
+            Saya adalah alumnie univrsitas gunadarma, saya menjelaskan secara detail sesuai pengalaman kuliah 4 tahun......
+          </p>
+          <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; font-size: 14px; margin-top: auto;">
+            Baca selengkapnya
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
         </div>
-        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
       </div>
-    </div>
-	
-	
-	 <!-- Daftar blog dummy -->
-    <div class="bab-card" style="width: 100%;">
-      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
-      <div>
-        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
-        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-          Judul Blog Menarik #1
+      
+      <!-- Blog 3 -->
+      <div class="bab-card blog-item" style="display: flex; flex-direction: column; height: 100%; transition: transform 0.3s;" data-title="IoT dalam Pertanian: Meningkatkan Produktivitas dengan Teknologi" data-date="2025-07-08" data-category="Teknologi" data-tags="iot, pertanian, smart-farming">
+        <img src="images/5.jpg" alt="Blog 3" style="width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px;" />
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: green; font-size: 12px; font-weight: bold; background: rgba(78, 161, 255, 0.1); padding: 4px 8px; border-radius: 10px;">pasangan</span>
+            <span style="color: #ccc; font-size: 12px;">8 Juli 2025</span>
+          </div>
+          <h3 style="color: white; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; line-height: 1.4;">
+		  Apakah saya membutuhkan pasangan dalam hidup?
+
+          </h3>
+          <p style="color: #ccc; margin: 0 0 15px 0; line-height: 1.5; font-size: 14px; flex-grow: 1;">
+            saya menjelaskan secara detail sesuai dengan pengalaman hidup......
+          </p>
+          <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; font-size: 14px; margin-top: auto;">
+            Baca selengkapnya
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
         </div>
-        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
       </div>
-    </div>
-	
-	 <!-- Daftar blog dummy -->
-    <div class="bab-card" style="width: 100%;">
-      <img src="images/5.jpg" alt="Blog 1" style="width: 150px; border-radius: 20px;" />
-      <div>
-        <div style="color: #ccc; font-size: 14px;">12 Juli 2025</div>
-        <div style="color: white; font-weight: bold; font-size: 18px; margin: 8px 0;">
-          Judul Blog Menarik #1
+      
+      <!-- Blog 4 -->
+      <div class="bab-card blog-item" style="display: flex; flex-direction: column; height: 100%; transition: transform 0.3s;" data-title="Review Modul ESP32: Kelebihan dan Kekurangan untuk Project IoT" data-date="2025-07-05" data-category="Review" data-tags="esp32, iot, review">
+        <img src="images/5.jpg" alt="Blog 4" style="width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px;" />
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: red; font-size: 12px; font-weight: bold; background: rgba(78, 161, 255, 0.1); padding: 4px 8px; border-radius: 10px;"> Belum dibikin blog nya, sabar ya</span>
+            <span style="color: #ccc; font-size: 12px;">14 Juli 2025</span>
+          </div>
+          <h3 style="color: white; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; line-height: 1.4;">
+            Belum dibikin blog nya, sabar ya
+          </h3>
+          <p style="color: #ccc; margin: 0 0 15px 0; line-height: 1.5; font-size: 14px; flex-grow: 1;">
+            saya bakal bikin blog nya sesuai waktu ya
+          </p>
+          <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; font-size: 14px; margin-top: auto;">
+            Baca selengkapnya
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
         </div>
-        <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none;">Baca selengkapnya →</a>
+      </div>
+      
+      <!-- Blog 5 -->
+      <div class="bab-card blog-item" style="display: flex; flex-direction: column; height: 100%; transition: transform 0.3s;" data-title="Panduan Lengkap Pemrograman Arduino untuk Pemula" data-date="2025-07-03" data-category="Tutorial" data-tags="arduino, pemrograman, dasar">
+        <img src="images/5.jpg" alt="Blog 5" style="width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px;" />
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: yellow; font-size: 12px; font-weight: bold; background: rgba(78, 161, 255, 0.1); padding: 4px 8px; border-radius: 10px;">  Belum dibikin blog nya, sabar ya</span>
+            <span style="color: #ccc; font-size: 12px;">14 Juli 2025</span>
+          </div>
+          <h3 style="color: white; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; line-height: 1.4;">
+             Belum dibikin blog nya, sabar ya
+          </h3>
+          <p style="color: #ccc; margin: 0 0 15px 0; line-height: 1.5; font-size: 14px; flex-grow: 1;">
+                        saya bakal bikin blog nya sesuai waktu ya...
+          </p>
+          <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; font-size: 14px; margin-top: auto;">
+            Baca selengkapnya
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Blog 6 -->
+      <div class="bab-card blog-item" style="display: flex; flex-direction: column; height: 100%; transition: transform 0.3s;" data-title="Teknologi Smart Home: Mengontrol Rumah dari Smartphone" data-date="2025-07-01" data-category="Teknologi" data-tags="smart-home, iot, otomasi">
+        <img src="images/5.jpg" alt="Blog 6" style="width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px;" />
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: green; font-size: 12px; font-weight: bold; background: rgba(78, 161, 255, 0.1); padding: 4px 8px; border-radius: 10px;"> Belum dibikin blog nya, sabar ya</span>
+            <span style="color: #ccc; font-size: 12px;">14 Juli 2025</span>
+          </div>
+          <h3 style="color: white; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; line-height: 1.4;">
+             Belum dibikin blog nya, sabar ya
+          </h3>
+          <p style="color: #ccc; margin: 0 0 15px 0; line-height: 1.5; font-size: 14px; flex-grow: 1;">
+             saya bakal bikin blog nya sesuai waktu ya......
+          </p>
+          <a href="#" style="color: #4ea1ff; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; font-size: 14px; margin-top: auto;">
+            Baca selengkapnya
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px;">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+        </div>
       </div>
     </div>
 
-    <!-- Pagination seperti gambar -->
-    <div style="display: flex; justify-content: flex-end; width: 100%; gap: 10px; margin-top: 20px;">
-      <div style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 5px 12px; color: white; font-size: 14px;">1 dari 77</div>
-      <button style="padding: 6px 16px; background: transparent; border: 1px solid #ccc; border-radius: 8px; color: white; cursor: pointer;">Selanjutnya →</button>
+    <!-- Pagination -->
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+      <button id="prevPage" style="
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.3s;
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Sebelumnya
+      </button>
+      
+      <div style="display: flex; gap: 5px;">
+        <button class="page-btn active" data-page="1" style="
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          background: rgba(78, 161, 255, 0.2);
+          border: 1px solid rgba(78, 161, 255, 0.5);
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s;
+        ">1</button>
+        <button class="page-btn" data-page="2" style="
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.2);
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s;
+        ">2</button>
+        <button class="page-btn" data-page="3" style="
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.2);
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s;
+        ">3</button>
+        <span style="color: white; display: flex; align-items: center; padding: 0 10px;">...</span>
+        <button class="page-btn" data-page="8" style="
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.2);
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s;
+        ">8</button>
+      </div>
+      
+      <button id="nextPage" style="
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.3s;
+      ">
+        Selanjutnya
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
     </div>
   </div>
+  
+  <div class="bottom-line"></div>
+
+    <div class="bottom-text">
+      <div>
+        <a href="#" class="tentangLink">
+
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Tentang Kami
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Masukan
+        </a>
+      </div>
+      <div>
+        <a href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+          Saran
+        </a>
+      </div>
+    </div>
 
   <div class="nav-link">
     <a href="#" id="back-page5">
@@ -762,7 +1123,80 @@
       Kembali
     </a>
   </div>
+  
+  <a href="https://faridardiansyah.netlify.app/#" target="_blank" style="
+    position: fixed;
+    bottom: 20px;
+    right: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 10px 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    z-index: 999;
+  ">
+    Powered by: Manusia
+  </a>
 </div>
+
+
+<!-- Halaman 6 - Tentang Kami -->
+<div id="page6" style="display:none;">
+  
+  <h1 style="color: white; font-size: 39px; margin: 20px 0 30px 180px;">Tentang Kami</h1>
+  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px;">
+  
+    <div style="color: white; font-size: 25px;">
+      Diperbarui <span id="tentangKamiTime">baru saja</span>
+    </div>
+  
+
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
+    Life Is What It Is Learn
+  </div>
+
+    <div style="color: white; font-size: 29px; line-height: 1.7;">
+     Life Is What It Is Learn adalah website pengalaman hidup yang terus menerus tetap berjalan tanpa ada satupun yang support saya dalam hal apapun, maka nya saya terus belajar sampai meninggal, melupakan orang lain dan melupakan nyari pasangan. <br><br>
+      Kunjungi Portfolio saya: 
+      <a href="https://faridardiansyah.netlify.app/" target="_blank" style="color: red;">Portfolio Farid Ardiansyah</a>
+    </div>
+	
+	<div style="color: white; font-size: 29px; line-height: 1.7;">
+     saya terus belajar dan belajar tentang pemrograman, illustration character, saya terus perbaiki kesalahan dan kekurangan. kamu bisa diskusi di forum chat.
+      <a href="https://forumchat-faridardiansyah.netlify.app/" target="_blank" style="color: green;">Forum Chat</a>
+    </div>
+
+    <img src="images/5.jpg" alt="Tentang Kami" style="width: 500px; border-radius: 20px;" />
+
+
+  <div class="nav-link">
+    <a href="#" id="back-tentang">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 5 5 12 12 19"></polyline>
+      </svg>
+      Kembali
+    </a>
+  </div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -861,125 +1295,335 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword , s
   const page3 = document.getElementById("page3");
   const page4 = document.getElementById("page4");
   const page5 = document.getElementById("page5");
+  const page6 = document.getElementById("page6");
+const tentangLink = document.getElementById("tentangLink");
+const backTentang = document.getElementById("back-tentang");
+
+
+let tentangLastUpdated = new Date(); // waktu update awal
+
+// Format waktu lengkap
+function formatTanggalLengkap(date) {
+  const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  return `${hari[date.getDay()]}, ${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+// Waktu terakhir update disimpan di localStorage
+let lastUpdatedTentang = localStorage.getItem("tentangLastUpdated");
+
+if (!lastUpdatedTentang) {
+  // Jika belum ada, set awal (misal saat kamu update konten)
+  lastUpdatedTentang = new Date("2025-07-14T00:00:00Z").toISOString();
+  localStorage.setItem("tentangLastUpdated", lastUpdatedTentang);
+}
+
+function updateTentangRelativeTime() {
+  const now = new Date();
+  const updatedDate = new Date(localStorage.getItem("tentangLastUpdated"));
+  const diffSec = Math.floor((now - updatedDate) / 1000);
+  let waktu = "baru saja";
+
+  if (diffSec >= 60 && diffSec < 3600)
+    waktu = `${Math.floor(diffSec / 60)} menit yang lalu`;
+  else if (diffSec >= 3600 && diffSec < 86400)
+    waktu = `${Math.floor(diffSec / 3600)} jam yang lalu`;
+  else if (diffSec >= 86400)
+    waktu = `${Math.floor(diffSec / 86400)} hari yang lalu`;
+
+  const lengkap = formatTanggalLengkap(updatedDate);
+  const span = document.getElementById("tentangKamiTime");
+  if (span) span.innerHTML = `${waktu} • ${lengkap}`;
+}
+
+// Update terus setiap 10 detik
+setInterval(updateTentangRelativeTime, 10000);
+updateTentangRelativeTime();
 
 
 
-  // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
-  function showPage(page) {
+// Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
+function showPageContent(page) {
   page1.style.display = "none";
   page2.style.display = "none";
   page3.style.display = "none";
   page4.style.display = "none";
   page5.style.display = "none";
+  page6.style.display = "none";
   page.style.display = "block";
   window.scrollTo(0, 0);
 }
 
-  // Event listener klik kartu
-  document.getElementById("card-arduino").addEventListener("click", function() {
-    showPage(page2);
-    history.pushState({ page: "arduino" }, "Arduino", "/halaman-arduino");
-  });
 
-  document.getElementById("card-iot").addEventListener("click", function() {
-    showPage(page3);
-    history.pushState({ page: "iot" }, "IoT", "/halaman-iot");
-  });
 
-  // Tombol kembali ke beranda
-  document.getElementById("back").addEventListener("click", function(e) {
-    e.preventDefault();
-    showPage(page1);
-    history.pushState({ page: "home" }, "Beranda", "/");
-  });
+// Event listener klik kartu
+document.getElementById("card-arduino").addEventListener("click", function() {
+  showPageContent(page2);
+  history.pushState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+});
 
-  document.getElementById("back-iot").addEventListener("click", function(e) {
-    e.preventDefault();
-    showPage(page1);
-    history.pushState({ page: "home" }, "Beranda", "/");
-  });
-  
-  document.getElementById("card-blog").addEventListener("click", function () {
-  showPage(page4);
+document.getElementById("card-iot").addEventListener("click", function() {
+  showPageContent(page3);
+  history.pushState({ page: "iot" }, "IoT", "/halaman-iot");
+});
+
+// Tombol kembali ke beranda
+document.getElementById("back").addEventListener("click", function(e) {
+  e.preventDefault();
+  showPageContent(page1);
+  history.pushState({ page: "home" }, "Beranda", "/");
+});
+
+document.getElementById("back-iot").addEventListener("click", function(e) {
+  e.preventDefault();
+  showPageContent(page1);
+  history.pushState({ page: "home" }, "Beranda", "/");
+});
+
+document.getElementById("card-blog").addEventListener("click", function () {
+  showPageContent(page4);
   history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
 });
 
 document.getElementById("back-blog").addEventListener("click", function (e) {
   e.preventDefault();
-  showPage(page1);
+  showPageContent(page1);
   history.pushState({ page: "home" }, "Beranda", "/");
 });
 
-document.getElementById("view-more").addEventListener("click", function(e) {
+document.getElementById("lihatSemuaBlog").addEventListener("click", function(e) {
   e.preventDefault();
-  showPage(document.getElementById("page5"));
+  showPageContent(page5);
   updateBlogCount();
   history.pushState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
 });
 
-
-
 // Tombol kembali di halaman 5
 document.getElementById("back-page5").addEventListener("click", function(e) {
   e.preventDefault();
-  showPage(page4);
+  showPageContent(page4);
   history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
 });
 
-// Hitung jumlah elemen blog di page5
+
+
+const semuaHalaman = ['page1', 'page2', 'page3', 'page4', 'page5', 'page6'];
+
+function tampilkanHalaman(targetId) {
+  semuaHalaman.forEach(id => {
+    document.getElementById(id).style.display = id === targetId ? 'block' : 'none';
+  });
+}
+
+document.querySelectorAll('.tentangLink').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    tampilkanHalaman('page6');
+  });
+});
+
+document.getElementById('back-tentang')?.addEventListener('click', e => {
+  e.preventDefault();
+  tampilkanHalaman('page1'); // Kembali ke halaman utama
+});
+
+
+
+  
+
+// Fungsi untuk mengupdate jumlah blog yang ditampilkan
 function updateBlogCount() {
-  const blogCards = page5.querySelectorAll(".bab-card");
-  const totalBlog = blogCards.length;
-  const tampilkan = totalBlog > 12 ? 12 : totalBlog;
-  const blogCountDisplay = document.getElementById("blogCountDisplay");
-  if (blogCountDisplay) {
-    blogCountDisplay.textContent = `Menampilkan ${tampilkan} dari ${totalBlog} Blog`;
-  }
+  const visibleBlogs = document.querySelectorAll('#blogList .blog-item:not([style*="display: none"])').length;
+  const totalBlog = document.querySelectorAll('#blogList .blog-item').length;
+  
+  document.getElementById('blogCountDisplay').textContent = 
+    `Menampilkan ${visibleBlogs} dari ${totalBlog} Blog`;
+}
+
+// Fungsi untuk pencarian blog
+function searchBlogs() {
+  const searchTerm = document.getElementById('blogSearch').value.toLowerCase();
+  const blogItems = document.querySelectorAll('.blog-item');
+  
+  blogItems.forEach(item => {
+    const title = item.getAttribute('data-title').toLowerCase();
+    const category = item.getAttribute('data-category').toLowerCase();
+    const tags = item.getAttribute('data-tags').toLowerCase();
+    
+    if (title.includes(searchTerm)) {
+      item.style.display = 'flex';
+    } else if (category.includes(searchTerm)) {
+      item.style.display = 'flex';
+    } else if (tags.includes(searchTerm)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+  
+  updateBlogCount();
 }
 
 
 
- // Navigasi tombol browser (Back/Forward)
-window.addEventListener("popstate", function(event) {
-  if (event.state && event.state.page) {
-    if (event.state.page === "arduino") {
-      showPage(page2);
-    } else if (event.state.page === "iot") {
-      showPage(page3);
-    } else if (event.state.page === "blog") {
-      showPage(page4);
-    } else if (event.state.page === "kumpulan-blog") {
-      showPage(page5);
-    } else {
-      showPage(page1);
-    }
-  } else {
-    showPage(page1);
+
+
+
+// Event listener untuk tombol pencarian
+document.getElementById('searchBtn').addEventListener('click', searchBlogs);
+
+// Event listener untuk input pencarian (bisa tekan enter)
+document.getElementById('blogSearch').addEventListener('keyup', function(e) {
+  if (e.key === 'Enter') {
+    searchBlogs();
   }
 });
 
+// Fungsi untuk pagination
+let currentPage = 1;
+const blogsPerPage = 6;
+const totalBlogs = document.querySelectorAll('.blog-item').length;
+const totalPages = Math.ceil(totalBlogs / blogsPerPage);
+
+function showPage(page) {
+  currentPage = page;
+  const startIndex = (page - 1) * blogsPerPage;
+  const endIndex = startIndex + blogsPerPage;
+  
+  document.querySelectorAll('.blog-item').forEach((item, index) => {
+    if (index >= startIndex && index < endIndex) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+  
+  // Update active button
+  document.querySelectorAll('.page-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (parseInt(btn.getAttribute('data-page')) === page) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Update teks pagination
+  document.getElementById('blogCountDisplay').textContent = 
+    `Menampilkan ${Math.min(endIndex, totalBlogs)} dari ${totalBlogs} Blog (Halaman ${page} dari ${totalPages})`;
+}
+
+// Event listener untuk tombol pagination
+document.querySelectorAll('.page-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    showPage(parseInt(this.getAttribute('data-page')));
+  });
+});
+
+document.getElementById('prevPage').addEventListener('click', function() {
+  if (currentPage > 1) {
+    showPage(currentPage - 1);
+  }
+});
+
+document.getElementById('nextPage').addEventListener('click', function() {
+  if (currentPage < totalPages) {
+    showPage(currentPage + 1);
+  }
+});
+
+// Inisialisasi halaman pertama saat dimuat
+document.addEventListener('DOMContentLoaded', function() {
+  showPage(1);
+  updateBlogCount();
+});
+
+// Fungsi untuk pagination
+document.addEventListener('DOMContentLoaded', function() {
+  // Update count saat halaman dimuat
+  updateBlogCount();
+  
+  // Navigasi pagination
+  const prevBtn = document.getElementById('prevPage');
+  const nextBtn = document.getElementById('nextPage');
+  const pageBtns = document.querySelectorAll('.page-btn');
+  
+  let currentPage = 1;
+  
+  // Event listener untuk tombol pagination
+  prevBtn.addEventListener('click', function() {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+    }
+  });
+  
+  nextBtn.addEventListener('click', function() {
+    if (currentPage < 8) { // Anggap ada 8 halaman
+      currentPage++;
+      updatePagination();
+    }
+  });
+  
+  pageBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      currentPage = parseInt(this.textContent);
+      updatePagination();
+    });
+  });
+  
+  function updatePagination() {
+    // Update active state
+    pageBtns.forEach(btn => {
+      btn.classList.remove('active');
+      if (parseInt(btn.textContent) === currentPage) {
+        btn.classList.add('active');
+      }
+    });
+    
+    // Di sini Anda bisa menambahkan logika untuk memuat data blog
+    // berdasarkan halaman yang dipilih
+    console.log(`Memuat data untuk halaman ${currentPage}`);
+  }
+});
+
+
+ window.addEventListener("popstate", function(event) {
+  if (event.state && event.state.page) {
+    if (event.state.page === "arduino") {
+      showPageContent(page2);
+    } else if (event.state.page === "iot") {
+      showPageContent(page3);
+    } else if (event.state.page === "blog") {
+      showPageContent(page4);
+    } else if (event.state.page === "kumpulan-blog") {
+      showPageContent(page5);
+    } else {
+      showPageContent(page1);
+    }
+  } else {
+    showPageContent(page1);
+  }
+});
 
 const path = window.location.pathname || "/";  // fallback kalau kosong
 
 if (path.includes("halaman-arduino")) {
-  showPage(page2);
+  showPageContent(page2);
   history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
 } else if (path.includes("halaman-iot")) {
-  showPage(page3);
+  showPageContent(page3);
   history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
 } else if (path.includes("halaman-blog")) {
-  showPage(page4);
+  showPageContent(page4);
   history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
 } else if (path.includes("halaman-kumpulan-blog")) {
-  showPage(page5);
+  showPageContent(page5);
   history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
 } else {
-  showPage(page1);
+  showPageContent(page1);
   history.replaceState({ page: "home" }, "Beranda", "/");
 }
-
- }
- 
+}
   </script>
 </body>
 </html>
