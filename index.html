@@ -2180,6 +2180,7 @@ document.querySelectorAll('.forumLink').forEach(link => {
         e.preventDefault();
         showPageContent(page8);
         history.pushState({ page: "forum" }, "Forum", "/halaman-forum");
+		initializeForumPage();
     });
 });
 
@@ -2636,6 +2637,13 @@ function updateFeedbackCount(count, isCached = false) {
 }
 
 
+// Global variables for forum
+let allDiscussions = [];
+let filteredDiscussions = [];
+let currentPage = 1;
+const discussionsPerPage = 10;
+
+
 
 
 
@@ -2718,11 +2726,6 @@ function initializeForumPage() {
   document.getElementById('nextPageBtn').addEventListener('click', goToNextPage);
 }
 
-// Global variables for forum
-let allDiscussions = [];
-let filteredDiscussions = [];
-let currentPage = 1;
-const discussionsPerPage = 10;
 
 // Load discussions from Firebase
 async function loadDiscussions() {
@@ -3178,7 +3181,74 @@ async function createNewDiscussion() {
 }
 
 
+// Hapus event listener ganda untuk form diskusi
+// Pastikan hanya ada satu event listener untuk form
+document.getElementById('newDiscussionForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const user = auth.currentUser;
+    if (!user) {
+        alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
+        return;
+    }
 
+    const title = document.getElementById('discussionTitle').value.trim();
+    const category = document.getElementById('discussionCategory').value;
+    const content = document.getElementById('discussionContent').value.trim();
+
+    if (!title || !category || !content) {
+        alert('Semua field harus diisi');
+        return;
+    }
+
+    const submitBtn = document.getElementById('submitDiscussion');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Membuat... <span class="loading-spinner"></span>';
+
+    try {
+        const newDiscussion = {
+            title,
+            category,
+            content,
+            authorId: user.uid,
+            authorName: user.displayName || 'Anonymous',
+            authorEmail: user.email,
+            createdAt: serverTimestamp(),
+            views: 0,
+            likes: 0,
+            replyCount: 0,
+            status: 'active'
+        };
+
+        // Tambahkan diskusi ke Firestore
+        const docRef = await addDoc(collection(db, "discussions"), newDiscussion);
+        
+        // Tambahkan ke array lokal untuk tampilan langsung
+        newDiscussion.id = docRef.id;
+        newDiscussion.createdAt = new Date();
+        allDiscussions.unshift(newDiscussion);
+        filteredDiscussions.unshift(newDiscussion);
+
+        // Reset form dan tutup modal
+        document.getElementById('newDiscussionForm').reset();
+        document.getElementById('newDiscussionModal').style.display = 'none';
+
+        // Tampilkan notifikasi sukses
+        alert('Diskusi berhasil dibuat!');
+        
+        // Perbarui tampilan diskusi
+        currentPage = 1;
+        displayDiscussions();
+
+    } catch (error) {
+        console.error("Error creating discussion:", error);
+        alert('Gagal membuat diskusi. Silakan coba lagi nanti.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+});
 
 
 
