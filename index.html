@@ -1630,27 +1630,53 @@
           Cari
         </button>
       </div>
-      
-      <button id="newDiscussionBtn" style="
-        padding: 10px 20px;
-        background: linear-gradient(135deg, #4ea1ff, #0066ff);
-        border: none;
-        border-radius: 10px;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        Diskusi Baru
-      </button>
-    </div>
-    
+	  
+	  
+	  <button id="newDiscussionBtn" style="padding: 10px 20px;background: linear-gradient(135deg, #4ea1ff, #0066ff);border: none;border-radius: 10px;color: white;font-weight: bold;cursor: pointer;display: flex;align-items: center;gap: 8px;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+  Diskusi Baru
+</button>
+   
+   <!-- Modal untuk Diskusi Baru -->
+<div id="newDiscussionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+  <div style="background: #1a1a1a; border-radius: 15px; padding: 30px; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+    <h2 style="color: white; font-size: 24px; margin-bottom: 20px;">Buat Diskusi Baru</h2>
+    <form id="newDiscussionForm">
+      <div style="margin-bottom: 20px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Judul Diskusi</label>
+        <input type="text" id="discussionTitle" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Kategori</label>
+        <select id="discussionCategory" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+          <option value="">Pilih Kategori</option>
+          <option value="arduino">Arduino</option>
+          <option value="iot">IoT</option>
+          <option value="pemrograman">Pemrograman</option>
+          <option value="elektronik">Elektronik</option>
+          <option value="lainnya">Lainnya</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Deskripsi Diskusi</label>
+        <textarea id="discussionContent" rows="5" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" id="cancelDiscussion" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">Batal</button>
+        <button type="submit" id="submitDiscussion" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">Buat Diskusi</button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+   
+   
+   
+   
+   
     <!-- Kategori dan Tag -->
     <div style="width: 100%; margin-bottom: 20px;">
       <h2 style="color: white; font-size: 22px; margin-bottom: 15px;">Kategori Populer</h2>
@@ -3066,10 +3092,90 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+// Event listener untuk tombol Diskusi Baru
+document.getElementById('newDiscussionBtn').addEventListener('click', function() {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
+    return;
+  }
+  document.getElementById('newDiscussionModal').style.display = 'flex';
+});
+
+// Event listener untuk tombol Batal
+document.getElementById('cancelDiscussion').addEventListener('click', function() {
+  document.getElementById('newDiscussionModal').style.display = 'none';
+  document.getElementById('newDiscussionForm').reset();
+});
+
+// Event listener untuk submit form
+document.getElementById('newDiscussionForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  createNewDiscussion();
+});
 
 
+// Fungsi untuk membuat diskusi baru
+async function createNewDiscussion() {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
+    return;
+  }
 
+  const title = document.getElementById('discussionTitle').value.trim();
+  const category = document.getElementById('discussionCategory').value;
+  const content = document.getElementById('discussionContent').value.trim();
 
+  if (!title || !category || !content) {
+    alert('Semua field harus diisi');
+    return;
+  }
+
+  const submitBtn = document.getElementById('submitDiscussion');
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Membuat...';
+
+  try {
+    const newDiscussion = {
+      title,
+      category,
+      content,
+      authorId: user.uid,
+      authorName: user.displayName || 'Anonymous',
+      authorEmail: user.email,
+      createdAt: serverTimestamp(),
+      views: 0,
+      likes: 0,
+      replyCount: 0
+    };
+
+    const docRef = await addDoc(collection(db, "discussions"), newDiscussion);
+    newDiscussion.id = docRef.id;
+    newDiscussion.createdAt = new Date();
+
+    // Tambahkan ke array lokal
+    allDiscussions.unshift(newDiscussion);
+    filteredDiscussions.unshift(newDiscussion);
+
+    // Reset form dan tutup modal
+    document.getElementById('newDiscussionForm').reset();
+    document.getElementById('newDiscussionModal').style.display = 'none';
+
+    // Refresh tampilan
+    currentPage = 1;
+    displayDiscussions();
+
+    alert('Diskusi berhasil dibuat!');
+  } catch (error) {
+    console.error("Error creating discussion:", error);
+    alert('Gagal membuat diskusi. Silakan coba lagi nanti.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+  }
+}
 
 
 
