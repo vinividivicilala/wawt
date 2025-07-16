@@ -425,6 +425,97 @@
   flex-shrink: 0;
 }
 
+
+
+/* Tambahkan di bagian style */
+.discussion-item {
+  margin-bottom: 20px;
+  padding: 20px;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+
+.discussion-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
+.hot-discussion {
+  border-left: 3px solid #F44336;
+  padding-left: 17px;
+}
+
+.latest-discussion {
+  border-left: 3px solid #4ea1ff;
+  padding-left: 17px;
+}
+
+
+.forum-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px; /* atau sesuai lebar kontainer kamu */
+  margin: 0 auto;
+  padding: 10px 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.forum-column {
+  flex: 1;
+  text-align: left;
+}
+
+/* Atur agar kolom kanan rata kanan */
+.forum-column:nth-child(2),
+.forum-column:nth-child(3),
+.forum-column:nth-child(4) {
+  text-align: right;
+}
+
+.forum-header-line {
+  width: 100%;
+  max-width: 1200px; /* atau sesuai lebar kontainer */
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px; /* jarak ke bawah */
+}
+
+
+
+#newDiscussionModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Style untuk konten modal */
+#newDiscussionModal > div {
+    background: #1a1a1a;
+    border-radius: 15px;
+    padding: 30px;
+    width: 600px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+
 	
 	
   </style>
@@ -517,21 +608,33 @@
 
   <div class="bottom-line"></div>
 
-  <div class="bottom-text">
-    <div> <a href="#" class="tentangLink">
- <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+<div class="bottom-text">
+  <div>
+    <a href="#" class="tentangLink">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
       </svg>
-	Tentang Kami</a></div>
-    <div><a href="#" class="masukanLink"> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+      Tentang Kami
+    </a>
+  </div>
+  <div>
+    <a href="#" class="masukanLink">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>Masukan</a></div>
-    <div><a href="#">  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+      </svg>
+      Masukan
+    </a>
+  </div>
+  <div>
+    <a href="#" class="forumLink">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>Saran</a></div>
+      </svg>
+      Forum Diskusi
+    </a>
   </div>
 </div>
 
@@ -1479,6 +1582,306 @@
 </div>
 
 
+
+
+
+
+
+
+
+<!-- Halaman 8 - Diskusi Forum -->
+<div id="page8" style="display:none;">
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
+  
+  <h1 style="color: white; font-size: 39px; margin: 20px 0 30px 180px;">Diskusi Forum</h1>
+  
+  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px;">
+    <!-- Header dengan search dan filter -->
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="position: relative;">
+          <input type="text" id="forumSearch" placeholder="Cari diskusi..." style="
+            padding: 10px 15px;
+            padding-right: 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            color: white;
+            font-size: 16px;
+            width: 300px;
+          ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+          ">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <button id="searchForumBtn" style="
+          padding: 10px 15px;
+          background: rgba(78, 161, 255, 0.2);
+          border: 1px solid rgba(78, 161, 255, 0.5);
+          border-radius: 20px;
+          color: #4ea1ff;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.3s;
+        ">
+          Cari
+        </button>
+      </div>
+      
+      <button id="newDiscussionBtn" style="
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #4ea1ff, #0066ff);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Diskusi Baru
+      </button>
+    </div>
+    
+    <!-- Kategori dan Tag -->
+    <div style="width: 100%; margin-bottom: 20px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px;">Kategori Populer</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <button class="category-btn active" data-category="all" style="
+          padding: 8px 15px;
+          background: rgba(78, 161, 255, 0.2);
+          border: 1px solid rgba(78, 161, 255, 0.5);
+          border-radius: 20px;
+          color: #4ea1ff;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Semua
+        </button>
+        <button class="category-btn" data-category="arduino" style="
+          padding: 8px 15px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 20px;
+          color: white;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Arduino
+        </button>
+        <button class="category-btn" data-category="iot" style="
+          padding: 8px 15px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 20px;
+          color: white;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          IoT
+        </button>
+        <button class="category-btn" data-category="pemrograman" style="
+          padding: 8px 15px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 20px;
+          color: white;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Pemrograman
+        </button>
+        <button class="category-btn" data-category="elektronik" style="
+          padding: 8px 15px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 20px;
+          color: white;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Elektronik
+        </button>
+      </div>
+    </div>
+    
+    <!-- Filter Diskusi -->
+    <div style="width: 100%; margin-bottom: 20px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px;">Filter Diskusi</h2>
+      <div style="display: flex; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px;">
+        <button id="filterLatest" class="filter-btn active" data-filter="latest" style="
+          padding: 8px 15px;
+          background: rgba(78, 161, 255, 0.2);
+          border: 1px solid rgba(78, 161, 255, 0.5);
+          border-radius: 20px;
+          color: #4ea1ff;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Terbaru
+        </button>
+        <button id="filterHot" class="filter-btn" data-filter="hot" style="
+          padding: 8px 15px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 20px;
+          color: white;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Populer
+        </button>
+      </div>
+    </div>
+
+    <!-- Header Tabel Diskusi -->
+    <div class="forum-header">
+      <div class="forum-column">Topik</div>
+      <div class="forum-column">Balasan</div>
+      <div class="forum-column">Dilihat</div>
+      <div class="forum-column">Aktivitas</div>
+    </div>
+    <div class="forum-header-line"></div>
+    
+    <!-- Daftar Diskusi -->
+    <div id="discussionList" style="width: 100%;"></div>
+    
+    <!-- Pagination -->
+    <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px;">
+      <button id="prevPageBtn" style="padding: 8px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+        Sebelumnya
+      </button>
+      <div id="pageNumbers" style="display: flex; gap: 5px;"></div>
+      <button id="nextPageBtn" style="padding: 8px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+        Selanjutnya
+      </button>
+    </div>
+  </div>
+  
+  <div class="bottom-line"></div>
+
+  <div class="bottom-text">
+    <div>
+      <a href="#" class="tentangLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Tentang Kami
+      </a>
+    </div>
+    <div>
+      <a href="#" class="masukanLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Masukan
+      </a>
+    </div>
+    <div>
+      <a href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Saran
+      </a>
+    </div>
+  </div>
+
+  <div class="nav-link">
+    <a href="#" id="back-forum">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 5 5 12 12 19"></polyline>
+      </svg>
+      Kembali
+    </a>
+  </div>
+  
+  <!-- Modal untuk Diskusi Baru -->
+  <div id="newDiscussionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: #1a1a1a; border-radius: 15px; padding: 30px; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+      <h2 style="color: white; font-size: 24px; margin-bottom: 20px;">Buat Diskusi Baru</h2>
+      
+      <form id="newDiscussionForm">
+        <div style="margin-bottom: 20px;">
+          <label style="color: white; display: block; margin-bottom: 8px;">Judul Diskusi</label>
+          <input type="text" id="discussionTitle" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="color: white; display: block; margin-bottom: 8px;">Kategori</label>
+          <select id="discussionCategory" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+            <option value="">Pilih Kategori</option>
+            <option value="arduino">Arduino</option>
+            <option value="iot">IoT</option>
+            <option value="pemrograman">Pemrograman</option>
+            <option value="elektronik">Elektronik</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="color: white; display: block; margin-bottom: 8px;">Deskripsi Diskusi</label>
+          <textarea id="discussionContent" rows="5" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;"></textarea>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="cancelDiscussion" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+            Batal
+          </button>
+          <button type="submit" id="submitDiscussion" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+            Buat Diskusi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <a href="https://faridardiansyah.netlify.app/#" target="_blank" style="
+    position: fixed;
+    bottom: 20px;
+    right: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 10px 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    z-index: 999;
+  ">
+    Powered by: Manusia
+  </a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, getDoc, writeBatch, setDoc, doc, updateDoc, where, getDocs, documentId, limit, increment, getCountFromServer, arrayUnion, 
@@ -1584,6 +1987,7 @@
         const page5 = document.getElementById("page5");
         const page6 = document.getElementById("page6");
         const page7 = document.getElementById("page7");
+		  const page8 = document.getElementById("page8");
 
         // Format waktu lengkap
         function formatTanggalLengkap(date) {
@@ -1625,7 +2029,7 @@
 
         // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
         function showPageContent(page) {
-            const pages = [page1, page2, page3, page4, page5, page6, page7];
+            const pages = [page1, page2, page3, page4, page5, page6, page7, page8];
             pages.forEach(p => {
                 if (p) p.style.display = "none";
             });
@@ -1746,6 +2150,38 @@
                 alert("Kamu mengikuti halaman ini!");
             });
         }
+		
+		// Forum Diskusi navigation
+document.querySelectorAll('.forumLink').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        showPageContent(page8);
+        history.pushState({ page: "forum" }, "Forum", "/halaman-forum");
+    });
+});
+
+if (document.getElementById('back-forum')) {
+    document.getElementById('back-forum').addEventListener('click', function(e) {
+        e.preventDefault();
+        showPageContent(page1);
+        history.pushState({ page: "home" }, "Beranda", "/");
+    });
+}
+		
+	
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 
         // Blog functions
         function updateBlogCount() {
@@ -2175,10 +2611,481 @@ function updateFeedbackCount(count, isCached = false) {
             : `Menampilkan ${count} masukan terbaru`;
     }
 }
-	 
-	 
-	 
-	 
+
+
+
+
+
+// Forum Diskusi Functions
+function initializeForumPage() {
+  // Load discussions from Firebase
+  loadDiscussions();
+  
+  // Event listeners
+  document.getElementById('searchForumBtn').addEventListener('click', searchDiscussions);
+  document.getElementById('forumSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') searchDiscussions();
+  });
+  
+  // Category filter
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.category-btn').forEach(b => {
+        b.style.background = 'rgba(255,255,255,0.05)';
+        b.style.border = '1px solid rgba(255,255,255,0.2)';
+        b.style.color = 'white';
+      });
+      
+      this.style.background = 'rgba(78, 161, 255, 0.2)';
+      this.style.border = '1px solid rgba(78, 161, 255, 0.5)';
+      this.style.color = '#4ea1ff';
+      
+      const category = this.getAttribute('data-category');
+      filterDiscussionsByCategory(category);
+    });
+  });
+  
+  // Discussion filter
+  document.getElementById('filterLatest').addEventListener('click', function() {
+    document.getElementById('filterLatest').style.background = 'rgba(78, 161, 255, 0.2)';
+    document.getElementById('filterLatest').style.border = '1px solid rgba(78, 161, 255, 0.5)';
+    document.getElementById('filterLatest').style.color = '#4ea1ff';
+    
+    document.getElementById('filterHot').style.background = 'rgba(255,255,255,0.05)';
+    document.getElementById('filterHot').style.border = '1px solid rgba(255,255,255,0.2)';
+    document.getElementById('filterHot').style.color = 'white';
+    
+    filterDiscussions('latest');
+  });
+  
+  document.getElementById('filterHot').addEventListener('click', function() {
+    document.getElementById('filterHot').style.background = 'rgba(244, 67, 54, 0.2)';
+    document.getElementById('filterHot').style.border = '1px solid rgba(244, 67, 54, 0.5)';
+    document.getElementById('filterHot').style.color = '#F44336';
+    
+    document.getElementById('filterLatest').style.background = 'rgba(255,255,255,0.05)';
+    document.getElementById('filterLatest').style.border = '1px solid rgba(255,255,255,0.2)';
+    document.getElementById('filterLatest').style.color = 'white';
+    
+    filterDiscussions('hot');
+  });
+  
+  // New discussion modal
+  document.getElementById('newDiscussionBtn').addEventListener('click', function() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
+      return;
+    }
+    document.getElementById('newDiscussionModal').style.display = 'flex';
+  });
+  
+  document.getElementById('cancelDiscussion').addEventListener('click', function() {
+    document.getElementById('newDiscussionModal').style.display = 'none';
+    document.getElementById('newDiscussionForm').reset();
+  });
+  
+  document.getElementById('newDiscussionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    createNewDiscussion();
+  });
+  
+  // Pagination
+  document.getElementById('prevPageBtn').addEventListener('click', goToPrevPage);
+  document.getElementById('nextPageBtn').addEventListener('click', goToNextPage);
+}
+
+// Global variables for forum
+let allDiscussions = [];
+let filteredDiscussions = [];
+let currentPage = 1;
+const discussionsPerPage = 10;
+
+// Load discussions from Firebase
+async function loadDiscussions() {
+  try {
+    const q = query(collection(db, "discussions"), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    
+    allDiscussions = [];
+    querySnapshot.forEach(doc => {
+      const discussion = doc.data();
+      discussion.id = doc.id;
+      allDiscussions.push(discussion);
+    });
+    
+    filteredDiscussions = [...allDiscussions];
+    displayDiscussions();
+  } catch (error) {
+    console.error("Error loading discussions:", error);
+    alert("Gagal memuat diskusi. Silakan coba lagi nanti.");
+  }
+}
+
+// Display discussions with pagination
+function displayDiscussions() {
+  const startIndex = (currentPage - 1) * discussionsPerPage;
+  const endIndex = startIndex + discussionsPerPage;
+  const paginatedDiscussions = filteredDiscussions.slice(startIndex, endIndex);
+  
+  const discussionList = document.getElementById('discussionList');
+  discussionList.innerHTML = '';
+  
+  if (paginatedDiscussions.length === 0) {
+    discussionList.innerHTML = '<div style="color: #ccc; text-align: center; padding: 40px;">Tidak ada diskusi yang ditemukan</div>';
+    return;
+  }
+  
+  paginatedDiscussions.forEach(discussion => {
+    const discussionItem = document.createElement('div');
+    discussionItem.className = 'bab-card discussion-item';
+    discussionItem.style.marginBottom = '20px';
+    discussionItem.style.padding = '20px';
+    discussionItem.style.transition = 'all 0.3s';
+    discussionItem.style.cursor = 'pointer';
+    discussionItem.dataset.id = discussion.id;
+    discussionItem.dataset.category = discussion.category;
+    discussionItem.dataset.views = discussion.views || 0;
+    discussionItem.dataset.replies = discussion.replyCount || 0;
+    discussionItem.dataset.createdAt = discussion.createdAt?.toDate().getTime() || new Date().getTime();
+    
+    // Get first letter of author name for avatar
+    const authorInitial = discussion.authorName ? discussion.authorName.charAt(0).toUpperCase() : 'A';
+    
+    // Format time
+    const createdAt = discussion.createdAt?.toDate() || new Date();
+    const timeAgo = formatTimeAgo(createdAt);
+    
+    discussionItem.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #4ea1ff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+            ${authorInitial}
+          </div>
+          <div>
+            <div style="color: white; font-weight: bold;">${discussion.authorName || 'Anonymous'}</div>
+            <div style="color: #aaa; font-size: 12px;">${timeAgo}</div>
+          </div>
+        </div>
+        <span style="color: ${getCategoryColor(discussion.category)}; font-size: 14px; background: ${getCategoryBackground(discussion.category)}; padding: 5px 10px; border-radius: 10px;">
+          ${getCategoryLabel(discussion.category)}
+        </span>
+      </div>
+      
+      <h3 style="color: white; font-size: 20px; margin-bottom: 10px;">
+        ${discussion.title}
+      </h3>
+      
+      <p style="color: #ccc; margin-bottom: 15px; line-height: 1.6;">
+        ${discussion.content.substring(0, 150)}${discussion.content.length > 150 ? '...' : ''}
+      </p>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 15px;">
+          <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+            </svg>
+            ${discussion.likes || 0}
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            ${discussion.replyCount || 0}
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            ${discussion.views || 0}
+          </div>
+        </div>
+        
+        <a href="#" class="view-discussion" style="color: #4ea1ff; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+          Lihat diskusi
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    `;
+    
+    discussionList.appendChild(discussionItem);
+    
+    // Add click event to view discussion
+    discussionItem.querySelector('.view-discussion').addEventListener('click', function(e) {
+      e.preventDefault();
+      viewDiscussion(discussion.id);
+    });
+  });
+  
+  // Update pagination
+  updatePagination();
+}
+
+// Filter discussions by category
+function filterDiscussionsByCategory(category) {
+  if (category === 'all') {
+    filteredDiscussions = [...allDiscussions];
+  } else {
+    filteredDiscussions = allDiscussions.filter(discussion => discussion.category === category);
+  }
+  
+  currentPage = 1;
+  displayDiscussions();
+}
+
+// Filter discussions by type (latest/hot)
+function filterDiscussions(type) {
+  if (type === 'latest') {
+    filteredDiscussions.sort((a, b) => {
+      const dateA = a.createdAt?.toDate() || new Date(0);
+      const dateB = b.createdAt?.toDate() || new Date(0);
+      return dateB - dateA;
+    });
+  } else if (type === 'hot') {
+    filteredDiscussions.sort((a, b) => {
+      const popularityA = (a.replyCount || 0) + (a.likes || 0) + (a.views || 0);
+      const popularityB = (b.replyCount || 0) + (b.likes || 0) + (b.views || 0);
+      return popularityB - popularityA;
+    });
+  }
+  
+  currentPage = 1;
+  displayDiscussions();
+}
+
+// Search discussions
+function searchDiscussions() {
+  const searchTerm = document.getElementById('forumSearch').value.toLowerCase();
+  
+  if (!searchTerm) {
+    filteredDiscussions = [...allDiscussions];
+  } else {
+    filteredDiscussions = allDiscussions.filter(discussion => {
+      return discussion.title.toLowerCase().includes(searchTerm) || 
+             discussion.content.toLowerCase().includes(searchTerm);
+    });
+  }
+  
+  currentPage = 1;
+  displayDiscussions();
+}
+
+// Create new discussion
+async function createNewDiscussion() {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
+    return;
+  }
+  
+  const title = document.getElementById('discussionTitle').value.trim();
+  const category = document.getElementById('discussionCategory').value;
+  const content = document.getElementById('discussionContent').value.trim();
+  
+  if (!title || !category || !content) {
+    alert('Semua field harus diisi');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('submitDiscussion');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Membuat...';
+  
+  try {
+    const newDiscussion = {
+      title,
+      category,
+      content,
+      authorId: user.uid,
+      authorName: user.displayName || 'Anonymous',
+      authorEmail: user.email,
+      createdAt: serverTimestamp(),
+      views: 0,
+      likes: 0,
+      replyCount: 0
+    };
+    
+    const docRef = await addDoc(collection(db, "discussions"), newDiscussion);
+    
+    // Add to local array
+    newDiscussion.id = docRef.id;
+    newDiscussion.createdAt = new Date();
+    allDiscussions.unshift(newDiscussion);
+    filteredDiscussions.unshift(newDiscussion);
+    
+    // Reset form and close modal
+    document.getElementById('newDiscussionForm').reset();
+    document.getElementById('newDiscussionModal').style.display = 'none';
+    
+    // Refresh display
+    currentPage = 1;
+    displayDiscussions();
+    
+    // Show success message
+    alert('Diskusi berhasil dibuat!');
+  } catch (error) {
+    console.error("Error creating discussion:", error);
+    alert('Gagal membuat diskusi. Silakan coba lagi nanti.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  }
+}
+
+// View discussion details
+function viewDiscussion(discussionId) {
+  // Increment view count
+  const discussionRef = doc(db, "discussions", discussionId);
+  updateDoc(discussionRef, {
+    views: increment(1)
+  });
+  
+  // TODO: Implement detailed view page or modal
+  alert(`Membuka diskusi dengan ID: ${discussionId}`);
+}
+
+// Pagination functions
+function updatePagination() {
+  const totalPages = Math.ceil(filteredDiscussions.length / discussionsPerPage);
+  const pageNumbers = document.getElementById('pageNumbers');
+  pageNumbers.innerHTML = '';
+  
+  for (let i = 1; i <= totalPages; i++) {
+    const pageBtn = document.createElement('button');
+    pageBtn.textContent = i;
+    pageBtn.style.padding = '8px 15px';
+    pageBtn.style.borderRadius = '8px';
+    pageBtn.style.cursor = 'pointer';
+    
+    if (i === currentPage) {
+      pageBtn.style.background = 'rgba(78, 161, 255, 0.2)';
+      pageBtn.style.border = '1px solid rgba(78, 161, 255, 0.5)';
+      pageBtn.style.color = '#4ea1ff';
+    } else {
+      pageBtn.style.background = 'rgba(255,255,255,0.05)';
+      pageBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+      pageBtn.style.color = 'white';
+    }
+    
+    pageBtn.addEventListener('click', () => {
+      currentPage = i;
+      displayDiscussions();
+    });
+    
+    pageNumbers.appendChild(pageBtn);
+  }
+  
+  // Update prev/next buttons
+  document.getElementById('prevPageBtn').disabled = currentPage === 1;
+  document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+}
+
+function goToPrevPage() {
+  if (currentPage > 1) {
+    currentPage--;
+    displayDiscussions();
+  }
+}
+
+function goToNextPage() {
+  const totalPages = Math.ceil(filteredDiscussions.length / discussionsPerPage);
+  if (currentPage < totalPages) {
+    currentPage++;
+    displayDiscussions();
+  }
+}
+
+// Helper functions
+function getCategoryLabel(category) {
+  const labels = {
+    arduino: 'Arduino',
+    iot: 'IoT',
+    pemrograman: 'Pemrograman',
+    elektronik: 'Elektronik',
+    lainnya: 'Lainnya'
+  };
+  return labels[category] || labels.lainnya;
+}
+
+function getCategoryColor(category) {
+  const colors = {
+    arduino: '#4ea1ff',
+    iot: '#FFC107',
+    pemrograman: '#F44336',
+    elektronik: '#4CAF50',
+    lainnya: '#9C27B0'
+  };
+  return colors[category] || '#9C27B0';
+}
+
+function getCategoryBackground(category) {
+  const colors = {
+    arduino: 'rgba(78, 161, 255, 0.1)',
+    iot: 'rgba(255, 193, 7, 0.1)',
+    pemrograman: 'rgba(244, 67, 54, 0.1)',
+    elektronik: 'rgba(76, 175, 80, 0.1)',
+    lainnya: 'rgba(156, 39, 176, 0.1)'
+  };
+  return colors[category] || 'rgba(156, 39, 176, 0.1)';
+}
+
+function formatTimeAgo(date) {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  if (diffInSeconds < 60) return 'baru saja';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
+  
+  return date.toLocaleDateString('id-ID', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+}
+
+// Initialize forum when page is shown
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if we're on the forum page
+  if (window.location.pathname.includes('/halaman-forum') || 
+      (window.history.state && window.history.state.page === 'forum')) {
+    initializeForumPage();
+  }
+  
+  // Also initialize when navigating to forum via popstate
+  window.addEventListener('popstate', function(event) {
+    if (event.state && event.state.page === 'forum') {
+      initializeForumPage();
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	 
 	 
 	  
@@ -2264,29 +3171,38 @@ function updateFeedbackCount(count, isCached = false) {
             updateBlogCount();
         }
 
-        // History and routing
-        window.addEventListener("popstate", function(event) {
-            if (event.state && event.state.page) {
-                if (event.state.page === "arduino") {
-                    showPageContent(page2);
-                } else if (event.state.page === "iot") {
-                    showPageContent(page3);
-                } else if (event.state.page === "blog") {
-                    showPageContent(page4);
-                } else if (event.state.page === "kumpulan-blog") {
-                    showPageContent(page5);
-                } else if (event.state.page === "masukan") {
-                    showPageContent(page7);
-                } else {
-                    showPageContent(page1);
-                }
-            } else {
-                showPageContent(page1);
-            }
-        });
+      window.addEventListener("popstate", function(event) {
+    if (event.state && event.state.page) {
+        if (event.state.page === "arduino") {
+            showPageContent(page2);
+        } 
+        else if (event.state.page === "iot") {
+            showPageContent(page3);
+        } 
+        else if (event.state.page === "blog") {
+            showPageContent(page4);
+        } 
+        else if (event.state.page === "kumpulan-blog") {
+            showPageContent(page5);
+        }
+        else if (event.state.page === "tentang-kami") {
+            showPageContent(page6);
+        }
+        else if (event.state.page === "masukan") {
+            showPageContent(page7);
+        }
+        else if (event.state.page === "forum") {
+            showPageContent(page8);
+        }
+        else {
+            showPageContent(page1);
+        }
+    } else {
+        showPageContent(page1);
+    }
+});
 
-    
-	window.onload = function () {
+    window.onload = function () {
   const path = window.location.pathname || "/";
 
   if (path.includes("halaman-arduino")) {
@@ -2308,6 +3224,9 @@ function updateFeedbackCount(count, isCached = false) {
     showPageContent(page7);
     loadFeedback().catch(console.error);
     history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+  } else if (path.includes("halaman-forum")) {
+    showPageContent(page8);
+    history.replaceState({ page: "forum" }, "Forum", "/halaman-forum");
   } else {
     showPageContent(page1);
     history.replaceState({ page: "home" }, "Beranda", "/");
@@ -2316,8 +3235,6 @@ function updateFeedbackCount(count, isCached = false) {
   initializeBlogPagination();
 };
  }
-
-
 
 	
 	</script>
