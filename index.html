@@ -248,6 +248,183 @@
 }
 
 
+/* Animasi untuk feedback item */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .feedback-item {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 15px;
+    animation: fadeInUp 0.5s ease-out;
+    transition: all 0.3s;
+  }
+  
+  .feedback-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+  
+  .feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .feedback-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .feedback-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #4ea1ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .feedback-time {
+    color: #ccc;
+    font-size: 14px;
+  }
+  
+  .feedback-title {
+    color: white;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 18px;
+  }
+  
+  .feedback-category {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .category-design {
+    background: rgba(78, 161, 255, 0.2);
+    color: #4ea1ff;
+  }
+  
+  .category-feature {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+  }
+  
+  .category-content {
+    background: rgba(255, 193, 7, 0.2);
+    color: #FFC107;
+  }
+  
+  .category-bug {
+    background: rgba(244, 67, 54, 0.2);
+    color: #F44336;
+  }
+  
+  .category-other {
+    background: rgba(156, 39, 176, 0.2);
+    color: #9C27B0;
+  }
+  
+  .feedback-content {
+    color: #ddd;
+    line-height: 1.6;
+  }
+  
+  /* Animasi tombol submit */
+  #submitFeedback {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  #submitFeedback:after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255,255,255,0.1);
+    transform: rotate(30deg);
+    transition: all 0.3s;
+  }
+  
+  #submitFeedback:hover:after {
+    left: 100%;
+  }
+  
+  /* Animasi loading */
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+    margin-left: 8px;
+  }
+  
+  
+  .feedback-time {
+  color: #ccc;
+  font-size: 14px;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 150px;
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 15px;
+}
+
+.feedback-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+}
+
+.feedback-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #4ea1ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
 	
 	
   </style>
@@ -347,7 +524,7 @@
         <polyline points="12 5 19 12 12 19"></polyline>
       </svg>
 	Tentang Kami</a></div>
-    <div><a href="#">  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+    <div><a href="#" class="masukanLink"> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
       </svg>Masukan</a></div>
@@ -451,7 +628,7 @@
         </a>
       </div>
       <div>
-        <a href="#">
+       <a href="#" class="masukanLink">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
@@ -573,7 +750,7 @@
         </a>
       </div>
       <div>
-        <a href="#">
+        <a href="#" class="masukanLink">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
@@ -1186,444 +1363,968 @@
 </div>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
+<!-- Halaman 7 - Masukan -->
+<div id="page7" style="display: none;">
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
   
+  
+  
+  <h1 style="color: white; font-size: 28px; margin: 30px 0 20px 180px;">Halaman Masukan</h1>
+  
+  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px;">
+    <!-- Header dengan info feedback -->
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div id="feedbackCountDisplay" style="color: #ccc; font-size: 16px;">
+        Menampilkan semua masukan
+      </div>
+    </div>
+    
+    <div id="feedbackHistory" style="width: 100%; margin-bottom: 30px;">
+    <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+      Riwayat Masukan
+    </h2>
+    <div id="feedbackListContainer" style="display: flex; flex-direction: column; gap: 15px;">
+      <!-- Feedback items will be added here dynamically -->
+    </div>
+  </div>
+    
+    <!-- Form masukan baru -->
+    <div id="newFeedbackForm" style="width: 100%;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Kirim Masukan Baru
+      </h2>
+      
+      <form id="masukanForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Kolom 1 - Judul Masukan -->
+        <div style="grid-column: 1;">
+          <label for="feedbackTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Masukan</label>
+          <input type="text" id="feedbackTitle" placeholder="Contoh: Perbaikan desain halaman utama" 
+                 style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+        </div>
+        
+        <!-- Kolom 2 - Kategori -->
+        <div style="grid-column: 2;">
+          <label for="feedbackCategory" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Kategori</label>
+          <select id="feedbackCategory" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+            <option value="design">Desain</option>
+            <option value="feature">Fitur</option>
+            <option value="content">Konten</option>
+            <option value="bug">Bug/Laporan Masalah</option>
+            <option value="other">Lainnya</option>
+          </select>
+        </div>
+        
+        <!-- Kolom 3 - Isi Masukan (full width) -->
+        <div style="grid-column: 1 / span 2;">
+          <label for="feedbackContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Masukan</label>
+          <textarea id="feedbackContent" rows="5" placeholder="Tulis masukan Anda secara detail..." 
+                    style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
+        </div>
+        
+        <!-- Tombol Submit -->
+        <div style="grid-column: 1 / span 2; display: flex; justify-content: flex-end;">
+          <button type="submit" id="submitFeedback" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s;">
+            Kirim Masukan
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="bottom-line"></div>
+
+  <div class="bottom-text">
+    <div>
+      <a href="#" class="tentangLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Tentang Kami
+      </a>
+    </div>
+    <div>
+      <a href="#" class="masukanLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Masukan
+      </a>
+    </div>
+    <div>
+      <a href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Saran
+      </a>
+    </div>
+  </div>
+
+  <div class="nav-link">
+    <a href="#" id="back-masukan">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 5 5 12 12 19"></polyline>
+      </svg>
+      Kembali
+    </a>
+  </div>
+</div>
+
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, getDoc, writeBatch, setDoc, doc, updateDoc, where, getDocs, documentId, limit, increment, getCountFromServer,  arrayUnion, 
-    arrayRemove, deleteField, runTransaction  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword , signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider,  setPersistence,
-  browserLocalPersistence  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"; // Pastikan semua fungsi auth yang Anda butuhkan diimpor
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, getDoc, writeBatch, setDoc, doc, updateDoc, where, getDocs, documentId, limit, increment, getCountFromServer, arrayUnion, 
+    arrayRemove, deleteField, runTransaction } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider, setPersistence,
+    browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
+    const firebaseConfig = {
+        apiKey: "AIzaSyAzgMVdqZhrqQ3PqiSWapaCl6oglF3QP64",
+        authDomain: "life-is-what-it-is-learn.firebaseapp.com",
+        projectId: "life-is-what-it-is-learn",
+        storageBucket: "life-is-what-it-is-learn.appspot.com",
+        messagingSenderId: "755474876167",
+        appId: "1:755474876167:web:205fb4ea8c7b8d5b66e7a2"
+    };
 
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAzgMVdqZhrqQ3PqiSWapaCl6oglF3QP64",
-    authDomain: "life-is-what-it-is-learn.firebaseapp.com",
-    projectId: "life-is-what-it-is-learn",
-    storageBucket: "life-is-what-it-is-learn.firebasestorage.app",
-    messagingSenderId: "755474876167",
-    appId: "1:755474876167:web:205fb4ea8c7b8d5b66e7a2"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-   const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-  
-  // DOM Element
-  const loginBtn = document.getElementById("loginBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const greeting = document.getElementById("greeting");
-
-  // Fungsi Login
-  loginBtn.addEventListener("click", () => {
-    signInWithPopup(auth, provider).catch(console.error);
-  });
-
-  // Fungsi Logout
-  logoutBtn.addEventListener("click", () => {
-    signOut(auth).catch(console.error);
-  });
-
- 
- 
- 
- onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // Pastikan halaman utama aktif agar #dynamicText ada
-    document.getElementById("page1").style.display = "block";
-    document.getElementById("page2").style.display = "none";
-    document.getElementById("page3").style.display = "none";
-
-    const hours = new Date().getHours();
-    let greet = "Selamat malam";
-    if (hours >= 5 && hours < 11) greet = "Selamat pagi";
-    else if (hours >= 11 && hours < 15) greet = "Selamat siang";
-    else if (hours >= 15 && hours < 18) greet = "Selamat sore";
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const db = getFirestore(app);
     
-    greeting.textContent = `${greet}, ${user.displayName}`;
+    // DOM Elements
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const greeting = document.getElementById("greeting");
+    const likeBtn = document.getElementById("likeBtn");
+    const followBtn = document.getElementById("followBtn");
 
-    // Dapatkan dynamicText SETELAH elemen ada
-    const dynamicText = document.getElementById("dynamicText");
-    if (dynamicText) {
-      let phrases = [
-        "Ada apa kamu di sini, " + user.displayName + "?",
-        "Lagi nyari inspirasi ya, " + user.displayName + "?",
-        "Selamat datang kembali, " + user.displayName + "!",
-        "Semangat belajar, " + user.displayName + "!",
-        "Mau ngoprek Arduino lagi, " + user.displayName + "?"
-      ];
-      let index = 0;
-      function changePhrase() {
-        dynamicText.textContent = phrases[index];
-        index = (index + 1) % phrases.length;
-      }
-      changePhrase();
-      setInterval(changePhrase, 20000);
+    // Authentication Functions
+    if (loginBtn) {
+        loginBtn.addEventListener("click", () => {
+            signInWithPopup(auth, provider).catch(console.error);
+        });
     }
 
-    loginBtn.style.display = "none";
-    logoutBtn.style.display = "inline-block";
-  } else {
-    greeting.textContent = "";
-    loginBtn.style.display = "inline-block";
-    logoutBtn.style.display = "none";
-    const dynamicText = document.getElementById("dynamicText");
-    if (dynamicText) dynamicText.textContent = "";
-  }
-});
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            signOut(auth).catch(console.error);
+        });
+    }
 
- 
- window.onload = function() {
-  const page1 = document.getElementById("page1");
-  const page2 = document.getElementById("page2");
-  const page3 = document.getElementById("page3");
-  const page4 = document.getElementById("page4");
-  const page5 = document.getElementById("page5");
-  const page6 = document.getElementById("page6");
-const tentangLink = document.getElementById("tentangLink");
-const backTentang = document.getElementById("back-tentang");
+    // Auth State Listener
+    onAuthStateChanged(auth, (user) => {
+        const greeting = document.getElementById("greeting");
+        const loginBtn = document.getElementById("loginBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
 
+        if (user) {
+            document.getElementById("page1").style.display = "block";
+            document.getElementById("page2").style.display = "none";
+            document.getElementById("page3").style.display = "none";
 
-let tentangLastUpdated = new Date(); // waktu update awal
+            const hours = new Date().getHours();
+            let greet = "Selamat malam";
+            if (hours >= 5 && hours < 11) greet = "Selamat pagi";
+            else if (hours >= 11 && hours < 15) greet = "Selamat siang";
+            else if (hours >= 15 && hours < 18) greet = "Selamat sore";
 
-// Format waktu lengkap
-function formatTanggalLengkap(date) {
-  const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-  const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  return `${hari[date.getDay()]}, ${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+            if (greeting) greeting.textContent = `${greet}, ${user.displayName}`;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) {
+                const phrases = [
+                    `Ada apa kamu di sini, ${user.displayName}?`,
+                    `Lagi nyari inspirasi ya, ${user.displayName}?`,
+                    `Selamat datang kembali, ${user.displayName}!`,
+                    `Semangat belajar, ${user.displayName}!`,
+                    `Mau ngoprek Arduino lagi, ${user.displayName}?`
+                ];
+                let index = 0;
+                function changePhrase() {
+                    dynamicText.textContent = phrases[index];
+                    index = (index + 1) % phrases.length;
+                }
+                changePhrase();
+                setInterval(changePhrase, 20000);
+            }
+
+            if (loginBtn) loginBtn.style.display = "none";
+            if (logoutBtn) logoutBtn.style.display = "inline-block";
+            if (likeBtn) likeBtn.disabled = false;
+            if (followBtn) followBtn.disabled = false;
+
+        } else {
+            if (greeting) greeting.textContent = "";
+            if (loginBtn) loginBtn.style.display = "inline-block";
+            if (logoutBtn) logoutBtn.style.display = "none";
+            if (likeBtn) likeBtn.disabled = true;
+            if (followBtn) followBtn.disabled = true;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) dynamicText.textContent = "";
+        }
+    });
+
+    // Page Management
+    window.onload = function() {
+        const page1 = document.getElementById("page1");
+        const page2 = document.getElementById("page2");
+        const page3 = document.getElementById("page3");
+        const page4 = document.getElementById("page4");
+        const page5 = document.getElementById("page5");
+        const page6 = document.getElementById("page6");
+        const page7 = document.getElementById("page7");
+
+        // Format waktu lengkap
+        function formatTanggalLengkap(date) {
+            const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return `${hari[date.getDay()]}, ${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        // Waktu terakhir update disimpan di localStorage
+        let lastUpdatedTentang = localStorage.getItem("tentangLastUpdated");
+
+        if (!lastUpdatedTentang) {
+            lastUpdatedTentang = new Date("2025-07-14T00:00:00Z").toISOString();
+            localStorage.setItem("tentangLastUpdated", lastUpdatedTentang);
+        }
+
+        function updateTentangRelativeTime() {
+            const now = new Date();
+            const updatedDate = new Date(localStorage.getItem("tentangLastUpdated"));
+            const diffSec = Math.floor((now - updatedDate) / 1000);
+            let waktu = "baru saja";
+
+            if (diffSec >= 60 && diffSec < 3600)
+                waktu = `${Math.floor(diffSec / 60)} menit yang lalu`;
+            else if (diffSec >= 3600 && diffSec < 86400)
+                waktu = `${Math.floor(diffSec / 3600)} jam yang lalu`;
+            else if (diffSec >= 86400)
+                waktu = `${Math.floor(diffSec / 86400)} hari yang lalu`;
+
+            const lengkap = formatTanggalLengkap(updatedDate);
+            const span = document.getElementById("tentangKamiTime");
+            if (span) span.innerHTML = `${waktu} • ${lengkap}`;
+        }
+
+        // Update terus setiap 10 detik
+        setInterval(updateTentangRelativeTime, 10000);
+        updateTentangRelativeTime();
+
+        // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
+        function showPageContent(page) {
+            const pages = [page1, page2, page3, page4, page5, page6, page7];
+            pages.forEach(p => {
+                if (p) p.style.display = "none";
+            });
+            if (page) page.style.display = "block";
+            window.scrollTo(0, 0);
+        }
+
+        // Event listeners for navigation
+        if (document.getElementById("card-arduino")) {
+            document.getElementById("card-arduino").addEventListener("click", function() {
+                showPageContent(page2);
+                history.pushState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+            });
+        }
+
+        if (document.getElementById("card-iot")) {
+            document.getElementById("card-iot").addEventListener("click", function() {
+                showPageContent(page3);
+                history.pushState({ page: "iot" }, "IoT", "/halaman-iot");
+            });
+        }
+
+        if (document.getElementById("back")) {
+            document.getElementById("back").addEventListener("click", function(e) {
+                e.preventDefault();
+                showPageContent(page1);
+                history.pushState({ page: "home" }, "Beranda", "/");
+            });
+        }
+
+        if (document.getElementById("back-iot")) {
+            document.getElementById("back-iot").addEventListener("click", function(e) {
+                e.preventDefault();
+                showPageContent(page1);
+                history.pushState({ page: "home" }, "Beranda", "/");
+            });
+        }
+
+        if (document.getElementById("card-blog")) {
+            document.getElementById("card-blog").addEventListener("click", function() {
+                showPageContent(page4);
+                history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
+            });
+        }
+
+        if (document.getElementById("back-blog")) {
+            document.getElementById("back-blog").addEventListener("click", function(e) {
+                e.preventDefault();
+                showPageContent(page1);
+                history.pushState({ page: "home" }, "Beranda", "/");
+            });
+        }
+
+        if (document.getElementById("lihatSemuaBlog")) {
+            document.getElementById("lihatSemuaBlog").addEventListener("click", function(e) {
+                e.preventDefault();
+                showPageContent(page5);
+                updateBlogCount();
+                history.pushState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
+            });
+        }
+
+        if (document.getElementById("back-page5")) {
+            document.getElementById("back-page5").addEventListener("click", function(e) {
+                e.preventDefault();
+                showPageContent(page4);
+                history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
+            });
+        }
+
+        // Tentang kami navigation
+        document.querySelectorAll('.tentangLink').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                showPageContent(page6);
+            });
+        });
+
+        if (document.getElementById('back-tentang')) {
+            document.getElementById('back-tentang').addEventListener('click', e => {
+                e.preventDefault();
+                showPageContent(page1);
+            });
+        }
+
+        // Masukan navigation
+        document.querySelectorAll('.masukanLink').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                showPageContent(page7);
+                history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+                loadFeedback();
+            });
+        });
+
+        if (document.getElementById('back-masukan')) {
+            document.getElementById('back-masukan').addEventListener('click', function(e) {
+                e.preventDefault();
+                showPageContent(page1);
+                history.pushState({ page: "home" }, "Beranda", "/");
+            });
+        }
+
+        // Feedback form
+        if (document.getElementById('masukanForm')) {
+            document.getElementById('masukanForm').addEventListener('submit', submitFeedback);
+        }
+
+        // Like and Follow buttons
+        if (likeBtn) {
+            likeBtn.addEventListener('click', () => {
+                alert("Kamu menyukai halaman ini!");
+            });
+        }
+
+        if (followBtn) {
+            followBtn.addEventListener('click', () => {
+                alert("Kamu mengikuti halaman ini!");
+            });
+        }
+
+        // Blog functions
+        function updateBlogCount() {
+            const blogList = document.getElementById('blogList');
+            if (!blogList) return;
+            
+            const visibleBlogs = document.querySelectorAll('#blogList .blog-item:not([style*="display: none"])').length;
+            const totalBlog = document.querySelectorAll('#blogList .blog-item').length;
+            
+            const blogCountDisplay = document.getElementById('blogCountDisplay');
+            if (blogCountDisplay) {
+                blogCountDisplay.textContent = `Menampilkan ${visibleBlogs} dari ${totalBlog} Blog`;
+            }
+        }
+
+        function searchBlogs() {
+            const searchInput = document.getElementById('blogSearch');
+            if (!searchInput) return;
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const blogItems = document.querySelectorAll('.blog-item');
+            
+            blogItems.forEach(item => {
+                const title = item.getAttribute('data-title')?.toLowerCase() || '';
+                const category = item.getAttribute('data-category')?.toLowerCase() || '';
+                const tags = item.getAttribute('data-tags')?.toLowerCase() || '';
+                
+                if (title.includes(searchTerm) || category.includes(searchTerm) || tags.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            updateBlogCount();
+        }
+
+        // Time formatting functions
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return 'baru saja';
+            
+            const now = new Date();
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            const options = { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const fullDate = date.toLocaleDateString('id-ID', options);
+            
+            if (diffInSeconds < 60) return `baru saja • ${fullDate}`;
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu • ${fullDate}`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu • ${fullDate}`;
+            
+            return fullDate;
+        }
+		
+
+     
+	 
+	 
+	 
+	 
+	 // Fungsi untuk memuat masukan dari Firebase atau cache
+async function loadFeedback() {
+    const feedbackList = document.getElementById('feedbackListContainer');
+    if (!feedbackList) return;
+
+    try {
+        // Tampilkan loading state
+        feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
+
+        // Coba ambil data dari Firebase
+        const q = query(
+            collection(db, "feedback"), 
+            orderBy("timestamp", "desc"),
+            limit(50)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            // Jika Firebase kosong, coba dari cache
+            displayCachedFeedback();
+            return;
+        }
+
+        // Render feedback dari Firebase
+        feedbackList.innerHTML = '';
+        const feedbackItems = [];
+        
+        querySnapshot.forEach((doc) => {
+            const feedback = doc.data();
+            feedbackItems.push({
+                id: doc.id,
+                ...feedback
+            });
+            
+            renderFeedbackItem(doc.id, feedback);
+        });
+
+        // Simpan ke cache
+        localStorage.setItem('cachedFeedback', JSON.stringify(feedbackItems));
+
+        // Update jumlah masukan
+        updateFeedbackCount(querySnapshot.size);
+
+    } catch (error) {
+        console.error("Error loading feedback:", error);
+        // Jika error, tampilkan dari cache
+        displayCachedFeedback();
+    }
 }
 
-// Waktu terakhir update disimpan di localStorage
-let lastUpdatedTentang = localStorage.getItem("tentangLastUpdated");
+	 
+	 
+	 
+	 // Fungsi untuk menampilkan masukan dari cache
+function displayCachedFeedback() {
+    const feedbackList = document.getElementById('feedbackListContainer');
+    if (!feedbackList) return;
+    
+    const cachedFeedback = JSON.parse(localStorage.getItem('cachedFeedback') || "[]");
+    
+    if (cachedFeedback.length === 0) {
+        feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada masukan yang dikirim</div>';
+        return;
+    }
+    
+    feedbackList.innerHTML = '';
+    cachedFeedback.forEach(item => {
+        renderFeedbackItem(item.id, item);
+    });
+    
+    updateFeedbackCount(cachedFeedback.length, true);
+}
+	 
+	 
+	 // Fungsi untuk merender item masukan
+function renderFeedbackItem(id, feedback) {
+    const feedbackList = document.getElementById('feedbackListContainer');
+    if (!feedbackList) return;
+    
+    const waktu = feedback.timestamp?.toDate ? feedback.timestamp.toDate() : new Date(feedback.timestamp || Date.now());
+    const initials = feedback.userName ? feedback.userName.charAt(0).toUpperCase() : 'A';
+    const categoryClass = feedback.category || 'other';
 
-if (!lastUpdatedTentang) {
-  // Jika belum ada, set awal (misal saat kamu update konten)
-  lastUpdatedTentang = new Date("2025-07-14T00:00:00Z").toISOString();
-  localStorage.setItem("tentangLastUpdated", lastUpdatedTentang);
+    const feedbackItem = document.createElement('div');
+    feedbackItem.className = 'feedback-item';
+    feedbackItem.setAttribute('data-id', id);
+    
+    feedbackItem.innerHTML = `
+        <div class="feedback-header">
+            <div class="feedback-user">
+                <div class="feedback-avatar">${initials}</div>
+                <div>
+                    <div style="color: white; font-weight: 500;">${feedback.userName || 'Anonymous'}</div>
+                    <div style="color: #aaa; font-size: 12px;">${feedback.userEmail || ''}</div>
+                </div>
+            </div>
+            <div class="feedback-time">${formatTimeAgo(waktu)}${feedback.isCached ? ' (offline)' : ''}</div>
+        </div>
+        <div class="feedback-title">${feedback.title || 'Tanpa judul'}</div>
+        <span class="feedback-category category-${categoryClass}">${getCategoryLabel(categoryClass)}</span>
+        <div class="feedback-content">${feedback.content || 'Tidak ada konten'}</div>
+    `;
+
+    feedbackList.appendChild(feedbackItem);
 }
 
-function updateTentangRelativeTime() {
-  const now = new Date();
-  const updatedDate = new Date(localStorage.getItem("tentangLastUpdated"));
-  const diffSec = Math.floor((now - updatedDate) / 1000);
-  let waktu = "baru saja";
-
-  if (diffSec >= 60 && diffSec < 3600)
-    waktu = `${Math.floor(diffSec / 60)} menit yang lalu`;
-  else if (diffSec >= 3600 && diffSec < 86400)
-    waktu = `${Math.floor(diffSec / 3600)} jam yang lalu`;
-  else if (diffSec >= 86400)
-    waktu = `${Math.floor(diffSec / 86400)} hari yang lalu`;
-
-  const lengkap = formatTanggalLengkap(updatedDate);
-  const span = document.getElementById("tentangKamiTime");
-  if (span) span.innerHTML = `${waktu} • ${lengkap}`;
+	 
+	 
+	 
+// Fungsi untuk memeriksa dan memuat masukan saat halaman dimuat
+function checkAndLoadFeedback() {
+    const path = window.location.pathname || "/";
+    if (path.includes("halaman-masukan") || 
+        (window.history.state && window.history.state.page === "masukan")) {
+        
+        // Coba muat dari cache dulu untuk UX yang lebih cepat
+        displayCachedFeedback();
+        
+        // Kemudian coba update dari Firebase
+        loadFeedback().catch(console.error);
+    }
 }
 
-// Update terus setiap 10 detik
-setInterval(updateTentangRelativeTime, 10000);
-updateTentangRelativeTime();
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	
 
+// Event listener untuk form
+document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
+// Panggil saat halaman dimuat dan setiap kali ada perubahan state
+window.addEventListener('load', checkAndLoadFeedback);
+window.addEventListener('popstate', checkAndLoadFeedback);
 
-
-// Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
-function showPageContent(page) {
-  page1.style.display = "none";
-  page2.style.display = "none";
-  page3.style.display = "none";
-  page4.style.display = "none";
-  page5.style.display = "none";
-  page6.style.display = "none";
-  page.style.display = "block";
-  window.scrollTo(0, 0);
-}
-
-
-
-// Event listener klik kartu
-document.getElementById("card-arduino").addEventListener("click", function() {
-  showPageContent(page2);
-  history.pushState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+// Deteksi perubahan koneksi untuk refresh data
+window.addEventListener('online', () => {
+    if (window.location.pathname.includes("halaman-masukan")) {
+        loadFeedback().catch(console.error);
+    }
 });
+	 
+	 
 
-document.getElementById("card-iot").addEventListener("click", function() {
-  showPageContent(page3);
-  history.pushState({ page: "iot" }, "IoT", "/halaman-iot");
-});
-
-// Tombol kembali ke beranda
-document.getElementById("back").addEventListener("click", function(e) {
-  e.preventDefault();
-  showPageContent(page1);
-  history.pushState({ page: "home" }, "Beranda", "/");
-});
-
-document.getElementById("back-iot").addEventListener("click", function(e) {
-  e.preventDefault();
-  showPageContent(page1);
-  history.pushState({ page: "home" }, "Beranda", "/");
-});
-
-document.getElementById("card-blog").addEventListener("click", function () {
-  showPageContent(page4);
-  history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
-});
-
-document.getElementById("back-blog").addEventListener("click", function (e) {
-  e.preventDefault();
-  showPageContent(page1);
-  history.pushState({ page: "home" }, "Beranda", "/");
-});
-
-document.getElementById("lihatSemuaBlog").addEventListener("click", function(e) {
-  e.preventDefault();
-  showPageContent(page5);
-  updateBlogCount();
-  history.pushState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
-});
-
-// Tombol kembali di halaman 5
-document.getElementById("back-page5").addEventListener("click", function(e) {
-  e.preventDefault();
-  showPageContent(page4);
-  history.pushState({ page: "blog" }, "Blog", "/halaman-blog");
-});
-
-
-
-const semuaHalaman = ['page1', 'page2', 'page3', 'page4', 'page5', 'page6'];
-
-function tampilkanHalaman(targetId) {
-  semuaHalaman.forEach(id => {
-    document.getElementById(id).style.display = id === targetId ? 'block' : 'none';
-  });
-}
-
-document.querySelectorAll('.tentangLink').forEach(link => {
-  link.addEventListener('click', e => {
+// Event listener untuk form
+document.getElementById('masukanForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    tampilkanHalaman('page6');
-  });
-});
-
-document.getElementById('back-tentang')?.addEventListener('click', e => {
-  e.preventDefault();
-  tampilkanHalaman('page1'); // Kembali ke halaman utama
-});
-
-
-
-  
-
-// Fungsi untuk mengupdate jumlah blog yang ditampilkan
-function updateBlogCount() {
-  const visibleBlogs = document.querySelectorAll('#blogList .blog-item:not([style*="display: none"])').length;
-  const totalBlog = document.querySelectorAll('#blogList .blog-item').length;
-  
-  document.getElementById('blogCountDisplay').textContent = 
-    `Menampilkan ${visibleBlogs} dari ${totalBlog} Blog`;
-}
-
-// Fungsi untuk pencarian blog
-function searchBlogs() {
-  const searchTerm = document.getElementById('blogSearch').value.toLowerCase();
-  const blogItems = document.querySelectorAll('.blog-item');
-  
-  blogItems.forEach(item => {
-    const title = item.getAttribute('data-title').toLowerCase();
-    const category = item.getAttribute('data-category').toLowerCase();
-    const tags = item.getAttribute('data-tags').toLowerCase();
     
-    if (title.includes(searchTerm)) {
-      item.style.display = 'flex';
-    } else if (category.includes(searchTerm)) {
-      item.style.display = 'flex';
-    } else if (tags.includes(searchTerm)) {
-      item.style.display = 'flex';
-    } else {
-      item.style.display = 'none';
-    }
-  });
-  
-  updateBlogCount();
-}
-
-
-
-
-
-
-// Event listener untuk tombol pencarian
-document.getElementById('searchBtn').addEventListener('click', searchBlogs);
-
-// Event listener untuk input pencarian (bisa tekan enter)
-document.getElementById('blogSearch').addEventListener('keyup', function(e) {
-  if (e.key === 'Enter') {
-    searchBlogs();
-  }
-});
-
-// Fungsi untuk pagination
-let currentPage = 1;
-const blogsPerPage = 6;
-const totalBlogs = document.querySelectorAll('.blog-item').length;
-const totalPages = Math.ceil(totalBlogs / blogsPerPage);
-
-function showPage(page) {
-  currentPage = page;
-  const startIndex = (page - 1) * blogsPerPage;
-  const endIndex = startIndex + blogsPerPage;
-  
-  document.querySelectorAll('.blog-item').forEach((item, index) => {
-    if (index >= startIndex && index < endIndex) {
-      item.style.display = 'flex';
-    } else {
-      item.style.display = 'none';
-    }
-  });
-  
-  // Update active button
-  document.querySelectorAll('.page-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (parseInt(btn.getAttribute('data-page')) === page) {
-      btn.classList.add('active');
-    }
-  });
-  
-  // Update teks pagination
-  document.getElementById('blogCountDisplay').textContent = 
-    `Menampilkan ${Math.min(endIndex, totalBlogs)} dari ${totalBlogs} Blog (Halaman ${page} dari ${totalPages})`;
-}
-
-// Event listener untuk tombol pagination
-document.querySelectorAll('.page-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    showPage(parseInt(this.getAttribute('data-page')));
-  });
-});
-
-document.getElementById('prevPage').addEventListener('click', function() {
-  if (currentPage > 1) {
-    showPage(currentPage - 1);
-  }
-});
-
-document.getElementById('nextPage').addEventListener('click', function() {
-  if (currentPage < totalPages) {
-    showPage(currentPage + 1);
-  }
-});
-
-// Inisialisasi halaman pertama saat dimuat
-document.addEventListener('DOMContentLoaded', function() {
-  showPage(1);
-  updateBlogCount();
-});
-
-// Fungsi untuk pagination
-document.addEventListener('DOMContentLoaded', function() {
-  // Update count saat halaman dimuat
-  updateBlogCount();
-  
-  // Navigasi pagination
-  const prevBtn = document.getElementById('prevPage');
-  const nextBtn = document.getElementById('nextPage');
-  const pageBtns = document.querySelectorAll('.page-btn');
-  
-  let currentPage = 1;
-  
-  // Event listener untuk tombol pagination
-  prevBtn.addEventListener('click', function() {
-    if (currentPage > 1) {
-      currentPage--;
-      updatePagination();
-    }
-  });
-  
-  nextBtn.addEventListener('click', function() {
-    if (currentPage < 8) { // Anggap ada 8 halaman
-      currentPage++;
-      updatePagination();
-    }
-  });
-  
-  pageBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      currentPage = parseInt(this.textContent);
-      updatePagination();
-    });
-  });
-  
-  function updatePagination() {
-    // Update active state
-    pageBtns.forEach(btn => {
-      btn.classList.remove('active');
-      if (parseInt(btn.textContent) === currentPage) {
-        btn.classList.add('active');
-      }
-    });
+    const title = document.getElementById('feedbackTitle').value.trim();
+    const category = document.getElementById('feedbackCategory').value;
+    const content = document.getElementById('feedbackContent').value.trim();
     
-    // Di sini Anda bisa menambahkan logika untuk memuat data blog
-    // berdasarkan halaman yang dipilih
-    console.log(`Memuat data untuk halaman ${currentPage}`);
-  }
+    if (!title || !content) {
+        alert('Judul dan isi masukan tidak boleh kosong!');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitFeedback');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+    
+    const user = auth.currentUser;
+    const feedbackData = {
+        title,
+        category,
+        content,
+        userName: user?.displayName || 'Anonymous',
+        userEmail: user?.email || null,
+        userId: user?.uid || null,
+        timestamp: serverTimestamp()
+    };
+
+    try {
+        // Simpan ke Firebase
+        const feedbackRef = collection(db, "feedback");
+        await addDoc(feedbackRef, feedbackData);
+        
+        // Reset form
+        e.target.reset();
+        
+        // Perbarui tampilan
+        await loadFeedback();
+        
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        alert('Gagal mengirim masukan. Pastikan Anda terhubung ke internet.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 });
 
+// Fungsi pembantu untuk label kategori
+function getCategoryLabel(category) {
+    const labels = {
+        design: 'Desain',
+        feature: 'Fitur',
+        content: 'Konten',
+        bug: 'Bug/Masalah',
+        other: 'Lainnya'
+    };
+    return labels[category] || labels.other;
+}
 
- window.addEventListener("popstate", function(event) {
-  if (event.state && event.state.page) {
-    if (event.state.page === "arduino") {
-      showPageContent(page2);
-    } else if (event.state.page === "iot") {
-      showPageContent(page3);
-    } else if (event.state.page === "blog") {
-      showPageContent(page4);
-    } else if (event.state.page === "kumpulan-blog") {
-      showPageContent(page5);
-    } else {
-      showPageContent(page1);
+
+
+
+
+
+
+// Fungsi untuk mengirim masukan
+async function submitFeedback(e) {
+    e.preventDefault();
+    
+    const title = document.getElementById('feedbackTitle').value.trim();
+    const category = document.getElementById('feedbackCategory').value;
+    const content = document.getElementById('feedbackContent').value.trim();
+    
+    if (!title || !content) {
+        alert('Judul dan isi masukan tidak boleh kosong!');
+        return;
     }
+    
+    const submitBtn = document.getElementById('submitFeedback');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+    
+    const user = auth.currentUser;
+    const feedbackData = {
+        title,
+        category,
+        content,
+        userName: user?.displayName || 'Anonymous',
+        userEmail: user?.email || null,
+        userId: user?.uid || null,
+        timestamp: serverTimestamp(),
+        status: 'new' // Tambahkan status untuk filtering
+    };
+
+    try {
+        // Simpan ke Firebase
+        const feedbackRef = collection(db, "feedback");
+        const docRef = await addDoc(feedbackRef, feedbackData);
+        
+        // Tambahkan ke localStorage sebagai cache
+        const cachedFeedback = {
+            id: docRef.id,
+            ...feedbackData,
+            timestamp: new Date().toISOString() // Gunakan waktu client sebagai fallback
+        };
+        
+        // Simpan di localStorage untuk sementara
+		
+        existingFeedback.unshift(cachedFeedback);
+        localStorage.setItem('cachedFeedback', JSON.stringify(existingFeedback.slice(0, 10))); // Simpan max 10 item
+        
+        // Reset form
+        e.target.reset();
+        
+        // Perbarui tampilan
+        await loadFeedback();
+        
+        // Tampilkan notifikasi sukses
+        const notification = document.createElement('div');
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.right = '20px';
+        notification.style.backgroundColor = '#4CAF50';
+        notification.style.color = 'white';
+        notification.style.padding = '15px';
+        notification.style.borderRadius = '5px';
+        notification.style.zIndex = '10000';
+        notification.textContent = 'Masukan berhasil dikirim!';
+        document.body.appendChild(notification);
+        
+        // Hilangkan notifikasi setelah 3 detik
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        
+        // Tampilkan notifikasi error
+        const errorNotification = document.createElement('div');
+        errorNotification.style.position = 'fixed';
+        errorNotification.style.bottom = '20px';
+        errorNotification.style.right = '20px';
+        errorNotification.style.backgroundColor = '#F44336';
+        errorNotification.style.color = 'white';
+        errorNotification.style.padding = '15px';
+        errorNotification.style.borderRadius = '5px';
+        errorNotification.style.zIndex = '10000';
+        errorNotification.textContent = 'Gagal mengirim masukan. Coba lagi nanti.';
+        document.body.appendChild(errorNotification);
+        
+        setTimeout(() => {
+            errorNotification.style.opacity = '0';
+            setTimeout(() => errorNotification.remove(), 500);
+        }, 3000);
+        
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// Fungsi pembantu untuk format waktu
+function formatTimeAgo(timestamp) {
+    if (!timestamp) return 'baru saja';
+    
+    const now = new Date();
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    const options = { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    const fullDate = date.toLocaleDateString('id-ID', options);
+    
+    if (diffInSeconds < 60) return `baru saja • ${fullDate}`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu • ${fullDate}`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu • ${fullDate}`;
+    
+    return fullDate;
+}
+
+
+	 
+	 
+	 
+	 // Fungsi untuk update jumlah masukan
+function updateFeedbackCount(count, isCached = false) {
+    const feedbackCountDisplay = document.getElementById('feedbackCountDisplay');
+    if (feedbackCountDisplay) {
+        feedbackCountDisplay.textContent = isCached 
+            ? `Menampilkan ${count} masukan (data offline)` 
+            : `Menampilkan ${count} masukan terbaru`;
+    }
+}
+	 
+	 
+	 
+	 
+	 
+	 
+	  
+	  
+	  
+        // Blog search and pagination
+        if (document.getElementById('searchBtn')) {
+            document.getElementById('searchBtn').addEventListener('click', searchBlogs);
+        }
+
+        if (document.getElementById('blogSearch')) {
+            document.getElementById('blogSearch').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    searchBlogs();
+                }
+            });
+        }
+
+        // Initialize blog pagination
+        function initializeBlogPagination() {
+            const blogItems = document.querySelectorAll('.blog-item');
+            if (blogItems.length === 0) return;
+            
+            let currentPage = 1;
+            const blogsPerPage = 6;
+            const totalBlogs = blogItems.length;
+            const totalPages = Math.ceil(totalBlogs / blogsPerPage);
+
+            function showPage(page) {
+                currentPage = page;
+                const startIndex = (page - 1) * blogsPerPage;
+                const endIndex = startIndex + blogsPerPage;
+                
+                blogItems.forEach((item, index) => {
+                    if (index >= startIndex && index < endIndex) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // Update active button
+                document.querySelectorAll('.page-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (parseInt(btn.getAttribute('data-page')) === page) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                // Update pagination text
+                const blogCountDisplay = document.getElementById('blogCountDisplay');
+                if (blogCountDisplay) {
+                    blogCountDisplay.textContent = 
+                        `Menampilkan ${Math.min(endIndex, totalBlogs)} dari ${totalBlogs} Blog (Halaman ${page} dari ${totalPages})`;
+                }
+            }
+
+            // Set up pagination controls
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    showPage(parseInt(this.getAttribute('data-page')));
+                });
+            });
+
+            if (document.getElementById('prevPage')) {
+                document.getElementById('prevPage').addEventListener('click', function() {
+                    if (currentPage > 1) {
+                        showPage(currentPage - 1);
+                    }
+                });
+            }
+
+            if (document.getElementById('nextPage')) {
+                document.getElementById('nextPage').addEventListener('click', function() {
+                    if (currentPage < totalPages) {
+                        showPage(currentPage + 1);
+                    }
+                });
+            }
+
+            // Show first page initially
+            showPage(1);
+            updateBlogCount();
+        }
+
+        // History and routing
+        window.addEventListener("popstate", function(event) {
+            if (event.state && event.state.page) {
+                if (event.state.page === "arduino") {
+                    showPageContent(page2);
+                } else if (event.state.page === "iot") {
+                    showPageContent(page3);
+                } else if (event.state.page === "blog") {
+                    showPageContent(page4);
+                } else if (event.state.page === "kumpulan-blog") {
+                    showPageContent(page5);
+                } else if (event.state.page === "masukan") {
+                    showPageContent(page7);
+                } else {
+                    showPageContent(page1);
+                }
+            } else {
+                showPageContent(page1);
+            }
+        });
+
+    
+	window.onload = function () {
+  const path = window.location.pathname || "/";
+
+  if (path.includes("halaman-arduino")) {
+    showPageContent(page2);
+    history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+  } else if (path.includes("halaman-iot")) {
+    showPageContent(page3);
+    history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
+  } else if (path.includes("halaman-blog")) {
+    showPageContent(page4);
+    history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
+  } else if (path.includes("halaman-kumpulan-blog")) {
+    showPageContent(page5);
+    history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
+  } else if (path.includes("halaman-tentang-kami")) {
+    showPageContent(page6);
+    history.replaceState({ page: "tentang-kami" }, "Tentang Kami", "/halaman-tentang-kami");
+  } else if (path.includes("halaman-masukan")) {
+    showPageContent(page7);
+    loadFeedback().catch(console.error);
+    history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
   } else {
     showPageContent(page1);
+    history.replaceState({ page: "home" }, "Beranda", "/");
   }
-});
 
-const path = window.location.pathname || "/";  // fallback kalau kosong
+  initializeBlogPagination();
+};
+ }
 
-if (path.includes("halaman-arduino")) {
-  showPageContent(page2);
-  history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
-} else if (path.includes("halaman-iot")) {
-  showPageContent(page3);
-  history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
-} else if (path.includes("halaman-blog")) {
-  showPageContent(page4);
-  history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
-} else if (path.includes("halaman-kumpulan-blog")) {
-  showPageContent(page5);
-  history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
-} else {
-  showPageContent(page1);
-  history.replaceState({ page: "home" }, "Beranda", "/");
-}
-}
-  </script>
+
+
+	
+	</script>
 </body>
 </html>
+
+
+
+
+
