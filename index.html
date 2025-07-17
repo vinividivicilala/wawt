@@ -1597,6 +1597,9 @@
 
 
 
+
+
+
 <!-- Halaman 7 - Masukan -->
 <div id="page7" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
@@ -1794,9 +1797,6 @@
     </a>
   </div>
 </div>
-
-
-
 
 
 
@@ -2499,46 +2499,19 @@ if (document.getElementById('back-forum')) {
 	 
 	 
 	 
-	 // Daftar email yang diizinkan (admin/contributor)
-const ALLOWED_EMAILS = ['faridardiansyah061@gmail.com'];
-
-// Fungsi untuk mengecek apakah user adalah admin/contributor
-function checkAdminStatus(user) {
-  if (!user || !user.email) return false;
-  return ALLOWED_EMAILS.includes(user.email.toLowerCase());
-}
-
-// Fungsi untuk menampilkan/menyembunyikan form admin
-function toggleAdminForms() {
-  const user = auth.currentUser;
-  const isAdmin = checkAdminStatus(user);
-  
-  const adminForm = document.getElementById('adminAnnouncementForm');
-  if (adminForm) {
-    adminForm.style.display = isAdmin ? 'block' : 'none';
-  }
-  
-  // Tambahkan badge admin jika diperlukan
-  const userDisplayElements = document.querySelectorAll('.feedback-user div:first-child');
-  userDisplayElements.forEach(el => {
-    const userEmail = el.nextElementSibling?.textContent?.trim();
-    if (userEmail && ALLOWED_EMAILS.includes(userEmail.toLowerCase())) {
-      el.innerHTML += ' <span style="background: #ff6b6b; color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">ADMIN</span>';
-    }
-  });
-}
-
-// Fungsi untuk memuat masukan
+	  
+	 // Fungsi untuk memuat masukan dari Firebase
 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
 
     try {
+        // Tampilkan loading state
         feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
 
-        // Ambil masukan biasa dari koleksi terpisah
+        // Ambil data dari Firebase dengan sorting berdasarkan timestamp
         const q = query(
-            collection(db, "user_feedback"),
+            collection(db, "feedback"), 
             orderBy("timestamp", "desc"),
             limit(50)
         );
@@ -2550,6 +2523,7 @@ async function loadFeedback() {
             return;
         }
 
+        // Render feedback dari Firebase
         feedbackList.innerHTML = '';
         const feedbackItems = [];
         
@@ -2558,73 +2532,37 @@ async function loadFeedback() {
             feedback.id = doc.id;
             feedbackItems.push(feedback);
             
-            const repliesCount = await getRepliesCount(doc.id, 'user_feedback');
-            const likesCount = await getLikesCount(doc.id, 'user_feedback');
-            const userLiked = await checkUserLiked(doc.id, 'user_feedback');
+            // Dapatkan jumlah replies untuk feedback ini
+            const repliesCount = await getRepliesCount(doc.id);
+            // Dapatkan jumlah likes untuk feedback ini
+            const likesCount = await getLikesCount(doc.id);
+            // Dapatkan status like user saat ini
+            const userLiked = await checkUserLiked(doc.id);
             
             renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
         });
 
+        // Simpan ke cache
         localStorage.setItem('cachedFeedback', JSON.stringify(feedbackItems));
+
+        // Update jumlah masukan
         updateFeedbackCount(querySnapshot.size);
 
     } catch (error) {
         console.error("Error loading feedback:", error);
+        // Jika error, tampilkan dari cache
         displayCachedFeedback();
     }
 }
 
-// Fungsi untuk memuat pengumuman
-async function loadPinnedAnnouncements() {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
 
-    try {
-        // Coba tampilkan dari cache dulu untuk UX yang lebih cepat
-        displayCachedPinnedAnnouncements();
-        
-        // Ambil pengumuman dari koleksi terpisah
-        const q = query(
-            collection(db, "announcements"),
-            orderBy("timestamp", "desc"),
-            limit(5)
-        );
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
-            localStorage.setItem('cachedPinnedAnnouncements', JSON.stringify([]));
-            return;
-        }
 
-        pinnedContainer.innerHTML = '';
-        const pinnedItems = [];
-        
-        for (const doc of querySnapshot.docs) {
-            const announcement = doc.data();
-            announcement.id = doc.id;
-            pinnedItems.push(announcement);
-            
-            const repliesCount = await getRepliesCount(doc.id, 'announcements');
-            const likesCount = await getLikesCount(doc.id, 'announcements');
-            const userLiked = await checkUserLiked(doc.id, 'announcements');
-            
-            renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
-        }
 
-        localStorage.setItem('cachedPinnedAnnouncements', JSON.stringify(pinnedItems));
-
-    } catch (error) {
-        console.error("Error loading pinned announcements:", error);
-        displayCachedPinnedAnnouncements();
-    }
-}
 
 // Fungsi untuk mendapatkan jumlah replies
-async function getRepliesCount(feedbackId, collectionName) {
+async function getRepliesCount(feedbackId) {
     try {
-        const repliesRef = collection(db, collectionName, feedbackId, "replies");
+        const repliesRef = collection(db, "feedback", feedbackId, "replies");
         const snapshot = await getCountFromServer(repliesRef);
         return snapshot.data().count;
     } catch (error) {
@@ -2634,9 +2572,9 @@ async function getRepliesCount(feedbackId, collectionName) {
 }
 
 // Fungsi untuk mendapatkan jumlah likes
-async function getLikesCount(feedbackId, collectionName) {
+async function getLikesCount(feedbackId) {
     try {
-        const likesRef = collection(db, collectionName, feedbackId, "likes");
+        const likesRef = collection(db, "feedback", feedbackId, "likes");
         const snapshot = await getCountFromServer(likesRef);
         return snapshot.data().count;
     } catch (error) {
@@ -2646,12 +2584,12 @@ async function getLikesCount(feedbackId, collectionName) {
 }
 
 // Fungsi untuk memeriksa apakah user sudah like
-async function checkUserLiked(feedbackId, collectionName) {
+async function checkUserLiked(feedbackId) {
     const user = auth.currentUser;
     if (!user) return false;
     
     try {
-        const likeDoc = doc(db, collectionName, feedbackId, "likes", user.uid);
+        const likeDoc = doc(db, "feedback", feedbackId, "likes", user.uid);
         const docSnap = await getDoc(likeDoc);
         return docSnap.exists();
     } catch (error) {
@@ -2660,7 +2598,22 @@ async function checkUserLiked(feedbackId, collectionName) {
     }
 }
 
-// Fungsi untuk menampilkan masukan dari cache
+
+
+
+
+
+
+
+
+
+
+
+
+	 
+	 
+	 
+	 // Fungsi untuk menampilkan masukan dari cache
 function displayCachedFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
@@ -2673,75 +2626,70 @@ function displayCachedFeedback() {
     }
     
     feedbackList.innerHTML = '';
-    cachedFeedback.forEach(async item => {
-        const repliesCount = await getRepliesCount(item.id, 'user_feedback');
-        const likesCount = await getLikesCount(item.id, 'user_feedback');
-        const userLiked = await checkUserLiked(item.id, 'user_feedback');
-        renderFeedbackItem(item, repliesCount, likesCount, userLiked);
+    cachedFeedback.forEach(item => {
+        renderFeedbackItem(item.id, item);
     });
     
     updateFeedbackCount(cachedFeedback.length, true);
 }
+	 
+	 
+	 
+	 // Event listener untuk form pengumuman
+document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
 
-// Fungsi untuk menampilkan pengumuman dari cache
-function displayCachedPinnedAnnouncements() {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
-    
-    const cachedPinned = JSON.parse(localStorage.getItem('cachedPinnedAnnouncements') || "[]");
-    
-    if (cachedPinned.length === 0) {
-        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
-        return;
-    }
-    
-    pinnedContainer.innerHTML = '';
-    cachedPinned.forEach(async (item) => {
-        const repliesCount = await getRepliesCount(item.id, 'announcements');
-        const likesCount = await getLikesCount(item.id, 'announcements');
-        const userLiked = await checkUserLiked(item.id, 'announcements');
-        renderPinnedAnnouncement(item, repliesCount, likesCount, userLiked);
-    });
+// Panggil saat auth state berubah
+auth.onAuthStateChanged((user) => {
+  toggleAdminForms();
+  checkAndLoadFeedback();
+});
+	 
+	 
+	 
+	 function showNotification(message, type = "info") {
+  alert(`${type.toUpperCase()}: ${message}`);
 }
 
-// Fungsi untuk render item masukan
+	 
+	 
+	 
+	 
+	 
+	 
+// Fungsi untuk merender item masukan dengan fitur tambahan
 function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLiked = false) {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
-    
-    const feedbackItem = document.createElement('div');
-    feedbackItem.className = 'feedback-item';
-    feedbackItem.setAttribute('data-id', feedback.id);
-    feedbackItem.style.cssText = `
-        margin-bottom: 20px;
-        width: 100%;
-        max-width: 800px;
-        box-sizing: border-box;
-        background: rgba(255,255,255,0.05);
-        padding: 20px;
-        border-radius: 15px;
-    `;
+	
+	  // Tambahkan class khusus untuk pengumuman
+    if (feedback.type === 'announcement' || feedback.category === 'announcement') {
+        feedbackItem.classList.add('announcement-item');
+        feedbackItem.style.borderLeft = '4px solid #ff6b6b';
+        feedbackItem.style.background = 'rgba(255, 107, 107, 0.05)';
+    }
     
     const waktu = feedback.timestamp?.toDate ? feedback.timestamp.toDate() : new Date(feedback.timestamp || Date.now());
     const initials = feedback.userName ? feedback.userName.charAt(0).toUpperCase() : 'A';
-    const categoryClass = feedback.category || 'other';
+  const categoryClass = (feedback.category || 'other').toLowerCase();
 
+    const feedbackItem = document.createElement('div');
+    feedbackItem.className = 'feedback-item';
+    feedbackItem.setAttribute('data-id', feedback.id);
+    
     feedbackItem.innerHTML = `
-        <div class="feedback-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div class="feedback-user" style="display: flex; align-items: center; gap: 10px;">
-                <div class="feedback-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: #4ea1ff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">${initials}</div>
+        <div class="feedback-header">
+            <div class="feedback-user">
+                <div class="feedback-avatar">${initials}</div>
                 <div>
                     <div style="color: white; font-weight: 500;">${feedback.userName || 'Anonymous'}</div>
                     <div style="color: #aaa; font-size: 12px;">${feedback.userEmail || ''}</div>
                 </div>
             </div>
-            <div class="feedback-time" style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}${feedback.isCached ? ' (offline)' : ''}</div>
+            <div class="feedback-time">${formatTimeAgo(waktu)}${feedback.isCached ? ' (offline)' : ''}</div>
         </div>
-        <div class="feedback-title" style="margin: 10px 0; color: white; font-size: 18px; font-weight: 500;">${feedback.title || 'Tanpa judul'}</div>
-        <span class="feedback-category category-${categoryClass}" style="display: inline-block; padding: 4px 10px; background: rgba(78, 161, 255, 0.2); color: #4ea1ff; border-radius: 20px; font-size: 12px; margin-bottom: 10px;">
-            ${getCategoryLabel(categoryClass)}
-        </span>
-        <div class="feedback-content" style="color: #ddd; line-height: 1.5; margin-bottom: 15px;">${feedback.content || 'Tidak ada konten'}</div>
+        <div class="feedback-title">${feedback.title || 'Tanpa judul'}</div>
+        <span class="feedback-category category-${categoryClass}">${getCategoryLabel(categoryClass)}</span>
+        <div class="feedback-content">${feedback.content || 'Tidak ada konten'}</div>
         
         <!-- Action buttons -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -2782,124 +2730,40 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
     const replyBtn = feedbackItem.querySelector('.reply-btn');
     const viewDetailsBtn = feedbackItem.querySelector('.view-details-btn');
     
-    likeBtn.addEventListener('click', () => toggleLike(feedback.id, 'user_feedback'));
-    replyBtn.addEventListener('click', () => openReplyModal(feedback, 'user_feedback'));
-    viewDetailsBtn.addEventListener('click', () => viewFeedbackDetails(feedback.id, 'user_feedback'));
+    likeBtn.addEventListener('click', () => toggleLike(feedback.id));
+    replyBtn.addEventListener('click', () => openReplyModal(feedback));
+    viewDetailsBtn.addEventListener('click', () => viewFeedbackDetails(feedback.id));
     
     // Increment view count
-    if (feedback.id) {
-        incrementViewCount(feedback.id, 'user_feedback');
+    incrementViewCount(feedback.id);
+}
+
+	 
+	 
+	 
+	 
+	 
+	 
+// Fungsi untuk memeriksa dan memuat masukan saat halaman dimuat
+function checkAndLoadFeedback() {
+    const path = window.location.pathname || "/";
+    if (path.includes("halaman-masukan") || 
+        (window.history.state && window.history.state.page === "masukan")) {
+        
+        // Coba muat dari cache dulu untuk UX yang lebih cepat
+        displayCachedFeedback();
+        
+        // Kemudian coba update dari Firebase
+        loadFeedback().catch(console.error);
     }
 }
 
-// Fungsi untuk render pengumuman yang dipin
-function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0, userLiked = false) {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
-    
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
-    const initials = announcement.userName ? announcement.userName.charAt(0).toUpperCase() : 'A';
-
-    const announcementItem = document.createElement('div');
-    announcementItem.className = 'feedback-item announcement-item';
-    announcementItem.setAttribute('data-id', announcement.id);
-    announcementItem.style.cssText = `
-        border-left: 4px solid #ff6b6b;
-        background: rgba(255, 107, 107, 0.05);
-        position: relative;
-        margin-bottom: 20px;
-        width: 100%;
-        max-width: 800px;
-        box-sizing: border-box;
-        padding: 20px;
-        border-radius: 15px;
-    `;
-    
-    announcementItem.innerHTML = `
-        <div style="position: absolute; top: 10px; right: 10px; background: #ff6b6b; color: white; padding: 3px 8px; border-radius: 10px; font-size: 12px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-            </svg>
-            Pengumuman Penting
-        </div>
-        
-        <div class="feedback-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div class="feedback-user" style="display: flex; align-items: center; gap: 10px;">
-                <div class="feedback-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: #ff6b6b; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">${initials}</div>
-                <div>
-                    <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-                    <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
-                </div>
-            </div>
-            <div class="feedback-time" style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
-        </div>
-        
-        <div class="feedback-title" style="color: #ff6b6b; font-size: 18px; margin: 10px 0; font-weight: 500;">${announcement.title || 'Pengumuman'}</div>
-        <div class="feedback-content" style="color: #ddd; line-height: 1.5; margin-bottom: 15px;">${announcement.content || 'Tidak ada konten'}</div>
-        
-        <!-- Action buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-            <div style="display: flex; gap: 15px;">
-                <button class="like-btn" style="background: none; border: none; color: ${userLiked ? '#4ea1ff' : '#ccc'}; display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="${userLiked ? '#4ea1ff' : 'none'}" stroke="${userLiked ? '#4ea1ff' : '#ccc'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-</svg>
-
-                    <span class="like-count">${likesCount}</span>
-                </button>
-                
-                <button class="reply-btn" style="background: none; border: none; color: #ccc; display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span class="reply-count">${repliesCount}</span>
-                </button>
-                
-                <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    <span class="view-count">${announcement.views || 0}</span>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button class="pin-btn" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#ff6b6b" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v16M5 12h14"/>
-                    </svg>
-                    Dipin
-                </button>
-                
-                <button class="view-details-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
-                    Lihat Detail
-                </button>
-            </div>
-        </div>
-    `;
-
-    pinnedContainer.appendChild(announcementItem);
-    
-    // Add event listeners
-    const likeBtn = announcementItem.querySelector('.like-btn');
-    const replyBtn = announcementItem.querySelector('.reply-btn');
-    const viewDetailsBtn = announcementItem.querySelector('.view-details-btn');
-    
-    likeBtn.addEventListener('click', () => toggleLike(announcement.id, 'announcements'));
-    replyBtn.addEventListener('click', () => openReplyModal(announcement, 'announcements'));
-    viewDetailsBtn.addEventListener('click', () => viewFeedbackDetails(announcement.id, 'announcements'));
-    
-    // Increment view count
-    if (announcement.id) {
-        incrementViewCount(announcement.id, 'announcements');
-    }
-}
-
-// Fungsi untuk menambah jumlah view
-async function incrementViewCount(feedbackId, collectionName) {
+	 
+	 
+	 // Fungsi untuk menambah jumlah view
+async function incrementViewCount(feedbackId) {
     try {
-        const feedbackRef = doc(db, collectionName, feedbackId);
+        const feedbackRef = doc(db, "feedback", feedbackId);
         await updateDoc(feedbackRef, {
             views: increment(1)
         });
@@ -2909,7 +2773,7 @@ async function incrementViewCount(feedbackId, collectionName) {
 }
 
 // Fungsi untuk like/unlike
-async function toggleLike(feedbackId, collectionName) {
+async function toggleLike(feedbackId) {
     const user = auth.currentUser;
     if (!user) {
         alert('Silakan login terlebih dahulu untuk memberikan like');
@@ -2917,7 +2781,7 @@ async function toggleLike(feedbackId, collectionName) {
     }
     
     try {
-        const likeRef = doc(db, collectionName, feedbackId, "likes", user.uid);
+        const likeRef = doc(db, "feedback", feedbackId, "likes", user.uid);
         const likeDoc = await getDoc(likeRef);
         
         if (likeDoc.exists()) {
@@ -2962,7 +2826,7 @@ async function toggleLike(feedbackId, collectionName) {
 }
 
 // Fungsi untuk membuka modal reply
-function openReplyModal(feedback, collectionName) {
+function openReplyModal(feedback) {
     const user = auth.currentUser;
     if (!user) {
         alert('Silakan login terlebih dahulu untuk membalas masukan');
@@ -2985,9 +2849,8 @@ function openReplyModal(feedback, collectionName) {
     // Reset form
     document.getElementById('replyContent').value = '';
     
-    // Simpan feedback ID dan collection name di modal
+    // Simpan feedback ID di modal
     modal.setAttribute('data-feedback-id', feedback.id);
-    modal.setAttribute('data-collection-name', collectionName);
     
     // Tampilkan modal
     modal.style.display = 'flex';
@@ -3009,7 +2872,6 @@ async function submitReply(e) {
     }
     
     const feedbackId = document.getElementById('replyModal').getAttribute('data-feedback-id');
-    const collectionName = document.getElementById('replyModal').getAttribute('data-collection-name');
     const content = document.getElementById('replyContent').value.trim();
     
     if (!content) {
@@ -3024,7 +2886,7 @@ async function submitReply(e) {
     
     try {
         // Tambahkan reply ke subcollection
-        const repliesRef = collection(db, collectionName, feedbackId, "replies");
+        const repliesRef = collection(db, "feedback", feedbackId, "replies");
         await addDoc(repliesRef, {
             content,
             userId: user.uid,
@@ -3034,7 +2896,7 @@ async function submitReply(e) {
         });
         
         // Update reply count di feedback utama
-        const feedbackRef = doc(db, collectionName, feedbackId);
+        const feedbackRef = doc(db, "feedback", feedbackId);
         await updateDoc(feedbackRef, {
             replyCount: increment(1)
         });
@@ -3063,14 +2925,67 @@ async function submitReply(e) {
 }
 
 // Fungsi untuk melihat detail feedback dan replies
-async function viewFeedbackDetails(feedbackId, collectionName) {
+async function viewFeedbackDetails(feedbackId) {
     // Implementasi halaman detail feedback
     alert(`Membuka detail feedback dengan ID: ${feedbackId}`);
     // Anda bisa mengarahkan ke halaman baru atau membuka modal yang lebih besar
 }
 
-// Fungsi untuk mengirim masukan baru
-async function submitFeedback(e) {
+// Event listeners untuk modal reply
+document.getElementById('closeReplyModal').addEventListener('click', closeReplyModal);
+document.getElementById('cancelReply').addEventListener('click', closeReplyModal);
+document.getElementById('replyForm').addEventListener('submit', submitReply);
+
+// Event listeners untuk sorting
+document.getElementById('sortNewest').addEventListener('click', function() {
+    this.style.background = 'rgba(78, 161, 255, 0.2)';
+    this.style.border = '1px solid rgba(78, 161, 255, 0.5)';
+    this.style.color = '#4ea1ff';
+    
+    document.getElementById('sortPopular').style.background = 'rgba(255,255,255,0.05)';
+    document.getElementById('sortPopular').style.border = '1px solid rgba(255,255,255,0.2)';
+    document.getElementById('sortPopular').style.color = 'white';
+    
+    // Implementasi sorting terbaru
+    loadFeedback();
+});
+
+document.getElementById('sortPopular').addEventListener('click', function() {
+    this.style.background = 'rgba(78, 161, 255, 0.2)';
+    this.style.border = '1px solid rgba(78, 161, 255, 0.5)';
+    this.style.color = '#4ea1ff';
+    
+    document.getElementById('sortNewest').style.background = 'rgba(255,255,255,0.05)';
+    document.getElementById('sortNewest').style.border = '1px solid rgba(255,255,255,0.2)';
+    document.getElementById('sortNewest').style.color = 'white';
+    
+    // Implementasi sorting populer (berdasarkan jumlah like + reply)
+    // Anda perlu memodifikasi query Firebase atau melakukan sorting client-side
+    alert('Fitur sorting populer akan segera tersedia!');
+});
+	 
+	 
+	 
+	 
+	
+
+// Event listener untuk form
+document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
+// Panggil saat halaman dimuat dan setiap kali ada perubahan state
+window.addEventListener('load', checkAndLoadFeedback);
+window.addEventListener('popstate', checkAndLoadFeedback);
+
+// Deteksi perubahan koneksi untuk refresh data
+window.addEventListener('online', () => {
+    if (window.location.pathname.includes("halaman-masukan")) {
+        loadFeedback().catch(console.error);
+    }
+});
+	 
+	 
+
+// Event listener untuk form
+document.getElementById('masukanForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const title = document.getElementById('feedbackTitle').value.trim();
@@ -3095,15 +3010,12 @@ async function submitFeedback(e) {
         userName: user?.displayName || 'Anonymous',
         userEmail: user?.email || null,
         userId: user?.uid || null,
-        timestamp: serverTimestamp(),
-        views: 0,
-        likes: 0,
-        replies: 0
+        timestamp: serverTimestamp()
     };
 
     try {
-        // Simpan ke koleksi terpisah untuk masukan user
-        const feedbackRef = collection(db, "user_feedback");
+        // Simpan ke Firebase
+        const feedbackRef = collection(db, "feedback");
         await addDoc(feedbackRef, feedbackData);
         
         // Reset form
@@ -3112,9 +3024,6 @@ async function submitFeedback(e) {
         // Perbarui tampilan
         await loadFeedback();
         
-        // Tampilkan notifikasi sukses
-        alert('Masukan berhasil dikirim! Terima kasih atas kontribusinya.');
-        
     } catch (error) {
         console.error('Error submitting feedback:', error);
         alert('Gagal mengirim masukan. Pastikan Anda terhubung ke internet.');
@@ -3122,67 +3031,9 @@ async function submitFeedback(e) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
-}
+});
 
-// Fungsi untuk mengirim pengumuman baru
-async function submitAnnouncement(e) {
-    e.preventDefault();
-    
-    const title = document.getElementById('announcementTitle').value.trim();
-    const content = document.getElementById('announcementContent').value.trim();
-    
-    if (!title || !content) {
-        alert('Judul dan isi pengumuman tidak boleh kosong!');
-        return;
-    }
-    
-    const user = auth.currentUser;
-    if (!checkAdminStatus(user)) {
-        alert('Anda tidak memiliki izin untuk membuat pengumuman!');
-        return;
-    }
-    
-    const submitBtn = document.getElementById('submitAnnouncement');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
-    
-    const announcementData = {
-        title,
-        content,
-        userEmail: user.email,
-        userName: user.displayName || 'Admin',
-        timestamp: serverTimestamp(),
-        views: 0,
-        likes: 0,
-        replies: 0,
-        isPinned: true
-    };
 
-    try {
-        // Simpan ke koleksi terpisah untuk pengumuman
-        const announcementRef = collection(db, "announcements");
-        await addDoc(announcementRef, announcementData);
-        
-        // Perbarui tampilan pengumuman yang dipin
-        await loadPinnedAnnouncements();
-        
-        // Reset form
-        e.target.reset();
-        
-        // Tampilkan notifikasi sukses
-        alert('Pengumuman berhasil dikirim dan dipin!');
-        
-    } catch (error) {
-        console.error('Error submitting announcement:', error);
-        alert('Gagal mengirim pengumuman. Silakan coba lagi.');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-    }
-}
-
-// Fungsi pembantu untuk label kategori
 function getCategoryLabel(category) {
     const labels = {
         design: 'Desain',
@@ -3193,6 +3044,122 @@ function getCategoryLabel(category) {
     };
     return labels[category] || labels.other;
 }
+
+
+
+
+// Fungsi untuk mengirim masukan (versi yang sudah diperbaiki)
+async function submitFeedback(e) {
+    e.preventDefault();
+    
+    const title = document.getElementById('feedbackTitle').value.trim();
+    const category = document.getElementById('feedbackCategory').value;
+    const content = document.getElementById('feedbackContent').value.trim();
+    
+    if (!title || !content) {
+        alert('Judul dan isi masukan tidak boleh kosong!');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitFeedback');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+    
+    const user = auth.currentUser;
+    const feedbackData = {
+        title,
+        category, // Pastikan kategori dari form digunakan
+        content,
+        userName: user?.displayName || 'Anonymous',
+        userEmail: user?.email || null,
+        userId: user?.uid || null,
+        timestamp: serverTimestamp(),
+        status: 'new',
+        views: 0 // Tambahkan views default
+    };
+
+    try {
+        // Simpan ke Firebase
+        const feedbackRef = collection(db, "feedback");
+        const docRef = await addDoc(feedbackRef, feedbackData);
+        
+        // Tambahkan ke localStorage sebagai cache
+        const cachedFeedback = {
+            id: docRef.id,
+            ...feedbackData,
+            timestamp: new Date().toISOString() // Gunakan waktu client sebagai fallback
+        };
+        
+        // Dapatkan cache yang ada atau buat array baru jika belum ada
+        const existingFeedback = JSON.parse(localStorage.getItem('cachedFeedback') || "[]");
+        existingFeedback.unshift(cachedFeedback);
+        localStorage.setItem('cachedFeedback', JSON.stringify(existingFeedback.slice(0, 10)));
+        
+        // Reset form
+        e.target.reset();
+        
+        // Perbarui tampilan
+        await loadFeedback();
+        
+        // Tampilkan notifikasi sukses
+        const notification = document.createElement('div');
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.right = '20px';
+        notification.style.backgroundColor = '#4CAF50';
+        notification.style.color = 'white';
+        notification.style.padding = '15px';
+        notification.style.borderRadius = '5px';
+        notification.style.zIndex = '10000';
+        notification.textContent = 'Masukan berhasil dikirim!';
+        document.body.appendChild(notification);
+        
+        // Hilangkan notifikasi setelah 3 detik
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        
+        // Tampilkan notifikasi error
+        const errorNotification = document.createElement('div');
+        errorNotification.style.position = 'fixed';
+        errorNotification.style.bottom = '20px';
+        errorNotification.style.right = '20px';
+        errorNotification.style.backgroundColor = '#F44336';
+        errorNotification.style.color = 'white';
+        errorNotification.style.padding = '15px';
+        errorNotification.style.borderRadius = '5px';
+        errorNotification.style.zIndex = '10000';
+        errorNotification.textContent = 'Gagal mengirim masukan. Coba lagi nanti.';
+        document.body.appendChild(errorNotification);
+        
+        setTimeout(() => {
+            errorNotification.style.opacity = '0';
+            setTimeout(() => errorNotification.remove(), 500);
+        }, 3000);
+        
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Fungsi pembantu untuk format waktu
 function formatTimeAgo(timestamp) {
@@ -3218,7 +3185,11 @@ function formatTimeAgo(timestamp) {
     return fullDate;
 }
 
-// Fungsi untuk update jumlah masukan
+
+	 
+	 
+	 
+	 // Fungsi untuk update jumlah masukan
 function updateFeedbackCount(count, isCached = false) {
     const feedbackCountDisplay = document.getElementById('feedbackCountDisplay');
     if (feedbackCountDisplay) {
@@ -3228,94 +3199,166 @@ function updateFeedbackCount(count, isCached = false) {
     }
 }
 
-// Fungsi untuk menampilkan notifikasi
-function showNotification(message, type = "info") {
-    alert(`${type.toUpperCase()}: ${message}`);
-}
 
-// Fungsi untuk memeriksa dan memuat feedback
-function checkAndLoadFeedback() {
-    const path = window.location.pathname || "/";
-    if (path.includes("halaman-masukan") || 
-        (window.history.state && window.history.state.page === "masukan")) {
+
+
+// Fungsi untuk memuat masukan dari Firebase (dimodifikasi untuk exclude pinned announcements)
+async function loadFeedback() {
+    const feedbackList = document.getElementById('feedbackListContainer');
+    if (!feedbackList) return;
+
+    try {
+        // Tampilkan loading state
+        feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
+
+        // Ambil data dari Firebase dengan sorting berdasarkan timestamp
+        // Exclude pinned items (karena sudah ditampilkan di section pinned)
+        const q = query(
+            collection(db, "feedback"), 
+            orderBy("timestamp", "desc"),
+            limit(50)
+        );
         
-        // Muat pengumuman yang dipin terlebih dahulu
-        loadPinnedAnnouncements();
+        const querySnapshot = await getDocs(q);
         
-        // Coba muat dari cache dulu untuk UX yang lebih cepat
+        if (querySnapshot.empty) {
+            feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada masukan yang dikirim</div>';
+            return;
+        }
+
+        // Render feedback dari Firebase
+        feedbackList.innerHTML = '';
+        const feedbackItems = [];
+        
+        querySnapshot.forEach(async (doc) => {
+            const feedback = doc.data();
+            feedback.id = doc.id;
+            
+            // Skip jika ini adalah pinned item (seharusnya sudah ditampilkan di pinned section)
+            if (feedback.pinned) return;
+            
+            feedbackItems.push(feedback);
+            
+            // Dapatkan jumlah replies untuk feedback ini
+            const repliesCount = await getRepliesCount(doc.id);
+            // Dapatkan jumlah likes untuk feedback ini
+            const likesCount = await getLikesCount(doc.id);
+            // Dapatkan status like user saat ini
+            const userLiked = await checkUserLiked(doc.id);
+            
+            renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
+        });
+
+        // Simpan ke cache
+        localStorage.setItem('cachedFeedback', JSON.stringify(feedbackItems));
+
+        // Update jumlah masukan
+        updateFeedbackCount(querySnapshot.size);
+
+    } catch (error) {
+        console.error("Error loading feedback:", error);
+        // Jika error, tampilkan dari cache
         displayCachedFeedback();
-        
-        // Kemudian coba update dari Firebase
-        loadFeedback().catch(console.error);
-        
-        // Set interval untuk refresh data secara berkala
-        if (!window.feedbackRefreshInterval) {
-            window.feedbackRefreshInterval = setInterval(() => {
-                loadPinnedAnnouncements();
-                loadFeedback();
-            }, 30000); // Refresh setiap 30 detik
-        }
-    } else {
-        // Bersihkan interval jika pindah halaman
-        if (window.feedbackRefreshInterval) {
-            clearInterval(window.feedbackRefreshInterval);
-            window.feedbackRefreshInterval = null;
-        }
     }
 }
 
-// Event listeners untuk modal reply
-document.getElementById('closeReplyModal')?.addEventListener('click', closeReplyModal);
-document.getElementById('cancelReply')?.addEventListener('click', closeReplyModal);
-document.getElementById('replyForm')?.addEventListener('submit', submitReply);
 
-// Event listeners untuk sorting
-document.getElementById('sortNewest')?.addEventListener('click', function() {
-    this.style.background = 'rgba(78, 161, 255, 0.2)';
-    this.style.border = '1px solid rgba(78, 161, 255, 0.5)';
-    this.style.color = '#4ea1ff';
-    
-    document.getElementById('sortPopular').style.background = 'rgba(255,255,255,0.05)';
-    document.getElementById('sortPopular').style.border = '1px solid rgba(255,255,255,0.2)';
-    document.getElementById('sortPopular').style.color = 'white';
-    
-    // Implementasi sorting terbaru
-    loadFeedback();
-});
+// Daftar email yang diizinkan (admin/contributor)
+const ALLOWED_EMAILS = ['faridardiansyah061@gmail.com'];
 
-document.getElementById('sortPopular')?.addEventListener('click', function() {
-    this.style.background = 'rgba(78, 161, 255, 0.2)';
-    this.style.border = '1px solid rgba(78, 161, 255, 0.5)';
-    this.style.color = '#4ea1ff';
-    
-    document.getElementById('sortNewest').style.background = 'rgba(255,255,255,0.05)';
-    document.getElementById('sortNewest').style.border = '1px solid rgba(255,255,255,0.2)';
-    document.getElementById('sortNewest').style.color = 'white';
-    
-    // Implementasi sorting populer (berdasarkan jumlah like + reply)
-    alert('Fitur sorting populer akan segera tersedia!');
-});
+// Fungsi untuk mengecek apakah user adalah admin/contributor
+function checkAdminStatus(user) {
+  if (!user || !user.email) return false;
+  return ALLOWED_EMAILS.includes(user.email.toLowerCase());
+}
 
-// Event listener untuk form
-document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
-document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
-
-// Panggil saat auth state berubah
-auth.onAuthStateChanged((user) => {
-  toggleAdminForms();
-  checkAndLoadFeedback();
-});
-
-// Panggil saat halaman dimuat dan setiap kali ada perubahan state
-window.addEventListener('load', checkAndLoadFeedback);
-window.addEventListener('popstate', checkAndLoadFeedback);
-
-// Deteksi perubahan koneksi untuk refresh data
-window.addEventListener('online', () => {
-    if (window.location.pathname.includes("halaman-masukan")) {
-        loadFeedback().catch(console.error);
+// Fungsi untuk menampilkan/menyembunyikan form admin
+function toggleAdminForms() {
+  const user = auth.currentUser;
+  const isAdmin = checkAdminStatus(user);
+  
+  const adminForm = document.getElementById('adminAnnouncementForm');
+  if (adminForm) {
+    adminForm.style.display = isAdmin ? 'block' : 'none';
+  }
+  
+  // Tambahkan badge admin jika diperlukan
+  const userDisplayElements = document.querySelectorAll('.feedback-user div:first-child');
+  userDisplayElements.forEach(el => {
+    const userEmail = el.nextElementSibling?.textContent?.trim();
+    if (userEmail && ALLOWED_EMAILS.includes(userEmail.toLowerCase())) {
+      el.innerHTML += ' <span style="background: #ff6b6b; color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">ADMIN</span>';
     }
-});
+  });
+}
+
+
+// Fungsi untuk mengirim pengumuman
+async function submitAnnouncement(e) {
+  e.preventDefault();
+  
+  const title = document.getElementById('announcementTitle').value.trim();
+  const content = document.getElementById('announcementContent').value.trim();
+  
+  if (!title || !content) {
+    alert('Judul dan isi pengumuman tidak boleh kosong!');
+    return;
+  }
+  
+  const user = auth.currentUser;
+  if (!checkAdminStatus(user)) {
+    alert('Anda tidak memiliki izin untuk membuat pengumuman!');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('submitAnnouncement');
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+  
+  const announcementData = {
+    title,
+    content,
+    userEmail: user.email,
+    userName: user.displayName || 'Admin',
+    timestamp: serverTimestamp(),
+    type: 'announcement',
+    isPriority: true
+  };
+
+  try {
+    // Simpan ke collection terpisah atau tambahkan flag khusus
+    const announcementsRef = collection(db, "announcements");
+    await addDoc(announcementsRef, announcementData);
+    
+    // Juga simpan ke feedback biasa dengan tipe khusus
+    const feedbackRef = collection(db, "feedback");
+    await addDoc(feedbackRef, {
+      ...announcementData,
+      category: 'announcement'
+    });
+    
+    // Reset form
+    e.target.reset();
+    
+    // Perbarui tampilan
+    await loadFeedback();
+    
+    // Tampilkan notifikasi sukses
+    showNotification('Pengumuman berhasil dikirim!', 'success');
+    
+  } catch (error) {
+    console.error('Error submitting announcement:', error);
+    showNotification('Gagal mengirim pengumuman. Silakan coba lagi.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+  }
+}
+
+
+
+	 
 	 
 	 
 	 
