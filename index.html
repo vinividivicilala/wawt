@@ -2444,7 +2444,15 @@ if (document.getElementById('back-forum')) {
      
 	 
 	 
-	 // Modifikasi fungsi loadFeedback untuk mengecualikan pengumuman yang sudah dipin
+	 
+	 
+	 
+	 
+	 
+	 
+		 
+	 
+	 // Fungsi untuk memuat masukan dari Firebase
 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
@@ -2453,11 +2461,9 @@ async function loadFeedback() {
         // Tampilkan loading state
         feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
 
-        // Ambil data dari Firebase, exclude pinned announcements
+        // Ambil data dari Firebase dengan sorting berdasarkan timestamp
         const q = query(
             collection(db, "feedback"), 
-            where("pinned", "!=", true),
-            orderBy("pinned", "desc"),
             orderBy("timestamp", "desc"),
             limit(50)
         );
@@ -2476,15 +2482,13 @@ async function loadFeedback() {
         querySnapshot.forEach(async (doc) => {
             const feedback = doc.data();
             feedback.id = doc.id;
-            
-            // Skip jika ini adalah pengumuman yang dipin
-            if (feedback.pinned) return;
-            
             feedbackItems.push(feedback);
             
-            // Dapatkan jumlah replies, likes, dan status like user
+            // Dapatkan jumlah replies untuk feedback ini
             const repliesCount = await getRepliesCount(doc.id);
+            // Dapatkan jumlah likes untuk feedback ini
             const likesCount = await getLikesCount(doc.id);
+            // Dapatkan status like user saat ini
             const userLiked = await checkUserLiked(doc.id);
             
             renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
@@ -2503,18 +2507,7 @@ async function loadFeedback() {
     }
 }
 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
+
 
 
 
@@ -2701,14 +2694,13 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 	 
 	 
 	 
-	// Panggil loadPinnedAnnouncements saat halaman dimuat
+	 
+	 
+// Fungsi untuk memeriksa dan memuat masukan saat halaman dimuat
 function checkAndLoadFeedback() {
     const path = window.location.pathname || "/";
     if (path.includes("halaman-masukan") || 
         (window.history.state && window.history.state.page === "masukan")) {
-        
-        // Muat pengumuman yang dipin terlebih dahulu
-        loadPinnedAnnouncements();
         
         // Coba muat dari cache dulu untuk UX yang lebih cepat
         displayCachedFeedback();
@@ -2717,6 +2709,8 @@ function checkAndLoadFeedback() {
         loadFeedback().catch(console.error);
     }
 }
+
+	 
 	 
 	 // Fungsi untuk menambah jumlah view
 async function incrementViewCount(feedbackId) {
@@ -3159,7 +3153,8 @@ function updateFeedbackCount(count, isCached = false) {
 
 
 
-// Modifikasi fungsi loadFeedback untuk mengecualikan pengumuman yang sudah dipin
+
+// Fungsi untuk memuat masukan dari Firebase (dimodifikasi untuk exclude pinned announcements)
 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
@@ -3168,11 +3163,10 @@ async function loadFeedback() {
         // Tampilkan loading state
         feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
 
-        // Ambil data dari Firebase, exclude pinned announcements
+        // Ambil data dari Firebase dengan sorting berdasarkan timestamp
+        // Exclude pinned items (karena sudah ditampilkan di section pinned)
         const q = query(
             collection(db, "feedback"), 
-            where("pinned", "!=", true),
-            orderBy("pinned", "desc"),
             orderBy("timestamp", "desc"),
             limit(50)
         );
@@ -3192,14 +3186,16 @@ async function loadFeedback() {
             const feedback = doc.data();
             feedback.id = doc.id;
             
-            // Skip jika ini adalah pengumuman yang dipin
+            // Skip jika ini adalah pinned item (seharusnya sudah ditampilkan di pinned section)
             if (feedback.pinned) return;
             
             feedbackItems.push(feedback);
             
-            // Dapatkan jumlah replies, likes, dan status like user
+            // Dapatkan jumlah replies untuk feedback ini
             const repliesCount = await getRepliesCount(doc.id);
+            // Dapatkan jumlah likes untuk feedback ini
             const likesCount = await getLikesCount(doc.id);
+            // Dapatkan status like user saat ini
             const userLiked = await checkUserLiked(doc.id);
             
             renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
@@ -3217,22 +3213,6 @@ async function loadFeedback() {
         displayCachedFeedback();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Daftar email yang diizinkan (admin/contributor)
@@ -3265,266 +3245,93 @@ function toggleAdminForms() {
 }
 
 
-
-
-
-
-
-
-// Modifikasi fungsi submitAnnouncement untuk otomatis pin
+// Fungsi untuk mengirim pengumuman
 async function submitAnnouncement(e) {
-    e.preventDefault();
-    
-    const title = document.getElementById('announcementTitle').value.trim();
-    const content = document.getElementById('announcementContent').value.trim();
-    
-    if (!title || !content) {
-        showNotification('Judul dan isi pengumuman tidak boleh kosong!', 'error');
-        return;
-    }
-    
-    const user = auth.currentUser;
-    if (!checkAdminStatus(user)) {
-        showNotification('Anda tidak memiliki izin untuk membuat pengumuman!', 'error');
-        return;
-    }
-    
-    const submitBtn = document.getElementById('submitAnnouncement');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
-    
-    const announcementData = {
-        title,
-        content,
-        userEmail: user.email,
-        userName: user.displayName || 'Admin',
-        timestamp: serverTimestamp(),
-        type: 'announcement',
-        category: 'announcement',
-        pinned: true, // Otomatis pin pengumuman baru
-        pinnedAt: serverTimestamp(),
-        isPriority: true,
-        views: 0
-    };
+  e.preventDefault();
+  
+  const title = document.getElementById('announcementTitle').value.trim();
+  const content = document.getElementById('announcementContent').value.trim();
+  
+  if (!title || !content) {
+    alert('Judul dan isi pengumuman tidak boleh kosong!');
+    return;
+  }
+  
+  const user = auth.currentUser;
+  if (!checkAdminStatus(user)) {
+    alert('Anda tidak memiliki izin untuk membuat pengumuman!');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('submitAnnouncement');
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+  
+  const announcementData = {
+    title,
+    content,
+    userEmail: user.email,
+    userName: user.displayName || 'Admin',
+    timestamp: serverTimestamp(),
+    type: 'announcement',
+    isPriority: true
+  };
 
-    try {
-        // Simpan ke collection feedback
-        const feedbackRef = collection(db, "feedback");
-        await addDoc(feedbackRef, announcementData);
-        
-        // Reset form
-        e.target.reset();
-        
-        // Perbarui tampilan
-        await loadPinnedAnnouncements();
-        await loadFeedback();
-        
-        // Tampilkan notifikasi sukses
-        showNotification('Pengumuman berhasil dikirim dan dipin!', 'success');
-        
-    } catch (error) {
-        console.error('Error submitting announcement:', error);
-        showNotification('Gagal mengirim pengumuman. Silakan coba lagi.', 'error');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-    }
+  try {
+    // Simpan ke collection terpisah atau tambahkan flag khusus
+    const announcementsRef = collection(db, "announcements");
+    await addDoc(announcementsRef, announcementData);
+    
+    // Juga simpan ke feedback biasa dengan tipe khusus
+    const feedbackRef = collection(db, "feedback");
+    await addDoc(feedbackRef, {
+      ...announcementData,
+      category: 'announcement'
+    });
+    
+    // Reset form
+    e.target.reset();
+    
+    // Perbarui tampilan
+    await loadFeedback();
+    
+    // Tampilkan notifikasi sukses
+    showNotification('Pengumuman berhasil dikirim!', 'success');
+    
+  } catch (error) {
+    console.error('Error submitting announcement:', error);
+    showNotification('Gagal mengirim pengumuman. Silakan coba lagi.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+  }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-// Fungsi untuk memuat pengumuman yang dipin
-async function loadPinnedAnnouncements() {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
-
-    try {
-        // Ambil pengumuman yang dipin dari Firebase
-        const q = query(
-            collection(db, "feedback"),
-            where("type", "==", "announcement"),
-            where("pinned", "==", true),
-            orderBy("timestamp", "desc"),
-            limit(5)
-        );
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman penting</div>';
-            return;
-        }
-
-        // Render pengumuman yang dipin
-        pinnedContainer.innerHTML = '';
-        
-        querySnapshot.forEach(async (doc) => {
-            const announcement = doc.data();
-            announcement.id = doc.id;
-            
-            // Dapatkan jumlah replies, likes, dan status like user
-            const repliesCount = await getRepliesCount(doc.id);
-            const likesCount = await getLikesCount(doc.id);
-            const userLiked = await checkUserLiked(doc.id);
-            
-            renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
-        });
-
-    } catch (error) {
-        console.error("Error loading pinned announcements:", error);
-    }
-}
-
-
-// Fungsi untuk merender pengumuman yang dipin
-function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0, userLiked = false) {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
-    
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
-    const initials = announcement.userName ? announcement.userName.charAt(0).toUpperCase() : 'A';
-
-    const announcementItem = document.createElement('div');
-    announcementItem.className = 'announcement-item pinned';
-    announcementItem.setAttribute('data-id', announcement.id);
-    announcementItem.style.borderLeft = '4px solid #ff6b6b';
-    announcementItem.style.background = 'rgba(255, 107, 107, 0.1)';
-    announcementItem.style.padding = '15px';
-    announcementItem.style.borderRadius = '10px';
-    
-    announcementItem.innerHTML = `
-        <div class="announcement-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 30px; height: 30px; border-radius: 50%; background: #ff6b6b; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                    ${initials}
-                </div>
-                <div>
-                    <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-                    <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
-                </div>
-            </div>
-            <div style="background: #ff6b6b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px;">
-                PENGUMUMAN
-            </div>
-        </div>
-        
-        <div style="color: white; font-weight: 600; font-size: 18px; margin-bottom: 10px;">${announcement.title}</div>
-        <div style="color: #ddd; margin-bottom: 15px;">${announcement.content}</div>
-        
-        <!-- Action buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-            <div style="display: flex; gap: 15px;">
-                <button class="like-btn" style="background: none; border: none; color: ${userLiked ? '#4ea1ff' : '#ccc'}; display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="${userLiked ? '#4ea1ff' : 'none'}" stroke="${userLiked ? '#4ea1ff' : '#ccc'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                    </svg>
-                    <span class="like-count">${likesCount}</span>
-                </button>
-                
-                <button class="reply-btn" style="background: none; border: none; color: #ccc; display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span class="reply-count">${repliesCount}</span>
-                </button>
-                
-                <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    <span class="view-count">${announcement.views || 0}</span>
-                </div>
-            </div>
-            
-            ${checkAdminStatus(auth.currentUser) ? `
-            <div style="display: flex; gap: 10px;">
-                <button class="pin-btn" style="background: none; border: none; color: #ccc; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="${announcement.pinned ? '#ff6b6b' : 'none'}" stroke="${announcement.pinned ? '#ff6b6b' : '#ccc'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v16M5 12l7 7 7-7"/>
-                    </svg>
-                    ${announcement.pinned ? 'Unpin' : 'Pin'}
-                </button>
-            </div>
-            ` : ''}
-        </div>
-    `;
-
-    pinnedContainer.appendChild(announcementItem);
-    
-    // Add event listeners
-    const likeBtn = announcementItem.querySelector('.like-btn');
-    const replyBtn = announcementItem.querySelector('.reply-btn');
-    const pinBtn = announcementItem.querySelector('.pin-btn');
-    
-    if (likeBtn) likeBtn.addEventListener('click', () => toggleLike(announcement.id));
-    if (replyBtn) replyBtn.addEventListener('click', () => openReplyModal(announcement));
-    if (pinBtn) pinBtn.addEventListener('click', () => togglePinAnnouncement(announcement.id));
-    
-    // Increment view count
-    incrementViewCount(announcement.id);
-}
-
-// Fungsi untuk toggle pin pengumuman
-async function togglePinAnnouncement(feedbackId) {
-    const user = auth.currentUser;
-    if (!checkAdminStatus(user)) {
-        alert('Hanya admin yang dapat melakukan pin/unpin pengumuman!');
-        return;
-    }
-    
-    try {
-        const feedbackRef = doc(db, "feedback", feedbackId);
-        const feedbackDoc = await getDoc(feedbackRef);
-        
-        if (!feedbackDoc.exists()) {
-            alert('Pengumuman tidak ditemukan!');
-            return;
-        }
-        
-        const isPinned = feedbackDoc.data().pinned || false;
-        
-        // Update status pinned
-        await updateDoc(feedbackRef, {
-            pinned: !isPinned,
-            pinnedAt: isPinned ? null : serverTimestamp()
-        });
-        
-        // Reload pinned announcements
-        await loadPinnedAnnouncements();
-        
-        // Tampilkan notifikasi
-        showNotification(`Pengumuman berhasil ${isPinned ? 'unpinned' : 'pinned'}!`, 'success');
-        
-    } catch (error) {
-        console.error("Error toggling pin:", error);
-        showNotification('Gagal mengupdate status pin. Silakan coba lagi.', 'error');
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
 
 
 
