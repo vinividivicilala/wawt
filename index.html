@@ -516,6 +516,159 @@
     overflow-y: auto;
 }
 
+  .announcement-item {
+    background: rgba(255, 215, 0, 0.1);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    animation: fadeInUp 0.5s ease-out;
+  }
+  
+  .announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .announcement-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .announcement-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #FFD700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-weight: bold;
+    font-size: 18px;
+  }
+  
+  .announcement-user-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .announcement-user-name {
+    color: #FFD700;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .admin-badge {
+    background-color: #FF0000;
+    color: white;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 5px;
+  }
+  
+  .announcement-user-email {
+    color: #aaa;
+    font-size: 12px;
+  }
+  
+  .announcement-time {
+    color: #FFD700;
+    font-size: 14px;
+    text-align: right;
+  }
+  
+  .announcement-title {
+    color: #FFD700;
+    font-weight: bold;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .announcement-content {
+    color: #ddd;
+    line-height: 1.6;
+    margin-bottom: 15px;
+  }
+  
+  .announcement-link {
+    color: #4ea1ff;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 15px;
+  }
+  
+  .announcement-link:hover {
+    text-decoration: underline;
+  }
+  
+  .announcement-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
+    padding-top: 15px;
+  }
+  
+  .announcement-stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #FFD700;
+    font-size: 14px;
+  }
+  
+  .announcement-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .pin-btn, .unpin-btn {
+    background: none;
+    border: none;
+    color: #FFD700;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .pin-btn:hover, .unpin-btn:hover {
+    opacity: 0.8;
+  }
+  
+  .pinned-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background-color: #FF0000;
+    color: white;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 15px;
+    transform: rotate(15deg);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	
 	
@@ -1504,6 +1657,62 @@
         </button>
       </div>
     </div>
+	
+	<!-- Tambahkan di halaman masukan (page7), sebelum bagian feedbackHistory -->
+<div id="announcementSection" style="width: 100%; margin-bottom: 30px;">
+  <h2 style="color: #FFD700; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255, 215, 0, 0.1); padding-bottom: 10px;">
+    Pengumuman
+  </h2>
+  
+  <div id="announcementList" style="margin-bottom: 20px;">
+    <!-- Daftar pengumuman akan dimuat di sini -->
+  </div>
+  
+  <div id="newAnnouncementForm" style="display: none; margin-top: 20px;">
+    <h3 style="color: #FFD700; font-size: 18px; margin-bottom: 15px;">Buat Pengumuman Baru</h3>
+    
+    <form id="announcementForm">
+      <div style="margin-bottom: 15px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Judul Pengumuman</label>
+        <input type="text" id="announcementTitle" required style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Isi Pengumuman</label>
+        <textarea id="announcementContent" rows="5" required style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Link Tautan (opsional)</label>
+        <input type="url" id="announcementLink" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <input type="checkbox" id="pinAnnouncement" style="margin-right: 8px;">
+          <label for="pinAnnouncement" style="color: white;">Pin pengumuman ini</label>
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="cancelAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+            Batal
+          </button>
+          <button type="submit" id="submitAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #FFD700, #FFA500); border: none; border-radius: 8px; color: #000; font-weight: bold; cursor: pointer;">
+            Buat Pengumuman
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <button id="newAnnouncementBtn" style="display: none; padding: 10px 20px; background: linear-gradient(135deg, #FFD700, #FFA500); border: none; border-radius: 8px; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+    Buat Pengumuman
+  </button>
+</div>
     
     <div id="feedbackHistory" style="width: 100%; margin-bottom: 30px;">
       <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
@@ -2765,6 +2974,463 @@ document.getElementById('sortPopular').addEventListener('click', function() {
     // Implementasi sorting populer (berdasarkan jumlah like + reply)
     // Anda perlu memodifikasi query Firebase atau melakukan sorting client-side
     alert('Fitur sorting populer akan segera tersedia!');
+});
+
+
+
+
+// Tambahkan di bagian script
+
+// Fungsi untuk memeriksa apakah user adalah admin
+async function checkAdminStatus(userId) {
+  try {
+    const adminDoc = await getDoc(doc(db, "admins", userId));
+    return adminDoc.exists();
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    return false;
+  }
+}
+
+// Fungsi untuk memuat pengumuman
+async function loadAnnouncements() {
+  const announcementList = document.getElementById('announcementList');
+  if (!announcementList) return;
+
+  try {
+    // Query untuk pengumuman yang dipin (akan muncul di atas)
+    const pinnedQuery = query(
+      collection(db, "announcements"),
+      where("isPinned", "==", true),
+      orderBy("createdAt", "desc")
+    );
+    
+    // Query untuk pengumuman biasa
+    const regularQuery = query(
+      collection(db, "announcements"),
+      where("isPinned", "==", false),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    );
+
+    const [pinnedSnapshot, regularSnapshot] = await Promise.all([
+      getDocs(pinnedQuery),
+      getDocs(regularQuery)
+    ]);
+
+    announcementList.innerHTML = '';
+
+    // Tampilkan pengumuman yang dipin terlebih dahulu
+    pinnedSnapshot.forEach(doc => {
+      renderAnnouncement(doc.data(), doc.id, true);
+    });
+
+    // Tampilkan pengumuman biasa
+    regularSnapshot.forEach(doc => {
+      renderAnnouncement(doc.data(), doc.id, false);
+    });
+
+    // Periksa status admin untuk menampilkan tombol buat pengumuman
+    const user = auth.currentUser;
+    if (user) {
+      const isAdmin = await checkAdminStatus(user.uid);
+      const newAnnouncementBtn = document.getElementById('newAnnouncementBtn');
+      if (newAnnouncementBtn) {
+        newAnnouncementBtn.style.display = isAdmin ? 'flex' : 'none';
+      }
+    }
+
+  } catch (error) {
+    console.error("Error loading announcements:", error);
+    announcementList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
+  }
+}
+
+// Fungsi untuk merender pengumuman
+function renderAnnouncement(announcement, id, isPinned) {
+  const announcementList = document.getElementById('announcementList');
+  if (!announcementList) return;
+
+  const user = auth.currentUser;
+  const isAdmin = user && user.uid === announcement.authorId;
+  const initials = announcement.authorName ? announcement.authorName.charAt(0).toUpperCase() : 'A';
+  const waktu = announcement.createdAt?.toDate ? announcement.createdAt.toDate() : new Date(announcement.createdAt || Date.now());
+
+  const announcementItem = document.createElement('div');
+  announcementItem.className = 'announcement-item';
+  announcementItem.dataset.id = id;
+
+  announcementItem.innerHTML = `
+    ${isPinned ? '<div class="pinned-badge">PINNED</div>' : ''}
+    
+    <div class="announcement-header">
+      <div class="announcement-user">
+        <div class="announcement-avatar">${initials}</div>
+        <div class="announcement-user-info">
+          <div class="announcement-user-name">
+            ${announcement.authorName || 'Admin'}
+            ${isAdmin ? '<span class="admin-badge">ADMIN</span>' : ''}
+          </div>
+          <div class="announcement-user-email">${announcement.authorEmail || ''}</div>
+        </div>
+      </div>
+      <div class="announcement-time">${formatTimeAgo(waktu)}</div>
+    </div>
+    
+    <div class="announcement-title">${announcement.title || 'Tanpa judul'}</div>
+    <div class="announcement-content">${announcement.content || 'Tidak ada konten'}</div>
+    
+    ${announcement.link ? `<a href="${announcement.link}" target="_blank" class="announcement-link">${announcement.link}</a>` : ''}
+    
+    <div class="announcement-stats">
+      <div style="display: flex; gap: 15px;">
+        <div class="announcement-stat">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          ${announcement.views || 0} dilihat
+        </div>
+        <div class="announcement-stat">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          ${announcement.replyCount || 0} balasan
+        </div>
+      </div>
+      
+      <div class="announcement-actions">
+        ${isAdmin ? `
+          <button class="${isPinned ? 'unpin-btn' : 'pin-btn'}" data-id="${id}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 17l-6 6V3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4z"></path>
+            </svg>
+            ${isPinned ? 'Lepas Pin' : 'Pin Pengumuman'}
+          </button>
+        ` : ''}
+        
+        <button class="reply-btn" data-id="${id}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Balas
+        </button>
+      </div>
+    </div>
+    
+    <div id="replies-${id}" style="margin-top: 15px; display: none;">
+      <!-- Balasan akan dimuat di sini -->
+    </div>
+  `;
+
+  // Masukkan pengumuman yang dipin di atas
+  if (isPinned) {
+    announcementList.insertBefore(announcementItem, announcementList.firstChild);
+  } else {
+    announcementList.appendChild(announcementItem);
+  }
+
+  // Tambahkan event listeners
+  const replyBtn = announcementItem.querySelector('.reply-btn');
+  const pinBtn = announcementItem.querySelector('.pin-btn, .unpin-btn');
+
+  if (replyBtn) {
+    replyBtn.addEventListener('click', () => toggleReplies(id));
+  }
+
+  if (pinBtn) {
+    pinBtn.addEventListener('click', () => togglePinAnnouncement(id, isPinned));
+  }
+
+  // Tambahkan view count
+  incrementAnnouncementViews(id);
+}
+
+// Fungsi untuk menambah view count pengumuman
+async function incrementAnnouncementViews(announcementId) {
+  try {
+    const announcementRef = doc(db, "announcements", announcementId);
+    await updateDoc(announcementRef, {
+      views: increment(1)
+    });
+  } catch (error) {
+    console.error("Error incrementing announcement views:", error);
+  }
+}
+
+// Fungsi untuk toggle pin/unpin pengumuman
+async function togglePinAnnouncement(announcementId, currentlyPinned) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login terlebih dahulu');
+    return;
+  }
+
+  const isAdmin = await checkAdminStatus(user.uid);
+  if (!isAdmin) {
+    alert('Hanya admin yang dapat melakukan ini');
+    return;
+  }
+
+  try {
+    const announcementRef = doc(db, "announcements", announcementId);
+    await updateDoc(announcementRef, {
+      isPinned: !currentlyPinned,
+      pinnedAt: currentlyPinned ? deleteField() : serverTimestamp()
+    });
+
+    // Refresh daftar pengumuman
+    loadAnnouncements();
+  } catch (error) {
+    console.error("Error toggling pin status:", error);
+    alert('Gagal mengubah status pin. Silakan coba lagi nanti.');
+  }
+}
+
+// Fungsi untuk toggle tampilan balasan
+async function toggleReplies(announcementId) {
+  const repliesContainer = document.getElementById(`replies-${announcementId}`);
+  if (!repliesContainer) return;
+
+  if (repliesContainer.style.display === 'block') {
+    repliesContainer.style.display = 'none';
+    return;
+  }
+
+  // Tampilkan loading
+  repliesContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Memuat balasan...</div>';
+  repliesContainer.style.display = 'block';
+
+  try {
+    // Ambil balasan dari subcollection
+    const repliesQuery = query(
+      collection(db, "announcements", announcementId, "replies"),
+      orderBy("createdAt", "asc")
+    );
+
+    const querySnapshot = await getDocs(repliesQuery);
+    repliesContainer.innerHTML = '';
+
+    if (querySnapshot.empty) {
+      repliesContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Belum ada balasan</div>';
+      return;
+    }
+
+    querySnapshot.forEach(doc => {
+      const reply = doc.data();
+      const waktu = reply.createdAt?.toDate ? reply.createdAt.toDate() : new Date(reply.createdAt || Date.now());
+      const initials = reply.authorName ? reply.authorName.charAt(0).toUpperCase() : 'A';
+
+      const replyItem = document.createElement('div');
+      replyItem.className = 'feedback-item';
+      replyItem.style.marginTop = '10px';
+      replyItem.style.padding = '15px';
+      replyItem.style.borderRadius = '10px';
+      replyItem.style.backgroundColor = 'rgba(255,255,255,0.05)';
+
+      replyItem.innerHTML = `
+        <div class="feedback-header">
+          <div class="feedback-user">
+            <div class="feedback-avatar">${initials}</div>
+            <div>
+              <div style="color: white; font-weight: 500;">${reply.authorName || 'Anonymous'}</div>
+              <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+            </div>
+          </div>
+        </div>
+        <div class="feedback-content">${reply.content || 'Tidak ada konten'}</div>
+      `;
+
+      repliesContainer.appendChild(replyItem);
+    });
+
+    // Tambahkan form balasan
+    const replyForm = document.createElement('div');
+    replyForm.style.marginTop = '15px';
+    replyForm.innerHTML = `
+      <textarea id="reply-content-${announcementId}" rows="3" placeholder="Tulis balasan Anda..." style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 10px;"></textarea>
+      <button id="submit-reply-${announcementId}" style="padding: 8px 15px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+        Kirim Balasan
+      </button>
+    `;
+
+    repliesContainer.appendChild(replyForm);
+
+    // Tambahkan event listener untuk form balasan
+    document.getElementById(`submit-reply-${announcementId}`).addEventListener('click', async () => {
+      await submitReply(announcementId);
+    });
+
+  } catch (error) {
+    console.error("Error loading replies:", error);
+    repliesContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Gagal memuat balasan</div>';
+  }
+}
+
+// Fungsi untuk mengirim balasan
+async function submitReply(announcementId) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login terlebih dahulu untuk membalas');
+    return;
+  }
+
+  const content = document.getElementById(`reply-content-${announcementId}`).value.trim();
+  if (!content) {
+    alert('Isi balasan tidak boleh kosong');
+    return;
+  }
+
+  const submitBtn = document.getElementById(`submit-reply-${announcementId}`);
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Mengirim...';
+
+  try {
+    // Tambahkan balasan ke subcollection
+    const repliesRef = collection(db, "announcements", announcementId, "replies");
+    await addDoc(repliesRef, {
+      content,
+      authorId: user.uid,
+      authorName: user.displayName || 'Anonymous',
+      authorEmail: user.email,
+      createdAt: serverTimestamp()
+    });
+
+    // Update reply count di pengumuman utama
+    const announcementRef = doc(db, "announcements", announcementId);
+    await updateDoc(announcementRef, {
+      replyCount: increment(1)
+    });
+
+    // Reset form
+    document.getElementById(`reply-content-${announcementId}`).value = '';
+
+    // Refresh tampilan balasan
+    await toggleReplies(announcementId);
+
+  } catch (error) {
+    console.error("Error submitting reply:", error);
+    alert('Gagal mengirim balasan. Silakan coba lagi nanti.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+  }
+}
+
+// Fungsi untuk membuat pengumuman baru
+async function createAnnouncement(e) {
+  e.preventDefault();
+  
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login terlebih dahulu');
+    return;
+  }
+
+  const isAdmin = await checkAdminStatus(user.uid);
+  if (!isAdmin) {
+    alert('Hanya admin yang dapat membuat pengumuman');
+    return;
+  }
+
+  const title = document.getElementById('announcementTitle').value.trim();
+  const content = document.getElementById('announcementContent').value.trim();
+  const link = document.getElementById('announcementLink').value.trim();
+  const isPinned = document.getElementById('pinAnnouncement').checked;
+
+  if (!title || !content) {
+    alert('Judul dan isi pengumuman tidak boleh kosong');
+    return;
+  }
+
+  const submitBtn = document.getElementById('submitAnnouncement');
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Mengirim...';
+
+  try {
+    const newAnnouncement = {
+      title,
+      content,
+      link: link || null,
+      isPinned,
+      authorId: user.uid,
+      authorName: user.displayName || 'Admin',
+      authorEmail: user.email,
+      createdAt: serverTimestamp(),
+      views: 0,
+      replyCount: 0
+    };
+
+    if (isPinned) {
+      newAnnouncement.pinnedAt = serverTimestamp();
+    }
+
+    // Tambahkan pengumuman ke Firestore
+    await addDoc(collection(db, "announcements"), newAnnouncement);
+
+    // Reset form
+    document.getElementById('announcementForm').reset();
+    document.getElementById('newAnnouncementForm').style.display = 'none';
+
+    // Refresh daftar pengumuman
+    loadAnnouncements();
+
+    alert('Pengumuman berhasil dibuat!');
+
+  } catch (error) {
+    console.error("Error creating announcement:", error);
+    alert('Gagal membuat pengumuman. Silakan coba lagi nanti.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+  }
+}
+
+// Event listeners untuk pengumuman
+document.addEventListener('DOMContentLoaded', function() {
+  // Periksa apakah di halaman masukan
+  if (window.location.pathname.includes('/halaman-masukan') || 
+      (window.history.state && window.history.state.page === 'masukan')) {
+    
+    // Load pengumuman
+    loadAnnouncements();
+
+    // Event listener untuk tombol buat pengumuman
+    document.getElementById('newAnnouncementBtn')?.addEventListener('click', function() {
+      document.getElementById('newAnnouncementForm').style.display = 'block';
+      this.style.display = 'none';
+    });
+
+    // Event listener untuk tombol batal
+    document.getElementById('cancelAnnouncement')?.addEventListener('click', function() {
+      document.getElementById('newAnnouncementForm').style.display = 'none';
+      document.getElementById('newAnnouncementBtn').style.display = 'flex';
+      document.getElementById('announcementForm').reset();
+    });
+
+    // Event listener untuk form pengumuman
+    document.getElementById('announcementForm')?.addEventListener('submit', createAnnouncement);
+  }
+});
+
+// Tambahkan listener untuk auth state changes
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    // Periksa apakah user adalah admin
+    const isAdmin = await checkAdminStatus(user.uid);
+    const newAnnouncementBtn = document.getElementById('newAnnouncementBtn');
+    
+    if (newAnnouncementBtn) {
+      newAnnouncementBtn.style.display = isAdmin ? 'flex' : 'none';
+    }
+  } else {
+    const newAnnouncementBtn = document.getElementById('newAnnouncementBtn');
+    if (newAnnouncementBtn) {
+      newAnnouncementBtn.style.display = 'none';
+    }
+  }
 });
 	 
 	 
