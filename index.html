@@ -1463,11 +1463,13 @@
 </div>
 
 
+
+
+
+
 <!-- Halaman 7 - Masukan -->
 <div id="page7" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
-  
-  
   
   <h1 style="color: white; font-size: 28px; margin: 30px 0 20px 180px;">Halaman Masukan</h1>
   
@@ -1477,16 +1479,40 @@
       <div id="feedbackCountDisplay" style="color: #ccc; font-size: 16px;">
         Menampilkan semua masukan
       </div>
+      <div style="display: flex; gap: 10px;">
+        <button id="sortNewest" class="sort-btn active" style="
+          padding: 8px 15px;
+          background: rgba(78, 161, 255, 0.2);
+          border: 1px solid rgba(78, 161, 255, 0.5);
+          border-radius: 20px;
+          color: #4ea1ff;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Terbaru
+        </button>
+        <button id="sortPopular" class="sort-btn" style="
+          padding: 8px 15px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 20px;
+          color: white;
+          font-size: 14px;
+          cursor: pointer;
+        ">
+          Populer
+        </button>
+      </div>
     </div>
     
     <div id="feedbackHistory" style="width: 100%; margin-bottom: 30px;">
-    <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-      Riwayat Masukan
-    </h2>
-    <div id="feedbackListContainer" style="display: flex; flex-direction: column; gap: 15px;">
-      <!-- Feedback items will be added here dynamically -->
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Riwayat Masukan
+      </h2>
+      <div id="feedbackListContainer" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Feedback items will be added here dynamically -->
+      </div>
     </div>
-  </div>
     
     <!-- Form masukan baru -->
     <div id="newFeedbackForm" style="width: 100%;">
@@ -1535,6 +1561,31 @@
     </div>
   </div>
 
+  <!-- Modal untuk Reply -->
+  <div id="replyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: #1a1a1a; border-radius: 15px; padding: 30px; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="color: white; font-size: 24px;">Balas Masukan</h2>
+        <button id="closeReplyModal" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+      </div>
+      
+      <div id="originalFeedback" style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;"></div>
+      
+      <form id="replyForm">
+        <textarea id="replyContent" rows="5" placeholder="Tulis balasan Anda..." style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; margin-bottom: 20px;"></textarea>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="cancelReply" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+            Batal
+          </button>
+          <button type="submit" id="submitReply" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+            Kirim Balasan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="bottom-line"></div>
 
   <div class="bottom-text">
@@ -1577,6 +1628,13 @@
     </a>
   </div>
 </div>
+
+
+
+
+
+
+
 
 
 
@@ -2272,8 +2330,7 @@ if (document.getElementById('back-forum')) {
 	 
 	 
 	 
-	 
-	 // Fungsi untuk memuat masukan dari Firebase atau cache
+	 // Fungsi untuk memuat masukan dari Firebase
 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
@@ -2282,7 +2339,7 @@ async function loadFeedback() {
         // Tampilkan loading state
         feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
 
-        // Coba ambil data dari Firebase
+        // Ambil data dari Firebase dengan sorting berdasarkan timestamp
         const q = query(
             collection(db, "feedback"), 
             orderBy("timestamp", "desc"),
@@ -2292,8 +2349,7 @@ async function loadFeedback() {
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
-            // Jika Firebase kosong, coba dari cache
-            displayCachedFeedback();
+            feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada masukan yang dikirim</div>';
             return;
         }
 
@@ -2301,14 +2357,19 @@ async function loadFeedback() {
         feedbackList.innerHTML = '';
         const feedbackItems = [];
         
-        querySnapshot.forEach((doc) => {
+        querySnapshot.forEach(async (doc) => {
             const feedback = doc.data();
-            feedbackItems.push({
-                id: doc.id,
-                ...feedback
-            });
+            feedback.id = doc.id;
+            feedbackItems.push(feedback);
             
-            renderFeedbackItem(doc.id, feedback);
+            // Dapatkan jumlah replies untuk feedback ini
+            const repliesCount = await getRepliesCount(doc.id);
+            // Dapatkan jumlah likes untuk feedback ini
+            const likesCount = await getLikesCount(doc.id);
+            // Dapatkan status like user saat ini
+            const userLiked = await checkUserLiked(doc.id);
+            
+            renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
         });
 
         // Simpan ke cache
@@ -2323,6 +2384,61 @@ async function loadFeedback() {
         displayCachedFeedback();
     }
 }
+
+
+
+
+
+// Fungsi untuk mendapatkan jumlah replies
+async function getRepliesCount(feedbackId) {
+    try {
+        const repliesRef = collection(db, "feedback", feedbackId, "replies");
+        const snapshot = await getCountFromServer(repliesRef);
+        return snapshot.data().count;
+    } catch (error) {
+        console.error("Error getting replies count:", error);
+        return 0;
+    }
+}
+
+// Fungsi untuk mendapatkan jumlah likes
+async function getLikesCount(feedbackId) {
+    try {
+        const likesRef = collection(db, "feedback", feedbackId, "likes");
+        const snapshot = await getCountFromServer(likesRef);
+        return snapshot.data().count;
+    } catch (error) {
+        console.error("Error getting likes count:", error);
+        return 0;
+    }
+}
+
+// Fungsi untuk memeriksa apakah user sudah like
+async function checkUserLiked(feedbackId) {
+    const user = auth.currentUser;
+    if (!user) return false;
+    
+    try {
+        const likeDoc = doc(db, "feedback", feedbackId, "likes", user.uid);
+        const docSnap = await getDoc(likeDoc);
+        return docSnap.exists();
+    } catch (error) {
+        console.error("Error checking user like:", error);
+        return false;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 	 
 	 
@@ -2348,8 +2464,10 @@ function displayCachedFeedback() {
 }
 	 
 	 
-	 // Fungsi untuk merender item masukan
-function renderFeedbackItem(id, feedback) {
+	 
+	 
+// Fungsi untuk merender item masukan dengan fitur tambahan
+function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLiked = false) {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
     
@@ -2359,7 +2477,7 @@ function renderFeedbackItem(id, feedback) {
 
     const feedbackItem = document.createElement('div');
     feedbackItem.className = 'feedback-item';
-    feedbackItem.setAttribute('data-id', id);
+    feedbackItem.setAttribute('data-id', feedback.id);
     
     feedbackItem.innerHTML = `
         <div class="feedback-header">
@@ -2375,11 +2493,57 @@ function renderFeedbackItem(id, feedback) {
         <div class="feedback-title">${feedback.title || 'Tanpa judul'}</div>
         <span class="feedback-category category-${categoryClass}">${getCategoryLabel(categoryClass)}</span>
         <div class="feedback-content">${feedback.content || 'Tidak ada konten'}</div>
+        
+        <!-- Action buttons -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <div style="display: flex; gap: 15px;">
+                <button class="like-btn" style="background: none; border: none; color: ${userLiked ? '#4ea1ff' : '#ccc'}; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="${userLiked ? '#4ea1ff' : 'none'}" stroke="${userLiked ? '#4ea1ff' : '#ccc'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                    </svg>
+                    <span class="like-count">${likesCount}</span>
+                </button>
+                
+                <button class="reply-btn" style="background: none; border: none; color: #ccc; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="reply-count">${repliesCount}</span>
+                </button>
+                
+                <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span class="view-count">${feedback.views || 0}</span>
+                </div>
+            </div>
+            
+            <button class="view-details-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
+                Lihat Detail
+            </button>
+        </div>
     `;
 
     feedbackList.appendChild(feedbackItem);
+    
+    // Add event listeners
+    const likeBtn = feedbackItem.querySelector('.like-btn');
+    const replyBtn = feedbackItem.querySelector('.reply-btn');
+    const viewDetailsBtn = feedbackItem.querySelector('.view-details-btn');
+    
+    likeBtn.addEventListener('click', () => toggleLike(feedback.id));
+    replyBtn.addEventListener('click', () => openReplyModal(feedback));
+    viewDetailsBtn.addEventListener('click', () => viewFeedbackDetails(feedback.id));
+    
+    // Increment view count
+    incrementViewCount(feedback.id);
 }
 
+	 
+	 
+	 
 	 
 	 
 	 
@@ -2399,7 +2563,209 @@ function checkAndLoadFeedback() {
 
 	 
 	 
-	 
+	 // Fungsi untuk menambah jumlah view
+async function incrementViewCount(feedbackId) {
+    try {
+        const feedbackRef = doc(db, "feedback", feedbackId);
+        await updateDoc(feedbackRef, {
+            views: increment(1)
+        });
+    } catch (error) {
+        console.error("Error incrementing view count:", error);
+    }
+}
+
+// Fungsi untuk like/unlike
+async function toggleLike(feedbackId) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert('Silakan login terlebih dahulu untuk memberikan like');
+        return;
+    }
+    
+    try {
+        const likeRef = doc(db, "feedback", feedbackId, "likes", user.uid);
+        const likeDoc = await getDoc(likeRef);
+        
+        if (likeDoc.exists()) {
+            // Unlike
+            await deleteDoc(likeRef);
+        } else {
+            // Like
+            await setDoc(likeRef, {
+                userId: user.uid,
+                timestamp: serverTimestamp()
+            });
+        }
+        
+        // Update UI
+        const feedbackItem = document.querySelector(`.feedback-item[data-id="${feedbackId}"]`);
+        if (feedbackItem) {
+            const likeBtn = feedbackItem.querySelector('.like-btn');
+            const likeCount = feedbackItem.querySelector('.like-count');
+            const likeSvg = likeBtn.querySelector('svg');
+            
+            const currentCount = parseInt(likeCount.textContent);
+            const isLiked = likeSvg.getAttribute('fill') === '#4ea1ff';
+            
+            if (isLiked) {
+                // Unlike
+                likeSvg.setAttribute('fill', 'none');
+                likeSvg.setAttribute('stroke', '#ccc');
+                likeBtn.style.color = '#ccc';
+                likeCount.textContent = currentCount - 1;
+            } else {
+                // Like
+                likeSvg.setAttribute('fill', '#4ea1ff');
+                likeSvg.setAttribute('stroke', '#4ea1ff');
+                likeBtn.style.color = '#4ea1ff';
+                likeCount.textContent = currentCount + 1;
+            }
+        }
+    } catch (error) {
+        console.error("Error toggling like:", error);
+        alert('Gagal mengupdate like. Silakan coba lagi nanti.');
+    }
+}
+
+// Fungsi untuk membuka modal reply
+function openReplyModal(feedback) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert('Silakan login terlebih dahulu untuk membalas masukan');
+        return;
+    }
+    
+    const modal = document.getElementById('replyModal');
+    const originalFeedback = document.getElementById('originalFeedback');
+    
+    // Tampilkan feedback asli
+    originalFeedback.innerHTML = `
+        <div style="margin-bottom: 10px;">
+            <strong style="color: white;">${feedback.userName || 'Anonymous'}</strong>
+            <span style="color: #aaa; font-size: 12px; margin-left: 10px;">${formatTimeAgo(feedback.timestamp?.toDate?.() || new Date(feedback.timestamp))}</span>
+        </div>
+        <div style="color: white; font-weight: 500; margin-bottom: 5px;">${feedback.title}</div>
+        <div style="color: #ddd;">${feedback.content}</div>
+    `;
+    
+    // Reset form
+    document.getElementById('replyContent').value = '';
+    
+    // Simpan feedback ID di modal
+    modal.setAttribute('data-feedback-id', feedback.id);
+    
+    // Tampilkan modal
+    modal.style.display = 'flex';
+}
+
+// Fungsi untuk menutup modal reply
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+}
+
+// Fungsi untuk mengirim reply
+async function submitReply(e) {
+    e.preventDefault();
+    
+    const user = auth.currentUser;
+    if (!user) {
+        alert('Silakan login terlebih dahulu untuk membalas masukan');
+        return;
+    }
+    
+    const feedbackId = document.getElementById('replyModal').getAttribute('data-feedback-id');
+    const content = document.getElementById('replyContent').value.trim();
+    
+    if (!content) {
+        alert('Isi balasan tidak boleh kosong');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitReply');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+    
+    try {
+        // Tambahkan reply ke subcollection
+        const repliesRef = collection(db, "feedback", feedbackId, "replies");
+        await addDoc(repliesRef, {
+            content,
+            userId: user.uid,
+            userName: user.displayName || 'Anonymous',
+            userEmail: user.email,
+            timestamp: serverTimestamp()
+        });
+        
+        // Update reply count di feedback utama
+        const feedbackRef = doc(db, "feedback", feedbackId);
+        await updateDoc(feedbackRef, {
+            replyCount: increment(1)
+        });
+        
+        // Update UI
+        const feedbackItem = document.querySelector(`.feedback-item[data-id="${feedbackId}"]`);
+        if (feedbackItem) {
+            const replyCount = feedbackItem.querySelector('.reply-count');
+            const currentCount = parseInt(replyCount.textContent);
+            replyCount.textContent = currentCount + 1;
+        }
+        
+        // Tutup modal dan reset form
+        closeReplyModal();
+        
+        // Tampilkan notifikasi sukses
+        alert('Balasan berhasil dikirim!');
+        
+    } catch (error) {
+        console.error("Error submitting reply:", error);
+        alert('Gagal mengirim balasan. Silakan coba lagi nanti.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+}
+
+// Fungsi untuk melihat detail feedback dan replies
+async function viewFeedbackDetails(feedbackId) {
+    // Implementasi halaman detail feedback
+    alert(`Membuka detail feedback dengan ID: ${feedbackId}`);
+    // Anda bisa mengarahkan ke halaman baru atau membuka modal yang lebih besar
+}
+
+// Event listeners untuk modal reply
+document.getElementById('closeReplyModal').addEventListener('click', closeReplyModal);
+document.getElementById('cancelReply').addEventListener('click', closeReplyModal);
+document.getElementById('replyForm').addEventListener('submit', submitReply);
+
+// Event listeners untuk sorting
+document.getElementById('sortNewest').addEventListener('click', function() {
+    this.style.background = 'rgba(78, 161, 255, 0.2)';
+    this.style.border = '1px solid rgba(78, 161, 255, 0.5)';
+    this.style.color = '#4ea1ff';
+    
+    document.getElementById('sortPopular').style.background = 'rgba(255,255,255,0.05)';
+    document.getElementById('sortPopular').style.border = '1px solid rgba(255,255,255,0.2)';
+    document.getElementById('sortPopular').style.color = 'white';
+    
+    // Implementasi sorting terbaru
+    loadFeedback();
+});
+
+document.getElementById('sortPopular').addEventListener('click', function() {
+    this.style.background = 'rgba(78, 161, 255, 0.2)';
+    this.style.border = '1px solid rgba(78, 161, 255, 0.5)';
+    this.style.color = '#4ea1ff';
+    
+    document.getElementById('sortNewest').style.background = 'rgba(255,255,255,0.05)';
+    document.getElementById('sortNewest').style.border = '1px solid rgba(255,255,255,0.2)';
+    document.getElementById('sortNewest').style.color = 'white';
+    
+    // Implementasi sorting populer (berdasarkan jumlah like + reply)
+    // Anda perlu memodifikasi query Firebase atau melakukan sorting client-side
+    alert('Fitur sorting populer akan segera tersedia!');
+});
 	 
 	 
 	 
