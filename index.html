@@ -616,6 +616,34 @@
 
 
 
+#pinnedAnnouncementsList {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+    margin-bottom: 30px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.announcement-item {
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.announcement-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
+}
+
+
+
+
+
+
+
+
+
 
 	
 	
@@ -1639,15 +1667,14 @@
   </form>
 </div>
 
-<!-- Section untuk menampilkan pengumuman yang dipin -->
-<div id="pinnedAnnouncements" style="width: 100%; margin-bottom: 30px;">
-  <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-    Pengumuman Penting
-  </h2>
-  <div id="pinnedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
-    <!-- Pinned announcements will be added here dynamically -->
-  </div>
+
+
+<div id="pinnedAnnouncementsContainer">
+    <h2 style="color: #ff6b6b; margin-bottom: 15px;">📌 Pengumuman Penting</h2>
+    <div id="pinnedAnnouncementsList"></div>
 </div>
+
+<div id="feedbackListContainer"></div>
     
     <div id="feedbackHistory" style="width: 100%; margin-bottom: 30px;">
       <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
@@ -2719,21 +2746,21 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 }
 
 	 
-	 
-	 
 	 function checkAndLoadFeedback() {
     const path = window.location.pathname || "/";
     if (path.includes("halaman-masukan") || 
         (window.history.state && window.history.state.page === "masukan")) {
         
-        // Muat pengumuman yang dipin
+        // Muat pengumuman yang dipin pertama kali
         loadPinnedAnnouncements();
         
         // Coba muat dari cache dulu untuk UX yang lebih cepat
         displayCachedFeedback();
+        displayCachedPinnedAnnouncements();
         
         // Kemudian coba update dari Firebase
         loadFeedback().catch(console.error);
+        loadPinnedAnnouncements().catch(console.error);
     }
 }
 
@@ -3232,6 +3259,8 @@ function toggleAdminForms() {
 
 
 
+
+
 async function submitAnnouncement(e) {
     e.preventDefault();
     
@@ -3293,16 +3322,22 @@ async function submitAnnouncement(e) {
 
 
 
-
-
-
  
-	 
-	// Fungsi untuk merender pengumuman yang dipin
-function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0, userLiked = false) {
+ 
+ 
+ 
+ 
+ 
+ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0, userLiked = false) {
   const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
   if (!pinnedContainer) return;
-  
+
+  // Cek apakah pengumuman sudah ada di DOM
+  const existingAnnouncement = pinnedContainer.querySelector(`[data-id="${announcement.id}"]`);
+  if (existingAnnouncement) {
+    return; // Jangan render ulang jika sudah ada
+  }
+
   const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
   const initials = announcement.userName ? announcement.userName.charAt(0).toUpperCase() : 'A';
 
@@ -3312,7 +3347,7 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
   announcementItem.style.borderLeft = '4px solid #ff6b6b';
   announcementItem.style.background = 'rgba(255, 107, 107, 0.05)';
   announcementItem.style.position = 'relative';
-  
+
   announcementItem.innerHTML = `
     <div style="position: absolute; top: 10px; right: 10px; background: #ff6b6b; color: white; padding: 3px 8px; border-radius: 10px; font-size: 12px;">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
@@ -3320,7 +3355,7 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
       </svg>
       Pengumuman
     </div>
-    
+
     <div class="feedback-header">
       <div class="feedback-user">
         <div class="feedback-avatar" style="background: #ff6b6b;">${initials}</div>
@@ -3331,11 +3366,10 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
       </div>
       <div class="feedback-time">${formatTimeAgo(waktu)}</div>
     </div>
-    
+
     <div class="feedback-title" style="color: #ff6b6b; font-size: 18px;">${announcement.title || 'Pengumuman'}</div>
     <div class="feedback-content">${announcement.content || 'Tidak ada konten'}</div>
-    
-    <!-- Action buttons -->
+
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
       <div style="display: flex; gap: 15px;">
         <button class="like-btn" style="background: none; border: none; color: ${userLiked ? '#4ea1ff' : '#ccc'}; display: flex; align-items: center; gap: 5px; cursor: pointer;">
@@ -3344,14 +3378,14 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
           </svg>
           <span class="like-count">${likesCount}</span>
         </button>
-        
+
         <button class="reply-btn" style="background: none; border: none; color: #ccc; display: flex; align-items: center; gap: 5px; cursor: pointer;">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
           <span class="reply-count">${repliesCount}</span>
         </button>
-        
+
         <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -3360,7 +3394,7 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
           <span class="view-count">${announcement.views || 0}</span>
         </div>
       </div>
-      
+
       <div style="display: flex; gap: 10px;">
         <button class="pin-btn" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#ff6b6b" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3368,7 +3402,7 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
           </svg>
           Dipin
         </button>
-        
+
         <button class="view-details-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
           Lihat Detail
         </button>
@@ -3377,41 +3411,48 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
   `;
 
   pinnedContainer.appendChild(announcementItem);
-  
-  // Add event listeners
+
+  // Event listeners
   const likeBtn = announcementItem.querySelector('.like-btn');
   const replyBtn = announcementItem.querySelector('.reply-btn');
   const viewDetailsBtn = announcementItem.querySelector('.view-details-btn');
-  
+
   likeBtn.addEventListener('click', () => toggleLike(announcement.id));
   replyBtn.addEventListener('click', () => openReplyModal(announcement));
   viewDetailsBtn.addEventListener('click', () => viewFeedbackDetails(announcement.id));
-  
-  // Increment view count
-  incrementViewCount(announcement.id);
-} 
+
+  // Hitung view
+  if (announcement.id) {
+    incrementViewCount(announcement.id);
+  }
+}
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 	 
 	 
 	 
-	 
-	 
-	 
-	 
-	 
-	 
-async function loadPinnedAnnouncements() {
+	 async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
     try {
-        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
+        // Tampilkan loading state hanya jika container kosong
+        if (pinnedContainer.innerHTML.trim() === '') {
+            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
+        }
 
         // Ambil pengumuman yang dipin
         const q = query(
             collection(db, "feedback"),
             where("pinned", "==", true),
-            orderBy("timestamp", "desc"),
-            limit(5)
+            orderBy("timestamp", "desc")
         );
         
         const querySnapshot = await getDocs(q);
@@ -3421,11 +3462,16 @@ async function loadPinnedAnnouncements() {
             return;
         }
 
+        // Kosongkan container hanya jika ada data baru
         pinnedContainer.innerHTML = '';
+        
+        // Simpan semua pengumuman untuk caching
+        const pinnedAnnouncements = [];
         
         querySnapshot.forEach(async (doc) => {
             const announcement = doc.data();
             announcement.id = doc.id;
+            pinnedAnnouncements.push(announcement);
             
             const repliesCount = await getRepliesCount(doc.id);
             const likesCount = await getLikesCount(doc.id);
@@ -3434,22 +3480,55 @@ async function loadPinnedAnnouncements() {
             renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
         });
 
+        // Simpan ke localStorage untuk tampilan offline
+        localStorage.setItem('pinnedAnnouncements', JSON.stringify(pinnedAnnouncements));
+
     } catch (error) {
         console.error("Error loading pinned announcements:", error);
-        pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
+        // Coba tampilkan dari cache jika ada error
+        displayCachedPinnedAnnouncements();
     }
+}
+
+	 // Fungsi untuk menampilkan pengumuman dari cache
+function displayCachedPinnedAnnouncements() {
+    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+    if (!pinnedContainer) return;
+    
+    const cachedAnnouncements = JSON.parse(localStorage.getItem('pinnedAnnouncements') || []);
+    
+    if (cachedAnnouncements.length === 0) {
+        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
+        return;
+    }
+    
+    pinnedContainer.innerHTML = '';
+    
+    cachedAnnouncements.forEach(async (announcement) => {
+        const repliesCount = await getRepliesCount(announcement.id);
+        const likesCount = await getLikesCount(announcement.id);
+        const userLiked = await checkUserLiked(announcement.id);
+        
+        renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
+    });
 }
 	 
 	 
 	 
 	 
 	 
-	 
-	 
-	 
-	 
-	 
-	 
+	 // Panggil saat halaman dimuat
+window.addEventListener('load', () => {
+    checkAndLoadFeedback();
+    // Muat pengumuman setiap 5 menit untuk update
+    setInterval(loadPinnedAnnouncements, 300000);
+});
+
+// Panggil saat auth state berubah
+auth.onAuthStateChanged((user) => {
+    toggleAdminForms();
+    checkAndLoadFeedback();
+});
 	 
 
 
