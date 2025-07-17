@@ -565,11 +565,22 @@
 
 
 
+.announcement-item {
+  position: relative;
+}
 
-
-
-
-
+.announcement-item::before {
+  content: "PENGUMUMAN RESMI";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff6b6b;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
 
 
 
@@ -1566,49 +1577,33 @@
     </div>
 	
 	
-	
-	<!-- Form Pengumuman (Hanya tampil untuk admin) -->
-<div id="announcementForm" style="width: 100%; display: none; margin-bottom: 30px;">
+
+   
+ <!-- Form Pengumuman (Hanya untuk Admin/Kontributor) -->
+<div id="adminAnnouncementForm" style="width: 100%; margin-bottom: 30px; display: none;">
   <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
     Buat Pengumuman
   </h2>
   
-  <form id="announcementFormContent" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-    <!-- Kolom 1 - Judul Pengumuman -->
-    <div style="grid-column: 1;">
-      <label for="announcementTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Pengumuman*</label>
+  <form id="announcementForm" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+    <div>
+      <label for="announcementTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Pengumuman</label>
       <input type="text" id="announcementTitle" placeholder="Contoh: Pemeliharaan Sistem" 
              style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
     </div>
     
-    <!-- Kolom 2 - Link Tautan -->
-    <div style="grid-column: 2;">
-      <label for="announcementLink" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Link Tautan (opsional)</label>
-      <input type="url" id="announcementLink" placeholder="https://contoh.com" 
-             style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
-    </div>
-    
-    <!-- Kolom 3 - Isi Pengumuman (full width) -->
-    <div style="grid-column: 1 / span 2;">
-      <label for="announcementContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Pengumuman*</label>
-      <textarea id="announcementContent" rows="5" placeholder="Tulis pengumuman Anda secara detail..." 
+    <div>
+      <label for="announcementContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Pengumuman</label>
+      <textarea id="announcementContent" rows="5" placeholder="Tulis pengumuman Anda..." 
                 style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
     </div>
     
-    <!-- Tombol Submit -->
-    <div style="grid-column: 1 / span 2; display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" id="pinAnnouncement" style="padding: 12px 25px; background: linear-gradient(135deg, #ffb84e, #ff8800); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s;">
-        Pin Pengumuman
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;">
-          <path d="M12 17v5"></path>
-          <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"></path>
-        </svg>
-      </button>
-      <button type="submit" id="submitAnnouncement" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s;">
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="submit" id="submitAnnouncement" style="padding: 12px 25px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s;">
         Kirim Pengumuman
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
         </svg>
       </button>
     </div>
@@ -2585,11 +2580,35 @@ function displayCachedFeedback() {
 	 
 	 
 	 
+	 // Event listener untuk form pengumuman
+document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
+
+// Panggil saat auth state berubah
+auth.onAuthStateChanged((user) => {
+  toggleAdminForms();
+  checkAndLoadFeedback();
+});
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
 	 
 // Fungsi untuk merender item masukan dengan fitur tambahan
 function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLiked = false) {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
+	
+	  // Tambahkan class khusus untuk pengumuman
+    if (feedback.type === 'announcement' || feedback.category === 'announcement') {
+        feedbackItem.classList.add('announcement-item');
+        feedbackItem.style.borderLeft = '4px solid #ff6b6b';
+        feedbackItem.style.background = 'rgba(255, 107, 107, 0.05)';
+    }
     
     const waktu = feedback.timestamp?.toDate ? feedback.timestamp.toDate() : new Date(feedback.timestamp || Date.now());
     const initials = feedback.userName ? feedback.userName.charAt(0).toUpperCase() : 'A';
@@ -3186,7 +3205,98 @@ async function loadFeedback() {
 }
 
 
+// Daftar email yang diizinkan (admin/contributor)
+const ALLOWED_EMAILS = ['faridardiansyah061@gmail.com'];
 
+// Fungsi untuk mengecek apakah user adalah admin/contributor
+function checkAdminStatus(user) {
+  if (!user || !user.email) return false;
+  return ALLOWED_EMAILS.includes(user.email.toLowerCase());
+}
+
+// Fungsi untuk menampilkan/menyembunyikan form admin
+function toggleAdminForms() {
+  const user = auth.currentUser;
+  const isAdmin = checkAdminStatus(user);
+  
+  const adminForm = document.getElementById('adminAnnouncementForm');
+  if (adminForm) {
+    adminForm.style.display = isAdmin ? 'block' : 'none';
+  }
+  
+  // Tambahkan badge admin jika diperlukan
+  const userDisplayElements = document.querySelectorAll('.feedback-user div:first-child');
+  userDisplayElements.forEach(el => {
+    const userEmail = el.nextElementSibling?.textContent?.trim();
+    if (userEmail && ALLOWED_EMAILS.includes(userEmail.toLowerCase())) {
+      el.innerHTML += ' <span style="background: #ff6b6b; color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">ADMIN</span>';
+    }
+  });
+}
+
+
+// Fungsi untuk mengirim pengumuman
+async function submitAnnouncement(e) {
+  e.preventDefault();
+  
+  const title = document.getElementById('announcementTitle').value.trim();
+  const content = document.getElementById('announcementContent').value.trim();
+  
+  if (!title || !content) {
+    alert('Judul dan isi pengumuman tidak boleh kosong!');
+    return;
+  }
+  
+  const user = auth.currentUser;
+  if (!checkAdminStatus(user)) {
+    alert('Anda tidak memiliki izin untuk membuat pengumuman!');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('submitAnnouncement');
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+  
+  const announcementData = {
+    title,
+    content,
+    userEmail: user.email,
+    userName: user.displayName || 'Admin',
+    timestamp: serverTimestamp(),
+    type: 'announcement',
+    isPriority: true
+  };
+
+  try {
+    // Simpan ke collection terpisah atau tambahkan flag khusus
+    const announcementsRef = collection(db, "announcements");
+    await addDoc(announcementsRef, announcementData);
+    
+    // Juga simpan ke feedback biasa dengan tipe khusus
+    const feedbackRef = collection(db, "feedback");
+    await addDoc(feedbackRef, {
+      ...announcementData,
+      category: 'announcement'
+    });
+    
+    // Reset form
+    e.target.reset();
+    
+    // Perbarui tampilan
+    await loadFeedback();
+    
+    // Tampilkan notifikasi sukses
+    showNotification('Pengumuman berhasil dikirim!', 'success');
+    
+  } catch (error) {
+    console.error('Error submitting announcement:', error);
+    showNotification('Gagal mengirim pengumuman. Silakan coba lagi.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+  }
+}
 
 
 
