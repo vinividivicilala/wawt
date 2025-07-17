@@ -3129,8 +3129,6 @@ function getCategoryLabel(category) {
 
 
 
-
-
 async function submitFeedback(e) {
     e.preventDefault();
     
@@ -3151,26 +3149,45 @@ async function submitFeedback(e) {
     const user = auth.currentUser;
     const feedbackData = {
         title,
-        category,
+        category, // Pastikan kategori disimpan dengan benar
         content,
         userName: user?.displayName || 'Anonymous',
         userEmail: user?.email || null,
         userId: user?.uid || null,
         timestamp: serverTimestamp(),
-        pinned: false, // Pastikan masukan biasa tidak dipin
-        type: 'feedback' // Tambahkan tipe untuk membedakan pengumuman
+        pinned: false,
+        type: 'feedback',
+        views: 0
     };
 
     try {
         // Simpan ke Firebase
         const feedbackRef = collection(db, "feedback");
-        await addDoc(feedbackRef, feedbackData);
+        const docRef = await addDoc(feedbackRef, feedbackData);
         
         // Reset form
         e.target.reset();
         
-        // Perbarui tampilan
-        await loadFeedback(); // Memuat ulang daftar masukan
+        // Perbarui tampilan dengan menambahkan feedback baru
+        const repliesCount = 0;
+        const likesCount = 0;
+        const userLiked = false;
+        
+        // Tambahkan ID ke data feedback
+        feedbackData.id = docRef.id;
+        
+        // Render item feedback baru
+        renderFeedbackItem(feedbackData, repliesCount, likesCount, userLiked);
+        
+        // Update count
+        const feedbackList = document.getElementById('feedbackListContainer');
+        const currentCount = parseInt(
+  document.getElementById('feedbackCountDisplay').textContent.match(/\d+/)
+) || 0;
+
+        updateFeedbackCount(currentCount + 1);
+        
+        alert('Masukan berhasil dikirim!');
         
     } catch (error) {
         console.error('Error submitting feedback:', error);
@@ -3365,7 +3382,7 @@ async function submitAnnouncement(e) {
         timestamp: serverTimestamp(),
         type: 'announcement',
         category: 'announcement',
-        pinned: true, // Pastikan pengumuman dipin
+        pinned: true,
         views: 0,
         likes: 0,
         replies: 0
@@ -3374,16 +3391,22 @@ async function submitAnnouncement(e) {
     try {
         // Simpan ke Firebase
         const feedbackRef = collection(db, "feedback");
-        await addDoc(feedbackRef, announcementData);
+        const docRef = await addDoc(feedbackRef, announcementData);
         
-        // Perbarui tampilan pengumuman yang dipin
-        await loadPinnedAnnouncements();
+        // Tambahkan ID ke data pengumuman
+        announcementData.id = docRef.id;
+        
+        // Render pengumuman baru
+        renderPinnedAnnouncement(announcementData, 0, 0, false);
         
         // Reset form
         e.target.reset();
         
         // Tampilkan notifikasi sukses
         showNotification('Pengumuman berhasil dikirim dan dipin!', 'success');
+        
+        // Perbarui tampilan pengumuman yang dipin
+        await loadPinnedAnnouncements();
         
     } catch (error) {
         console.error('Error submitting announcement:', error);
@@ -3393,6 +3416,12 @@ async function submitAnnouncement(e) {
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
+
+
+
 
 
 
@@ -3503,22 +3532,12 @@ async function submitAnnouncement(e) {
  
  
  
- 
- 
- 
- 
-	 
-	 
-	 
-	 
-	 async function loadPinnedAnnouncements() {
+ // Fungsi untuk memuat pengumuman yang dipin saat halaman dimuat
+async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
     try {
-        // Coba tampilkan dari cache dulu untuk UX yang lebih cepat
-        displayCachedPinnedAnnouncements();
-        
         // Ambil pengumuman yang dipin dari Firebase
         const q = query(
             collection(db, "feedback"),
@@ -3531,18 +3550,14 @@ async function submitAnnouncement(e) {
         
         if (querySnapshot.empty) {
             pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
-            // Simpan ke cache bahwa tidak ada pengumuman
-            localStorage.setItem('cachedPinnedAnnouncements', JSON.stringify([]));
             return;
         }
 
         pinnedContainer.innerHTML = '';
-        const pinnedItems = [];
         
         for (const doc of querySnapshot.docs) {
             const announcement = doc.data();
             announcement.id = doc.id;
-            pinnedItems.push(announcement);
             
             const repliesCount = await getRepliesCount(doc.id);
             const likesCount = await getLikesCount(doc.id);
@@ -3551,16 +3566,35 @@ async function submitAnnouncement(e) {
             renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
         }
 
-        // Simpan ke cache
-        localStorage.setItem('cachedPinnedAnnouncements', JSON.stringify(pinnedItems));
-
     } catch (error) {
         console.error("Error loading pinned announcements:", error);
-        // Jika error, tampilkan dari cache
-        displayCachedPinnedAnnouncements();
+        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
     }
 }
 
+// Panggil fungsi loadPinnedAnnouncements saat halaman dimuat
+window.addEventListener('load', () => {
+    loadPinnedAnnouncements();
+    loadFeedback();
+});
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 function displayCachedPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
