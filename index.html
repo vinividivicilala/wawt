@@ -2501,6 +2501,7 @@ if (document.getElementById('back-forum')) {
 	 
 	 
 	 
+	 	 
 	 
 	 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
@@ -2746,21 +2747,21 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 }
 
 	 
+	 
+	 
 	 function checkAndLoadFeedback() {
     const path = window.location.pathname || "/";
     if (path.includes("halaman-masukan") || 
         (window.history.state && window.history.state.page === "masukan")) {
         
-        // Muat pengumuman yang dipin pertama kali
+        // Muat pengumuman yang dipin
         loadPinnedAnnouncements();
         
         // Coba muat dari cache dulu untuk UX yang lebih cepat
         displayCachedFeedback();
-        displayCachedPinnedAnnouncements();
         
         // Kemudian coba update dari Firebase
         loadFeedback().catch(console.error);
-        loadPinnedAnnouncements().catch(console.error);
     }
 }
 
@@ -3259,8 +3260,6 @@ function toggleAdminForms() {
 
 
 
-
-
 async function submitAnnouncement(e) {
     e.preventDefault();
     
@@ -3319,6 +3318,9 @@ async function submitAnnouncement(e) {
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
 
 
 
@@ -3420,21 +3422,24 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
 	 
 	 
 	 
-	 async function loadPinnedAnnouncements() {
+	 
+	 
+	 
+	 
+	 
+async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
     try {
-        // Tampilkan loading state hanya jika container kosong
-        if (pinnedContainer.innerHTML.trim() === '') {
-            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
-        }
+        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
 
         // Ambil pengumuman yang dipin
         const q = query(
             collection(db, "feedback"),
             where("pinned", "==", true),
-            orderBy("timestamp", "desc")
+            orderBy("timestamp", "desc"),
+            limit(5)
         );
         
         const querySnapshot = await getDocs(q);
@@ -3444,16 +3449,11 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
             return;
         }
 
-        // Kosongkan container hanya jika ada data baru
         pinnedContainer.innerHTML = '';
-        
-        // Simpan semua pengumuman untuk caching
-        const pinnedAnnouncements = [];
         
         querySnapshot.forEach(async (doc) => {
             const announcement = doc.data();
             announcement.id = doc.id;
-            pinnedAnnouncements.push(announcement);
             
             const repliesCount = await getRepliesCount(doc.id);
             const likesCount = await getLikesCount(doc.id);
@@ -3462,57 +3462,28 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
             renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
         });
 
-        // Simpan ke localStorage untuk tampilan offline
-        localStorage.setItem('pinnedAnnouncements', JSON.stringify(pinnedAnnouncements));
-
     } catch (error) {
         console.error("Error loading pinned announcements:", error);
-        // Coba tampilkan dari cache jika ada error
-        displayCachedPinnedAnnouncements();
+        pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
     }
 }
-
-	 // Fungsi untuk menampilkan pengumuman dari cache
-function displayCachedPinnedAnnouncements() {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
-    
-    const cachedAnnouncements = JSON.parse(localStorage.getItem('pinnedAnnouncements') || []);
-    
-    if (cachedAnnouncements.length === 0) {
-        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
-        return;
-    }
-    
-    pinnedContainer.innerHTML = '';
-    
-    cachedAnnouncements.forEach(async (announcement) => {
-        const repliesCount = await getRepliesCount(announcement.id);
-        const likesCount = await getLikesCount(announcement.id);
-        const userLiked = await checkUserLiked(announcement.id);
-        
-        renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
-    });
-}
 	 
 	 
 	 
 	 
 	 
-	 // Panggil saat halaman dimuat
-window.addEventListener('load', () => {
-    checkAndLoadFeedback();
-    // Muat pengumuman setiap 5 menit untuk update
-    setInterval(loadPinnedAnnouncements, 300000);
-});
-
-// Panggil saat auth state berubah
-auth.onAuthStateChanged((user) => {
-    toggleAdminForms();
-    checkAndLoadFeedback();
-});
 	 
-
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
 
 
 
