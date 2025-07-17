@@ -2475,22 +2475,17 @@ if (document.getElementById('back-forum')) {
 	 
 	 
 	 
-	 
-	 
-	 
 	 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
 
     try {
-        // Tampilkan loading state
         feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
 
-        // Ambil data dari Firebase dengan sorting berdasarkan timestamp
-        // Exclude pinned items (karena sudah ditampilkan di section pinned)
+        // Ambil masukan biasa (non-pinned dan non-announcement)
         const q = query(
-            collection(db, "feedback"), 
-            where("pinned", "!=", true), // Exclude pinned items
+            collection(db, "feedback"),
+            where("pinned", "==", false),
             orderBy("timestamp", "desc"),
             limit(50)
         );
@@ -2502,7 +2497,6 @@ if (document.getElementById('back-forum')) {
             return;
         }
 
-        // Render feedback dari Firebase
         feedbackList.innerHTML = '';
         const feedbackItems = [];
         
@@ -2511,30 +2505,32 @@ if (document.getElementById('back-forum')) {
             feedback.id = doc.id;
             feedbackItems.push(feedback);
             
-            // Dapatkan jumlah replies untuk feedback ini
             const repliesCount = await getRepliesCount(doc.id);
-            // Dapatkan jumlah likes untuk feedback ini
             const likesCount = await getLikesCount(doc.id);
-            // Dapatkan status like user saat ini
             const userLiked = await checkUserLiked(doc.id);
             
             renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
         });
 
-        // Simpan ke cache
         localStorage.setItem('cachedFeedback', JSON.stringify(feedbackItems));
-
-        // Update jumlah masukan
         updateFeedbackCount(querySnapshot.size);
 
     } catch (error) {
         console.error("Error loading feedback:", error);
-        // Jika error, tampilkan dari cache
         displayCachedFeedback();
     }
 }
 
-
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
 
 
 // Fungsi untuk mendapatkan jumlah replies
@@ -3031,7 +3027,7 @@ function getCategoryLabel(category) {
 
 
 
-// Fungsi untuk mengirim masukan
+
 async function submitFeedback(e) {
     e.preventDefault();
     
@@ -3058,79 +3054,34 @@ async function submitFeedback(e) {
         userEmail: user?.email || null,
         userId: user?.uid || null,
         timestamp: serverTimestamp(),
-        status: 'new' // Untuk filtering
+        pinned: false, // Pastikan masukan biasa tidak dipin
+        type: 'feedback' // Tambahkan tipe untuk membedakan pengumuman
     };
 
     try {
         // Simpan ke Firebase
         const feedbackRef = collection(db, "feedback");
-        const docRef = await addDoc(feedbackRef, feedbackData);
+        await addDoc(feedbackRef, feedbackData);
         
-        // Ambil cache lokal dulu (jika ada)
-        let existingFeedback = JSON.parse(localStorage.getItem('cachedFeedback')) || [];
-
-        // Buat data masukan baru
-        const cachedFeedback = {
-            id: docRef.id,
-            ...feedbackData,
-            timestamp: new Date().toISOString() // Gunakan waktu lokal
-        };
-
-        // Simpan di awal array
-        existingFeedback.unshift(cachedFeedback);
-
-        // Simpan ke localStorage (maksimal 10 masukan disimpan)
-        localStorage.setItem('cachedFeedback', JSON.stringify(existingFeedback.slice(0, 10)));
-
         // Reset form
         e.target.reset();
-
-        // Perbarui tampilan masukan
-        await loadFeedback();
-
-        // Notifikasi sukses
-        const notification = document.createElement('div');
-        notification.style.position = 'fixed';
-        notification.style.bottom = '20px';
-        notification.style.right = '20px';
-        notification.style.backgroundColor = '#4CAF50';
-        notification.style.color = 'white';
-        notification.style.padding = '15px';
-        notification.style.borderRadius = '5px';
-        notification.style.zIndex = '10000';
-        notification.textContent = 'Masukan berhasil dikirim!';
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            setTimeout(() => notification.remove(), 500);
-        }, 3000);
-
+        
+        // Perbarui tampilan
+        await loadFeedback(); // Memuat ulang daftar masukan
+        
     } catch (error) {
         console.error('Error submitting feedback:', error);
-
-        // Notifikasi error
-        const errorNotification = document.createElement('div');
-        errorNotification.style.position = 'fixed';
-        errorNotification.style.bottom = '20px';
-        errorNotification.style.right = '20px';
-        errorNotification.style.backgroundColor = '#F44336';
-        errorNotification.style.color = 'white';
-        errorNotification.style.padding = '15px';
-        errorNotification.style.borderRadius = '5px';
-        errorNotification.style.zIndex = '10000';
-        errorNotification.textContent = 'Gagal mengirim masukan. Coba lagi nanti.';
-        document.body.appendChild(errorNotification);
-
-        setTimeout(() => {
-            errorNotification.style.opacity = '0';
-            setTimeout(() => errorNotification.remove(), 500);
-        }, 3000);
+        alert('Gagal mengirim masukan. Pastikan Anda terhubung ke internet.');
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
+
+
 
 
 
@@ -3281,70 +3232,64 @@ function toggleAdminForms() {
 
 
 
-
-
 async function submitAnnouncement(e) {
-  e.preventDefault();
-  
-  const title = document.getElementById('announcementTitle').value.trim();
-  const content = document.getElementById('announcementContent').value.trim();
-  
-  if (!title || !content) {
-    alert('Judul dan isi pengumuman tidak boleh kosong!');
-    return;
-  }
-  
-  const user = auth.currentUser;
-  if (!checkAdminStatus(user)) {
-    alert('Anda tidak memiliki izin untuk membuat pengumuman!');
-    return;
-  }
-  
-  const submitBtn = document.getElementById('submitAnnouncement');
-  const originalBtnText = submitBtn.innerHTML;
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
-  
-  const announcementData = {
-    title,
-    content,
-    userEmail: user.email,
-    userName: user.displayName || 'Admin',
-    timestamp: serverTimestamp(),
-    type: 'announcement',
-    category: 'announcement',
-    isPriority: true,
-    pinned: true, // Otomatis pin pengumuman
-    views: 0,
-    likes: 0,
-    replies: 0
-  };
+    e.preventDefault();
+    
+    const title = document.getElementById('announcementTitle').value.trim();
+    const content = document.getElementById('announcementContent').value.trim();
+    
+    if (!title || !content) {
+        alert('Judul dan isi pengumuman tidak boleh kosong!');
+        return;
+    }
+    
+    const user = auth.currentUser;
+    if (!checkAdminStatus(user)) {
+        alert('Anda tidak memiliki izin untuk membuat pengumuman!');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitAnnouncement');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
+    
+    const announcementData = {
+        title,
+        content,
+        userEmail: user.email,
+        userName: user.displayName || 'Admin',
+        timestamp: serverTimestamp(),
+        type: 'announcement',
+        category: 'announcement',
+        pinned: true, // Pastikan pengumuman dipin
+        views: 0,
+        likes: 0,
+        replies: 0
+    };
 
-  try {
-    // Simpan ke collection feedback dengan flag khusus
-    const feedbackRef = collection(db, "feedback");
-    const docRef = await addDoc(feedbackRef, announcementData);
-    
-    // Update UI untuk menampilkan pengumuman yang dipin
-    await loadPinnedAnnouncements();
-    
-    // Reset form
-    e.target.reset();
-    
-    // Tampilkan notifikasi sukses
-    showNotification('Pengumuman berhasil dikirim dan dipin!', 'success');
-    
-  } catch (error) {
-    console.error('Error submitting announcement:', error);
-    showNotification('Gagal mengirim pengumuman. Silakan coba lagi.', 'error');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = originalBtnText;
-  }
+    try {
+        // Simpan ke Firebase
+        const feedbackRef = collection(db, "feedback");
+        await addDoc(feedbackRef, announcementData);
+        
+        // Perbarui tampilan pengumuman yang dipin
+        await loadPinnedAnnouncements();
+        
+        // Reset form
+        e.target.reset();
+        
+        // Tampilkan notifikasi sukses
+        showNotification('Pengumuman berhasil dikirim dan dipin!', 'success');
+        
+    } catch (error) {
+        console.error('Error submitting announcement:', error);
+        showNotification('Gagal mengirim pengumuman. Silakan coba lagi.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 }
-
-
-
 
 
 
@@ -3448,53 +3393,52 @@ function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0
 	 
 	 
 	 
-	// Fungsi untuk memuat pengumuman yang dipin
+	 
+	 
+	 
+	 
+	 
+	 
 async function loadPinnedAnnouncements() {
-  const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-  if (!pinnedContainer) return;
+    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+    if (!pinnedContainer) return;
 
-  try {
-    pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
+    try {
+        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
 
-    // Ambil pengumuman yang dipin dari Firebase
-    const q = query(
-      collection(db, "feedback"),
-      where("pinned", "==", true),
-      orderBy("timestamp", "desc"),
-      limit(5)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    
-    if (querySnapshot.empty) {
-      pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
-      return;
+        // Ambil pengumuman yang dipin
+        const q = query(
+            collection(db, "feedback"),
+            where("pinned", "==", true),
+            orderBy("timestamp", "desc"),
+            limit(5)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
+            return;
+        }
+
+        pinnedContainer.innerHTML = '';
+        
+        querySnapshot.forEach(async (doc) => {
+            const announcement = doc.data();
+            announcement.id = doc.id;
+            
+            const repliesCount = await getRepliesCount(doc.id);
+            const likesCount = await getLikesCount(doc.id);
+            const userLiked = await checkUserLiked(doc.id);
+            
+            renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
+        });
+
+    } catch (error) {
+        console.error("Error loading pinned announcements:", error);
+        pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
     }
-
-    pinnedContainer.innerHTML = '';
-    
-    querySnapshot.forEach(async (doc) => {
-      const announcement = doc.data();
-      announcement.id = doc.id;
-      
-      // Dapatkan jumlah replies, likes, dan status like user
-      const repliesCount = await getRepliesCount(doc.id);
-      const likesCount = await getLikesCount(doc.id);
-      const userLiked = await checkUserLiked(doc.id);
-      
-      renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
-    });
-
-  } catch (error) {
-    console.error("Error loading pinned announcements:", error);
-    pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
-  }
-} 
-	 
-	 
-	 
-	 
-	 
+}
 	 
 	 
 	 
