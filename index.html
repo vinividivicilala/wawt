@@ -585,6 +585,35 @@
 
 
 
+.announcement-item {
+    position: relative;
+    border-left: 4px solid #ff6b6b !important;
+    background: rgba(255, 107, 107, 0.05) !important;
+}
+
+.announcement-item .feedback-title {
+    color: #ff6b6b !important;
+    font-size: 18px !important;
+}
+
+.announcement-item .feedback-avatar {
+    background: #ff6b6b !important;
+}
+
+.pinned-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff6b6b;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 
 
 
@@ -2449,11 +2478,7 @@ if (document.getElementById('back-forum')) {
 	 
 	 
 	 
-	 
-		 
-	 
-	 // Fungsi untuk memuat masukan dari Firebase
-async function loadFeedback() {
+	 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
 
@@ -2462,8 +2487,10 @@ async function loadFeedback() {
         feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
 
         // Ambil data dari Firebase dengan sorting berdasarkan timestamp
+        // Exclude pinned items (karena sudah ditampilkan di section pinned)
         const q = query(
             collection(db, "feedback"), 
+            where("pinned", "!=", true), // Exclude pinned items
             orderBy("timestamp", "desc"),
             limit(50)
         );
@@ -2506,7 +2533,6 @@ async function loadFeedback() {
         displayCachedFeedback();
     }
 }
-
 
 
 
@@ -2693,14 +2719,13 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 	 
 	 
 	 
-	 
-	 
-	 
-// Fungsi untuk memeriksa dan memuat masukan saat halaman dimuat
-function checkAndLoadFeedback() {
+	 function checkAndLoadFeedback() {
     const path = window.location.pathname || "/";
     if (path.includes("halaman-masukan") || 
         (window.history.state && window.history.state.page === "masukan")) {
+        
+        // Muat pengumuman yang dipin
+        loadPinnedAnnouncements();
         
         // Coba muat dari cache dulu untuk UX yang lebih cepat
         displayCachedFeedback();
@@ -3154,7 +3179,8 @@ function updateFeedbackCount(count, isCached = false) {
 
 
 
-// Fungsi untuk memuat masukan dari Firebase (dimodifikasi untuk exclude pinned announcements)
+
+
 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
@@ -3167,6 +3193,7 @@ async function loadFeedback() {
         // Exclude pinned items (karena sudah ditampilkan di section pinned)
         const q = query(
             collection(db, "feedback"), 
+            where("pinned", "!=", true), // Exclude pinned items
             orderBy("timestamp", "desc"),
             limit(50)
         );
@@ -3185,10 +3212,6 @@ async function loadFeedback() {
         querySnapshot.forEach(async (doc) => {
             const feedback = doc.data();
             feedback.id = doc.id;
-            
-            // Skip jika ini adalah pinned item (seharusnya sudah ditampilkan di pinned section)
-            if (feedback.pinned) return;
-            
             feedbackItems.push(feedback);
             
             // Dapatkan jumlah replies untuk feedback ini
@@ -3213,6 +3236,12 @@ async function loadFeedback() {
         displayCachedFeedback();
     }
 }
+
+
+
+
+
+
 
 
 // Daftar email yang diizinkan (admin/contributor)
@@ -3245,7 +3274,12 @@ function toggleAdminForms() {
 }
 
 
-// Fungsi untuk mengirim pengumuman
+
+
+
+
+
+
 async function submitAnnouncement(e) {
   e.preventDefault();
   
@@ -3275,29 +3309,27 @@ async function submitAnnouncement(e) {
     userName: user.displayName || 'Admin',
     timestamp: serverTimestamp(),
     type: 'announcement',
-    isPriority: true
+    category: 'announcement',
+    isPriority: true,
+    pinned: true, // Otomatis pin pengumuman
+    views: 0,
+    likes: 0,
+    replies: 0
   };
 
   try {
-    // Simpan ke collection terpisah atau tambahkan flag khusus
-    const announcementsRef = collection(db, "announcements");
-    await addDoc(announcementsRef, announcementData);
-    
-    // Juga simpan ke feedback biasa dengan tipe khusus
+    // Simpan ke collection feedback dengan flag khusus
     const feedbackRef = collection(db, "feedback");
-    await addDoc(feedbackRef, {
-      ...announcementData,
-      category: 'announcement'
-    });
+    const docRef = await addDoc(feedbackRef, announcementData);
+    
+    // Update UI untuk menampilkan pengumuman yang dipin
+    await loadPinnedAnnouncements();
     
     // Reset form
     e.target.reset();
     
-    // Perbarui tampilan
-    await loadFeedback();
-    
     // Tampilkan notifikasi sukses
-    showNotification('Pengumuman berhasil dikirim!', 'success');
+    showNotification('Pengumuman berhasil dikirim dan dipin!', 'success');
     
   } catch (error) {
     console.error('Error submitting announcement:', error);
@@ -3308,13 +3340,153 @@ async function submitAnnouncement(e) {
   }
 }
 
+
+
+
+
+
+
+
+
  
 	 
+	// Fungsi untuk merender pengumuman yang dipin
+function renderPinnedAnnouncement(announcement, repliesCount = 0, likesCount = 0, userLiked = false) {
+  const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+  if (!pinnedContainer) return;
+  
+  const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
+  const initials = announcement.userName ? announcement.userName.charAt(0).toUpperCase() : 'A';
+
+  const announcementItem = document.createElement('div');
+  announcementItem.className = 'feedback-item announcement-item';
+  announcementItem.setAttribute('data-id', announcement.id);
+  announcementItem.style.borderLeft = '4px solid #ff6b6b';
+  announcementItem.style.background = 'rgba(255, 107, 107, 0.05)';
+  announcementItem.style.position = 'relative';
+  
+  announcementItem.innerHTML = `
+    <div style="position: absolute; top: 10px; right: 10px; background: #ff6b6b; color: white; padding: 3px 8px; border-radius: 10px; font-size: 12px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+      </svg>
+      Pengumuman
+    </div>
+    
+    <div class="feedback-header">
+      <div class="feedback-user">
+        <div class="feedback-avatar" style="background: #ff6b6b;">${initials}</div>
+        <div>
+          <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
+          <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
+        </div>
+      </div>
+      <div class="feedback-time">${formatTimeAgo(waktu)}</div>
+    </div>
+    
+    <div class="feedback-title" style="color: #ff6b6b; font-size: 18px;">${announcement.title || 'Pengumuman'}</div>
+    <div class="feedback-content">${announcement.content || 'Tidak ada konten'}</div>
+    
+    <!-- Action buttons -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+      <div style="display: flex; gap: 15px;">
+        <button class="like-btn" style="background: none; border: none; color: ${userLiked ? '#4ea1ff' : '#ccc'}; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="${userLiked ? '#4ea1ff' : 'none'}" stroke="${userLiked ? '#4ea1ff' : '#ccc'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+          </svg>
+          <span class="like-count">${likesCount}</span>
+        </button>
+        
+        <button class="reply-btn" style="background: none; border: none; color: #ccc; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span class="reply-count">${repliesCount}</span>
+        </button>
+        
+        <div style="display: flex; align-items: center; gap: 5px; color: #ccc;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <span class="view-count">${announcement.views || 0}</span>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button class="pin-btn" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#ff6b6b" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v16M5 12h14"/>
+          </svg>
+          Dipin
+        </button>
+        
+        <button class="view-details-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
+          Lihat Detail
+        </button>
+      </div>
+    </div>
+  `;
+
+  pinnedContainer.appendChild(announcementItem);
+  
+  // Add event listeners
+  const likeBtn = announcementItem.querySelector('.like-btn');
+  const replyBtn = announcementItem.querySelector('.reply-btn');
+  const viewDetailsBtn = announcementItem.querySelector('.view-details-btn');
+  
+  likeBtn.addEventListener('click', () => toggleLike(announcement.id));
+  replyBtn.addEventListener('click', () => openReplyModal(announcement));
+  viewDetailsBtn.addEventListener('click', () => viewFeedbackDetails(announcement.id));
+  
+  // Increment view count
+  incrementViewCount(announcement.id);
+} 
 	 
 	 
 	 
-	 
-	 
+	// Fungsi untuk memuat pengumuman yang dipin
+async function loadPinnedAnnouncements() {
+  const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+  if (!pinnedContainer) return;
+
+  try {
+    pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
+
+    // Ambil pengumuman yang dipin dari Firebase
+    const q = query(
+      collection(db, "feedback"),
+      where("pinned", "==", true),
+      orderBy("timestamp", "desc"),
+      limit(5)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada pengumuman</div>';
+      return;
+    }
+
+    pinnedContainer.innerHTML = '';
+    
+    querySnapshot.forEach(async (doc) => {
+      const announcement = doc.data();
+      announcement.id = doc.id;
+      
+      // Dapatkan jumlah replies, likes, dan status like user
+      const repliesCount = await getRepliesCount(doc.id);
+      const likesCount = await getLikesCount(doc.id);
+      const userLiked = await checkUserLiked(doc.id);
+      
+      renderPinnedAnnouncement(announcement, repliesCount, likesCount, userLiked);
+    });
+
+  } catch (error) {
+    console.error("Error loading pinned announcements:", error);
+    pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
+  }
+} 
 	 
 	 
 	 
