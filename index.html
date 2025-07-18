@@ -2701,6 +2701,10 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
                     </svg>
                     <span class="reply-count" style="margin-left: 5px;">${repliesCount}</span>
                 </button>
+				
+				 <div style="color:#ccc; display:flex; align-items:center;">
+    👁️ <span class="view-count">${feedback.views || 0}</span>
+  </div>
             </div>
             <button class="view-details-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
                 Lihat Detail
@@ -3045,6 +3049,7 @@ function getCategoryLabel(category) {
 
 
 
+// Fungsi submitFeedback yang diperbarui
 async function submitFeedback(e) {
     e.preventDefault();
     
@@ -3060,10 +3065,7 @@ async function submitFeedback(e) {
     
     // Validasi kategori yang lebih ketat
     const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
-    if (!validCategories.includes(category)) {
-        category = 'other'; // Default ke 'other' jika kategori tidak valid
-        showNotification('Kategori tidak valid, menggunakan kategori "Lainnya"', 'warning');
-    }
+    category = validCategories.includes(category) ? category : 'other';
     
     const submitBtn = document.getElementById('submitFeedback');
     const originalBtnText = submitBtn.innerHTML;
@@ -3073,7 +3075,7 @@ async function submitFeedback(e) {
     const user = auth.currentUser;
     const feedbackData = {
         title,
-        category: category.toLowerCase(), // Pastikan lowercase
+        category,
         content,
         userName: user?.displayName || 'Anonymous',
         userEmail: user?.email || null,
@@ -3081,8 +3083,8 @@ async function submitFeedback(e) {
         timestamp: serverTimestamp(),
         status: 'new',
         likesCount: 0,
-            repliesCount: 0,
-            viewsCount: 0,
+        repliesCount: 0,
+        viewsCount: 0,
         isCached: false
     };
 
@@ -3092,7 +3094,15 @@ async function submitFeedback(e) {
         
         // Update UI langsung dengan data baru
         const feedbackWithId = { ...feedbackData, id: docRef.id };
-        renderFeedbackItem(feedbackWithId, 0, 0, false);
+        
+        // Dapatkan jumlah like dan reply (default 0)
+        const [repliesCount, likesCount, userLiked] = await Promise.all([
+            getRepliesCount(docRef.id),
+            getLikesCount(docRef.id),
+            checkUserLiked(docRef.id)
+        ]);
+        
+        renderFeedbackItem(feedbackWithId, repliesCount, likesCount, userLiked);
         
         // Reset form
         e.target.reset();
@@ -3124,6 +3134,12 @@ async function submitFeedback(e) {
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
+
+
+
 
 
 
@@ -3744,6 +3760,28 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
+// Fungsi untuk menambah view count (diperbarui)
+async function incrementViewCount(feedbackId) {
+    try {
+        const feedbackRef = doc(db, "feedback", feedbackId);
+        await updateDoc(feedbackRef, {
+            views: increment(1),
+            lastViewed: serverTimestamp()
+        });
+        
+        // Update UI jika diperlukan
+        const feedbackItem = document.querySelector(`.feedback-item[data-id="${feedbackId}"]`);
+        if (feedbackItem) {
+            const viewCountEl = feedbackItem.querySelector('.view-count');
+            if (viewCountEl) {
+                const currentCount = parseInt(viewCountEl.textContent) || 0;
+                viewCountEl.textContent = currentCount + 1;
+            }
+        }
+    } catch (error) {
+        console.error("Error incrementing view count:", error);
+    }
+}
 
 
 
