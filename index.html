@@ -2454,7 +2454,11 @@
         setInterval(updateTentangRelativeTime, 10000);
         updateTentangRelativeTime();
 
-       function showPageContent(page) {
+     
+	 
+	 
+	 // Improved showPageContent function
+function showPageContent(page) {
     const pages = [page1, page2, page3, page4, page5, page6, page7, page8, page9];
     pages.forEach(p => {
         if (p) p.style.display = "none";
@@ -2463,14 +2467,31 @@
     if (page) {
         page.style.display = "block";
 
-        // ✅ Jika halaman masukan (page5), muat ulang pengumuman penting
+        // Load appropriate content based on page
         if (page.id === "page7") {
             loadPinnedAnnouncements();
+            loadFeedback().catch(console.error);
+        } else if (page.id === "page9") {
+            // Handle page9 content loading via URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const announcementId = urlParams.get('id');
+            if (announcementId) {
+                loadAnnouncementDetail(announcementId);
+            }
         }
     }
 
     window.scrollTo(0, 0);
 }
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
 
         // Event listeners for navigation
         if (document.getElementById("card-arduino")) {
@@ -2604,15 +2625,19 @@ if (document.getElementById('back-forum')) {
     });
 }
 		
-	// Tambahkan event listener untuk tombol kembali di halaman 9
-if (document.getElementById('backToAnnouncements')) {
-    document.getElementById('backToAnnouncements').addEventListener('click', function(e) {
-        e.preventDefault();
-        // Kembali ke halaman sebelumnya (biasanya page7)
-        showPageContent(page7);
-        history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-    });
-}
+	
+	document.getElementById('backToAnnouncements')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    // Sembunyikan halaman detail (page9)
+    document.getElementById('page9').style.display = 'none';
+    
+    // Tampilkan halaman sebelumnya (page7)
+    const page7 = document.getElementById('page7');
+    if (page7) page7.style.display = 'block';
+    
+    // Update URL
+    window.history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+});
 
 
 		
@@ -3720,6 +3745,13 @@ function renderAnnouncements(announcements) {
         `;
         
         pinnedContainer.appendChild(announcementItem);
+		
+		// Dalam fungsi renderAnnouncements, tambahkan event listener untuk judul pengumuman
+const titleElement = announcementItem.querySelector('h3');
+if (titleElement) {
+    titleElement.style.cursor = 'pointer';
+    titleElement.addEventListener('click', () => openAnnouncementDetail(announcement.id));
+}
         
         // Tambahkan event listeners
         const likeBtn = announcementItem.querySelector('.like-btn');
@@ -3739,12 +3771,6 @@ function renderAnnouncements(announcements) {
             replyBtn.addEventListener('click', () => openAnnouncementDetail(announcement.id));
         }
 		
-		 // Tambahkan event listener untuk judul pengumuman
-        const titleElement = announcementItem.querySelector('h3');
-        if (titleElement) {
-            titleElement.style.cursor = 'pointer';
-            titleElement.addEventListener('click', () => openAnnouncementDetail(announcement.id));
-        }
 			
     });
 }
@@ -4031,36 +4057,19 @@ async function incrementViewCount(feedbackId) {
 }
 
 
-
-// Fungsi untuk membuka halaman detail pengumuman (diperbaiki)
 async function openAnnouncementDetail(announcementId) {
-    try {
-        // Pastikan halaman 9 ada dan tersedia
-        const page9 = document.getElementById('page9');
-        if (!page9) {
-            console.error('Halaman detail (page9) tidak ditemukan');
-            return;
-        }
-
-        // Sembunyikan semua halaman lain
-        document.querySelectorAll('.page').forEach(page => {
-            if (page.id !== 'page9') {
-                page.style.display = 'none';
-            }
-        });
-
-        // Tampilkan halaman detail
-        page9.style.display = 'block';
-        
-        // Load data pengumuman
-        await loadAnnouncementDetail(announcementId);
-        
-        // Update URL tanpa reload
-        window.history.pushState({ page: "announcementDetail" }, "", `#page9?id=${announcementId}`);
-    } catch (error) {
-        console.error("Error opening announcement detail:", error);
-        showNotification('Gagal membuka detail pengumuman', 'error');
-    }
+    // Sembunyikan halaman saat ini (page7) dan tampilkan halaman detail (page9)
+    const currentPage = document.querySelector('.page[style*="display: block"]');
+    if (currentPage) currentPage.style.display = 'none';
+    
+    const page9 = document.getElementById('page9');
+    if (page9) page9.style.display = 'block';
+    
+    // Load data pengumuman
+    await loadAnnouncementDetail(announcementId);
+    
+    // Update URL tanpa reload
+    window.history.pushState({ page: "announcementDetail" }, "", `#page9?id=${announcementId}`);
 }
 
 
@@ -5129,47 +5138,74 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 
    
    
-   // Tambahkan penanganan popstate untuk halaman 9
+  
+  // Enhanced popstate handler with better page9 support
 window.addEventListener("popstate", function(event) {
+    // Get current URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const announcementId = urlParams.get('id');
+    
+    // Check hash for page9
+    const isPage9 = window.location.hash.includes("page9");
+    
+    if (isPage9 && announcementId) {
+        // Handle page9 with announcement ID
+        showPageContent(page9);
+        loadAnnouncementDetail(announcementId);
+        return;
+    }
+
+    // Handle other pages based on state
     if (event.state && event.state.page) {
-        if (event.state.page === "arduino") {
-            showPageContent(page2);
-        } 
-        else if (event.state.page === "iot") {
-            showPageContent(page3);
-        } 
-        else if (event.state.page === "blog") {
-            showPageContent(page4);
-        } 
-        else if (event.state.page === "kumpulan-blog") {
-            showPageContent(page5);
-        }
-        else if (event.state.page === "tentang-kami") {
-            showPageContent(page6);
-        }
-        else if (event.state.page === "masukan") {
-            showPageContent(page7);
-            loadFeedback().catch(console.error);
-        }
-        else if (event.state.page === "forum") {
-            showPageContent(page8);
-        }
-        else if (event.state.page === "announcementDetail") {
-            // Tangani kembali ke halaman detail pengumuman
-            const urlParams = new URLSearchParams(window.location.search);
-            const announcementId = urlParams.get('id');
-            if (announcementId) {
-                showPageContent(page9);
-                loadAnnouncementDetail(announcementId);
-            }
-        }
-        else {
-            showPageContent(page1);
+        switch (event.state.page) {
+            case "arduino":
+                showPageContent(page2);
+                break;
+            case "iot":
+                showPageContent(page3);
+                break;
+            case "blog":
+                showPageContent(page4);
+                break;
+            case "kumpulan-blog":
+                showPageContent(page5);
+                break;
+            case "tentang-kami":
+                showPageContent(page6);
+                break;
+            case "masukan":
+                showPageContent(page7);
+                loadFeedback().catch(console.error);
+                break;
+            case "forum":
+                showPageContent(page8);
+                break;
+            case "announcementDetail":
+                if (announcementId) {
+                    showPageContent(page9);
+                    loadAnnouncementDetail(announcementId);
+                } else {
+                    showPageContent(page7); // Fallback to feedback page
+                }
+                break;
+            default:
+                showPageContent(page1);
         }
     } else {
+        // Default to home page if no state
         showPageContent(page1);
     }
 });
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
    
 
 // Update window.onload untuk menangani halaman 9
