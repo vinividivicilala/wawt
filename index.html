@@ -3338,10 +3338,11 @@ async function loadPinnedAnnouncements() {
         
         const querySnapshot = await getDocs(q);
         
-        if (querySnapshot.empty) {
-            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada pengumuman</div>';
-            return;
-        }
+      if (querySnapshot.empty) {
+    console.warn('Pengumuman kosong dari Firebase, coba tampilkan cache');
+    displayCachedAnnouncements();
+    return;
+}
 
         const announcements = [];
         
@@ -3382,31 +3383,15 @@ async function loadPinnedAnnouncements() {
     }
 }
 
-
-
-
-// Fungsi untuk menampilkan dari cache
 function displayCachedAnnouncements() {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
-    
-    try {
-        const cachedData = JSON.parse(localStorage.getItem('cachedAnnouncements'));
-        
-        if (!cachedData || !cachedData.data) {
-            throw new Error("No cached data available");
+    const cached = JSON.parse(localStorage.getItem('cachedAnnouncements'));
+    if (cached && cached.data && Array.isArray(cached.data)) {
+        renderAnnouncements(cached.data);
+    } else {
+        const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+        if (pinnedContainer) {
+            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada data cache pengumuman</div>';
         }
-        
-        // Tampilkan indikator jika data dari cache
-        const cacheIndicator = cachedData.source === 'firebase' ? '' : 
-            '<div style="color:#ff6b6b; font-size:12px; text-align:center; margin-bottom:10px;">Menampilkan data offline</div>';
-        
-        pinnedContainer.innerHTML = cacheIndicator;
-        renderAnnouncements(cachedData.data);
-        
-    } catch (error) {
-        console.error("Error displaying cached announcements:", error);
-        pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
     }
 }
 
@@ -3657,26 +3642,6 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
-// Panggil saat halaman dimuat
-document.addEventListener('DOMContentLoaded', () => {
-    // Load pengumuman
-    loadPinnedAnnouncements();
-    
-    // Set interval untuk refresh data secara periodic
-    setInterval(() => {
-        if (navigator.onLine) {
-            loadPinnedAnnouncements();
-        }
-    }, 300000); // Refresh setiap 5 menit
-    
-    // Deteksi koneksi online/offline
-    window.addEventListener('online', () => {
-        loadPinnedAnnouncements();
-    });
-});
-
-
-
 
 
 
@@ -3717,38 +3682,38 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 }
 
-// Panggil saat halaman dimuat
-window.addEventListener('DOMContentLoaded', () => {
-  loadAnnouncements();
-});
-
-
-
 
 document.addEventListener('DOMContentLoaded', function() {
     // Form pengumuman
     document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
-    
+
     // Form masukan
     document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
-    
+
+    // Load pengumuman & masukan
+    loadPinnedAnnouncements();
+    checkAndLoadFeedback();
+
     // Panggil saat auth state berubah
     auth.onAuthStateChanged((user) => {
         toggleAdminForms();
-        checkAndLoadFeedback();
-        loadPinnedAnnouncements();
+        checkAndLoadFeedback(); // untuk masukan
+        loadPinnedAnnouncements(); // untuk pengumuman
     });
-    
-    // Load data awal
-    loadPinnedAnnouncements();
-    checkAndLoadFeedback();
-    
-    // Cek koneksi dan kirim pending feedback
+
+    // Cek koneksi online
     window.addEventListener('online', () => {
         sendPendingFeedback();
         loadPinnedAnnouncements();
         checkAndLoadFeedback();
     });
+
+    // Refresh setiap 5 menit (300.000 ms)
+    setInterval(() => {
+        if (navigator.onLine) {
+            loadPinnedAnnouncements();
+        }
+    }, 300000);
 });
 
 
