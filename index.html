@@ -3256,9 +3256,6 @@ function toggleAdminForms() {
 
 
 
-
-
-
 // Update submitAnnouncement to always pin and use announcements collection
 async function submitAnnouncement(e) {
     e.preventDefault();
@@ -3295,17 +3292,28 @@ async function submitAnnouncement(e) {
             pinnedAt: serverTimestamp() // Permanent pin
         };
 
-        // Simpan ke collection announcements (bukan feedback)
+        // Simpan ke collection announcements
         const announcementsRef = collection(db, "announcements");
-        await addDoc(announcementsRef, announcementData);
-        
+        const docRef = await addDoc(announcementsRef, announcementData);
+
         // Reset form
         e.target.reset();
-        
-        // Perbarui tampilan pengumuman
-        await loadPinnedAnnouncements();
-        showNotification('Pengumuman berhasil diposting!', 'success');
-        
+
+        // ⏳ Tambahkan delay agar serverTimestamp tersimpan
+        setTimeout(async () => {
+            await loadPinnedAnnouncements();
+            showNotification('Pengumuman berhasil diposting!', 'success');
+        }, 1500); // 1.5 detik untuk menunggu serverTimestamp() tersimpan
+
+        // ✅ Simpan ke cache lokal juga agar tidak hilang sementara saat reload
+        const existingCache = JSON.parse(localStorage.getItem('cachedAnnouncements') || '{}');
+        const updatedAnnouncements = [announcementData, ...(existingCache?.data || [])];
+        localStorage.setItem('cachedAnnouncements', JSON.stringify({
+            data: updatedAnnouncements,
+            timestamp: new Date().getTime(),
+            source: 'local'
+        }));
+
     } catch (error) {
         console.error('Error submitting announcement:', error);
         showNotification('Gagal mengirim pengumuman: ' + error.message, 'error');
@@ -3473,16 +3481,12 @@ window.addEventListener('online', sendPendingFeedback);
 
 
 
-
-
 function renderAnnouncements(announcements) {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
-    // Kosongkan container hanya jika tidak ada cache indicator
-    if (!pinnedContainer.innerHTML.includes('Menampilkan data offline')) {
-        pinnedContainer.innerHTML = '';
-    }
+    // Kosongkan kontainer sebelum render baru
+    pinnedContainer.innerHTML = '';
     
     announcements.forEach(announcement => {
         const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
