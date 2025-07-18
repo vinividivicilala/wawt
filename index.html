@@ -2637,9 +2637,13 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
     
-    // Pastikan feedback.category ada dan valid
-    const category = feedback.category ? feedback.category.toLowerCase() : 'other';
-    const validCategories = ['design', 'feature', 'content', 'bug', 'announcement', 'other'];
+    
+    
+   // Validasi kategori yang lebih ketat
+    const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'announcement', 'other'];
+    const category = feedback.category && validCategories.includes(feedback.category.toLowerCase()) 
+        ? feedback.category.toLowerCase() 
+        : 'other';
     const categoryClass = validCategories.includes(category) ? category : 'other';
     const categoryLabel = getCategoryLabel(categoryClass);
 
@@ -3031,10 +3035,6 @@ function getCategoryLabel(category) {
 
 
 
-
-
-
-
 async function submitFeedback(e) {
     e.preventDefault();
     
@@ -3047,15 +3047,14 @@ async function submitFeedback(e) {
         showNotification('Judul dan isi masukan tidak boleh kosong!', 'error');
         return;
     }
-	
-	   // Validasi kategori - tambahkan 'arduino' dan pastikan defaultnya benar
+    
+    // Validasi kategori yang lebih ketat
     const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
     if (!validCategories.includes(category)) {
-        category = 'other';
+        category = 'other'; // Default ke 'other' jika kategori tidak valid
+        showNotification('Kategori tidak valid, menggunakan kategori "Lainnya"', 'warning');
     }
     
-  
-
     const submitBtn = document.getElementById('submitFeedback');
     const originalBtnText = submitBtn.innerHTML;
     submitBtn.disabled = true;
@@ -3064,7 +3063,7 @@ async function submitFeedback(e) {
     const user = auth.currentUser;
     const feedbackData = {
         title,
-        category,
+        category: category.toLowerCase(), // Pastikan lowercase
         content,
         userName: user?.displayName || 'Anonymous',
         userEmail: user?.email || null,
@@ -3094,7 +3093,11 @@ async function submitFeedback(e) {
         if (error.code === 'unavailable') {
             try {
                 const cachedFeedback = JSON.parse(localStorage.getItem('pendingFeedback') || "[]");
-                cachedFeedback.push({...feedbackData, timestamp: new Date().toISOString()});
+                cachedFeedback.push({
+                    ...feedbackData,
+                    timestamp: new Date().toISOString(),
+                    category: category // Pastikan kategori yang disimpan sesuai
+                });
                 localStorage.setItem('pendingFeedback', JSON.stringify(cachedFeedback));
                 showNotification('Masukan disimpan secara offline dan akan dikirim ketika online', 'warning');
             } catch (cacheError) {
@@ -3109,6 +3112,7 @@ async function submitFeedback(e) {
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
 
 
 
@@ -3312,22 +3316,17 @@ async function submitAnnouncement(e) {
 
 
 
-// Panggil fungsi loadPinnedAnnouncements saat halaman dimuat
-window.addEventListener('load', () => {
-    loadPinnedAnnouncements();
-    checkAndLoadFeedback();
-});
 
 
 
 
-
-
-
-// Update loadPinnedAnnouncements function
+// Fungsi untuk memuat pengumuman dari cache dan Firebase
 async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
+
+    // Tampilkan data cache dulu untuk UX yang lebih baik
+    displayCachedAnnouncements();
 
     try {
         const q = query(
@@ -3345,48 +3344,21 @@ async function loadPinnedAnnouncements() {
         }
 
         pinnedContainer.innerHTML = '';
+        const announcements = [];
         
         querySnapshot.forEach((doc) => {
             const announcement = doc.data();
             announcement.id = doc.id;
-            
-            const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
-            
-            const announcementItem = document.createElement('div');
-            announcementItem.className = 'pinned-item';
-            announcementItem.style.cssText = `
-                margin-bottom: 15px;
-                padding: 15px;
-                border-radius: 10px;
-                background: rgba(255, 107, 107, 0.1);
-                border-left: 4px solid #ff6b6b;
-            `;
-            
-            announcementItem.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                    <h3 style="color: #ff6b6b; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff6b6b">
-                            <path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>
-                        </svg>
-                        ${announcement.title}
-                    </h3>
-                    <div style="color: #aaa; font-size: 12px; white-space: nowrap; margin-left: 10px;">
-                        ${formatTimeAgo(waktu)}
-                    </div>
-                </div>
-                <div style="color: #ddd; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">
-                    ${announcement.content}
-                </div>
-                <div style="color: #aaa; font-size: 12px; font-style: italic;">
-                    Diposting oleh: ${announcement.userName || 'Admin'}
-                </div>
-            `;
-            
-            pinnedContainer.appendChild(announcementItem);
+            announcements.push(announcement);
+            renderAnnouncementItem(announcement);
         });
+
+        // Simpan ke cache
+        localStorage.setItem('cachedAnnouncements', JSON.stringify(announcements));
+        
     } catch (error) {
         console.error("Error loading pinned announcements:", error);
-        pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
+        displayCachedAnnouncements();
     }
 }
 
@@ -3394,14 +3366,23 @@ async function loadPinnedAnnouncements() {
 
 
 
-
-
-
-
-
-
-
-
+// Fungsi untuk menampilkan pengumuman dari cache
+function displayCachedAnnouncements() {
+    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+    if (!pinnedContainer) return;
+    
+    const cachedAnnouncements = JSON.parse(localStorage.getItem('cachedAnnouncements') || "[]");
+    
+    if (cachedAnnouncements.length === 0) {
+        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
+        return;
+    }
+    
+    pinnedContainer.innerHTML = '';
+    cachedAnnouncements.forEach(announcement => {
+        renderAnnouncementItem(announcement);
+    });
+}
 
 
 
@@ -3499,7 +3480,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-
+// Fungsi untuk merender item pengumuman
+function renderAnnouncementItem(announcement) {
+    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+    if (!pinnedContainer) return;
+    
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
+    
+    const announcementItem = document.createElement('div');
+    announcementItem.className = 'pinned-item';
+    announcementItem.style.cssText = `
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 10px;
+        background: rgba(255, 107, 107, 0.1);
+        border-left: 4px solid #ff6b6b;
+    `;
+    
+    announcementItem.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <h3 style="color: #ff6b6b; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff6b6b">
+                    <path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>
+                </svg>
+                ${announcement.title}
+            </h3>
+            <div style="color: #aaa; font-size: 12px; white-space: nowrap; margin-left: 10px;">
+                ${formatTimeAgo(waktu)}
+            </div>
+        </div>
+        <div style="color: #ddd; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">
+            ${announcement.content}
+        </div>
+        <div style="color: #aaa; font-size: 12px; font-style: italic;">
+            Diposting oleh: ${announcement.userName || 'Admin'}
+        </div>
+    `;
+    
+    pinnedContainer.appendChild(announcementItem);
+}
 	 
 	 
 	 
