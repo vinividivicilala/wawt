@@ -3318,20 +3318,17 @@ async function submitAnnouncement(e) {
 
 
 
-// Fungsi untuk memuat pengumuman dengan caching
+
+// Fungsi utama untuk memuat pengumuman
 async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
     try {
-        // Cek cache dulu untuk UX yang lebih cepat
-      const cachedAnnouncements = JSON.parse(localStorage.getItem('cachedAnnouncements') || "[]");
+        // Tampilkan loading state
+        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
 
-        if (cachedAnnouncements.length > 0) {
-            renderAnnouncements(cachedAnnouncements);
-        }
-
-        // Ambil data terbaru dari Firebase
+        // Query untuk mendapatkan pengumuman yang dipin
         const q = query(
             collection(db, "announcements"),
             where("pinned", "==", true),
@@ -3342,54 +3339,79 @@ async function loadPinnedAnnouncements() {
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
-            if (cachedAnnouncements.length === 0) {
-                pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada pengumuman</div>';
-            }
+            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada pengumuman</div>';
             return;
         }
 
         const announcements = [];
-        querySnapshot.forEach((doc) => {
+        
+        // Gunakan Promise.all untuk parallel processing
+        await Promise.all(querySnapshot.docs.map(async (doc) => {
             const announcement = doc.data();
             announcement.id = doc.id;
+            
+            // Dapatkan jumlah like dan reply
+            const [likesCount, repliesCount] = await Promise.all([
+                getAnnouncementLikesCount(doc.id),
+                getAnnouncementRepliesCount(doc.id)
+            ]);
+            
+            announcement.likesCount = likesCount;
+            announcement.repliesCount = repliesCount;
             announcements.push(announcement);
-        });
+            
+            // Update view count
+            await incrementAnnouncementViews(doc.id);
+        }));
 
-        // Simpan ke cache
-        localStorage.setItem('cachedAnnouncements', JSON.stringify(announcements));
+        // Simpan ke cache dengan timestamp
+        const cacheData = {
+            data: announcements,
+            timestamp: new Date().getTime(),
+            source: 'firebase'
+        };
+        localStorage.setItem('cachedAnnouncements', JSON.stringify(cacheData));
         
-        // Render ulang dengan data terbaru
+        // Render pengumuman
         renderAnnouncements(announcements);
 
     } catch (error) {
         console.error("Error loading pinned announcements:", error);
-        if (!pinnedContainer.innerHTML) {
-            pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
-        }
+        // Fallback ke cache jika error
+        displayCachedAnnouncements();
     }
 }
 
 
 
 
-
-// Fungsi untuk menampilkan pengumuman dari cache
+// Fungsi untuk menampilkan dari cache
 function displayCachedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
     
-    const cachedAnnouncements = JSON.parse(localStorage.getItem('cachedAnnouncements') || "[]");
-    
-    if (cachedAnnouncements.length === 0) {
-        pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
-        return;
+    try {
+        const cachedData = JSON.parse(localStorage.getItem('cachedAnnouncements'));
+        
+        if (!cachedData || !cachedData.data) {
+            throw new Error("No cached data available");
+        }
+        
+        // Tampilkan indikator jika data dari cache
+        const cacheIndicator = cachedData.source === 'firebase' ? '' : 
+            '<div style="color:#ff6b6b; font-size:12px; text-align:center; margin-bottom:10px;">Menampilkan data offline</div>';
+        
+        pinnedContainer.innerHTML = cacheIndicator;
+        renderAnnouncements(cachedData.data);
+        
+    } catch (error) {
+        console.error("Error displaying cached announcements:", error);
+        pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
     }
-    
-    pinnedContainer.innerHTML = '';
-    cachedAnnouncements.forEach(announcement => {
-        renderAnnouncementItem(announcement);
-    });
 }
+
+
+
 
 
 
@@ -3468,20 +3490,21 @@ window.addEventListener('online', sendPendingFeedback);
 
 
 
-
-
-// Fungsi untuk render pengumuman
 function renderAnnouncements(announcements) {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
-    pinnedContainer.innerHTML = '';
+    // Kosongkan container hanya jika tidak ada cache indicator
+    if (!pinnedContainer.innerHTML.includes('Menampilkan data offline')) {
+        pinnedContainer.innerHTML = '';
+    }
     
-    announcements.forEach((announcement) => {
+    announcements.forEach(announcement => {
         const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
         
         const announcementItem = document.createElement('div');
         announcementItem.className = 'pinned-item';
+        announcementItem.setAttribute('data-id', announcement.id);
         announcementItem.style.cssText = `
             margin-bottom: 15px;
             padding: 15px;
@@ -3489,9 +3512,6 @@ function renderAnnouncements(announcements) {
             background: rgba(255, 107, 107, 0.1);
             border-left: 4px solid #ff6b6b;
         `;
-		
-		 // Increment view count
-        incrementAnnouncementViews(announcement.id);
         
         announcementItem.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
@@ -3513,18 +3533,47 @@ function renderAnnouncements(announcements) {
                     Diposting oleh: ${announcement.userName || 'Admin'}
                 </div>
                 <div style="display: flex; gap: 10px;">
+                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+                    </button>
+                    <button class="reply-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="reply-count" style="margin-left: 5px;">${announcement.repliesCount || 0}</span>
+                    </button>
                     <span style="color: #ccc; font-size: 12px; display: flex; align-items: center;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
-                        ${announcement.views || 0}
+                        <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
                     </span>
                 </div>
             </div>
         `;
         
         pinnedContainer.appendChild(announcementItem);
+        
+        // Tambahkan event listeners
+        const likeBtn = announcementItem.querySelector('.like-btn');
+        const replyBtn = announcementItem.querySelector('.reply-btn');
+        
+        if (likeBtn) {
+            likeBtn.addEventListener('click', async () => {
+                await toggleAnnouncementLike(announcement.id);
+                // Update UI setelah like
+                const updatedLikes = await getAnnouncementLikesCount(announcement.id);
+                announcementItem.querySelector('.like-count').textContent = updatedLikes;
+            });
+        }
+        
+        if (replyBtn) {
+            replyBtn.addEventListener('click', () => openAnnouncementReplyModal(announcement));
+        }
     });
 }
 
@@ -3532,34 +3581,145 @@ function renderAnnouncements(announcements) {
 
 
 
+// Fungsi untuk menambah view count pengumuman
+async function incrementAnnouncementViews(announcementId) {
+    try {
+        const announcementRef = doc(db, "announcements", announcementId);
+        await updateDoc(announcementRef, {
+            views: increment(1),
+            lastViewed: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error incrementing announcement views:", error);
+    }
+}
+
+// Fungsi untuk toggle like pengumuman
+async function toggleAnnouncementLike(announcementId) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert('Silakan login terlebih dahulu untuk memberikan like');
+        return;
+    }
+    
+    try {
+        const likeRef = doc(db, "announcements", announcementId, "likes", user.uid);
+        const likeDoc = await getDoc(likeRef);
+        
+        if (likeDoc.exists()) {
+            // Unlike
+            await deleteDoc(likeRef);
+            // Kurangi likesCount
+            await updateDoc(doc(db, "announcements", announcementId), {
+                likesCount: increment(-1)
+            });
+        } else {
+            // Like
+            await setDoc(likeRef, {
+                userId: user.uid,
+                timestamp: serverTimestamp()
+            });
+            // Tambah likesCount
+            await updateDoc(doc(db, "announcements", announcementId), {
+                likesCount: increment(1)
+            });
+        }
+        
+    } catch (error) {
+        console.error("Error toggling announcement like:", error);
+        throw error; // Lempar error untuk ditangani oleh caller
+    }
+}
+
+// Fungsi untuk mendapatkan jumlah like pengumuman
+async function getAnnouncementLikesCount(announcementId) {
+    try {
+        const docSnap = await getDoc(doc(db, "announcements", announcementId));
+        return docSnap.data()?.likesCount || 0;
+    } catch (error) {
+        console.error("Error getting announcement likes count:", error);
+        return 0;
+    }
+}
+
+// Fungsi untuk mendapatkan jumlah reply pengumuman
+async function getAnnouncementRepliesCount(announcementId) {
+    try {
+        const docSnap = await getDoc(doc(db, "announcements", announcementId));
+        return docSnap.data()?.repliesCount || 0;
+    } catch (error) {
+        console.error("Error getting announcement replies count:", error);
+        return 0;
+    }
+}
+
+
+
+
+
+// Panggil saat halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+    // Load pengumuman
+    loadPinnedAnnouncements();
+    
+    // Set interval untuk refresh data secara periodic
+    setInterval(() => {
+        if (navigator.onLine) {
+            loadPinnedAnnouncements();
+        }
+    }, 300000); // Refresh setiap 5 menit
+    
+    // Deteksi koneksi online/offline
+    window.addEventListener('online', () => {
+        loadPinnedAnnouncements();
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	 
-	 
-	 
-	 
-// Fungsi untuk me-render pengumuman dari Firebase setelah reload
-function loadPengumuman() {
-  const pengumumanList = document.getElementById('pengumumanList');
-  pengumumanList.innerHTML = ''; // Kosongkan sebelum render ulang
+	 function loadAnnouncements() {
+  const container = document.getElementById("announcementContainer");
+  container.innerHTML = "";
 
-  db.collection('pengumuman').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const card = document.createElement('div');
-      card.className = 'pengumuman-card';
-      card.innerHTML = `
-        <h3>${data.judul}</h3>
-        <p><strong>Kategori:</strong> ${getCategoryLabel(data.kategori)}</p>
-        <p>${data.isi}</p>
+  firebase.database().ref('announcements').once('value', snapshot => {
+    snapshot.forEach(child => {
+      const data = child.val();
+      const div = document.createElement("div");
+      div.className = "feedback-item announcement-item";
+      div.innerHTML = `
+        <div class="feedback-title">${data.title}</div>
+        <div class="feedback-content">${data.content}</div>
+        <div style="margin-top:10px;">
+          👁️ <span>${data.views || 0}</span>
+          ❤️ <span>${data.likes || 0}</span>
+          💬 <span>${(data.replies || []).length}</span>
+        </div>
+        <button onclick="likeAnnouncement('${child.key}')">Like</button>
+        <button onclick="replyToAnnouncement('${child.key}')">Reply</button>
       `;
-      pengumumanList.appendChild(card);
+      container.appendChild(div);
+
+      // Tambah view otomatis
+      firebase.database().ref(`announcements/${child.key}/views`).transaction(v => (v || 0) + 1);
     });
   });
 }
 
 // Panggil saat halaman dimuat
 window.addEventListener('DOMContentLoaded', () => {
-  loadPengumuman();
+  loadAnnouncements();
 });
 
 
@@ -3590,21 +3750,6 @@ document.addEventListener('DOMContentLoaded', function() {
         checkAndLoadFeedback();
     });
 });
-
-
-
-// Fungsi untuk menambah view count di pengumuman
-async function incrementAnnouncementViews(announcementId) {
-    try {
-        const announcementRef = doc(db, "announcements", announcementId);
-        await updateDoc(announcementRef, {
-            views: increment(1)
-        });
-    } catch (error) {
-        console.error("Error incrementing announcement views:", error);
-    }
-}
-
 
 
 
