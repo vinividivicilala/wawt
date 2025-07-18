@@ -3523,6 +3523,44 @@ function renderAnnouncementItem(announcement) {
 	 
 	 
 	 
+// Fungsi untuk me-render pengumuman dari Firebase setelah reload
+function loadPengumuman() {
+  const pengumumanList = document.getElementById('pengumumanList');
+  pengumumanList.innerHTML = ''; // Kosongkan sebelum render ulang
+
+  db.collection('pengumuman').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const card = document.createElement('div');
+      card.className = 'pengumuman-card';
+      card.innerHTML = `
+        <h3>${data.judul}</h3>
+        <p><strong>Kategori:</strong> ${getCategoryLabel(data.kategori)}</p>
+        <p>${data.isi}</p>
+      `;
+      pengumumanList.appendChild(card);
+    });
+  });
+}
+
+// Panggil saat halaman dimuat
+window.addEventListener('DOMContentLoaded', () => {
+  loadPengumuman();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
