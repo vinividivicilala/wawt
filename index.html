@@ -3467,9 +3467,6 @@ function toggleAdminForms() {
 }
 
 
-
-
-// Update submitAnnouncement to always pin and use announcements collection
 async function submitAnnouncement(e) {
     e.preventDefault();
     
@@ -3501,11 +3498,13 @@ async function submitAnnouncement(e) {
             timestamp: serverTimestamp(),
             type: 'announcement',
             isPriority: true,
-            pinned: true, // Always pinned
-            pinnedAt: serverTimestamp() // Permanent pin
+            pinned: true,
+            pinnedAt: serverTimestamp(),
+            views: 0, // Tambahkan view count
+            likesCount: 0, // Tambahkan likes count
+            repliesCount: 0 // Tambahkan replies count
         };
 
-        // Simpan ke collection announcements
         const announcementsRef = collection(db, "announcements");
         const docRef = await addDoc(announcementsRef, announcementData);
 
@@ -3516,11 +3515,18 @@ async function submitAnnouncement(e) {
         setTimeout(async () => {
             await loadPinnedAnnouncements();
             showNotification('Pengumuman berhasil diposting!', 'success');
-        }, 1500); // 1.5 detik untuk menunggu serverTimestamp() tersimpan
+        }, 1500);
 
-        // ✅ Simpan ke cache lokal juga agar tidak hilang sementara saat reload
+        // ✅ Simpan ke cache lokal
         const existingCache = JSON.parse(localStorage.getItem('cachedAnnouncements') || '{}');
-        const updatedAnnouncements = [announcementData, ...(existingCache?.data || [])];
+        const updatedAnnouncements = [{
+            ...announcementData,
+            id: docRef.id,
+            views: 0,
+            likesCount: 0,
+            repliesCount: 0
+        }, ...(existingCache?.data || [])];
+        
         localStorage.setItem('cachedAnnouncements', JSON.stringify({
             data: updatedAnnouncements,
             timestamp: new Date().getTime(),
@@ -3535,7 +3541,6 @@ async function submitAnnouncement(e) {
         submitBtn.innerHTML = originalBtnText;
     }
 }
-
 
 
 
@@ -3732,10 +3737,35 @@ function renderAnnouncements(announcements) {
             <div style="color: #ddd; margin-top: 8px; line-height: 1.5;">
                 ${announcement.content.substring(0, 150)}${announcement.content.length > 150 ? '...' : ''}
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-                <div style="color: #aaa; font-size: 12px;">
-                    Oleh: ${announcement.userName || 'Admin'}
+          
+				
+			
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="color: #aaa; font-size: 12px; font-style: italic;">
+                    Diposting oleh: ${announcement.userName || 'Admin'}
                 </div>
+                <div style="display: flex; gap: 10px;">
+                    <span style="color: #ccc; font-size: 12px; display: flex; align-items: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
+                    </span>
+                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+                    </button>
+                    <button class="reply-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="reply-count" style="margin-left: 5px;">${announcement.repliesCount || 0}</span>
+                    </button>
+                </div>
+            </div>
                 <button class="view-announcement-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
                     Baca Selengkapnya
                 </button>
@@ -3743,6 +3773,20 @@ function renderAnnouncements(announcements) {
         `;
 
         pinnedContainer.appendChild(announcementItem);
+		
+		  
+        // Tambahkan event listeners
+        const likeBtn = announcementItem.querySelector('.like-btn');
+        const replyBtn = announcementItem.querySelector('.reply-btn');
+        
+        if (likeBtn) likeBtn.addEventListener('click', async () => {
+            await toggleAnnouncementLike(announcement.id);
+            // Update UI setelah like
+            const updatedLikes = await getAnnouncementLikesCount(announcement.id);
+            announcementItem.querySelector('.like-count').textContent = updatedLikes;
+        });
+        
+        if (replyBtn) replyBtn.addEventListener('click', () => openAnnouncementDetail(announcement.id));
 
         // Add click event to the entire announcement item
         announcementItem.addEventListener('click', () => {
