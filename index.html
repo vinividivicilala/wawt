@@ -2325,7 +2325,7 @@
         page.style.display = "block";
 
         // ✅ Jika halaman masukan (page5), muat ulang pengumuman penting
-        if (page.id === "page5") {
+        if (page.id === "page7") {
             loadPinnedAnnouncements();
         }
     }
@@ -3707,8 +3707,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const defaultPage = page1; // default ke halaman utama
     const hash = window.location.hash;
 
-    if (hash.includes('page5')) {
-        showPageContent(page5);
+    if (hash.includes('page7')) {
+        showPageContent(page7);
         loadPinnedAnnouncements(); // ✅ muat pengumuman penting di halaman masukan
     } else {
         showPageContent(defaultPage);
@@ -3721,7 +3721,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleAdminForms();
         checkAndLoadFeedback();
         // hanya jika halaman masukan aktif
-        if (page5.style.display === 'block') {
+        if (page7.style.display === 'block') {
             loadPinnedAnnouncements();
         }
     });
@@ -3730,14 +3730,14 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('online', () => {
         sendPendingFeedback();
         checkAndLoadFeedback();
-        if (page5.style.display === 'block') {
+        if (page7.style.display === 'block') {
             loadPinnedAnnouncements();
         }
     });
 
     // Refresh setiap 5 menit
     setInterval(() => {
-        if (navigator.onLine && page5.style.display === 'block') {
+        if (navigator.onLine && page7.style.display === 'block') {
             loadPinnedAnnouncements();
         }
     }, 300000);
