@@ -1737,13 +1737,13 @@
         <!-- Kolom 2 - Kategori -->
         <div style="grid-column: 2;">
           <label for="feedbackCategory" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Kategori</label>
-          <select id="feedbackCategory" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+          <select id="feedbackCategory" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; required">
    <option value="design">Desain</option>
-<option value="feature">Fitur</option>
-<option value="content">Konten</option>
-<option value="announcement">Pengumuman</option>
-<option value="bug">Bug</option>
-<option value="other">Lainnya</option>
+    <option value="feature">Fitur</option>
+    <option value="content">Konten</option>
+    <option value="bug">Bug/Masalah</option>
+    <option value="arduino">Arduino</option>
+    <option value="other">Lainnya</option>
 
 </select>
         </div>
@@ -3008,20 +3008,29 @@ document.getElementById('masukanForm')?.addEventListener('submit', async functio
 
 
 
+
+// Update getCategoryLabel to include arduino
 function getCategoryLabel(category) {
     const categoryMap = {
         'design': 'Desain',
         'feature': 'Fitur',
         'content': 'Konten',
         'bug': 'Bug/Masalah',
+        'arduino': 'Arduino', // Added arduino category
         'announcement': 'Pengumuman',
         'other': 'Lainnya'
     };
     
-    // Handle case sensitivity and fallback
     const normalizedCategory = String(category).toLowerCase().trim();
     return categoryMap[normalizedCategory] || categoryMap['other'];
 }
+
+
+
+
+
+
+
 
 
 
@@ -3038,11 +3047,14 @@ async function submitFeedback(e) {
         showNotification('Judul dan isi masukan tidak boleh kosong!', 'error');
         return;
     }
-    
-    // Validasi kategori
-    if (!['design', 'feature', 'content', 'bug', 'other'].includes(category)) {
+	
+	   // Validasi kategori - tambahkan 'arduino' dan pastikan defaultnya benar
+    const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
+    if (!validCategories.includes(category)) {
         category = 'other';
     }
+    
+  
 
     const submitBtn = document.getElementById('submitFeedback');
     const originalBtnText = submitBtn.innerHTML;
@@ -3238,6 +3250,10 @@ function toggleAdminForms() {
 
 
 
+
+
+
+// Update submitAnnouncement to always pin and use announcements collection
 async function submitAnnouncement(e) {
     e.preventDefault();
     
@@ -3269,11 +3285,11 @@ async function submitAnnouncement(e) {
             timestamp: serverTimestamp(),
             type: 'announcement',
             isPriority: true,
-            pinned: true,
-            pinnedAt: serverTimestamp()
+            pinned: true, // Always pinned
+            pinnedAt: serverTimestamp() // Permanent pin
         };
 
-        // Simpan ke collection announcements
+        // Simpan ke collection announcements (bukan feedback)
         const announcementsRef = collection(db, "announcements");
         await addDoc(announcementsRef, announcementData);
         
@@ -3308,20 +3324,18 @@ window.addEventListener('load', () => {
 
 
 
-
+// Update loadPinnedAnnouncements function
 async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
     try {
-      // Ambil pengumuman yang dipin saja, diurutkan dari yang terbaru dipin
         const q = query(
             collection(db, "announcements"),
             where("pinned", "==", true),
             orderBy("pinnedAt", "desc"),
             limit(25)
         );
-        
         
         const querySnapshot = await getDocs(q);
         
@@ -3340,22 +3354,30 @@ async function loadPinnedAnnouncements() {
             
             const announcementItem = document.createElement('div');
             announcementItem.className = 'pinned-item';
-            announcementItem.style.marginBottom = '15px';
-            announcementItem.style.padding = '15px';
-            announcementItem.style.borderRadius = '10px';
+            announcementItem.style.cssText = `
+                margin-bottom: 15px;
+                padding: 15px;
+                border-radius: 10px;
+                background: rgba(255, 107, 107, 0.1);
+                border-left: 4px solid #ff6b6b;
+            `;
             
             announcementItem.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <h3 style="color: #ff6b6b; margin: 0 0 10px 0; font-size: 18px; display: flex; align-items: center;">
-                        <svg class="pin-icon" viewBox="0 0 24 24">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <h3 style="color: #ff6b6b; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff6b6b">
                             <path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>
                         </svg>
                         ${announcement.title}
                     </h3>
-                    <div style="color: #aaa; font-size: 12px; white-space: nowrap;">${formatTimeAgo(waktu)}</div>
+                    <div style="color: #aaa; font-size: 12px; white-space: nowrap; margin-left: 10px;">
+                        ${formatTimeAgo(waktu)}
+                    </div>
                 </div>
-                <div style="color: #ddd; font-size: 14px; line-height: 1.5;">${announcement.content}</div>
-                <div style="margin-top: 10px; color: #aaa; font-size: 12px;">
+                <div style="color: #ddd; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">
+                    ${announcement.content}
+                </div>
+                <div style="color: #aaa; font-size: 12px; font-style: italic;">
                     Diposting oleh: ${announcement.userName || 'Admin'}
                 </div>
             `;
@@ -3367,8 +3389,22 @@ async function loadPinnedAnnouncements() {
         pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
     }
 }
-	 
-	 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	 
 	 
 	 // Fungsi untuk toggle pin pengumuman
