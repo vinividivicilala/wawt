@@ -2538,64 +2538,6 @@ if (document.getElementById('back-forum')) {
 	 
 	 
 	 
-	  
-	 // Fungsi untuk memuat masukan dari Firebase
-async function loadFeedback() {
-    const feedbackList = document.getElementById('feedbackListContainer');
-    if (!feedbackList) return;
-
-    try {
-        // Tampilkan loading state
-        feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat masukan...</div>';
-
-        // Ambil data dari Firebase dengan sorting berdasarkan timestamp
-        const q = query(
-            collection(db, "feedback"), 
-            orderBy("timestamp", "desc"),
-            limit(50)
-        );
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            feedbackList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada masukan yang dikirim</div>';
-            return;
-        }
-
-        // Render feedback dari Firebase
-        feedbackList.innerHTML = '';
-        const feedbackItems = [];
-        
-        querySnapshot.forEach(async (doc) => {
-            const feedback = doc.data();
-            feedback.id = doc.id;
-            feedbackItems.push(feedback);
-            
-            // Dapatkan jumlah replies untuk feedback ini
-            const repliesCount = await getRepliesCount(doc.id);
-            // Dapatkan jumlah likes untuk feedback ini
-            const likesCount = await getLikesCount(doc.id);
-            // Dapatkan status like user saat ini
-            const userLiked = await checkUserLiked(doc.id);
-            
-            renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
-        });
-
-        // Simpan ke cache
-        localStorage.setItem('cachedFeedback', JSON.stringify(feedbackItems));
-
-        // Update jumlah masukan
-        updateFeedbackCount(querySnapshot.size);
-
-    } catch (error) {
-        console.error("Error loading feedback:", error);
-        // Jika error, tampilkan dari cache
-        displayCachedFeedback();
-    }
-}
-
-
-
 
 
 // Fungsi untuk mendapatkan jumlah replies
@@ -3084,32 +3026,22 @@ function getCategoryLabel(category) {
 
 
 
-
-
-
-
-
-
-
-
-
-
 async function submitFeedback(e) {
     e.preventDefault();
     
     const title = document.getElementById('feedbackTitle').value.trim();
-    const category = document.getElementById('feedbackCategory').value; // Pastikan ini sesuai dengan value option
+    let category = document.getElementById('feedbackCategory').value;
     const content = document.getElementById('feedbackContent').value.trim();
     
+    // Validasi input
     if (!title || !content) {
-        alert('Judul dan isi masukan tidak boleh kosong!');
+        showNotification('Judul dan isi masukan tidak boleh kosong!', 'error');
         return;
     }
     
     // Validasi kategori
     if (!['design', 'feature', 'content', 'bug', 'other'].includes(category)) {
-        console.error('Kategori tidak valid:', category);
-        category = 'other'; // Fallback ke other jika kategori tidak valid
+        category = 'other';
     }
 
     const submitBtn = document.getElementById('submitFeedback');
@@ -3120,7 +3052,7 @@ async function submitFeedback(e) {
     const user = auth.currentUser;
     const feedbackData = {
         title,
-        category, // Pastikan ini tersimpan
+        category,
         content,
         userName: user?.displayName || 'Anonymous',
         userEmail: user?.email || null,
@@ -3128,7 +3060,7 @@ async function submitFeedback(e) {
         timestamp: serverTimestamp(),
         status: 'new',
         views: 0,
-        isCached: false // Tambahkan flag untuk cache
+        isCached: false
     };
 
     try {
@@ -3141,15 +3073,33 @@ async function submitFeedback(e) {
         
         // Reset form
         e.target.reset();
+        showNotification('Masukan berhasil dikirim!', 'success');
         
     } catch (error) {
         console.error('Error submitting feedback:', error);
-        alert('Gagal mengirim masukan. Silakan coba lagi.');
+        
+        // Coba simpan ke cache jika offline
+        if (error.code === 'unavailable') {
+            try {
+                const cachedFeedback = JSON.parse(localStorage.getItem('pendingFeedback') || "[]");
+                cachedFeedback.push({...feedbackData, timestamp: new Date().toISOString()});
+                localStorage.setItem('pendingFeedback', JSON.stringify(cachedFeedback));
+                showNotification('Masukan disimpan secara offline dan akan dikirim ketika online', 'warning');
+            } catch (cacheError) {
+                console.error('Error saving to cache:', cacheError);
+                showNotification('Gagal mengirim masukan. Silakan coba lagi saat online.', 'error');
+            }
+        } else {
+            showNotification('Gagal mengirim masukan: ' + error.message, 'error');
+        }
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
 
 
 
@@ -3199,9 +3149,6 @@ function updateFeedbackCount(count, isCached = false) {
 
 
 
-
-
-// Fungsi untuk memuat masukan dari Firebase (dimodifikasi untuk exclude pinned announcements)
 async function loadFeedback() {
     const feedbackList = document.getElementById('feedbackListContainer');
     if (!feedbackList) return;
@@ -3213,7 +3160,6 @@ async function loadFeedback() {
         // Ambil data dari Firebase dengan sorting berdasarkan timestamp
         const q = query(
             collection(db, "feedback"), 
-            where("type", "!=", "announcement"), // Exclude announcements
             orderBy("timestamp", "desc"),
             limit(50)
         );
@@ -3229,41 +3175,30 @@ async function loadFeedback() {
         feedbackList.innerHTML = '';
         const feedbackItems = [];
         
-        querySnapshot.forEach(async (doc) => {
+        // Gunakan Promise.all untuk menunggu semua operasi async selesai
+        await Promise.all(querySnapshot.docs.map(async (doc) => {
             const feedback = doc.data();
             feedback.id = doc.id;
-            
             feedbackItems.push(feedback);
             
-            // Dapatkan jumlah replies untuk feedback ini
-            const repliesCount = await getRepliesCount(doc.id);
-            // Dapatkan jumlah likes untuk feedback ini
-            const likesCount = await getLikesCount(doc.id);
-            // Dapatkan status like user saat ini
-            const userLiked = await checkUserLiked(doc.id);
+            const [repliesCount, likesCount, userLiked] = await Promise.all([
+                getRepliesCount(doc.id),
+                getLikesCount(doc.id),
+                checkUserLiked(doc.id)
+            ]);
             
             renderFeedbackItem(feedback, repliesCount, likesCount, userLiked);
-        });
+        }));
 
         // Simpan ke cache
         localStorage.setItem('cachedFeedback', JSON.stringify(feedbackItems));
-
-        // Update jumlah masukan
         updateFeedbackCount(querySnapshot.size);
 
     } catch (error) {
         console.error("Error loading feedback:", error);
-        // Jika error, tampilkan dari cache
         displayCachedFeedback();
     }
 }
-
-
-
-
-
-
-
 
 
 
@@ -3310,13 +3245,13 @@ async function submitAnnouncement(e) {
     const content = document.getElementById('announcementContent').value.trim();
     
     if (!title || !content) {
-        alert('Judul dan isi pengumuman tidak boleh kosong!');
+        showNotification('Judul dan isi pengumuman tidak boleh kosong!', 'error');
         return;
     }
     
     const user = auth.currentUser;
-    if (!checkAdminStatus(user)) {
-        alert('Anda tidak memiliki izin untuk membuat pengumuman!');
+    if (!user || !checkAdminStatus(user)) {
+        showNotification('Anda tidak memiliki izin untuk membuat pengumuman!', 'error');
         return;
     }
     
@@ -3325,19 +3260,19 @@ async function submitAnnouncement(e) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
     
-    const announcementData = {
-        title,
-        content,
-        userEmail: user.email,
-        userName: user.displayName || 'Admin',
-        timestamp: serverTimestamp(),
-        type: 'announcement',
-        isPriority: true,
-        pinned: true, // Flag untuk pinned
-        pinnedAt: serverTimestamp() // Waktu pin
-    };
-
     try {
+        const announcementData = {
+            title,
+            content,
+            userEmail: user.email,
+            userName: user.displayName || 'Admin',
+            timestamp: serverTimestamp(),
+            type: 'announcement',
+            isPriority: true,
+            pinned: true,
+            pinnedAt: serverTimestamp()
+        };
+
         // Simpan ke collection announcements
         const announcementsRef = collection(db, "announcements");
         await addDoc(announcementsRef, announcementData);
@@ -3347,18 +3282,19 @@ async function submitAnnouncement(e) {
         
         // Perbarui tampilan pengumuman
         await loadPinnedAnnouncements();
-        
-        // Tampilkan notifikasi sukses
-        showNotification('Pengumuman berhasil diposting dan dipin!', 'success');
+        showNotification('Pengumuman berhasil diposting!', 'success');
         
     } catch (error) {
         console.error('Error submitting announcement:', error);
-        showNotification('Gagal mengirim pengumuman. Silakan coba lagi.', 'error');
+        showNotification('Gagal mengirim pengumuman: ' + error.message, 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
 
 // Panggil fungsi loadPinnedAnnouncements saat halaman dimuat
 window.addEventListener('load', () => {
@@ -3473,7 +3409,61 @@ async function togglePinAnnouncement(announcementId, currentlyPinned) {
 	 
 	 
 	 
-	 
+	 // Fungsi untuk mencoba mengirim pending feedback saat online
+async function sendPendingFeedback() {
+    const pendingFeedback = JSON.parse(localStorage.getItem('pendingFeedback') || "[]");
+    if (pendingFeedback.length === 0) return;
+
+    try {
+        const feedbackRef = collection(db, "feedback");
+        
+        for (const feedback of pendingFeedback) {
+            await addDoc(feedbackRef, {
+                ...feedback,
+                timestamp: serverTimestamp(),
+                isCached: true
+            });
+        }
+        
+        // Kosongkan cache setelah berhasil dikirim
+        localStorage.removeItem('pendingFeedback');
+        showNotification(`${pendingFeedback.length} masukan offline berhasil dikirim`, 'success');
+        
+    } catch (error) {
+        console.error('Error sending pending feedback:', error);
+    }
+}
+
+// Panggil saat online
+window.addEventListener('online', sendPendingFeedback);
+
+
+// Pastikan event listener terpasang setelah DOM siap
+document.addEventListener('DOMContentLoaded', function() {
+    // Form pengumuman
+    document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
+    
+    // Form masukan
+    document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
+    
+    // Panggil saat auth state berubah
+    auth.onAuthStateChanged((user) => {
+        toggleAdminForms();
+        checkAndLoadFeedback();
+        loadPinnedAnnouncements();
+    });
+    
+    // Load data awal
+    loadPinnedAnnouncements();
+    checkAndLoadFeedback();
+});
+
+
+
+
+
+
+
 	 
 	 
 	 
