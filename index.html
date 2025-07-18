@@ -755,10 +755,7 @@
       </div>
     </div>
 	
-	 <!-- ✅ Tempat pengumuman akan ditampilkan -->
-  <div id="pinnedAnnouncementsList" style="width: 100%; max-width: 1200px; margin: 50px auto;"></div>
-
-
+	
     <div class="bottom-line"></div>
     <div class="bottom-text">
       <!-- Link-link footer -->
@@ -2318,15 +2315,23 @@
         setInterval(updateTentangRelativeTime, 10000);
         updateTentangRelativeTime();
 
-        // Fungsi untuk menampilkan halaman tertentu dan menyembunyikan yang lain
-        function showPageContent(page) {
-            const pages = [page1, page2, page3, page4, page5, page6, page7, page8];
-            pages.forEach(p => {
-                if (p) p.style.display = "none";
-            });
-            if (page) page.style.display = "block";
-            window.scrollTo(0, 0);
+       function showPageContent(page) {
+    const pages = [page1, page2, page3, page4, page5, page6, page7, page8];
+    pages.forEach(p => {
+        if (p) p.style.display = "none";
+    });
+
+    if (page) {
+        page.style.display = "block";
+
+        // ✅ Jika halaman masukan (page5), muat ulang pengumuman penting
+        if (page.id === "page5") {
+            loadPinnedAnnouncements();
         }
+    }
+
+    window.scrollTo(0, 0);
+}
 
         // Event listeners for navigation
         if (document.getElementById("card-arduino")) {
@@ -3691,7 +3696,6 @@ async function getAnnouncementRepliesCount(announcementId) {
   });
 }
 
-
 document.addEventListener('DOMContentLoaded', function() {
     // Form pengumuman
     document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
@@ -3699,31 +3703,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form masukan
     document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
 
-    // Load pengumuman & masukan
-    loadPinnedAnnouncements();
-    checkAndLoadFeedback();
+    // Tentukan halaman awal yang ditampilkan
+    const defaultPage = page1; // default ke halaman utama
+    const hash = window.location.hash;
+
+    if (hash.includes('page5')) {
+        showPageContent(page5);
+        loadPinnedAnnouncements(); // ✅ muat pengumuman penting di halaman masukan
+    } else {
+        showPageContent(defaultPage);
+    }
+
+    checkAndLoadFeedback(); // ✅ tetap muat feedback
 
     // Panggil saat auth state berubah
     auth.onAuthStateChanged((user) => {
         toggleAdminForms();
-        checkAndLoadFeedback(); // untuk masukan
-        loadPinnedAnnouncements(); // untuk pengumuman
+        checkAndLoadFeedback();
+        // hanya jika halaman masukan aktif
+        if (page5.style.display === 'block') {
+            loadPinnedAnnouncements();
+        }
     });
 
-    // Cek koneksi online
+    // Saat online kembali
     window.addEventListener('online', () => {
         sendPendingFeedback();
-        loadPinnedAnnouncements();
         checkAndLoadFeedback();
+        if (page5.style.display === 'block') {
+            loadPinnedAnnouncements();
+        }
     });
 
-    // Refresh setiap 5 menit (300.000 ms)
+    // Refresh setiap 5 menit
     setInterval(() => {
-        if (navigator.onLine) {
+        if (navigator.onLine && page5.style.display === 'block') {
             loadPinnedAnnouncements();
         }
     }, 300000);
 });
+
 
 
 
