@@ -3070,7 +3070,9 @@ async function submitFeedback(e) {
         userId: user?.uid || null,
         timestamp: serverTimestamp(),
         status: 'new',
-        views: 0,
+        likesCount: 0,
+            repliesCount: 0,
+            viewsCount: 0,
         isCached: false
     };
 
@@ -3316,19 +3318,20 @@ async function submitAnnouncement(e) {
 
 
 
-
-
-
-
-// Fungsi untuk memuat pengumuman dari cache dan Firebase
+// Fungsi untuk memuat pengumuman dengan caching
 async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
 
-    // Tampilkan data cache dulu untuk UX yang lebih baik
-    displayCachedAnnouncements();
-
     try {
+        // Cek cache dulu untuk UX yang lebih cepat
+      const cachedAnnouncements = JSON.parse(localStorage.getItem('cachedAnnouncements') || "[]");
+
+        if (cachedAnnouncements.length > 0) {
+            renderAnnouncements(cachedAnnouncements);
+        }
+
+        // Ambil data terbaru dari Firebase
         const q = query(
             collection(db, "announcements"),
             where("pinned", "==", true),
@@ -3339,26 +3342,30 @@ async function loadPinnedAnnouncements() {
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
-            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada pengumuman</div>';
+            if (cachedAnnouncements.length === 0) {
+                pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada pengumuman</div>';
+            }
             return;
         }
 
-        pinnedContainer.innerHTML = '';
         const announcements = [];
-        
         querySnapshot.forEach((doc) => {
             const announcement = doc.data();
             announcement.id = doc.id;
             announcements.push(announcement);
-            renderAnnouncementItem(announcement);
         });
 
         // Simpan ke cache
         localStorage.setItem('cachedAnnouncements', JSON.stringify(announcements));
         
+        // Render ulang dengan data terbaru
+        renderAnnouncements(announcements);
+
     } catch (error) {
         console.error("Error loading pinned announcements:", error);
-        displayCachedAnnouncements();
+        if (!pinnedContainer.innerHTML) {
+            pinnedContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
+        }
     }
 }
 
@@ -3455,70 +3462,77 @@ async function sendPendingFeedback() {
 window.addEventListener('online', sendPendingFeedback);
 
 
-// Pastikan event listener terpasang setelah DOM siap
-document.addEventListener('DOMContentLoaded', function() {
-    // Form pengumuman
-    document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
-    
-    // Form masukan
-    document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
-    
-    // Panggil saat auth state berubah
-    auth.onAuthStateChanged((user) => {
-        toggleAdminForms();
-        checkAndLoadFeedback();
-        loadPinnedAnnouncements();
-    });
-    
-    // Load data awal
-    loadPinnedAnnouncements();
-    checkAndLoadFeedback();
-});
 
 
 
 
 
 
-// Fungsi untuk merender item pengumuman
-function renderAnnouncementItem(announcement) {
+
+
+// Fungsi untuk render pengumuman
+function renderAnnouncements(announcements) {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
+
+    pinnedContainer.innerHTML = '';
     
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
-    
-    const announcementItem = document.createElement('div');
-    announcementItem.className = 'pinned-item';
-    announcementItem.style.cssText = `
-        margin-bottom: 15px;
-        padding: 15px;
-        border-radius: 10px;
-        background: rgba(255, 107, 107, 0.1);
-        border-left: 4px solid #ff6b6b;
-    `;
-    
-    announcementItem.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-            <h3 style="color: #ff6b6b; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff6b6b">
-                    <path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>
-                </svg>
-                ${announcement.title}
-            </h3>
-            <div style="color: #aaa; font-size: 12px; white-space: nowrap; margin-left: 10px;">
-                ${formatTimeAgo(waktu)}
+    announcements.forEach((announcement) => {
+        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
+        
+        const announcementItem = document.createElement('div');
+        announcementItem.className = 'pinned-item';
+        announcementItem.style.cssText = `
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 107, 107, 0.1);
+            border-left: 4px solid #ff6b6b;
+        `;
+		
+		 // Increment view count
+        incrementAnnouncementViews(announcement.id);
+        
+        announcementItem.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <h3 style="color: #ff6b6b; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff6b6b">
+                        <path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>
+                    </svg>
+                    ${announcement.title}
+                </h3>
+                <div style="color: #aaa; font-size: 12px; white-space: nowrap; margin-left: 10px;">
+                    ${formatTimeAgo(waktu)}
+                </div>
             </div>
-        </div>
-        <div style="color: #ddd; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">
-            ${announcement.content}
-        </div>
-        <div style="color: #aaa; font-size: 12px; font-style: italic;">
-            Diposting oleh: ${announcement.userName || 'Admin'}
-        </div>
-    `;
-    
-    pinnedContainer.appendChild(announcementItem);
+            <div style="color: #ddd; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">
+                ${announcement.content}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="color: #aaa; font-size: 12px; font-style: italic;">
+                    Diposting oleh: ${announcement.userName || 'Admin'}
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <span style="color: #ccc; font-size: 12px; display: flex; align-items: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        ${announcement.views || 0}
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        pinnedContainer.appendChild(announcementItem);
+    });
 }
+
+
+
+
+
+
 	 
 	 
 	 
@@ -3551,10 +3565,45 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 
+document.addEventListener('DOMContentLoaded', function() {
+    // Form pengumuman
+    document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
+    
+    // Form masukan
+    document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
+    
+    // Panggil saat auth state berubah
+    auth.onAuthStateChanged((user) => {
+        toggleAdminForms();
+        checkAndLoadFeedback();
+        loadPinnedAnnouncements();
+    });
+    
+    // Load data awal
+    loadPinnedAnnouncements();
+    checkAndLoadFeedback();
+    
+    // Cek koneksi dan kirim pending feedback
+    window.addEventListener('online', () => {
+        sendPendingFeedback();
+        loadPinnedAnnouncements();
+        checkAndLoadFeedback();
+    });
+});
 
 
 
-
+// Fungsi untuk menambah view count di pengumuman
+async function incrementAnnouncementViews(announcementId) {
+    try {
+        const announcementRef = doc(db, "announcements", announcementId);
+        await updateDoc(announcementRef, {
+            views: increment(1)
+        });
+    } catch (error) {
+        console.error("Error incrementing announcement views:", error);
+    }
+}
 
 
 
