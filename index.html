@@ -2163,7 +2163,10 @@
 
 
 
-<!-- Add this to your 2x.txt file, right after the page7 div -->
+
+
+
+<!-- Add this to your HTML file where page9 should be -->
 <div id="page9" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
   
@@ -2171,9 +2174,12 @@
   
   <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px; border-radius: 20px; background: rgba(0, 0, 0, 0.3); margin: 0 100px;">
     
-    <!-- Announcement Content -->
+    <!-- Announcement Content Container -->
     <div id="announcementDetailContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px;">
       <!-- Content will be loaded dynamically -->
+      <div style="text-align: center; color: #ccc; padding: 50px 0;">
+        Memuat detail pengumuman...
+      </div>
     </div>
     
     <!-- Replies Section -->
@@ -2182,7 +2188,10 @@
         Balasan (<span id="repliesCount">0</span>)
       </h2>
       <div id="repliesList" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
-        <!-- Replies will be added here dynamically -->
+        <!-- Replies will be loaded here -->
+        <div style="text-align: center; color: #ccc; padding: 20px 0;">
+          Belum ada balasan
+        </div>
       </div>
       
       <!-- Reply Form -->
@@ -2209,7 +2218,10 @@
         Pengumuman Terkait
       </h2>
       <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
-        <!-- Related announcements will be added here dynamically -->
+        <!-- Related announcements will be loaded here -->
+        <div style="text-align: center; color: #ccc; padding: 20px 0;">
+          Memuat pengumuman terkait...
+        </div>
       </div>
     </div>
   </div>
@@ -2256,16 +2268,6 @@
     </a>
   </div>
 </div>
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2427,8 +2429,7 @@
      
 	 
 	 
-	 // Improved showPageContent function
-function showPageContent(page) {
+	function showPageContent(page) {
     const pages = [page1, page2, page3, page4, page5, page6, page7, page8, page9];
     pages.forEach(p => {
         if (p) p.style.display = "none";
@@ -2442,11 +2443,20 @@ function showPageContent(page) {
             loadPinnedAnnouncements();
             loadFeedback().catch(console.error);
         } else if (page.id === "page9") {
-            // Handle page9 content loading via URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const announcementId = urlParams.get('id');
-            if (announcementId) {
-                loadAnnouncementDetail(announcementId);
+            // Handle page9 content loading via URL path
+            const pathSegments = window.location.pathname.split('/');
+            const announcementSlug = pathSegments[pathSegments.length - 1];
+            if (announcementSlug && announcementSlug !== 'halaman-masukan') {
+                // Cari ID pengumuman berdasarkan slug
+                findAnnouncementIdBySlug(announcementSlug)
+                    .then(id => {
+                        if (id) {
+                            loadAnnouncementDetail(id);
+                        } else {
+                            // Fallback ke halaman masukan jika tidak ditemukan
+                            showPageContent(page7);
+                        }
+                    });
             }
         }
     }
@@ -2456,10 +2466,30 @@ function showPageContent(page) {
 	 
 	 
 	 
-	 
-	 
-	 
-	 
+	 // Fungsi untuk membuat slug dari judul
+function createSlug(title) {
+    return title.toLowerCase()
+        .replace(/[^\w\s-]/g, '') // Hapus karakter non-word
+        .replace(/[\s_-]+/g, '-') // Ganti spasi/underscore dengan dash
+        .replace(/^-+|-+$/g, ''); // Hapus dash di awal/akhir
+}
+
+// Fungsi untuk mencari ID pengumuman berdasarkan slug
+async function findAnnouncementIdBySlug(slug) {
+    try {
+        const announcementsRef = collection(db, "announcements");
+        const q = query(announcementsRef, where("slug", "==", slug));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            return querySnapshot.docs[0].id;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error finding announcement by slug:", error);
+        return null;
+    }
+}
 	 
 	 
 
@@ -2595,17 +2625,14 @@ if (document.getElementById('back-forum')) {
     });
 }
 		
-		
+		// Add event listeners
 document.getElementById('back-announcement')?.addEventListener('click', function(e) {
     e.preventDefault();
     showPageContent(page7);
-    // Go back to /halaman-masukan without the hash
     history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-});		
-		
-		
-		
-		
+});
+
+document.getElementById('announcementReplyForm')?.addEventListener('submit', submitAnnouncementReply);
 		
 		
 		
@@ -3413,6 +3440,13 @@ function toggleAdminForms() {
 }
 
 
+
+
+
+
+
+
+
 async function submitAnnouncement(e) {
     e.preventDefault();
     
@@ -3436,6 +3470,7 @@ async function submitAnnouncement(e) {
     submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
     
     try {
+        const slug = createSlug(title);
         const announcementData = {
             title,
             content,
@@ -3446,9 +3481,10 @@ async function submitAnnouncement(e) {
             isPriority: true,
             pinned: true,
             pinnedAt: serverTimestamp(),
-            views: 0, // Tambahkan view count
-            likesCount: 0, // Tambahkan likes count
-            repliesCount: 0 // Tambahkan replies count
+            views: 0,
+            likesCount: 0,
+            repliesCount: 0,
+            slug: slug // Tambahkan slug
         };
 
         const announcementsRef = collection(db, "announcements");
@@ -3487,6 +3523,18 @@ async function submitAnnouncement(e) {
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3889,7 +3937,7 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
-// Add these functions to your existing JavaScript
+
 
 // Function to load announcement details
 async function loadAnnouncementDetail(announcementId) {
@@ -4017,6 +4065,13 @@ async function loadAnnouncementDetail(announcementId) {
     }
 }
 
+
+
+
+
+
+
+
 // Function to load announcement replies
 async function loadAnnouncementReplies(announcementId) {
     try {
@@ -4086,6 +4141,12 @@ async function loadAnnouncementReplies(announcementId) {
     }
 }
 
+
+
+
+
+
+
 // Function to load related announcements
 async function loadRelatedAnnouncements(currentAnnouncementId) {
     try {
@@ -4143,9 +4204,7 @@ async function loadRelatedAnnouncements(currentAnnouncementId) {
             `;
             
             relatedItem.addEventListener('click', () => {
-                showPageContent(page9);
-                loadAnnouncementDetail(doc.id);
-                history.pushState({ page: "announcementDetail" }, "Detail Pengumuman", `#page9?id=${doc.id}`);
+                viewAnnouncementDetails(doc.id);
             });
             
             relatedList.appendChild(relatedItem);
@@ -4161,6 +4220,11 @@ async function loadRelatedAnnouncements(currentAnnouncementId) {
             '<div style="color:#ff6b6b; text-align:center; padding:10px;">Gagal memuat pengumuman terkait</div>';
     }
 }
+
+
+
+
+
 
 // Function to submit reply to announcement
 async function submitAnnouncementReply(e) {
@@ -4227,25 +4291,35 @@ async function submitAnnouncementReply(e) {
 }
 
 
-// Updated viewAnnouncementDetails function
-function viewAnnouncementDetails(announcementId) {
-    // Show page9
+// Function to view announcement details (called from pinned announcements)
+function viewAnnouncementDetails(announcementId, announcementTitle = '') {
     showPageContent(page9);
     
-    // Load the announcement details
-    loadAnnouncementDetail(announcementId);
-    
-    // Update URL to: /halaman-masukan#page9?id=announcementId
-    const newUrl = `/halaman-masukan#page9?id=${announcementId}`;
-    history.pushState({ 
-        page: "announcementDetail",
-        announcementId: announcementId
-    }, `Pengumuman ${announcementId}`, newUrl);
-    
-    // Update the page title
-    document.title = `Pengumuman | ${window.location.hostname}`;
+    // Dapatkan judul pengumuman jika tidak disediakan
+    if (!announcementTitle) {
+        getDoc(doc(db, "announcements", announcementId))
+            .then(doc => {
+                if (doc.exists()) {
+                    const title = doc.data().title;
+                    const slug = createSlug(title);
+                    history.pushState(
+                        { page: "announcementDetail" }, 
+                        title, 
+                        `/halaman-masukan-${slug}`
+                    );
+                    loadAnnouncementDetail(announcementId);
+                }
+            });
+    } else {
+        const slug = createSlug(announcementTitle);
+        history.pushState(
+            { page: "announcementDetail" }, 
+            announcementTitle, 
+            `/halaman-masukan-${slug}`
+        );
+        loadAnnouncementDetail(announcementId);
+    }
 }
-
 
 
 
@@ -4993,26 +5067,27 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
    
    
   
-  
-  
   window.addEventListener("popstate", function(event) {
-    // Get current URL
-    const currentUrl = window.location.href;
+    // Handle URL dengan format /halaman-masukan-[slug]
+    const path = window.location.pathname || "/";
+    const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
     
-    // Check if we're on a page9 view
-    const isPage9 = currentUrl.includes('#page9?id=');
-    const announcementId = isPage9 ? currentUrl.split('id=')[1] : null;
-    
-    if (isPage9 && announcementId) {
-        // Handle page9 with announcement ID
-        showPageContent(page9);
-        loadAnnouncementDetail(announcementId);
+    if (isAnnouncementDetail) {
+        const slug = path.replace('/halaman-masukan-', '');
+        findAnnouncementIdBySlug(slug)
+            .then(id => {
+                if (id) {
+                    showPageContent(page9);
+                    loadAnnouncementDetail(id);
+                } else {
+                    // Fallback ke halaman masukan jika tidak ditemukan
+                    showPageContent(page7);
+                }
+            });
         return;
     }
 
     // Handle other pages based on state or path
-    const path = window.location.pathname || "/";
-    
     if (path.includes("halaman-arduino")) {
         showPageContent(page2);
     } else if (path.includes("halaman-iot")) {
@@ -5038,20 +5113,31 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
   
   
   
-   window.onload = function () {
+  
+  
+  
+  
+  
+  window.onload = function () {
     const path = window.location.pathname || "/";
-    const hash = window.location.hash;
+    const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
     
-    // Check for page9 in the hash
-    const isPage9 = hash.includes('#page9?id=');
-    const announcementId = isPage9 ? hash.split('id=')[1] : null;
-    
-    if (isPage9 && announcementId) {
-        showPageContent(page9);
-        loadAnnouncementDetail(announcementId);
-        history.replaceState({ 
-            page: "announcementDetail" 
-        }, "Detail Pengumuman", `/halaman-masukan#page9?id=${announcementId}`);
+    if (isAnnouncementDetail) {
+        const slug = path.replace('/halaman-masukan-', '');
+        findAnnouncementIdBySlug(slug)
+            .then(id => {
+                if (id) {
+                    showPageContent(page9);
+                    loadAnnouncementDetail(id);
+                    history.replaceState({ 
+                        page: "announcementDetail" 
+                    }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
+                } else {
+                    // Fallback ke halaman masukan jika tidak ditemukan
+                    showPageContent(page7);
+                    history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+                }
+            });
     } else if (path.includes("halaman-arduino")) {
         showPageContent(page2);
         history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
@@ -5081,9 +5167,19 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 
     initializeBlogPagination();
 };
-
-}
-	
+  
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 </script>
 </body>
 </html>
