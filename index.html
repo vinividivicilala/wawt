@@ -2720,7 +2720,21 @@ document.getElementById('announcementReplyForm')?.addEventListener('submit', asy
 });
 
 
+// Fungsi untuk mendapatkan parameter dari URL
+function getUrlParameter(name) {
+    name = name.replace(/[\[\]]/g, '\\$&');
+    const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+    const results = regex.exec(window.location.href);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
 
+// Fungsi untuk memeriksa apakah halaman saat ini adalah halaman detail pengumuman
+function isAnnouncementDetailPage() {
+    return window.location.pathname.includes('/halaman-masukan') && 
+           getUrlParameter('announcement') !== null;
+}
 		
 		
 		
@@ -2980,21 +2994,25 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 	 
 	 
 	 
-	 
-	 
-	 
-	 
-// Fungsi untuk memeriksa dan memuat masukan saat halaman dimuat
-function checkAndLoadFeedback() {
-    const path = window.location.pathname || "/";
-    if (path.includes("halaman-masukan") || 
-        (window.history.state && window.history.state.page === "masukan")) {
-        
-        // Coba muat dari cache dulu untuk UX yang lebih cepat
+	 / Fungsi untuk memeriksa dan memuat konten yang sesuai
+async function checkAndLoadFeedback() {
+    // Jika ini adalah halaman detail pengumuman
+    if (isAnnouncementDetailPage()) {
+        const announcementId = getUrlParameter('announcement');
+        if (announcementId) {
+            // Tampilkan halaman 9 dan muat detail pengumuman
+            document.getElementById('page7').style.display = 'none';
+            document.getElementById('page9').style.display = 'block';
+            await loadAnnouncementDetail(announcementId);
+        }
+    } 
+    // Jika ini adalah halaman masukan biasa
+    else if (window.location.pathname.includes('/halaman-masukan')) {
+        // Tampilkan halaman 7 dan muat feedback
+        document.getElementById('page7').style.display = 'block';
+        document.getElementById('page9').style.display = 'none';
         displayCachedFeedback();
-        
-        // Kemudian coba update dari Firebase
-        loadFeedback().catch(console.error);
+        await loadFeedback();
     }
 }
 
@@ -4026,13 +4044,6 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
-
-
-
-
-
-
-
 async function loadAnnouncementDetail(announcementId) {
     const container = document.getElementById('announcementDetailContainer');
     if (!container) return;
@@ -4088,12 +4099,6 @@ async function loadAnnouncementDetail(announcementId) {
             </div>
         `;
         
-        // Tambahkan event listener untuk like button
-        const likeBtn = container.querySelector('.like-btn');
-        if (likeBtn) {
-            likeBtn.addEventListener('click', () => toggleAnnouncementLike(announcementId));
-        }
-        
         // Load balasan
         await loadAnnouncementReplies(announcementId);
         
@@ -4112,9 +4117,6 @@ async function loadAnnouncementDetail(announcementId) {
         `;
     }
 }
-
-
-
 
 
 
@@ -4555,8 +4557,6 @@ async function submitAnnouncementReply(e) {
 
 
 
-
-
 async function viewAnnouncementDetails(announcementId) {
     try {
         // Tampilkan halaman 9
@@ -4569,11 +4569,12 @@ async function viewAnnouncementDetails(announcementId) {
         // Load detail pengumuman
         await loadAnnouncementDetail(announcementId);
         
-        // Update URL history
+        // Update URL tanpa reload halaman
+        const newUrl = `${window.location.pathname}?announcement=${announcementId}`;
         history.pushState(
             { page: "announcementDetail", id: announcementId }, 
             "Detail Pengumuman", 
-            `?announcement=${announcementId}`
+            newUrl
         );
         
     } catch (error) {
