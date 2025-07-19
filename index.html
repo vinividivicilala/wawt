@@ -2160,14 +2160,7 @@
 
 
 
-
-
-
-
-
-
-
-
+<!-- Tambahkan ini ke dalam file HTML Anda (di bagian yang sesuai) -->
 <div id="page9" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
   
@@ -2175,33 +2168,90 @@
   
   <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px; border-radius: 20px; background: rgba(0, 0, 0, 0.3); margin: 0 100px;">
     
-    <!-- Konten Pengumuman -->
+    <!-- Announcement Content Container -->
     <div id="announcementDetailContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px;">
-      <!-- Data akan dimuat di sini -->
+      <!-- Content will be loaded dynamically -->
+      <div style="text-align: center; color: #ccc; padding: 50px 0;">
+        Memuat detail pengumuman...
+      </div>
     </div>
     
-    <!-- Daftar Balasan -->
+    <!-- Replies Section -->
     <div id="announcementRepliesContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
       <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
         Balasan (<span id="repliesCount">0</span>)
       </h2>
       <div id="repliesList" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
-        <!-- Daftar balasan akan muncul di sini -->
+        <!-- Replies will be loaded here -->
+        <div style="text-align: center; color: #ccc; padding: 20px 0;">
+          Belum ada balasan
+        </div>
       </div>
+      
+      <!-- Reply Form -->
+      <form id="announcementReplyForm" style="margin-top: 20px;">
+        <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
+                  style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
+        
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="submit" id="submitAnnouncementReply" 
+                  style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s;">
+            Kirim Balasan
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </form>
     </div>
     
-    <!-- Pengumuman Terkait -->
+    <!-- Related Announcements -->
     <div id="relatedAnnouncementsContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
       <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
         Pengumuman Terkait
       </h2>
       <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
-        <!-- Daftar pengumuman terkait akan muncul di sini -->
+        <!-- Related announcements will be loaded here -->
+        <div style="text-align: center; color: #ccc; padding: 20px 0;">
+          Memuat pengumuman terkait...
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Tombol Kembali -->
+  <div class="bottom-line"></div>
+
+  <div class="bottom-text">
+    <div>
+      <a href="#" class="tentangLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Tentang Kami
+      </a>
+    </div>
+    <div>
+      <a href="#" class="masukanLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Masukan
+      </a>
+    </div>
+    <div>
+      <a href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Saran
+      </a>
+    </div>
+  </div>
+
   <div class="nav-link">
     <a href="#" id="back-announcement">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2212,13 +2262,6 @@
     </a>
   </div>
 </div>
-
-
-
-
-
-
-
 
 
 
@@ -2577,36 +2620,15 @@ if (document.getElementById('back-forum')) {
     });
 }
 		
-		document.getElementById('back-announcement')?.addEventListener('click', function(e) {
+		
+		
+// Fungsi untuk menangani klik tombol kembali
+document.getElementById('back-announcement')?.addEventListener('click', function(e) {
     e.preventDefault();
-    showPageContent(page7);
-    history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    showPageContent(page7); // Kembali ke halaman masukan
 });
 
-
-
-// Event delegation untuk menangani klik pengumuman
-document.addEventListener('click', async function(e) {
-    // Handle click on announcement items
-    const announcementItem = e.target.closest('.pinned-item');
-    if (announcementItem) {
-        e.preventDefault();
-        const announcementId = announcementItem.getAttribute('data-id');
-        if (announcementId) {
-            await viewAnnouncementDetails(announcementId);
-        }
-    }
-    
-    // Handle back button in page9
-    if (e.target.closest('#back-announcement')) {
-        e.preventDefault();
-        document.getElementById('page9').style.display = 'none';
-        document.getElementById('page7').style.display = 'block';
-        history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-    }
-});
-
-// Handle form reply pengumuman
+// Event listener untuk form balasan
 document.getElementById('announcementReplyForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -2624,13 +2646,11 @@ document.getElementById('announcementReplyForm')?.addEventListener('submit', asy
     
     // Get announcement ID from URL
     const urlParams = new URLSearchParams(window.location.search);
- const announcementId = window.currentAnnouncementId;
-
-  if (!announcementId) {
-    alert('Pengumuman tidak ditemukan.');
-    return;
-}
-
+    const announcementId = urlParams.get('id');
+    if (!announcementId) {
+        alert('Tidak dapat menemukan pengumuman');
+        return;
+    }
     
     const submitBtn = document.getElementById('submitAnnouncementReply');
     const originalBtnText = submitBtn.innerHTML;
@@ -2660,10 +2680,6 @@ document.getElementById('announcementReplyForm')?.addEventListener('submit', asy
         // Reload replies
         await loadAnnouncementReplies(announcementId);
         
-        // Update replies count display
-        const repliesCount = await getAnnouncementRepliesCount(announcementId);
-        document.getElementById('repliesCount').textContent = repliesCount;
-        
         // Show success message
         alert('Balasan berhasil dikirim!');
         
@@ -2674,33 +2690,18 @@ document.getElementById('announcementReplyForm')?.addEventListener('submit', asy
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
-});
-
-
-// Fungsi bantu untuk ambil parameter dari URL
-function getUrlParameter(name) {
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  const regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
-  const results = regex.exec(location.search);
-  return results === null ? null : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  const path = window.location.pathname;
-  const announcementId = getUrlParameter("announcement");
-
-  if (path.includes("halaman-masukan") && announcementId) {
-    // jika URL punya ?announcement=id
-    showPageContent(page9);
-    loadAnnouncementDetail(announcementId);
-  }
-});
-
-// Fungsi untuk memeriksa apakah halaman saat ini adalah halaman detail pengumuman
-function isAnnouncementDetailPage() {
-    return window.location.pathname.includes('/halaman-masukan') && 
-           getUrlParameter('announcement') !== null;
-}
+});		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		
 		
@@ -2958,122 +2959,25 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 }
 
 	 
-	 async function checkAndLoadFeedback() {
-    const path = window.location.pathname;
-    
-    // Handle URL pattern: /halaman-masukan-[judul]-[ID]
-    if (path.startsWith('/halaman-masukan-')) {
-        const parts = path.split('-');
-        if (parts.length >= 3) {
-            const potentialId = parts[parts.length-1];
-            
-            // Validasi ID dokumen Firestore
-            if (potentialId && potentialId.length >= 20 && /^[a-zA-Z0-9]+$/.test(potentialId)) {
-                console.log("Memuat pengumuman dengan ID:", potentialId);
-                document.getElementById('page7').style.display = 'none';
-                document.getElementById('page9').style.display = 'block';
-                await loadAnnouncementDetail(potentialId);
-                return;
-            }
-        }
-    }
-    
-    // Default: load halaman masukan biasa
-    document.getElementById('page7').style.display = 'block';
-    document.getElementById('page9').style.display = 'none';
-    displayCachedFeedback();
-    await loadFeedback();
-}
-	 
-	 
-	 
-	 
-	 document.addEventListener('click', async function(e) {
-    // Handle click on announcement items
-    const announcementItem = e.target.closest('.pinned-item, .announcement-item');
-    if (announcementItem) {
-        e.preventDefault();
-        const announcementId = announcementItem.getAttribute('data-id');
-        if (announcementId) {
-            await viewAnnouncementDetails(announcementId);
-        }
-    }
-    
-    // Handle back button in page9
-    if (e.target.closest('#back-announcement')) {
-        e.preventDefault();
-        document.getElementById('page9').style.display = 'none';
-        document.getElementById('page7').style.display = 'block';
-        history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-    }
-});
 	 
 	 
 	 
 	 
 	 
 	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 // Initialize page 9 elements
-function initPage9() {
-    const page9 = document.getElementById('page9');
-    if (!page9) return;
-    
-    // Set up the reply form
-    const replyForm = document.getElementById('announcementReplyForm');
-    if (replyForm) {
-        replyForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const content = document.getElementById('announcementReplyContent').value.trim();
-            if (!content) {
-                alert('Isi balasan tidak boleh kosong');
-                return;
-            }
-            
-            // Get announcement ID from URL
-            const announcementId = window.location.pathname.split('-').pop();
-            if (!announcementId) return;
-            
-            // Submit the reply
-            await submitAnnouncementReply(announcementId, content);
-            
-            // Clear the form
-            document.getElementById('announcementReplyContent').value = '';
-        });
-    }
-    
-    // Set up like button
-    const likeBtn = page9.querySelector('.like-btn');
-    if (likeBtn) {
-        likeBtn.addEventListener('click', async function() {
-            const announcementId = window.location.pathname.split('-').pop();
-            if (!announcementId) return;
-            await toggleAnnouncementLike(announcementId);
-        });
+// Fungsi untuk memeriksa dan memuat masukan saat halaman dimuat
+function checkAndLoadFeedback() {
+    const path = window.location.pathname || "/";
+    if (path.includes("halaman-masukan") || 
+        (window.history.state && window.history.state.page === "masukan")) {
+        
+        // Coba muat dari cache dulu untuk UX yang lebih cepat
+        displayCachedFeedback();
+        
+        // Kemudian coba update dari Firebase
+        loadFeedback().catch(console.error);
     }
 }
-
-// Call this during initial page load
-window.addEventListener('load', initPage9);
-	 
-	 
-	 
-	 
-	 
-	 
-	 
-	 
 
 	 
 	 
@@ -4104,94 +4008,39 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
-
-
-
-
-
+// Fungsi untuk memuat detail pengumuman
 async function loadAnnouncementDetail(announcementId) {
-    const container = document.getElementById('announcementDetailContainer');
-    if (!container) return;
-    
     try {
-        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:50px;">Memuat detail pengumuman...</div>';
+        const announcementRef = doc(db, "announcements", announcementId);
+        const announcementSnap = await getDoc(announcementRef);
         
-        // Dekode ID untuk handle case sensitivity
-        const decodedId = announcementId.replace(/[^a-zA-Z0-9]/g, '');
-        console.log("Mencoba memuat dengan ID:", decodedId);
-        
-        const docRef = doc(db, "announcements", decodedId);
-        const docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
-            throw new Error(`Pengumuman dengan ID ${decodedId} tidak ditemukan`);
+        if (!announcementSnap.exists()) {
+            throw new Error("Pengumuman tidak ditemukan");
         }
         
-        const announcement = docSnap.data();
-        console.log("Data pengumuman:", announcement);
+        const announcement = announcementSnap.data();
+        announcement.id = announcementSnap.id;
         
-        if (!announcement.title || !announcement.content) {
-            throw new Error("Data pengumuman tidak lengkap");
-        }
+        // Dapatkan jumlah replies dan likes
+        const [repliesCount, likesCount] = await Promise.all([
+            getAnnouncementRepliesCount(announcementId),
+            getAnnouncementLikesCount(announcementId)
+        ]);
         
-        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
+        // Render konten pengumuman
+        renderAnnouncementDetail(announcement, repliesCount, likesCount);
         
-        container.innerHTML = `
-            <div style="margin-bottom: 30px;">
-                <h2 style="color: #ff6b6b; font-size: 28px; margin-bottom: 15px;">
-                    ${announcement.title || 'Pengumuman Penting'}
-                </h2>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
-                        ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
-                    </div>
-                    <div>
-                        <div style="color: white; font-weight: 500;">
-                            ${announcement.userName || 'Admin'}
-                        </div>
-                        <div style="color: #aaa; font-size: 12px;">
-                            ${formatTimeAgo(waktu)} • ${waktu.toLocaleDateString('id-ID')}
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="font-size: 16px; line-height: 1.8; color: #ddd; margin-bottom: 20px; white-space: pre-line;">
-                    ${announcement.content || 'Tidak ada konten yang tersedia'}
-                </div>
-                
-                <div style="display: flex; gap: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                        </svg>
-                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
-                    </button>
-                    
-                    <div style="display: flex; align-items: center; color: #ccc;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span class="view-count">${announcement.views || 0}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+        // Load replies
+        loadAnnouncementReplies(announcementId);
         
-        // Load komponen lainnya
-        await loadAnnouncementReplies(decodedId);
-        await loadRelatedAnnouncements(decodedId);
-        await incrementAnnouncementViews(decodedId);
+        // Load related announcements
+        loadRelatedAnnouncements(announcementId);
         
     } catch (error) {
-        console.error("Error:", error);
-        container.innerHTML = `
-            <div style="color:#ff6b6b; text-align:center; padding:50px;">
-                <p>Gagal memuat pengumuman</p>
-                <p style="font-size:14px; color:#aaa;">${error.message}</p>
-                <a href="/halaman-masukan" style="color:#4ea1ff; margin-top:20px; display:inline-block;">
-                    Kembali ke halaman masukan
-                </a>
+        console.error("Error loading announcement:", error);
+        document.getElementById('announcementDetailContainer').innerHTML = `
+            <div style="color:#ff6b6b; text-align:center; padding:20px;">
+                Gagal memuat pengumuman: ${error.message}
             </div>
         `;
     }
@@ -4202,173 +4051,64 @@ async function loadAnnouncementDetail(announcementId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-// Fungsi untuk memuat balasan
+// Fungsi untuk memuat balasan pengumuman
 async function loadAnnouncementReplies(announcementId) {
-  const repliesList = document.getElementById('repliesList');
-  if (!repliesList) return;
-  
-  try {
-    const q = query(
-      collection(db, "announcements", announcementId, "replies"),
-      orderBy("timestamp", "asc")
-    );
-    
-    const querySnapshot = await getDocs(q);
-    repliesList.innerHTML = '';
-    
-    if (querySnapshot.empty) {
-      repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
-      return;
-    }
-    
-    querySnapshot.forEach(doc => {
-      const reply = doc.data();
-      const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
-      
-      repliesList.innerHTML += `
-        <div style="margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 32px; height: 32px; background: #4ea1ff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                ${reply.userName?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div style="color: white; font-weight: 500;">${reply.userName || 'User'}</div>
-            </div>
-            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
-          </div>
-          <div style="color: #ddd; line-height: 1.6;">${reply.content}</div>
-        </div>
-      `;
-    });
-    
-    // Update jumlah balasan
-    document.getElementById('repliesCount').textContent = querySnapshot.size;
-    
-  } catch (error) {
-    console.error("Error loading replies:", error);
-    repliesList.innerHTML = `
-      <div style="color:#ff6b6b; text-align:center; padding:20px;">
-        Gagal memuat balasan
-      </div>
-    `;
-  }
-}
-
-// Fungsi untuk menambah view count
-async function incrementAnnouncementViews(announcementId) {
-  try {
-    const announcementRef = doc(db, "announcements", announcementId);
-    await updateDoc(announcementRef, {
-      views: increment(1)
-    });
-  } catch (error) {
-    console.error("Error updating views:", error);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function loadRelatedAnnouncements(currentAnnouncementId) {
-    const relatedList = document.getElementById('relatedAnnouncementsList');
-    if (!relatedList) return;
+    const repliesList = document.getElementById('repliesList');
+    if (!repliesList) return;
     
     try {
-        relatedList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Memuat pengumuman terkait...</div>';
-        
-        // Get 3 most recent announcements excluding the current one
         const q = query(
-            collection(db, "announcements"),
-            where("pinned", "==", true),
-            orderBy("timestamp", "desc"),
-            limit(3)
+            collection(db, "announcements", announcementId, "replies"),
+            orderBy("timestamp", "asc")
         );
         
         const querySnapshot = await getDocs(q);
+        repliesList.innerHTML = '';
         
         if (querySnapshot.empty) {
-            relatedList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Tidak ada pengumuman terkait</div>';
+            repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
             return;
         }
         
-        relatedList.innerHTML = '';
-        let addedCount = 0;
-        
-        querySnapshot.forEach((doc) => {
-            if (doc.id === currentAnnouncementId || addedCount >= 3) return;
+        querySnapshot.forEach(doc => {
+            const reply = doc.data();
+            reply.id = doc.id;
             
-            addedCount++;
-            const announcement = doc.data();
-            const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
+            const replyEl = document.createElement('div');
+            replyEl.className = 'feedback-item';
+            replyEl.style.marginBottom = '15px';
+            replyEl.style.padding = '15px';
             
-            const relatedItem = document.createElement('div');
-            relatedItem.className = 'related-item';
-            relatedItem.style.cssText = `
-                padding: 15px;
-                background: rgba(255,255,255,0.03);
-                border-radius: 10px;
-                cursor: pointer;
-                transition: all 0.2s;
-                margin-bottom: 10px;
-            `;
-            relatedItem.onmouseover = () => relatedItem.style.background = 'rgba(255,255,255,0.07)';
-            relatedItem.onmouseout = () => relatedItem.style.background = 'rgba(255,255,255,0.03)';
+            const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
             
-            relatedItem.innerHTML = `
-                <h3 style="color: #4ea1ff; margin: 0 0 5px 0; font-size: 16px;">
-                    ${announcement.title.substring(0, 50)}${announcement.title.length > 50 ? '...' : ''}
-                </h3>
-                <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">
-                    ${announcement.content.substring(0, 80)}${announcement.content.length > 80 ? '...' : ''}
+            replyEl.innerHTML = `
+                <div class="feedback-header">
+                    <div class="feedback-user">
+                        <div class="feedback-avatar">${reply.userName?.charAt(0).toUpperCase() || 'U'}</div>
+                        <div>
+                            <div style="color: white; font-weight: 500;">${reply.userName || 'User'}</div>
+                            <div style="color: #aaa; font-size: 12px;">${reply.userEmail || ''}</div>
+                        </div>
+                    </div>
+                    <div class="feedback-time">${formatTimeAgo(waktu)}</div>
                 </div>
-                <div style="color: #777; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+                <div class="feedback-content">${reply.content}</div>
             `;
             
-            relatedItem.addEventListener('click', () => {
-                viewAnnouncementDetails(doc.id);
-            });
-            
-            relatedList.appendChild(relatedItem);
+            repliesList.appendChild(replyEl);
         });
         
-        if (addedCount === 0) {
-            relatedList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Tidak ada pengumuman terkait</div>';
-        }
-        
     } catch (error) {
-        console.error("Error loading related announcements:", error);
-        relatedList.innerHTML = `
-            <div style="color:#ff6b6b; text-align:center; padding:10px;">
-                Gagal memuat pengumuman terkait
+        console.error("Error loading replies:", error);
+        repliesList.innerHTML = `
+            <div style="color:#ff6b6b; text-align:center; padding:20px;">
+                Gagal memuat balasan
             </div>
         `;
     }
 }
+
+
 
 
 
@@ -4391,6 +4131,27 @@ document.querySelectorAll('.announcement-item').forEach(item => {
   });
 });
 
+// Dengan ini (delegasi event):
+document.addEventListener('click', function(e) {
+    // Handle click on announcement items
+    const announcementItem = e.target.closest('.announcement-item, .pinned-item');
+    if (announcementItem) {
+        e.preventDefault();
+        const announcementId = announcementItem.getAttribute('data-id');
+        if (announcementId) {
+            loadAnnouncementDetail(announcementId);
+            showPageContent(page9);
+            history.pushState({ page: "announcement-detail" }, "Detail Pengumuman", `/halaman-masukan-${announcementId}`);
+        }
+    }
+    
+    // Handle back button in page9
+    if (e.target.closest('#back-announcement')) {
+        e.preventDefault();
+        showPageContent(page7);
+        history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    }
+});
 
 
 
@@ -4643,60 +4404,48 @@ async function submitAnnouncementReply(e) {
 
 
 
+
+
+// Fungsi untuk menampilkan detail pengumuman
 async function viewAnnouncementDetails(announcementId) {
     try {
-        // Ambil data pengumuman terlebih dahulu
-        const docRef = doc(db, "announcements", announcementId);
-        const docSnap = await getDoc(docRef);
+        // Tampilkan halaman 9 terlebih dahulu
+        showPageContent(page9);
         
-        if (!docSnap.exists()) {
+        // Dapatkan data pengumuman untuk mendapatkan judul
+        const announcementRef = doc(db, "announcements", announcementId);
+        const announcementSnap = await getDoc(announcementRef);
+        
+        if (!announcementSnap.exists()) {
             throw new Error("Pengumuman tidak ditemukan");
         }
         
-        const announcement = docSnap.data();
+        const announcement = announcementSnap.data();
+        const title = announcement.title;
         
-        // Buat URL yang ramah pengguna tanpa slug
-        const urlTitle = announcement.title
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '') // Hapus karakter khusus
-            .replace(/\s+/g, '-')     // Ganti spasi dengan tanda hubung
-            .replace(/-+/g, '-');     // Gabungkan tanda hubung berurutan
-            
-        const newUrl = `/halaman-masukan-${urlTitle}-${announcementId}`;
+        // Buat slug dari judul
+        const slug = title.toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
         
-        // Tampilkan halaman 9
-        document.getElementById('page7').style.display = 'none';
-        document.getElementById('page9').style.display = 'block';
-        
-        // Load detail pengumuman
-        await loadAnnouncementDetail(announcementId);
-        
-        // Update URL tanpa reload halaman
+        // Update URL dengan format yang diinginkan
         history.pushState(
             { page: "announcementDetail", id: announcementId }, 
-            announcement.title, 
-            newUrl
+            title, 
+            `/halaman-masukan-${slug}`
         );
+        
+        // Muat detail pengumuman
+        await loadAnnouncementDetail(announcementId);
         
     } catch (error) {
         console.error("Error viewing announcement:", error);
-        const container = document.getElementById('announcementDetailContainer');
-        if (container) {
-            container.innerHTML = `
-                <div style="color:#ff6b6b; text-align:center; padding:50px;">
-                    Gagal memuat pengumuman: ${error.message}
-                </div>
-            `;
-        }
+        // Fallback ke halaman masukan jika error
+        showPageContent(page7);
+        showNotification('Gagal memuat pengumuman: ' + error.message, 'error');
     }
 }
-
-
-
-
-
-
-
 
 
 
@@ -5511,18 +5260,16 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
     
     if (isAnnouncementDetail) {
         const slug = path.replace('/halaman-masukan-', '');
-     findAnnouncementIdBySlug(slug)
-    .then(id => {
-        if (id) {
-            window.currentAnnouncementId = id;
-            showPageContent(page9);
-            loadAnnouncementDetail(id);
-            history.replaceState({ page: "announcementDetail" }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
-        } else {
-            showPageContent(page7);
-        }
-    });
-
+        findAnnouncementIdBySlug(slug)
+            .then(id => {
+                if (id) {
+                    showPageContent(page9);
+                    loadAnnouncementDetail(id);
+                } else {
+                    // Fallback ke halaman masukan jika tidak ditemukan
+                    showPageContent(page7);
+                }
+            });
         return;
     }
 
@@ -5553,125 +5300,69 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
   
   
   
- window.onload = function () {
+  
+  
+  
+  
+  window.onload = function () {
     const path = window.location.pathname || "/";
     const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
-
+    
     if (isAnnouncementDetail) {
         const slug = path.replace('/halaman-masukan-', '');
-        findAnnouncementIdBySlug(slug).then(id => {
-            if (id) {
-                window.currentAnnouncementId = id;
-                showPageContent(page9);
-                loadAnnouncementDetail(id);
-                history.replaceState({ page: "announcementDetail" }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
-            } else {
-                showPageContent(page7);
-                history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-            }
-        });
-
-  // Halaman lain
-  if (path.includes("halaman-arduino")) {
-    showPageContent(page2);
-    history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
-  } else if (path.includes("halaman-iot")) {
-    showPageContent(page3);
-    history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
-  } else if (path.includes("halaman-blog")) {
-    showPageContent(page4);
-    history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
-  } else if (path.includes("halaman-kumpulan-blog")) {
-    showPageContent(page5);
-    history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
-  } else if (path.includes("halaman-tentang-kami")) {
-    showPageContent(page6);
-    history.replaceState({ page: "tentang-kami" }, "Tentang Kami", "/halaman-tentang-kami");
-  } else if (path.includes("halaman-masukan")) {
-    showPageContent(page7);
-    loadFeedback().catch(console.error);
-    history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-  } else if (path.includes("halaman-forum")) {
-    showPageContent(page8);
-    history.replaceState({ page: "forum" }, "Forum", "/halaman-forum");
-  } else {
-    showPageContent(page1);
-    history.replaceState({ page: "home" }, "Beranda", "/");
-  }
-
-  initializeBlogPagination();
-};
-
- }
-  
-  
-  
-  window.addEventListener("DOMContentLoaded", function () {
-  const path = window.location.pathname || "/";
-  const isDetailPage = path.startsWith("/halaman-masukan-");
-
-  if (isDetailPage) {
-    const slug = path.replace("/halaman-masukan-", "");
-
-    findAnnouncementIdBySlug(slug).then((announcement) => {
-      if (announcement && announcement.id) {
-        window.currentAnnouncementId = announcement.id;
-        showPageContent(page9);
-        loadAnnouncementDetail(announcement.id);
-      } else {
-        // fallback ke halaman masukan biasa
+        findAnnouncementIdBySlug(slug)
+            .then(id => {
+                if (id) {
+                    showPageContent(page9);
+                    loadAnnouncementDetail(id);
+                    history.replaceState({ 
+                        page: "announcementDetail" 
+                    }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
+                } else {
+                    // Fallback ke halaman masukan jika tidak ditemukan
+                    showPageContent(page7);
+                    history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+                }
+            });
+    } else if (path.includes("halaman-arduino")) {
+        showPageContent(page2);
+        history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+    } else if (path.includes("halaman-iot")) {
+        showPageContent(page3);
+        history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
+    } else if (path.includes("halaman-blog")) {
+        showPageContent(page4);
+        history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
+    } else if (path.includes("halaman-kumpulan-blog")) {
+        showPageContent(page5);
+        history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
+    } else if (path.includes("halaman-tentang-kami")) {
+        showPageContent(page6);
+        history.replaceState({ page: "tentang-kami" }, "Tentang Kami", "/halaman-tentang-kami");
+    } else if (path.includes("halaman-masukan")) {
         showPageContent(page7);
-        loadFeedback();
-      }
-    });
-  }
-});
-
-
-
-
-document.addEventListener('click', async function(e) {
-  const readMoreBtn = e.target.closest('.read-more-btn');
-  if (readMoreBtn) {
-    const parentCard = readMoreBtn.closest('.pinned-item');
-    const announcementId = parentCard?.getAttribute('data-id');
-
-    if (announcementId) {
-      // Update URL
-      history.pushState({}, "", `/halaman-masukan?announcement=${announcementId}`);
-
-      // Tampilkan halaman 9
-      showPageContent(page9);
-
-      // Muat detail pengumuman
-      await loadAnnouncementDetail(announcementId);
+        loadFeedback().catch(console.error);
+        history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    } else if (path.includes("halaman-forum")) {
+        showPageContent(page8);
+        history.replaceState({ page: "forum" }, "Forum", "/halaman-forum");
+    } else {
+        showPageContent(page1);
+        history.replaceState({ page: "home" }, "Beranda", "/");
     }
+
+    initializeBlogPagination();
+};
+  
   }
-});
-
-
-
-
-
-
-
-
-
-async function findAnnouncementIdBySlug(slug) {
-    try {
-        const q = query(collection(db, "announcements"), where("slug", "==", slug));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            return querySnapshot.docs[0].id;
-        }
-        return null;
-    } catch (error) {
-        console.error("Gagal menemukan ID pengumuman:", error);
-        return null;
-    }
-}
-
- } 
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
