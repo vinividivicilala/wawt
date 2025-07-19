@@ -2231,13 +2231,21 @@
     Powered by: Manusia
   </a>
 
+
+
+
+
+
+
+
+
 <div id="page9" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
     Detail Pengumuman
   </div>
 
   <!-- ✅ Konten Pengumuman -->
-  <div id="announcementDetailContent" style="margin: 30px 100px 0 100px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 15px;">
+  <div id="announcementDetailContainer" style="margin: 30px 100px 0 100px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 15px;">
     <!-- Konten akan dimuat oleh JavaScript -->
   </div>
 
@@ -4018,62 +4026,69 @@ async function getAnnouncementLikesCount(announcementId) {
 
 
 
-async function loadAnnouncementDetail(announcementId) {
-    try {
-        // Pastikan halaman detail ditampilkan terlebih dahulu
-        showPageContent(page9);
-        
-        // Tunggu sebentar untuk memastikan DOM siap
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-        const container = document.getElementById('announcementDetailContainer');
-        if (!container) {
-            throw new Error("Container detail pengumuman tidak ditemukan");
-        }
 
-        const announcementRef = doc(db, "announcements", announcementId);
-        const docSnap = await getDoc(announcementRef);
-        
-        if (!docSnap.exists()) {
-            throw new Error("Pengumuman tidak ditemukan");
-        }
-        
-        const announcement = docSnap.data();
-        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
-        
-        // Render konten pengumuman
-        container.innerHTML = `
-            <div style="margin-bottom: 30px;">
-                <!-- Struktur detail pengumuman -->
-            </div>
-        `;
-        
-        // Load balasan dan update view count
-        await Promise.all([
-            loadAnnouncementReplies(announcementId),
-            incrementAnnouncementViews(announcementId)
-        ]);
-        
-    } catch (error) {
-        console.error("Error loading announcement:", error);
-        
-        // Fallback ke halaman masukan jika error
-        showPageContent(page7);
-        
-        // Tampilkan error ke user jika diperlukan
-        const feedbackList = document.getElementById('feedbackListContainer');
-        if (feedbackList) {
-            feedbackList.innerHTML = `
-                <div style="color:#ff6b6b; text-align:center; padding:30px;">
-                    Gagal memuat pengumuman: ${error.message}
-                    <button onclick="location.reload()" style="margin-top:15px; padding:8px 16px; background:#ff6b6b; color:white; border:none; border-radius:4px; cursor:pointer;">
-                        Muat Ulang
-                    </button>
-                </div>
-            `;
-        }
+
+async function loadAnnouncementDetail(announcementId) {
+  try {
+    // Tampilkan halaman page9
+    document.querySelectorAll('[id^="page"]').forEach(p => p.style.display = "none");
+    document.getElementById("page9").style.display = "block";
+
+    // Tunggu supaya DOM benar-benar render
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    let container = document.getElementById('announcementDetailContainer');
+    if (!container) {
+      throw new Error("Container detail pengumuman tidak ditemukan");
     }
+
+    const announcementRef = doc(db, "announcements", announcementId);
+    const docSnap = await getDoc(announcementRef);
+
+    if (!docSnap.exists()) {
+      throw new Error("Pengumuman tidak ditemukan");
+    }
+
+    const announcement = docSnap.data();
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
+
+    container.innerHTML = `
+      <div style="color:white; margin-bottom: 30px;">
+        <h2>${announcement.title}</h2>
+        <p>${announcement.content}</p>
+        <div style="font-size:12px; color: #aaa;">${formatTimeAgo(waktu)} • Dilihat: ${announcement.views || 0}</div>
+      </div>
+    `;
+
+    // Load replies & increment view
+    await Promise.all([
+      loadAnnouncementReplies(announcementId),
+      incrementAnnouncementViews(announcementId)
+    ]);
+
+  } catch (error) {
+    console.error("Error loading announcement:", error);
+    showPageContent(document.getElementById("page7"));
+    const feedbackList = document.getElementById('feedbackListContainer');
+    if (feedbackList) {
+      feedbackList.innerHTML = `
+        <div style="color:#ff6b6b; text-align:center; padding:30px;">
+          Gagal memuat pengumuman: ${error.message}
+          <button onclick="location.reload()" style="margin-top:15px; padding:8px 16px; background:#ff6b6b; color:white; border:none; border-radius:4px; cursor:pointer;">
+            Muat Ulang
+          </button>
+        </div>
+      `;
+    }
+  }
 }
+
+
+
+
+
+
+
 
 
 
@@ -4530,92 +4545,53 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
-
-
-
-
-
-// Fungsi untuk menampilkan detail pengumuman
 async function showAnnouncementDetail(announcementId) {
   try {
-     // SEMBUNYIKAN SEMUA PAGE LAIN
+    // Tampilkan page9
     document.querySelectorAll('[id^="page"]').forEach(page => page.style.display = 'none');
-
-    // TAMPILKAN PAGE 9
     document.getElementById('page9').style.display = 'block';
-    
-    // Ambil data pengumuman dari Firestore
+
+    // ⏳ Tunggu 50–100ms agar elemen page9 dirender sepenuhnya
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const container = document.getElementById("announcementDetailContainer");
+    if (!container) throw new Error("Container detail pengumuman tidak ditemukan");
+
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
-    
+
     if (!docSnap.exists()) {
       throw new Error("Pengumuman tidak ditemukan");
     }
-    
-    const announcement = docSnap.data();
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
-    
-    // Render konten pengumuman
-    document.getElementById('announcementDetailContent').innerHTML = `
-      <div class="feedback-item" style="border-left: 4px solid #ff6b6b;">
-        <div class="feedback-header">
-          <div class="feedback-user">
-            <div class="feedback-avatar">${announcement.userName?.charAt(0).toUpperCase() || 'A'}</div>
-            <div>
-              <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-              <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
-            </div>
-          </div>
-          <div class="feedback-time">${formatTimeAgo(waktu)}</div>
-        </div>
-        
-        <div class="feedback-title" style="color: #ff6b6b; font-size: 24px; margin: 15px 0;">${announcement.title}</div>
-        
-        <div class="feedback-content" style="white-space: pre-line; font-size: 16px; line-height: 1.6;">
-          ${announcement.content}
-        </div>
-        
-        <div style="display: flex; gap: 15px; margin-top: 20px; color: #aaa; font-size: 14px;">
-          <div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="vertical-align: middle; margin-right: 5px;">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-            ${announcement.views || 0} dilihat
-          </div>
-        </div>
+
+    const data = docSnap.data();
+    const waktu = data.timestamp?.toDate() || new Date();
+
+    container.innerHTML = `
+      <div style="color:white;">
+        <h2>${data.title}</h2>
+        <p>${data.content}</p>
+        <div style="font-size: 12px; color: #aaa;">${formatTimeAgo(waktu)} | Dilihat: ${data.views || 0}</div>
       </div>
     `;
-    
-    // Muat balasan
+
+    // Load replies dan update jumlah balasan
     await loadAnnouncementReplies(announcementId);
-    
-    // Update jumlah balasan
     const repliesCount = await getAnnouncementRepliesCount(announcementId);
-    document.getElementById('repliesCount').textContent = repliesCount;
-    
-    // Tambahkan event listener untuk form balasan
-    document.getElementById('announcementReplyForm').onsubmit = async (e) => {
-      e.preventDefault();
-      await submitAnnouncementReply(announcementId);
-    };
-    
-    // Tambahkan event listener untuk tombol kembali
-    document.getElementById('backToAnnouncements').onclick = () => {
-      document.getElementById('announcementDetailPage').style.display = 'none';
-      document.getElementById('page7').style.display = 'block';
-    };
-    
+    document.getElementById("repliesCount").textContent = repliesCount;
+
   } catch (error) {
     console.error("Error loading announcement:", error);
-    document.getElementById('announcementDetailContent').innerHTML = `
-      <div style="color: #ff6b6b; text-align: center; padding: 30px;">
-        Gagal memuat pengumuman: ${error.message}
-      </div>
-    `;
+    const container = document.getElementById("announcementDetailContainer");
+    if (container) {
+      container.innerHTML = `<div style="color:red;">${error.message}</div>`;
+    }
   }
 }
+
+
+
+
 
 
 
