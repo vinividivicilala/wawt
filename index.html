@@ -4542,21 +4542,23 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
-
-
 async function showAnnouncementDetail(announcementId) {
   try {
-    // Tampilkan page9
+    // Sembunyikan semua page
     document.querySelectorAll('[id^="page"]').forEach(page => page.style.display = 'none');
-    document.getElementById('page9').style.display = 'block';
 
-    // ⏳ Tunggu 50–100ms agar elemen page9 dirender sepenuhnya
+    // Tampilkan halaman detail
+    const page9 = document.getElementById('page9');
+    if (!page9) throw new Error("Halaman page9 tidak ditemukan");
+    page9.style.display = 'block';
+
+    // Tunggu supaya elemen DOM ter-render
     await new Promise(resolve => setTimeout(resolve, 100));
 
     const container = document.getElementById("announcementDetailContainer");
     if (!container) throw new Error("Container detail pengumuman tidak ditemukan");
 
+    // Ambil data dari Firestore
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
 
@@ -4565,29 +4567,37 @@ async function showAnnouncementDetail(announcementId) {
     }
 
     const data = docSnap.data();
-    const waktu = data.timestamp?.toDate() || new Date();
+    console.log("✅ Data berhasil dimuat:", data);
 
+    const waktu = data.timestamp?.toDate?.() || new Date();
+
+    // Render konten
     container.innerHTML = `
       <div style="color:white;">
-        <h2>${data.title}</h2>
-        <p>${data.content}</p>
-        <div style="font-size: 12px; color: #aaa;">${formatTimeAgo(waktu)} | Dilihat: ${data.views || 0}</div>
+        <h2 style="font-size: 28px; margin-bottom: 10px;">${data.title || "Tanpa Judul"}</h2>
+        <p style="font-size: 16px; line-height: 1.6;">${data.content || "Tanpa Konten"}</p>
+        <div style="font-size: 12px; color: #aaa; margin-top: 15px;">
+          ${formatTimeAgo(waktu)} &nbsp;|&nbsp; Dilihat: ${data.views || 0}
+        </div>
       </div>
     `;
 
-    // Load replies dan update jumlah balasan
+    // Load balasan
     await loadAnnouncementReplies(announcementId);
     const repliesCount = await getAnnouncementRepliesCount(announcementId);
-    document.getElementById("repliesCount").textContent = repliesCount;
+    const repliesCountEl = document.getElementById("repliesCount");
+    if (repliesCountEl) repliesCountEl.textContent = repliesCount;
 
   } catch (error) {
     console.error("Error loading announcement:", error);
-    const container = document.getElementById("announcementDetailContainer");
+
+  const container = document.getElementById("announcementDetailContainer");
     if (container) {
       container.innerHTML = `<div style="color:red;">${error.message}</div>`;
     }
   }
 }
+
 
 
 
