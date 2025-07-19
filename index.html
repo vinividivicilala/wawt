@@ -2719,16 +2719,17 @@ document.getElementById('announcementReplyForm')?.addEventListener('submit', asy
     }
 });
 
-
-// Fungsi untuk mendapatkan parameter dari URL
 function getUrlParameter(name) {
-    name = name.replace(/[\[\]]/g, '\\$&');
-    const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
-    const results = regex.exec(window.location.href);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+  if (typeof name !== 'string') return null; // Hindari error dari .replace()
+
+  name = name.replace(/[\[\]]/g, '\\$&');
+  const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+  const results = regex.exec(window.location.href);
+  if (!results) return null;
+  if (!results[2]) return '';
+  return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+
 
 // Fungsi untuk memeriksa apakah halaman saat ini adalah halaman detail pengumuman
 function isAnnouncementDetailPage() {
