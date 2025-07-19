@@ -2160,112 +2160,6 @@
 
 
 
-<!-- Tambahkan ini ke dalam file HTML Anda (di bagian yang sesuai) -->
-<div id="page9" style="display: none;">
-  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
-  
-  <h1 style="color: white; font-size: 28px; margin: 30px 0 20px 180px;">Detail Pengumuman</h1>
-  
-  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px; border-radius: 20px; background: rgba(0, 0, 0, 0.3); margin: 0 100px;">
-    
-    <!-- Announcement Content Container -->
-    <div id="announcementDetailContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px;">
-      <!-- Content will be loaded dynamically -->
-      <div style="text-align: center; color: #ccc; padding: 50px 0;">
-        Memuat detail pengumuman...
-      </div>
-    </div>
-    
-    <!-- Replies Section -->
-    <div id="announcementRepliesContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-        Balasan (<span id="repliesCount">0</span>)
-      </h2>
-      <div id="repliesList" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
-        <!-- Replies will be loaded here -->
-        <div style="text-align: center; color: #ccc; padding: 20px 0;">
-          Belum ada balasan
-        </div>
-      </div>
-      
-      <!-- Reply Form -->
-      <form id="announcementReplyForm" style="margin-top: 20px;">
-        <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
-                  style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
-        
-        <div style="display: flex; justify-content: flex-end;">
-          <button type="submit" id="submitAnnouncementReply" 
-                  style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s;">
-            Kirim Balasan
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
-      </form>
-    </div>
-    
-    <!-- Related Announcements -->
-    <div id="relatedAnnouncementsContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-        Pengumuman Terkait
-      </h2>
-      <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
-        <!-- Related announcements will be loaded here -->
-        <div style="text-align: center; color: #ccc; padding: 20px 0;">
-          Memuat pengumuman terkait...
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="bottom-line"></div>
-
-  <div class="bottom-text">
-    <div>
-      <a href="#" class="tentangLink">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-        Tentang Kami
-      </a>
-    </div>
-    <div>
-      <a href="#" class="masukanLink">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-        Masukan
-      </a>
-    </div>
-    <div>
-      <a href="#">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-        Saran
-      </a>
-    </div>
-  </div>
-
-  <div class="nav-link">
-    <a href="#" id="back-announcement">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 5 5 12 12 19"></polyline>
-      </svg>
-      Kembali
-    </a>
-  </div>
-</div>
-
-
-
-
 
 
 
@@ -3969,13 +3863,6 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
-
-
-
-
-
-
-
 	 
 	 function loadAnnouncements() {
   const container = document.getElementById("announcementContainer");
@@ -4051,12 +3938,13 @@ async function loadAnnouncementDetail(announcementId) {
 
 
 
-// Fungsi untuk memuat balasan pengumuman
+
+
 async function loadAnnouncementReplies(announcementId) {
-    const repliesList = document.getElementById('repliesList');
-    if (!repliesList) return;
-    
     try {
+        const repliesList = document.getElementById('announcementRepliesList');
+        repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Memuat balasan...</div>';
+        
         const q = query(
             collection(db, "announcements", announcementId, "replies"),
             orderBy("timestamp", "asc")
@@ -4066,51 +3954,43 @@ async function loadAnnouncementReplies(announcementId) {
         repliesList.innerHTML = '';
         
         if (querySnapshot.empty) {
-            repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
+            repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Belum ada balasan</div>';
             return;
         }
         
         querySnapshot.forEach(doc => {
             const reply = doc.data();
-            reply.id = doc.id;
-            
-            const replyEl = document.createElement('div');
-            replyEl.className = 'feedback-item';
-            replyEl.style.marginBottom = '15px';
-            replyEl.style.padding = '15px';
-            
             const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
             
-            replyEl.innerHTML = `
-                <div class="feedback-header">
-                    <div class="feedback-user">
-                        <div class="feedback-avatar">${reply.userName?.charAt(0).toUpperCase() || 'U'}</div>
-                        <div>
-                            <div style="color: white; font-weight: 500;">${reply.userName || 'User'}</div>
-                            <div style="color: #aaa; font-size: 12px;">${reply.userEmail || ''}</div>
+            repliesList.innerHTML += `
+                <div class="feedback-item" style="margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                    <div class="feedback-header">
+                        <div class="feedback-user">
+                            <div class="feedback-avatar" style="width: 30px; height: 30px; font-size: 14px;">
+                                ${reply.userName?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <div>
+                                <div style="color: white; font-size: 14px;">${reply.userName || 'User'}</div>
+                                <div style="color: #aaa; font-size: 11px;">${formatTimeAgo(waktu)}</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="feedback-time">${formatTimeAgo(waktu)}</div>
+                    <div class="feedback-content" style="margin-top: 10px; font-size: 14px;">
+                        ${reply.content}
+                    </div>
                 </div>
-                <div class="feedback-content">${reply.content}</div>
             `;
-            
-            repliesList.appendChild(replyEl);
         });
         
     } catch (error) {
         console.error("Error loading replies:", error);
-        repliesList.innerHTML = `
-            <div style="color:#ff6b6b; text-align:center; padding:20px;">
+        document.getElementById('announcementRepliesList').innerHTML = `
+            <div style="color:#ff6b6b; text-align:center; padding:10px;">
                 Gagal memuat balasan
             </div>
         `;
     }
 }
-
-
-
-
 
 
 
@@ -4213,50 +4093,6 @@ async function toggleAnnouncementLike(announcementId) {
     }
 }
 
-async function submitAnnouncementReply(e) {
-    e.preventDefault();
-    
-    const user = auth.currentUser;
-    if (!user) {
-        alert('Silakan login untuk membalas pengumuman');
-        return;
-    }
-    
-    const announcementId = window.location.pathname.split('-').pop();
-    const content = document.getElementById('announcementReplyContent').value.trim();
-    
-    if (!content) {
-        alert('Isi balasan tidak boleh kosong');
-        return;
-    }
-    
-    try {
-        const repliesRef = collection(db, "announcements", announcementId, "replies");
-        await addDoc(repliesRef, {
-            content,
-            userId: user.uid,
-            userName: user.displayName || 'Anonymous',
-            userEmail: user.email,
-            timestamp: serverTimestamp()
-        });
-        
-        // Reset form
-        e.target.reset();
-        
-        // Reload replies
-        await loadAnnouncementReplies(announcementId);
-        
-        // Update replies count
-        const repliesCount = await getAnnouncementRepliesCount(announcementId);
-        document.getElementById('repliesCount').textContent = repliesCount;
-        
-    } catch (error) {
-        console.error("Error submitting announcement reply:", error);
-        alert('Gagal mengirim balasan');
-    }
-}
-
-
 
 // Fungsi untuk memuat pengumuman terkait
 async function loadRelatedAnnouncements(currentAnnouncementId) {
@@ -4337,122 +4173,99 @@ async function loadRelatedAnnouncements(currentAnnouncementId) {
 
 
 
-// Function to submit reply to announcement
-async function submitAnnouncementReply(e) {
-    e.preventDefault();
-    
-    const user = auth.currentUser;
-    if (!user) {
-        alert('Silakan login terlebih dahulu untuk membalas pengumuman');
-        return;
-    }
-    
-    const content = document.getElementById('announcementReplyContent').value.trim();
-    if (!content) {
-        alert('Isi balasan tidak boleh kosong');
-        return;
-    }
-    
-    // Get announcement ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const announcementId = urlParams.get('id');
-    if (!announcementId) {
-        alert('Tidak dapat menemukan pengumuman');
-        return;
-    }
-    
-    const submitBtn = document.getElementById('submitAnnouncementReply');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
-    
-    try {
-        // Add reply to subcollection
-        const repliesRef = collection(db, "announcements", announcementId, "replies");
-        await addDoc(repliesRef, {
-            content,
-            userId: user.uid,
-            userName: user.displayName || 'Anonymous',
-            userEmail: user.email,
-            timestamp: serverTimestamp()
-        });
-        
-        // Update reply count in main announcement
-        const announcementRef = doc(db, "announcements", announcementId);
-        await updateDoc(announcementRef, {
-            repliesCount: increment(1)
-        });
-        
-        // Clear form
-        document.getElementById('announcementReplyContent').value = '';
-        
-        // Reload replies
-        await loadAnnouncementReplies(announcementId);
-        
-        // Show success message
-        alert('Balasan berhasil dikirim!');
-        
-    } catch (error) {
-        console.error("Error submitting reply:", error);
-        alert('Gagal mengirim balasan. Silakan coba lagi nanti.');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-    }
-}
 
 
 
-
-
-
-// Fungsi untuk menampilkan detail pengumuman
 async function viewAnnouncementDetails(announcementId) {
     try {
-        // Tampilkan halaman 9 terlebih dahulu
-        showPageContent(page9);
+        // Ambil data pengumuman dari Firestore
+        const docRef = doc(db, "announcements", announcementId);
+        const docSnap = await getDoc(docRef);
         
-        // Dapatkan data pengumuman untuk mendapatkan judul
-        const announcementRef = doc(db, "announcements", announcementId);
-        const announcementSnap = await getDoc(announcementRef);
-        
-        if (!announcementSnap.exists()) {
+        if (!docSnap.exists()) {
             throw new Error("Pengumuman tidak ditemukan");
         }
         
-        const announcement = announcementSnap.data();
-        const title = announcement.title;
+        const announcement = docSnap.data();
+        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
         
-        // Buat slug dari judul
-        const slug = title.toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '');
+        // Render ke dalam container yang sama dengan halaman masukan
+        const feedbackList = document.getElementById('feedbackListContainer');
+        feedbackList.innerHTML = `
+            <div class="feedback-item announcement-item" style="border-left: 4px solid #ff6b6b;">
+                <div class="feedback-header">
+                    <div class="feedback-user">
+                        <div class="feedback-avatar">${announcement.userName?.charAt(0).toUpperCase() || 'A'}</div>
+                        <div>
+                            <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
+                            <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
+                        </div>
+                    </div>
+                    <div class="feedback-time">${formatTimeAgo(waktu)}</div>
+                </div>
+                
+                <div class="feedback-title">${announcement.title}</div>
+                <div class="feedback-content" style="white-space: pre-line;">${announcement.content}</div>
+                
+                <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                    <button id="backToAnnouncements" style="background: none; border: none; color: #4ea1ff; cursor: pointer;">
+                        ← Kembali ke Daftar Pengumuman
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Bagian untuk replies -->
+            <div id="announcementRepliesContainer" style="margin-top: 30px;">
+                <h3 style="color: white; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                    Balasan (${announcement.repliesCount || 0})
+                </h3>
+                <div id="announcementRepliesList"></div>
+                
+                <form id="announcementReplyForm" style="margin-top: 20px;">
+                    <textarea id="announcementReplyContent" rows="3" placeholder="Tulis balasan Anda..." 
+                              style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); 
+                                     border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; 
+                                     color: white; margin-bottom: 10px;"></textarea>
+                    <button type="submit" style="padding: 8px 15px; background: #4ea1ff; border: none; 
+                                                border-radius: 8px; color: white; cursor: pointer;">
+                        Kirim Balasan
+                    </button>
+                </form>
+            </div>
+        `;
         
-        // Update URL dengan format yang diinginkan
-        history.pushState(
-            { page: "announcementDetail", id: announcementId }, 
-            title, 
-            `/halaman-masukan-${slug}`
-        );
+        // Load replies
+        await loadAnnouncementReplies(announcementId);
         
-        // Muat detail pengumuman
-        await loadAnnouncementDetail(announcementId);
+        // Tambahkan event listener untuk tombol kembali
+        document.getElementById('backToAnnouncements').addEventListener('click', () => {
+            loadPinnedAnnouncements();
+        });
+        
+        // Tambahkan event listener untuk form reply
+        document.getElementById('announcementReplyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await submitAnnouncementReply(announcementId);
+        });
         
     } catch (error) {
-        console.error("Error viewing announcement:", error);
-        // Fallback ke halaman masukan jika error
-        showPageContent(page7);
-        showNotification('Gagal memuat pengumuman: ' + error.message, 'error');
+        console.error("Error loading announcement:", error);
+        const feedbackList = document.getElementById('feedbackListContainer');
+        feedbackList.innerHTML = `
+            <div class="feedback-item" style="color: #ff6b6b; text-align: center; padding: 30px;">
+                Gagal memuat pengumuman: ${error.message}
+                <button id="backToAnnouncements" style="display: block; margin: 20px auto; padding: 8px 15px; 
+                                                     background: none; border: 1px solid #ff6b6b; 
+                                                     color: #ff6b6b; cursor: pointer;">
+                    Kembali ke Daftar Pengumuman
+                </button>
+            </div>
+        `;
+        document.getElementById('backToAnnouncements').addEventListener('click', () => {
+            loadPinnedAnnouncements();
+        });
     }
 }
-
-
-
-
-
-
-
 
 
 
@@ -4521,7 +4334,47 @@ function renderAnnouncementDetail(announcement, repliesCount, likesCount) {
 
 
 
-
+async function submitAnnouncementReply(announcementId) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert('Silakan login untuk membalas pengumuman');
+        return;
+    }
+    
+    const content = document.getElementById('announcementReplyContent').value.trim();
+    if (!content) {
+        alert('Isi balasan tidak boleh kosong');
+        return;
+    }
+    
+    try {
+        // Tambahkan reply
+        const repliesRef = collection(db, "announcements", announcementId, "replies");
+        await addDoc(repliesRef, {
+            content,
+            userId: user.uid,
+            userName: user.displayName || 'Anonymous',
+            userEmail: user.email,
+            timestamp: serverTimestamp()
+        });
+        
+        // Update reply count
+        const announcementRef = doc(db, "announcements", announcementId);
+        await updateDoc(announcementRef, {
+            repliesCount: increment(1)
+        });
+        
+        // Reset form
+        document.getElementById('announcementReplyContent').value = '';
+        
+        // Reload replies
+        await loadAnnouncementReplies(announcementId);
+        
+    } catch (error) {
+        console.error("Error submitting reply:", error);
+        alert('Gagal mengirim balasan');
+    }
+}
 
 
 
