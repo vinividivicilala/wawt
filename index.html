@@ -2960,25 +2960,30 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 	 
 	 
 	 
-	 
 	 async function checkAndLoadFeedback() {
     const path = window.location.pathname;
     
-    // Handle announcement detail pages
-    if (path.includes('/halaman-masukan-')) {
-        const announcementId = path.split('-').pop();
+    // Jika URL sesuai pola halaman detail pengumuman
+    if (path.startsWith('/halaman-masukan-') && path.split('-').length > 3) {
+        const parts = path.split('-');
+        const announcementId = parts[parts.length - 1]; // ID ada di bagian terakhir
+        
+        // Tampilkan halaman 9 dan muat detail pengumuman
         document.getElementById('page7').style.display = 'none';
         document.getElementById('page9').style.display = 'block';
         await loadAnnouncementDetail(announcementId);
     } 
-    // Handle main feedback page
+    // Jika ini adalah halaman masukan biasa
     else if (path.includes('/halaman-masukan')) {
+        // Tampilkan halaman 7 dan muat feedback
         document.getElementById('page7').style.display = 'block';
         document.getElementById('page9').style.display = 'none';
         displayCachedFeedback();
         await loadFeedback();
     }
 }
+	 
+	 
 	 
 	 
 	 
@@ -2989,23 +2994,11 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
         e.preventDefault();
         const announcementId = announcementItem.getAttribute('data-id');
         if (announcementId) {
-            // Show page 9 and hide page 7
-            document.getElementById('page7').style.display = 'none';
-            document.getElementById('page9').style.display = 'block';
-            
-            // Load the announcement content
-            await loadAnnouncementDetail(announcementId);
-            
-            // Update URL
-            history.pushState(
-                { page: "announcement-detail", id: announcementId }, 
-                "Detail Pengumuman", 
-                `/halaman-masukan-${announcementId}`
-            );
+            await viewAnnouncementDetails(announcementId);
         }
     }
     
-    // Handle back button
+    // Handle back button in page9
     if (e.target.closest('#back-announcement')) {
         e.preventDefault();
         document.getElementById('page9').style.display = 'none';
@@ -3013,6 +3006,21 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
         history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
     }
 });
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
 	 
 	 
 	 
@@ -4622,23 +4630,39 @@ async function submitAnnouncementReply(e) {
 
 
 
+
 async function viewAnnouncementDetails(announcementId) {
     try {
+        // Ambil data pengumuman terlebih dahulu
+        const docRef = doc(db, "announcements", announcementId);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
+            throw new Error("Pengumuman tidak ditemukan");
+        }
+        
+        const announcement = docSnap.data();
+        
+        // Buat URL yang ramah pengguna tanpa slug
+        const urlTitle = announcement.title
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '') // Hapus karakter khusus
+            .replace(/\s+/g, '-')     // Ganti spasi dengan tanda hubung
+            .replace(/-+/g, '-');     // Gabungkan tanda hubung berurutan
+            
+        const newUrl = `/halaman-masukan-${urlTitle}-${announcementId}`;
+        
         // Tampilkan halaman 9
         document.getElementById('page7').style.display = 'none';
         document.getElementById('page9').style.display = 'block';
-        
-        // Set judul dinamis
-        document.getElementById('dynamicText').textContent = "Detail Pengumuman";
         
         // Load detail pengumuman
         await loadAnnouncementDetail(announcementId);
         
         // Update URL tanpa reload halaman
-        const newUrl = `${window.location.pathname}?announcement=${announcementId}`;
         history.pushState(
             { page: "announcementDetail", id: announcementId }, 
-            "Detail Pengumuman", 
+            announcement.title, 
             newUrl
         );
         
@@ -4656,6 +4680,30 @@ async function viewAnnouncementDetails(announcementId) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+viewBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const slug = announcement.slug || announcement.id;
+    history.pushState({ page: "announcementDetail" }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
+    showPageContent(page9);
+    await loadAnnouncementDetail(announcement.id);
+});
 
 
 
@@ -5504,27 +5552,23 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
   
   
   
-  
-  window.onload = function () {
-  const path = window.location.pathname || "/";
-  const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
+ window.onload = function () {
+    const path = window.location.pathname || "/";
+    const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
 
-  if (isAnnouncementDetail) {
-    const slug = path.replace('/halaman-masukan-', '');
-    findAnnouncementIdBySlug(slug)
-      .then(id => {
-        if (id) {
-          window.currentAnnouncementId = id;
-          showPageContent(page9);
-          loadAnnouncementDetail(id);
-          history.replaceState({ page: "announcementDetail" }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
-        } else {
-          showPageContent(page7);
-          history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-        }
-      });
-    return; // Tambahkan return agar tidak lanjut ke blok else if lainnya
-  }
+    if (isAnnouncementDetail) {
+        const slug = path.replace('/halaman-masukan-', '');
+        findAnnouncementIdBySlug(slug).then(id => {
+            if (id) {
+                window.currentAnnouncementId = id;
+                showPageContent(page9);
+                loadAnnouncementDetail(id);
+                history.replaceState({ page: "announcementDetail" }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
+            } else {
+                showPageContent(page7);
+                history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+            }
+        });
 
   // Halaman lain
   if (path.includes("halaman-arduino")) {
@@ -5585,23 +5629,48 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 
 
 
-async function findAnnouncementIdBySlug(slug) {
-  try {
-    const q = query(collection(db, "announcements"), where("slug", "==", slug));
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-      const doc = querySnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
+document.addEventListener('click', async function(e) {
+  const readMoreBtn = e.target.closest('.read-more-btn');
+  if (readMoreBtn) {
+    const parentCard = readMoreBtn.closest('.pinned-item');
+    const announcementId = parentCard?.getAttribute('data-id');
+
+    if (announcementId) {
+      // Update URL
+      history.pushState({}, "", `/halaman-masukan?announcement=${announcementId}`);
+
+      // Tampilkan halaman 9
+      showPageContent(page9);
+
+      // Muat detail pengumuman
+      await loadAnnouncementDetail(announcementId);
     }
-    return null;
-  } catch (error) {
-    console.error("Error finding announcement by slug:", error);
-    return null;
   }
+});
+
+
+
+
+
+
+
+
+
+async function findAnnouncementIdBySlug(slug) {
+    try {
+        const q = query(collection(db, "announcements"), where("slug", "==", slug));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            return querySnapshot.docs[0].id;
+        }
+        return null;
+    } catch (error) {
+        console.error("Gagal menemukan ID pengumuman:", error);
+        return null;
+    }
 }
 
-  
-  
+ } 
   
   
   
