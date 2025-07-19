@@ -2231,26 +2231,12 @@
     Powered by: Manusia
   </a>
 
-
-
-
 <div id="page9" style="display: none;">
-  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
-  
-  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px; border-radius: 20px; background: rgba(0, 0, 0, 0.3); margin: 0 100px;">
-    
-    <!-- Konten Pengumuman -->
-    <div id="announcementDetailContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px;">
-      <!-- Konten akan dimuat secara dinamis -->
-    </div>
-    
-<div id="announcementDetailPage" style="display: none;">
-  <!-- Judul Halaman -->
-  <div style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
     Detail Pengumuman
   </div>
 
-  <!-- ✅ Konten Pengumuman akan dirender di sini oleh JS -->
+  <!-- ✅ Konten Pengumuman -->
   <div id="announcementDetailContent" style="margin: 30px 100px 0 100px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 15px;">
     <!-- Konten akan dimuat oleh JavaScript -->
   </div>
@@ -2292,8 +2278,6 @@
     </button>
   </div>
 </div>
-
-
 
 
 
@@ -4552,15 +4536,14 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
-
-
 // Fungsi untuk menampilkan detail pengumuman
 async function showAnnouncementDetail(announcementId) {
   try {
-    // Sembunyikan halaman masukan dan tampilkan halaman detail
-    document.getElementById('page7').style.display = 'none';
-    document.getElementById('announcementDetailPage').style.display = 'block';
+     // SEMBUNYIKAN SEMUA PAGE LAIN
+    document.querySelectorAll('[id^="page"]').forEach(page => page.style.display = 'none');
+
+    // TAMPILKAN PAGE 9
+    document.getElementById('page9').style.display = 'block';
     
     // Ambil data pengumuman dari Firestore
     const docRef = doc(db, "announcements", announcementId);
