@@ -4132,9 +4132,11 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
-
 async function loadAnnouncementDetail(announcementId) {
     try {
+        const container = document.getElementById('announcementDetailContainer');
+        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:50px;">Memuat pengumuman...</div>';
+
         const announcementRef = doc(db, "announcements", announcementId);
         const announcementSnap = await getDoc(announcementRef);
         
@@ -4165,12 +4167,13 @@ async function loadAnnouncementDetail(announcementId) {
         
     } catch (error) {
         console.error("Error loading announcement:", error);
-        throw error;
+        document.getElementById('announcementDetailContainer').innerHTML = `
+            <div style="color:#ff6b6b; text-align:center; padding:50px;">
+                Gagal memuat pengumuman: ${error.message}
+            </div>
+        `;
     }
 }
-
-
-
 
 
 
@@ -4604,11 +4607,6 @@ async function submitAnnouncementReply(e) {
 }
 
 
-
-
-
-
-
 async function viewAnnouncementDetails(announcementId) {
     try {
         // Sembunyikan semua halaman terlebih dahulu
@@ -4620,7 +4618,10 @@ async function viewAnnouncementDetails(announcementId) {
         document.getElementById('page9').style.display = 'block';
         
         // Update dynamic text
-        document.getElementById('dynamicText').textContent = "Detail Pengumuman";
+        const dynamicText = document.getElementById('dynamicText');
+        if (dynamicText) {
+            dynamicText.textContent = "Detail Pengumuman";
+        }
         
         // Muat detail pengumuman
         await loadAnnouncementDetail(announcementId);
@@ -4634,11 +4635,53 @@ async function viewAnnouncementDetails(announcementId) {
         
     } catch (error) {
         console.error("Error viewing announcement:", error);
-        document.getElementById('announcementDetailContainer').innerHTML = `
-            <div style="color:#ff6b6b; text-align:center; padding:50px;">
-                Gagal memuat pengumuman: ${error.message}
-            </div>
-        `;
+        const container = document.getElementById('announcementDetailContainer');
+        if (container) {
+            container.innerHTML = `
+                <div style="color:#ff6b6b; text-align:center; padding:50px;">
+                    Gagal memuat pengumuman: ${error.message}
+                </div>
+            `;
+        }
+    }
+}
+
+
+
+// Fungsi untuk mendapatkan jumlah like pengumuman
+async function getAnnouncementLikesCount(announcementId) {
+    try {
+        const likesRef = collection(db, "announcements", announcementId, "likes");
+        const snapshot = await getCountFromServer(likesRef);
+        return snapshot.data().count;
+    } catch (error) {
+        console.error("Error getting likes count:", error);
+        return 0;
+    }
+}
+
+// Fungsi untuk mendapatkan jumlah balasan pengumuman
+async function getAnnouncementRepliesCount(announcementId) {
+    try {
+        const repliesRef = collection(db, "announcements", announcementId, "replies");
+        const snapshot = await getCountFromServer(repliesRef);
+        return snapshot.data().count;
+    } catch (error) {
+        console.error("Error getting replies count:", error);
+        return 0;
+    }
+}
+
+// Fungsi untuk menambah view count
+async function incrementAnnouncementViews(announcementId) {
+    try {
+        const announcementRef = doc(db, "announcements", announcementId);
+        await updateDoc(announcementRef, {
+            views: increment(1),
+            lastViewed: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error incrementing announcement views:", error);
     }
 }
 
@@ -4648,18 +4691,6 @@ async function viewAnnouncementDetails(announcementId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// Fungsi untuk merender detail pengumuman
 function renderAnnouncementDetail(announcement, repliesCount, likesCount) {
     const container = document.getElementById('announcementDetailContainer');
     if (!container) return;
@@ -4669,7 +4700,7 @@ function renderAnnouncementDetail(announcement, repliesCount, likesCount) {
     container.innerHTML = `
         <div style="margin-bottom: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title}</h2>
+                <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title || 'Tanpa Judul'}</h2>
                 <span class="feedback-time">${formatTimeAgo(waktu)}</span>
             </div>
             
@@ -4684,7 +4715,7 @@ function renderAnnouncementDetail(announcement, repliesCount, likesCount) {
             </div>
             
             <div class="feedback-content" style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
-                ${announcement.content}
+                ${announcement.content || 'Tidak ada konten'}
             </div>
             
             <div style="display: flex; gap: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -4721,10 +4752,31 @@ function renderAnnouncementDetail(announcement, repliesCount, likesCount) {
 
 
 
+// Tambahkan fungsi ini untuk memeriksa URL saat halaman dimuat
+function checkUrlForAnnouncement() {
+    const path = window.location.pathname;
+    if (path.startsWith('/pengumuman/')) {
+        const announcementId = path.split('/pengumuman/')[1];
+        if (announcementId) {
+            // Sembunyikan semua halaman
+            document.querySelectorAll('[id^="page"]').forEach(page => {
+                page.style.display = 'none';
+            });
+            // Tampilkan halaman 9
+            document.getElementById('page9').style.display = 'block';
+            // Muat detail pengumuman
+            loadAnnouncementDetail(announcementId);
+        }
+    }
+}
 
-
-
-
+// Panggil fungsi ini saat halaman dimuat
+window.addEventListener('DOMContentLoaded', () => {
+    checkUrlForAnnouncement();
+    
+    // Juga panggil saat ada perubahan state history
+    window.addEventListener('popstate', checkUrlForAnnouncement);
+});
 
 
 
