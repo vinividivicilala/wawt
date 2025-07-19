@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -678,141 +679,9 @@
 
 
 
-/* Page 9 - Announcement Detail */
-#page9 {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    color: white;
-}
 
-#page9 .announcement-detail {
-    background: rgba(30, 30, 30, 0.7);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-left: 4px solid #ff6b6b;
-}
 
-#page9 .announcement-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-}
 
-#page9 .announcement-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-#page9 .announcement-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #4ea1ff;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-}
-
-#page9 .announcement-title {
-    font-size: 22px;
-    color: white;
-    margin-bottom: 15px;
-    font-weight: 600;
-}
-
-#page9 .announcement-content {
-    color: #ddd;
-    line-height: 1.6;
-    margin-bottom: 20px;
-    white-space: pre-line;
-}
-
-#page9 .announcement-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-#page9 .announcement-stats {
-    display: flex;
-    gap: 20px;
-    color: #aaa;
-    font-size: 14px;
-}
-
-#page9 .announcement-stats span {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-#page9 .reply-item {
-    background: rgba(30, 30, 30, 0.5);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-
-#page9 .reply-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-#page9 .reply-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#page9 .reply-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #4ea1ff;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 12px;
-}
-
-#page9 .reply-content {
-    color: #ddd;
-    line-height: 1.5;
-    margin-left: 42px;
-}
-
-#announcementReplyForm textarea {
-    width: 100%;
-    padding: 12px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 5px;
-    color: white;
-    margin-bottom: 10px;
-    min-height: 100px;
-}
-
-#submitAnnouncementReply {
-    background: #4ea1ff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-}
 
 
 
@@ -2291,30 +2160,114 @@
   </a>
 
 
-<div id="page9" class="page" style="display:none; max-width: 800px; margin: 0 auto; padding: 20px;">
-    <div style="display: flex; align-items: center; margin-bottom: 20px;">
-        <button id="backToAnnouncements" style="background: none; border: none; color: #4ea1ff; cursor: pointer; margin-right: 15px;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-        </button>
-        <h1 style="margin: 0; color: white;">Detail Pengumuman</h1>
+
+
+
+<!-- Add this to your 2x.txt file, right after the page7 div -->
+<div id="page9" style="display: none;">
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
+  
+  <h1 style="color: white; font-size: 28px; margin: 30px 0 20px 180px;">Detail Pengumuman</h1>
+  
+  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px; border-radius: 20px; background: rgba(0, 0, 0, 0.3); margin: 0 100px;">
+    
+    <!-- Announcement Content -->
+    <div id="announcementDetailContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px;">
+      <!-- Content will be loaded dynamically -->
     </div>
     
-    <div id="announcementDetailContainer" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-        <!-- Konten pengumuman akan dimuat di sini -->
-    </div>
-    
-    <div id="repliesContainer" style="margin-top: 30px;">
-        <h3 style="color: white; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Balasan</h3>
-        <div id="announcementRepliesList" style="margin-top: 15px;"></div>
+    <!-- Replies Section -->
+    <div id="announcementRepliesContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Balasan (<span id="repliesCount">0</span>)
+      </h2>
+      <div id="repliesList" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+        <!-- Replies will be added here dynamically -->
+      </div>
+      
+      <!-- Reply Form -->
+      <form id="announcementReplyForm" style="margin-top: 20px;">
+        <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
+                  style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
         
-        <form id="announcementReplyForm" style="margin-top: 20px;">
-            <textarea id="announcementReplyContent" placeholder="Tulis balasan Anda..." style="width: 100%; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white; margin-bottom: 10px; min-height: 100px;"></textarea>
-            <button type="submit" id="submitAnnouncementReply" style="background: #4ea1ff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Kirim Balasan</button>
-        </form>
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="submit" id="submitAnnouncementReply" 
+                  style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s;">
+            Kirim Balasan
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </form>
     </div>
+    
+    <!-- Related Announcements -->
+    <div id="relatedAnnouncementsContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Pengumuman Terkait
+      </h2>
+      <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Related announcements will be added here dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-line"></div>
+
+  <div class="bottom-text">
+    <div>
+      <a href="#" class="tentangLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Tentang Kami
+      </a>
+    </div>
+    <div>
+      <a href="#" class="masukanLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Masukan
+      </a>
+    </div>
+    <div>
+      <a href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Saran
+      </a>
+    </div>
+  </div>
+
+  <div class="nav-link">
+    <a href="#" id="back-announcement">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 5 5 12 12 19"></polyline>
+      </svg>
+      Kembali
+    </a>
+  </div>
 </div>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2643,19 +2596,15 @@ if (document.getElementById('back-forum')) {
 }
 		
 
-// Back button in page9
-document.getElementById('backToAnnouncements')?.addEventListener('click', function(e) {
+	// Add event listeners
+document.getElementById('back-announcement')?.addEventListener('click', function(e) {
     e.preventDefault();
-    
-    // Hide page9 and show page7
-    document.getElementById('page9').style.display = 'none';
-    document.getElementById('page7').style.display = 'block';
-    
-    // Update URL
+    showPageContent(page7);
     history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
 });
-		
-		
+
+document.getElementById('announcementReplyForm')?.addEventListener('submit', submitAnnouncementReply);
+	
 		
 		
 		
@@ -3934,368 +3883,283 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Form pengumuman
-    document.getElementById('announcementForm')?.addEventListener('submit', submitAnnouncement);
-
-    // Form masukan
-    document.getElementById('masukanForm')?.addEventListener('submit', submitFeedback);
-
-    // Tentukan halaman awal yang ditampilkan
-    const defaultPage = page1; // default ke halaman utama
-    const hash = window.location.hash;
-
-    // Handle routing untuk semua halaman
-    if (hash.includes('page9')) {
-        // Tangani halaman detail pengumuman
-        const urlParams = new URLSearchParams(window.location.search);
-        const announcementId = urlParams.get('id');
-        
-        if (announcementId) {
-            // Sembunyikan semua halaman
-            document.querySelectorAll('.page').forEach(page => {
-                page.style.display = 'none';
-            });
-            // Tampilkan halaman 9
-            document.getElementById('page9').style.display = 'block';
-            // Muat detail pengumuman
-            loadAnnouncementDetail(announcementId);
-        } else {
-            // Jika tidak ada ID, kembali ke halaman default
-            showPageContent(defaultPage);
-        }
-    } else if (hash.includes('page7')) {
-        showPageContent(page7);
-        loadPinnedAnnouncements(); // Muat pengumuman penting di halaman masukan
-    } else {
-        showPageContent(defaultPage);
-    }
-
-    checkAndLoadFeedback(); // Tetap muat feedback
-
-    // Panggil saat auth state berubah
-    auth.onAuthStateChanged((user) => {
-        toggleAdminForms();
-        checkAndLoadFeedback();
-        
-        // Periksa halaman yang aktif
-        const activePage = document.querySelector('.page[style*="display: block"]');
-        
-        // Jika halaman masukan aktif
-        if (page7.style.display === 'block') {
-            loadPinnedAnnouncements();
-        }
-        // Jika halaman detail pengumuman aktif
-        else if (document.getElementById('page9').style.display === 'block') {
-            const urlParams = new URLSearchParams(window.location.search);
-            const announcementId = urlParams.get('id');
-            if (announcementId) {
-                loadAnnouncementDetail(announcementId);
-            }
-        }
-    });
-
-    // Saat online kembali
-    window.addEventListener('online', () => {
-        sendPendingFeedback();
-        checkAndLoadFeedback();
-        
-        // Periksa halaman yang aktif
-        const activePage = document.querySelector('.page[style*="display: block"]');
-        
-        if (page7.style.display === 'block') {
-            loadPinnedAnnouncements();
-        }
-        // Refresh data di halaman detail jika sedang aktif
-        else if (document.getElementById('page9').style.display === 'block') {
-            const urlParams = new URLSearchParams(window.location.search);
-            const announcementId = urlParams.get('id');
-            if (announcementId) {
-                loadAnnouncementDetail(announcementId);
-            }
-        }
-    });
-
-    // Refresh setiap 5 menit
-    setInterval(() => {
-        if (navigator.onLine) {
-            // Periksa halaman yang aktif
-            const activePage = document.querySelector('.page[style*="display: block"]');
-            
-            if (page7.style.display === 'block') {
-                loadPinnedAnnouncements();
-            }
-            // Refresh data di halaman detail jika sedang aktif
-            else if (document.getElementById('page9').style.display === 'block') {
-                const urlParams = new URLSearchParams(window.location.search);
-                const announcementId = urlParams.get('id');
-                if (announcementId) {
-                    loadAnnouncementDetail(announcementId);
-                }
-            }
-        }
-    }, 300000);
-
-    // Event listener untuk tombol kembali di halaman detail
-    document.getElementById('backToAnnouncements')?.addEventListener('click', function() {
-        // Sembunyikan halaman detail
-        document.getElementById('page9').style.display = 'none';
-        
-        // Tampilkan halaman sebelumnya (biasanya page7)
-        const previousPage = document.querySelector('.page[style*="display: none"]');
-        if (previousPage) {
-            previousPage.style.display = 'block';
-        } else {
-            // Default ke page7 jika tidak ditemukan
-            page7.style.display = 'block';
-        }
-        
-        // Update URL
-        window.history.pushState({}, "", "#page7");
-    });
-});
 
 
+// Add these functions to your existing JavaScript
 
-
-
-
-
-
-
-
-
-
-
-
-// Fungsi untuk menambah view count (diperbarui)
-async function incrementViewCount(feedbackId) {
-    try {
-        const feedbackRef = doc(db, "feedback", feedbackId);
-        await updateDoc(feedbackRef, {
-            views: increment(1),
-            lastViewed: serverTimestamp()
-        });
-        
-        // Update UI jika diperlukan
-        const feedbackItem = document.querySelector(`.feedback-item[data-id="${feedbackId}"]`);
-        if (feedbackItem) {
-            const viewCountEl = feedbackItem.querySelector('.view-count');
-            if (viewCountEl) {
-                const currentCount = parseInt(viewCountEl.textContent) || 0;
-                viewCountEl.textContent = currentCount + 1;
-            }
-        }
-    } catch (error) {
-        console.error("Error incrementing view count:", error);
-    }
-}
-
-
-async function openAnnouncementDetail(announcementId) {
-    // Sembunyikan halaman saat ini (page7) dan tampilkan halaman detail (page9)
-    const currentPage = document.querySelector('.page[style*="display: block"]');
-    if (currentPage) currentPage.style.display = 'none';
-    
-    const page9 = document.getElementById('page9');
-    if (page9) page9.style.display = 'block';
-    
-    // Load data pengumuman
-    await loadAnnouncementDetail(announcementId);
-    
-    // Update URL tanpa reload
-    window.history.pushState({ page: "announcementDetail" }, "", `#page9?id=${announcementId}`);
-}
-
-
-
-
-
-
-
-
-
-// Function to view announcement details in page9
-async function viewAnnouncementDetails(announcementId) {
-    // Hide current page (page7) and show page9
-    document.getElementById('page7').style.display = 'none';
-    document.getElementById('page9').style.display = 'block';
-    
-    // Update URL without reloading
-    history.pushState({ page: "announcement-detail", id: announcementId }, 
-                     `Pengumuman ${announcementId}`, 
-                     `?id=${announcementId}`);
-    
-    // Load the announcement details
-    await loadAnnouncementDetail(announcementId);
-}
-
-// Function to load announcement details in page9
+// Function to load announcement details
 async function loadAnnouncementDetail(announcementId) {
-    const detailContainer = document.getElementById('announcementDetailContainer');
-    const repliesList = document.getElementById('announcementRepliesList');
-    
-    if (!detailContainer || !repliesList) return;
-    
     try {
         // Show loading state
-        detailContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
-        repliesList.innerHTML = '';
+        document.getElementById('announcementDetailContainer').innerHTML = 
+            '<div style="color:#ccc; text-align:center; padding:20px;">Memuat pengumuman...</div>';
         
         // Get announcement data
         const announcementRef = doc(db, "announcements", announcementId);
         const announcementSnap = await getDoc(announcementRef);
         
         if (!announcementSnap.exists()) {
-            detailContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Pengumuman tidak ditemukan</div>';
-            return;
+            throw new Error("Pengumuman tidak ditemukan");
         }
         
         const announcement = announcementSnap.data();
-        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
+        announcement.id = announcementSnap.id;
         
-        // Render announcement details
-        detailContainer.innerHTML = `
-            <div class="announcement-header">
-                <div class="announcement-user">
-                    <div class="announcement-avatar">${announcement.userName?.charAt(0) || 'A'}</div>
-                    <div>
-                        <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-                        <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
-                    </div>
+        // Increment view count
+        await incrementAnnouncementViews(announcementId);
+        
+        // Format date
+        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
+        const formattedDate = waktu.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Check if user is admin
+        const isAdmin = announcement.userEmail && ALLOWED_EMAILS.includes(announcement.userEmail.toLowerCase());
+        
+        // Render announcement
+        document.getElementById('announcementDetailContainer').innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="color: #ff6b6b; margin: 0; font-size: 24px; display: flex; align-items: center; gap: 8px;">
+                        ${announcement.pinned ? 
+                            '<svg width="24" height="24" viewBox="0 0 24 24" fill="#ff6b6b" style="margin-right: 5px;">' +
+                            '<path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>' +
+                            '</svg>' : ''}
+                        ${announcement.title}
+                    </h2>
                 </div>
-                ${checkAdminStatus(auth.currentUser) ? `
-                <button id="pinAnnouncementBtn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
-                    ${announcement.pinned ? 'Unpin' : 'Pin'} Pengumuman
-                </button>` : ''}
+                <div style="color: #aaa; font-size: 14px;">${formattedDate}</div>
             </div>
-            <h2 class="announcement-title">${announcement.title}</h2>
-            <div class="announcement-content">${announcement.content.replace(/\n/g, '<br>')}</div>
-            <div class="announcement-meta">
-                <div class="announcement-stats">
-                    <span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2">
+            
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <div style="background: rgba(78, 161, 255, 0.2); color: #4ea1ff; padding: 5px 10px; border-radius: 15px; font-size: 14px;">
+                    Pengumuman
+                </div>
+                ${isAdmin ? 
+                    '<div style="background: rgba(255, 107, 107, 0.2); color: #ff6b6b; padding: 5px 10px; border-radius: 15px; font-size: 14px; margin-left: 10px;">' +
+                    'ADMIN</div>' : ''}
+            </div>
+            
+            <div style="color: #ddd; line-height: 1.6; margin-bottom: 25px; white-space: pre-line;">
+                ${announcement.content}
+            </div>
+            
+            <!-- Image container if announcement has images -->
+            ${announcement.imageUrl ? 
+                `<div style="margin-bottom: 25px;">
+                    <img src="${announcement.imageUrl}" alt="Gambar pengumuman" style="max-width: 100%; border-radius: 10px;">
+                </div>` : ''}
+            
+            <!-- Link container if announcement has links -->
+            ${announcement.links && announcement.links.length > 0 ? 
+                `<div style="margin-bottom: 25px;">
+                    <h3 style="color: white; font-size: 18px; margin-bottom: 10px;">Tautan Terkait:</h3>
+                    <ul style="padding-left: 20px;">
+                        ${announcement.links.map(link => 
+                            `<li style="margin-bottom: 5px;">
+                                <a href="${link.url}" target="_blank" style="color: #4ea1ff; text-decoration: none;">
+                                    ${link.text || link.url}
+                                </a>
+                            </li>`
+                        ).join('')}
+                    </ul>
+                </div>` : ''}
+            
+            <!-- Stats and actions -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <div style="display: flex; gap: 20px;">
+                    <div style="display: flex; align-items: center; color: #ccc;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        ${announcement.views || 0} dilihat
+                    </div>
+                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="${announcement.userLiked ? '#4ea1ff' : 'none'}" stroke="${announcement.userLiked ? '#4ea1ff' : '#ccc'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
                             <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                         </svg>
-                        ${announcement.likesCount || 0}
-                    </span>
-                    <span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        ${announcement.repliesCount || 0}
-                    </span>
-                    <span>
-                        👁️ ${announcement.views || 0}
-                    </span>
+                        ${announcement.likesCount || 0} suka
+                    </button>
+                </div>
+                <div style="color: #aaa; font-size: 14px;">
+                    Diposting oleh: ${announcement.userName || 'Admin'} (${announcement.userEmail || 'no-email'})
                 </div>
             </div>
         `;
         
-        // Add event listener for pin button if admin
-        if (checkAdminStatus(auth.currentUser)) {
-            document.getElementById('pinAnnouncementBtn').addEventListener('click', () => {
-                togglePinAnnouncement(announcementId, announcement.pinned);
-            });
+        // Load replies
+        await loadAnnouncementReplies(announcementId);
+        
+        // Load related announcements
+        await loadRelatedAnnouncements(announcementId);
+        
+        // Add event listener to like button
+        document.querySelector('#announcementDetailContainer .like-btn')?.addEventListener('click', async () => {
+            await toggleAnnouncementLike(announcementId);
+            // Refresh the announcement to update like count
+            await loadAnnouncementDetail(announcementId);
+        });
+        
+    } catch (error) {
+        console.error("Error loading announcement:", error);
+        document.getElementById('announcementDetailContainer').innerHTML = 
+            `<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman: ${error.message}</div>`;
+    }
+}
+
+// Function to load announcement replies
+async function loadAnnouncementReplies(announcementId) {
+    try {
+        const repliesList = document.getElementById('repliesList');
+        repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Memuat balasan...</div>';
+        
+        const q = query(
+            collection(db, "announcements", announcementId, "replies"),
+            orderBy("timestamp", "desc")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Belum ada balasan</div>';
+            document.getElementById('repliesCount').textContent = '0';
+            return;
         }
         
-        // Load replies
-        const repliesRef = collection(db, "announcements", announcementId, "replies");
-        const q = query(repliesRef, orderBy("timestamp", "asc"));
-        const repliesSnap = await getDocs(q);
-        
         repliesList.innerHTML = '';
+        let replyCount = 0;
         
-        if (repliesSnap.empty) {
-            repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
-        } else {
-            repliesSnap.forEach(doc => {
-                const reply = doc.data();
-                const replyTime = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date(reply.timestamp);
-                
-                const replyItem = document.createElement('div');
-                replyItem.className = 'reply-item';
-                replyItem.innerHTML = `
-                    <div class="reply-header">
-                        <div class="reply-user">
-                            <div class="reply-avatar">${reply.userName?.charAt(0) || 'U'}</div>
-                            <div>
-                                <div style="color: white; font-weight: 500;">${reply.userName || 'User'}</div>
-                                <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(replyTime)}</div>
+        querySnapshot.forEach((doc) => {
+            replyCount++;
+            const reply = doc.data();
+            const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date(reply.timestamp);
+            const isAdmin = reply.userEmail && ALLOWED_EMAILS.includes(reply.userEmail.toLowerCase());
+            
+            const replyItem = document.createElement('div');
+            replyItem.className = 'reply-item';
+            replyItem.style.cssText = `
+                padding: 15px;
+                background: rgba(255,255,255,0.03);
+                border-radius: 10px;
+                border-left: 3px solid rgba(78, 161, 255, 0.5);
+            `;
+            
+            replyItem.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #4ea1ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                            ${reply.userName ? reply.userName.charAt(0).toUpperCase() : 'A'}
+                        </div>
+                        <div>
+                            <div style="color: white; font-weight: 500;">
+                                ${reply.userName || 'Anonymous'}
+                                ${isAdmin ? '<span style="background: #ff6b6b; color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">ADMIN</span>' : ''}
                             </div>
+                            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
                         </div>
                     </div>
-                    <div class="reply-content">${reply.content.replace(/\n/g, '<br>')}</div>
-                `;
-                repliesList.appendChild(replyItem);
+                </div>
+                <div style="color: #ddd; line-height: 1.5; white-space: pre-line;">
+                    ${reply.content}
+                </div>
+            `;
+            
+            repliesList.appendChild(replyItem);
+        });
+        
+        document.getElementById('repliesCount').textContent = replyCount.toString();
+        
+    } catch (error) {
+        console.error("Error loading replies:", error);
+        document.getElementById('repliesList').innerHTML = 
+            '<div style="color:#ff6b6b; text-align:center; padding:10px;">Gagal memuat balasan</div>';
+    }
+}
+
+// Function to load related announcements
+async function loadRelatedAnnouncements(currentAnnouncementId) {
+    try {
+        const relatedList = document.getElementById('relatedAnnouncementsList');
+        relatedList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Memuat pengumuman terkait...</div>';
+        
+        // Get 3 most recent announcements excluding the current one
+        const q = query(
+            collection(db, "announcements"),
+            where("pinned", "==", true),
+            orderBy("timestamp", "desc"),
+            limit(3)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            relatedList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Tidak ada pengumuman terkait</div>';
+            return;
+        }
+        
+        relatedList.innerHTML = '';
+        let addedCount = 0;
+        
+        querySnapshot.forEach((doc) => {
+            if (doc.id === currentAnnouncementId) return;
+            if (addedCount >= 3) return;
+            
+            addedCount++;
+            const announcement = doc.data();
+            const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
+            
+            const relatedItem = document.createElement('div');
+            relatedItem.className = 'related-item';
+            relatedItem.style.cssText = `
+                padding: 15px;
+                background: rgba(255,255,255,0.03);
+                border-radius: 10px;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            relatedItem.onmouseover = () => relatedItem.style.background = 'rgba(255,255,255,0.07)';
+            relatedItem.onmouseout = () => relatedItem.style.background = 'rgba(255,255,255,0.03)';
+            
+            relatedItem.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <h3 style="color: #4ea1ff; margin: 0; font-size: 16px;">
+                        ${announcement.title.substring(0, 50)}${announcement.title.length > 50 ? '...' : ''}
+                    </h3>
+                    <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+                </div>
+                <div style="color: #aaa; font-size: 14px;">
+                    ${announcement.content.substring(0, 80)}${announcement.content.length > 80 ? '...' : ''}
+                </div>
+            `;
+            
+            relatedItem.addEventListener('click', () => {
+                showPageContent(page9);
+                loadAnnouncementDetail(doc.id);
+                history.pushState({ page: "announcementDetail" }, "Detail Pengumuman", `#page9?id=${doc.id}`);
             });
+            
+            relatedList.appendChild(relatedItem);
+        });
+        
+        if (addedCount === 0) {
+            relatedList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Tidak ada pengumuman terkait</div>';
         }
         
     } catch (error) {
-        console.error("Error loading announcement details:", error);
-        detailContainer.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat pengumuman</div>';
+        console.error("Error loading related announcements:", error);
+        document.getElementById('relatedAnnouncementsList').innerHTML = 
+            '<div style="color:#ff6b6b; text-align:center; padding:10px;">Gagal memuat pengumuman terkait</div>';
     }
 }
 
-
-
-
-
-
-// Fungsi untuk tombol kembali (diperbaiki)
-function setupBackButton() {
-    const backButton = document.getElementById('backToAnnouncements');
-    if (backButton) {
-        backButton.addEventListener('click', function() {
-            // Sembunyikan halaman detail
-            const page9 = document.getElementById('page9');
-            if (page9) page9.style.display = 'none';
-            
-            // Tampilkan halaman sebelumnya (default ke page7)
-            const page7 = document.getElementById('page7');
-            if (page7) page7.style.display = 'block';
-            
-            // Update URL
-            window.history.pushState({}, "", "#page7");
-        });
-    }
-}
-
-// Panggil setupBackButton saat DOM siap
-document.addEventListener('DOMContentLoaded', function() {
-    setupBackButton();
-    
-    // Handle routing untuk halaman detail
-    const hash = window.location.hash;
-    if (hash.includes('page9')) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const announcementId = urlParams.get('id');
-        
-        if (announcementId) {
-            // Sembunyikan semua halaman
-            document.querySelectorAll('.page').forEach(page => {
-                page.style.display = 'none';
-            });
-            
-            // Tampilkan halaman 9
-            const page9 = document.getElementById('page9');
-            if (page9) {
-                page9.style.display = 'block';
-                loadAnnouncementDetail(announcementId);
-            }
-        }
-    }
-});
-
-
-
-
-
-
-
-
-// Handle reply form submission in page9
-document.getElementById('announcementReplyForm')?.addEventListener('submit', async function(e) {
+// Function to submit reply to announcement
+async function submitAnnouncementReply(e) {
     e.preventDefault();
     
     const user = auth.currentUser;
@@ -4310,137 +4174,11 @@ document.getElementById('announcementReplyForm')?.addEventListener('submit', asy
         return;
     }
     
+    // Get announcement ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const announcementId = urlParams.get('id');
     if (!announcementId) {
-        alert('Pengumuman tidak valid');
-        return;
-    }
-    
-    const submitBtn = document.getElementById('submitAnnouncementReply');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
-    
-    try {
-        // Add reply
-        const repliesRef = collection(db, "announcements", announcementId, "replies");
-        await addDoc(repliesRef, {
-            content,
-            userId: user.uid,
-            userName: user.displayName || 'Anonymous',
-            userEmail: user.email,
-            timestamp: serverTimestamp()
-        });
-        
-        // Update reply count
-        const announcementRef = doc(db, "announcements", announcementId);
-        await updateDoc(announcementRef, {
-            repliesCount: increment(1)
-        });
-        
-        // Clear form
-        document.getElementById('announcementReplyContent').value = '';
-        
-        // Reload replies
-        await loadAnnouncementDetail(announcementId);
-        
-    } catch (error) {
-        console.error("Error submitting reply:", error);
-        alert('Gagal mengirim balasan. Silakan coba lagi.');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    }
-});
-
-
-
-
-
-
-
-
-
-
-
-// Fungsi untuk memeriksa apakah user sudah like pengumuman
-async function checkUserLikedAnnouncement(announcementId) {
-    const user = auth.currentUser;
-    if (!user) return false;
-    
-    try {
-        const likeDoc = doc(db, "announcements", announcementId, "likes", user.uid);
-        const docSnap = await getDoc(likeDoc);
-        return docSnap.exists();
-    } catch (error) {
-        console.error("Error checking user like:", error);
-        return false;
-    }
-}
-
-// Fungsi untuk mendapatkan balasan pengumuman
-async function getAnnouncementReplies(announcementId) {
-    try {
-        const repliesRef = collection(db, "announcements", announcementId, "replies");
-        const q = query(repliesRef, orderBy("timestamp", "desc"));
-        const snapshot = await getDocs(q);
-        
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            timestamp: doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp)
-        }));
-    } catch (error) {
-        console.error("Error getting replies:", error);
-        return [];
-    }
-}
-
-// Fungsi untuk render balasan pengumuman
-function renderAnnouncementReplies(replies) {
-    const container = document.getElementById('announcementRepliesList');
-    if (!container) return;
-    
-    if (replies.length === 0) {
-        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
-        return;
-    }
-    
-    container.innerHTML = '';
-    
-    replies.forEach(reply => {
-        const replyItem = document.createElement('div');
-        replyItem.className = 'reply-item';
-        replyItem.innerHTML = `
-            <div class="reply-header">
-                <div class="reply-user">
-                    <div class="reply-avatar">${reply.userName?.charAt(0).toUpperCase() || 'A'}</div>
-                    <div>
-                        <div style="color: white; font-size: 14px;">${reply.userName || 'Anonymous'}</div>
-                        <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(reply.timestamp)}</div>
-                    </div>
-                </div>
-                ${checkAdminStatus({ email: reply.userEmail }) ? '<span style="background: #ff6b6b; color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px;">ADMIN</span>' : ''}
-            </div>
-            <div class="reply-content">${reply.content || ''}</div>
-        `;
-        
-        container.appendChild(replyItem);
-    });
-}
-
-// Fungsi untuk mengirim balasan pengumuman
-async function submitAnnouncementReply(announcementId) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert('Silakan login terlebih dahulu untuk membalas pengumuman');
-        return;
-    }
-    
-    const content = document.getElementById('announcementReplyContent').value.trim();
-    if (!content) {
-        alert('Isi balasan tidak boleh kosong');
+        alert('Tidak dapat menemukan pengumuman');
         return;
     }
     
@@ -4450,7 +4188,7 @@ async function submitAnnouncementReply(announcementId) {
     submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
     
     try {
-        // Tambahkan reply ke subcollection
+        // Add reply to subcollection
         const repliesRef = collection(db, "announcements", announcementId, "replies");
         await addDoc(repliesRef, {
             content,
@@ -4460,44 +4198,36 @@ async function submitAnnouncementReply(announcementId) {
             timestamp: serverTimestamp()
         });
         
-        // Update reply count di pengumuman utama
+        // Update reply count in main announcement
         const announcementRef = doc(db, "announcements", announcementId);
         await updateDoc(announcementRef, {
             repliesCount: increment(1)
         });
         
-        // Reset form
-        document.getElementById('announcementReplyForm').reset();
+        // Clear form
+        document.getElementById('announcementReplyContent').value = '';
         
-        // Refresh daftar balasan
-        const replies = await getAnnouncementReplies(announcementId);
-        renderAnnouncementReplies(replies);
+        // Reload replies
+        await loadAnnouncementReplies(announcementId);
         
-        // Refresh detail pengumuman untuk update count
-        await loadAnnouncementDetail(announcementId);
-        
-        showNotification('Balasan berhasil dikirim!', 'success');
+        // Show success message
+        alert('Balasan berhasil dikirim!');
         
     } catch (error) {
         console.error("Error submitting reply:", error);
-        showNotification('Gagal mengirim balasan. Silakan coba lagi.', 'error');
+        alert('Gagal mengirim balasan. Silakan coba lagi nanti.');
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
 }
 
-// Update fungsi openAnnouncementReplyModal untuk mengarahkan ke halaman detail
-function openAnnouncementReplyModal(announcement) {
-    openAnnouncementDetail(announcement.id);
+// Function to view announcement details (called from pinned announcements)
+function viewAnnouncementDetails(announcementId) {
+    showPageContent(page9);
+    loadAnnouncementDetail(announcementId);
+    history.pushState({ page: "announcementDetail" }, "Detail Pengumuman", `#page9?id=${announcementId}`);
 }
-
-
-
-
-
-
-
 
 
 
