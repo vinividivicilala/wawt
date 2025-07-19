@@ -5555,7 +5555,45 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
   
   
   
-  
+  window.addEventListener("DOMContentLoaded", function () {
+  const path = window.location.pathname || "/";
+  const isDetailPage = path.startsWith("/halaman-masukan-");
+
+  if (isDetailPage) {
+    const slug = path.replace("/halaman-masukan-", "");
+
+    findAnnouncementIdBySlug(slug).then((announcement) => {
+      if (announcement && announcement.id) {
+        window.currentAnnouncementId = announcement.id;
+        showPageContent(page9);
+        loadAnnouncementDetail(announcement.id);
+      } else {
+        // fallback ke halaman masukan biasa
+        showPageContent(page7);
+        loadFeedback();
+      }
+    });
+  }
+});
+
+
+
+
+async function findAnnouncementIdBySlug(slug) {
+  try {
+    const q = query(collection(db, "announcements"), where("slug", "==", slug));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error finding announcement by slug:", error);
+    return null;
+  }
+}
+
   
   
   
