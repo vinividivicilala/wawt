@@ -2429,7 +2429,8 @@
      
 	 
 	 
-	function showPageContent(page) {
+	 
+	 function showPageContent(page) {
     const pages = [page1, page2, page3, page4, page5, page6, page7, page8, page9];
     pages.forEach(p => {
         if (p) p.style.display = "none";
@@ -2438,22 +2439,20 @@
     if (page) {
         page.style.display = "block";
 
-        // Load appropriate content based on page
         if (page.id === "page7") {
             loadPinnedAnnouncements();
             loadFeedback().catch(console.error);
         } else if (page.id === "page9") {
-            // Handle page9 content loading via URL path
-            const pathSegments = window.location.pathname.split('/');
-            const announcementSlug = pathSegments[pathSegments.length - 1];
-            if (announcementSlug && announcementSlug !== 'halaman-masukan') {
-                // Cari ID pengumuman berdasarkan slug
-                findAnnouncementIdBySlug(announcementSlug)
-                    .then(id => {
-                        if (id) {
-                            loadAnnouncementDetail(id);
+            // Handle page9 content loading via URL
+            const path = window.location.pathname;
+            if (path.startsWith('/halaman-masukan-')) {
+                const slug = path.replace('/halaman-masukan-', '');
+                // Cari pengumuman berdasarkan slug
+                findAnnouncementBySlug(slug)
+                    .then(announcement => {
+                        if (announcement) {
+                            loadAnnouncementDetail(announcement.id);
                         } else {
-                            // Fallback ke halaman masukan jika tidak ditemukan
                             showPageContent(page7);
                         }
                     });
@@ -2465,6 +2464,28 @@
 }
 	 
 	 
+	 async function findAnnouncementBySlug(slug) {
+    try {
+        const q = query(
+            collection(db, "announcements"),
+            where("slug", "==", slug)
+        );
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            return { id: doc.id, ...doc.data() };
+        }
+        return null;
+    } catch (error) {
+        console.error("Error finding announcement by slug:", error);
+        return null;
+    }
+}
+	 
+	 
+	 
+	 
 	 
 	 // Fungsi untuk membuat slug dari judul
 function createSlug(title) {
@@ -2474,23 +2495,7 @@ function createSlug(title) {
         .replace(/^-+|-+$/g, ''); // Hapus dash di awal/akhir
 }
 
-// Fungsi untuk mencari ID pengumuman berdasarkan slug
-async function findAnnouncementIdBySlug(slug) {
-    try {
-        const announcementsRef = collection(db, "announcements");
-        const q = query(announcementsRef, where("slug", "==", slug));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            return querySnapshot.docs[0].id;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error finding announcement by slug:", error);
-        return null;
-    }
-}
-	 
+
 	 
 
         // Event listeners for navigation
@@ -3470,7 +3475,10 @@ async function submitAnnouncement(e) {
     submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
     
     try {
-        const slug = createSlug(title);
+      const slug = title.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
         const announcementData = {
             title,
             content,
@@ -3792,20 +3800,20 @@ function renderAnnouncements(announcements) {
             });
         }
 
-        if (viewBtn) {
-            viewBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                viewAnnouncementDetails(announcement.id);
-            });
-        }
+       // Dalam fungsi renderAnnouncements, perbaiki bagian event listener:
+if (viewBtn) {
+    viewBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await viewAnnouncementDetails(announcement.id);
+    });
+}
 
-        // Add click event to the entire announcement item
-        announcementItem.addEventListener('click', (e) => {
-            // Only proceed if we didn't click on a button
-            if (!e.target.closest('button')) {
-                viewAnnouncementDetails(announcement.id);
-            }
-        });
+announcementItem.addEventListener('click', async (e) => {
+    if (!e.target.closest('button')) {
+        await viewAnnouncementDetails(announcement.id);
+    }
+});
     });
 }
 
@@ -4290,34 +4298,43 @@ async function submitAnnouncementReply(e) {
     }
 }
 
-
-// Function to view announcement details (called from pinned announcements)
-function viewAnnouncementDetails(announcementId, announcementTitle = '') {
-    showPageContent(page9);
-    
-    // Dapatkan judul pengumuman jika tidak disediakan
-    if (!announcementTitle) {
-        getDoc(doc(db, "announcements", announcementId))
-            .then(doc => {
-                if (doc.exists()) {
-                    const title = doc.data().title;
-                    const slug = createSlug(title);
-                    history.pushState(
-                        { page: "announcementDetail" }, 
-                        title, 
-                        `/halaman-masukan-${slug}`
-                    );
-                    loadAnnouncementDetail(announcementId);
-                }
-            });
-    } else {
-        const slug = createSlug(announcementTitle);
+async function viewAnnouncementDetails(announcementId) {
+    try {
+        // Tampilkan halaman 9 terlebih dahulu
+        showPageContent(page9);
+        
+        // Dapatkan data pengumuman untuk mendapatkan judul
+        const announcementRef = doc(db, "announcements", announcementId);
+        const announcementSnap = await getDoc(announcementRef);
+        
+        if (!announcementSnap.exists()) {
+            throw new Error("Pengumuman tidak ditemukan");
+        }
+        
+        const announcement = announcementSnap.data();
+        const title = announcement.title;
+        
+        // Buat slug dari judul
+        const slug = title.toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        
+        // Update URL dengan format yang diinginkan
         history.pushState(
-            { page: "announcementDetail" }, 
-            announcementTitle, 
+            { page: "announcementDetail", id: announcementId }, 
+            title, 
             `/halaman-masukan-${slug}`
         );
-        loadAnnouncementDetail(announcementId);
+        
+        // Muat detail pengumuman
+        await loadAnnouncementDetail(announcementId);
+        
+    } catch (error) {
+        console.error("Error viewing announcement:", error);
+        // Fallback ke halaman masukan jika error
+        showPageContent(page7);
+        showNotification('Gagal memuat pengumuman: ' + error.message, 'error');
     }
 }
 
