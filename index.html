@@ -2577,12 +2577,10 @@ if (document.getElementById('back-forum')) {
     });
 }
 		
-		
 		document.getElementById('back-announcement')?.addEventListener('click', function(e) {
-  e.preventDefault();
-  window.currentAnnouncementId = null; // ✅ bersihkan
-  showPageContent(page7);
-  history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    e.preventDefault();
+    showPageContent(page7);
+    history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
 });
 
 
@@ -2678,17 +2676,25 @@ document.getElementById('announcementReplyForm')?.addEventListener('submit', asy
     }
 });
 
-function getUrlParameter(name) {
-  if (typeof name !== 'string') return null; // Hindari error dari .replace()
 
-  name = name.replace(/[\[\]]/g, '\\$&');
-  const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
-  const results = regex.exec(window.location.href);
-  if (!results) return null;
-  if (!results[2]) return '';
-  return decodeURIComponent(results[2].replace(/\+/g, ' '));
+// Fungsi bantu untuk ambil parameter dari URL
+function getUrlParameter(name) {
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  const regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+  const results = regex.exec(location.search);
+  return results === null ? null : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
+window.addEventListener("DOMContentLoaded", () => {
+  const path = window.location.pathname;
+  const announcementId = getUrlParameter("announcement");
+
+  if (path.includes("halaman-masukan") && announcementId) {
+    // jika URL punya ?announcement=id
+    showPageContent(page9);
+    loadAnnouncementDetail(announcementId);
+  }
+});
 
 // Fungsi untuk memeriksa apakah halaman saat ini adalah halaman detail pengumuman
 function isAnnouncementDetailPage() {
