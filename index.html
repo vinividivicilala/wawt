@@ -2958,27 +2958,27 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
 }
 
 	 
-	 
 	 async function checkAndLoadFeedback() {
     const path = window.location.pathname;
     
-    // Jika URL sesuai pola halaman detail pengumuman
+    // Handle URL pattern: /halaman-masukan-[judul]-[ID]
     if (path.startsWith('/halaman-masukan-')) {
-        // Ambil ID dari URL (bagian terakhir setelah tanda hubung terakhir)
         const parts = path.split('-');
-        const announcementId = parts[parts.length - 1];
-        
-        // Validasi ID (harus mengandung karakter yang valid untuk Firestore ID)
-        if (announcementId && /^[a-zA-Z0-9]+$/.test(announcementId)) {
-            // Tampilkan halaman 9 dan muat detail pengumuman
-            document.getElementById('page7').style.display = 'none';
-            document.getElementById('page9').style.display = 'block';
-            await loadAnnouncementDetail(announcementId);
-            return;
+        if (parts.length >= 3) {
+            const potentialId = parts[parts.length-1];
+            
+            // Validasi ID dokumen Firestore
+            if (potentialId && potentialId.length >= 20 && /^[a-zA-Z0-9]+$/.test(potentialId)) {
+                console.log("Memuat pengumuman dengan ID:", potentialId);
+                document.getElementById('page7').style.display = 'none';
+                document.getElementById('page9').style.display = 'block';
+                await loadAnnouncementDetail(potentialId);
+                return;
+            }
         }
     }
     
-    // Jika bukan halaman detail, tampilkan halaman masukan biasa
+    // Default: load halaman masukan biasa
     document.getElementById('page7').style.display = 'block';
     document.getElementById('page9').style.display = 'none';
     displayCachedFeedback();
@@ -4106,6 +4106,9 @@ async function getAnnouncementRepliesCount(announcementId) {
 
 
 
+
+
+
 async function loadAnnouncementDetail(announcementId) {
     const container = document.getElementById('announcementDetailContainer');
     if (!container) return;
@@ -4113,31 +4116,47 @@ async function loadAnnouncementDetail(announcementId) {
     try {
         container.innerHTML = '<div style="color:#ccc; text-align:center; padding:50px;">Memuat detail pengumuman...</div>';
         
-        const docRef = doc(db, "announcements", announcementId);
+        // Dekode ID untuk handle case sensitivity
+        const decodedId = announcementId.replace(/[^a-zA-Z0-9]/g, '');
+        console.log("Mencoba memuat dengan ID:", decodedId);
+        
+        const docRef = doc(db, "announcements", decodedId);
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
-            throw new Error("Pengumuman tidak ditemukan");
+            throw new Error(`Pengumuman dengan ID ${decodedId} tidak ditemukan`);
         }
         
         const announcement = docSnap.data();
+        console.log("Data pengumuman:", announcement);
+        
+        if (!announcement.title || !announcement.content) {
+            throw new Error("Data pengumuman tidak lengkap");
+        }
+        
         const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
         
         container.innerHTML = `
             <div style="margin-bottom: 30px;">
-                <h2 style="color: #ff6b6b; font-size: 28px; margin-bottom: 15px;">${announcement.title || 'Tanpa Judul'}</h2>
+                <h2 style="color: #ff6b6b; font-size: 28px; margin-bottom: 15px;">
+                    ${announcement.title || 'Pengumuman Penting'}
+                </h2>
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                     <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
                         ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
                     </div>
                     <div>
-                        <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-                        <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+                        <div style="color: white; font-weight: 500;">
+                            ${announcement.userName || 'Admin'}
+                        </div>
+                        <div style="color: #aaa; font-size: 12px;">
+                            ${formatTimeAgo(waktu)} • ${waktu.toLocaleDateString('id-ID')}
+                        </div>
                     </div>
                 </div>
                 
-                <div style="font-size: 16px; line-height: 1.8; color: #ddd; margin-bottom: 20px;">
-                    ${announcement.content || 'Tidak ada konten'}
+                <div style="font-size: 16px; line-height: 1.8; color: #ddd; margin-bottom: 20px; white-space: pre-line;">
+                    ${announcement.content || 'Tidak ada konten yang tersedia'}
                 </div>
                 
                 <div style="display: flex; gap: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -4159,27 +4178,31 @@ async function loadAnnouncementDetail(announcementId) {
             </div>
         `;
         
-        // Load balasan
-        await loadAnnouncementReplies(announcementId);
-        
-        // Load pengumuman terkait
-        await loadRelatedAnnouncements(announcementId);
-        
-        // Update view count
-        await incrementAnnouncementViews(announcementId);
+        // Load komponen lainnya
+        await loadAnnouncementReplies(decodedId);
+        await loadRelatedAnnouncements(decodedId);
+        await incrementAnnouncementViews(decodedId);
         
     } catch (error) {
-        console.error("Error loading announcement:", error);
+        console.error("Error:", error);
         container.innerHTML = `
             <div style="color:#ff6b6b; text-align:center; padding:50px;">
-                Gagal memuat pengumuman: ${error.message}
-                <div style="margin-top: 20px;">
-                    <a href="/halaman-masukan" style="color: #4ea1ff;">Kembali ke halaman masukan</a>
-                </div>
+                <p>Gagal memuat pengumuman</p>
+                <p style="font-size:14px; color:#aaa;">${error.message}</p>
+                <a href="/halaman-masukan" style="color:#4ea1ff; margin-top:20px; display:inline-block;">
+                    Kembali ke halaman masukan
+                </a>
             </div>
         `;
     }
 }
+
+
+
+
+
+
+
 
 
 
