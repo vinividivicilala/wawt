@@ -4008,10 +4008,7 @@ async function getAnnouncementRepliesCount(announcementId) {
   });
 }
 
-
-
-
-// Fungsi untuk memuat detail pengumuman
+// Perbaikan fungsi loadAnnouncementDetail
 async function loadAnnouncementDetail(announcementId) {
     try {
         const announcementRef = doc(db, "announcements", announcementId);
@@ -4034,22 +4031,19 @@ async function loadAnnouncementDetail(announcementId) {
         renderAnnouncementDetail(announcement, repliesCount, likesCount);
         
         // Load replies
-        loadAnnouncementReplies(announcementId);
+        await loadAnnouncementReplies(announcementId);
         
         // Load related announcements
-        loadRelatedAnnouncements(announcementId);
+        await loadRelatedAnnouncements(announcementId);
+        
+        // Update view count
+        await incrementAnnouncementViews(announcementId);
         
     } catch (error) {
         console.error("Error loading announcement:", error);
-        document.getElementById('announcementDetailContainer').innerHTML = `
-            <div style="color:#ff6b6b; text-align:center; padding:20px;">
-                Gagal memuat pengumuman: ${error.message}
-            </div>
-        `;
+        throw error;
     }
 }
-
-
 
 
 
@@ -4408,45 +4402,32 @@ async function submitAnnouncementReply(e) {
 
 
 
-
-// Fungsi untuk menampilkan detail pengumuman
+// Perbaikan fungsi viewAnnouncementDetails
 async function viewAnnouncementDetails(announcementId) {
     try {
         // Tampilkan halaman 9 terlebih dahulu
         showPageContent(page9);
         
-        // Dapatkan data pengumuman untuk mendapatkan judul
-        const announcementRef = doc(db, "announcements", announcementId);
-        const announcementSnap = await getDoc(announcementRef);
-        
-        if (!announcementSnap.exists()) {
-            throw new Error("Pengumuman tidak ditemukan");
-        }
-        
-        const announcement = announcementSnap.data();
-        const title = announcement.title;
-        
-        // Buat slug dari judul
-        const slug = title.toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-        
-        // Update URL dengan format yang diinginkan
-        history.pushState(
-            { page: "announcementDetail", id: announcementId }, 
-            title, 
-            `/halaman-masukan-${slug}`
-        );
+        // Update dynamic text
+        document.getElementById('dynamicText').textContent = "Detail Pengumuman";
         
         // Muat detail pengumuman
         await loadAnnouncementDetail(announcementId);
         
+        // Update URL history
+        history.pushState(
+            { page: "announcementDetail", id: announcementId }, 
+            "Detail Pengumuman", 
+            `/pengumuman/${announcementId}`
+        );
+        
     } catch (error) {
         console.error("Error viewing announcement:", error);
-        // Fallback ke halaman masukan jika error
-        showPageContent(page7);
-        showNotification('Gagal memuat pengumuman: ' + error.message, 'error');
+        document.getElementById('announcementDetailContainer').innerHTML = `
+            <div style="color:#ff6b6b; text-align:center; padding:50px;">
+                Gagal memuat pengumuman: ${error.message}
+            </div>
+        `;
     }
 }
 
@@ -4525,7 +4506,25 @@ function renderAnnouncementDetail(announcement, repliesCount, likesCount) {
 
 
 
-
+// Perbaikan delegasi event untuk menangani klik pengumuman
+document.addEventListener('click', async function(e) {
+    // Handle click on announcement items
+    const announcementItem = e.target.closest('.announcement-item, .pinned-item');
+    if (announcementItem) {
+        e.preventDefault();
+        const announcementId = announcementItem.getAttribute('data-id');
+        if (announcementId) {
+            await viewAnnouncementDetails(announcementId);
+        }
+    }
+    
+    // Handle back button in page9
+    if (e.target.closest('#back-announcement')) {
+        e.preventDefault();
+        showPageContent(page7);
+        history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    }
+});
 
 
 
