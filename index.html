@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5755,74 +5756,115 @@ let currentState = {
     announcementId: null
 };
 
-// Fungsi utama untuk menangani navigasi halaman
+
+
+
+
 function handlePageLoad(isInitialLoad = true) {
     const path = window.location.pathname || "/";
-    
+
     // Reset state
     currentState = {
         page: "home",
         announcementId: null
     };
 
-    if (path.includes("halaman-arduino")) {
+    // 🔹 Tangani detail pengumuman (halaman 9)
+    if (path.startsWith("/halaman-masukan-")) {
+        const slug = path.replace("/halaman-masukan-", "");
+        currentState.page = "detail-pengumuman";
+        showPageContent(document.getElementById("page9"));
+
+        const q = query(collection(db, "announcements"), where("slug", "==", slug), limit(1));
+        getDocs(q)
+            .then((querySnapshot) => {
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    const data = doc.data();
+
+                    const detailContainer = document.getElementById("announcementDetailContainer");
+                    if (detailContainer) {
+                        detailContainer.innerHTML = `
+                            <div style="padding: 20px; color: white;">
+                                <h2 style="font-size: 32px; font-weight: bold;">${data.title}</h2>
+                                <p style="margin-top: 10px;">${data.content}</p>
+                                <p style="margin-top: 20px; font-size: 14px; color: gray;">
+                                    Diposting pada ${new Date(data.createdAt?.seconds * 1000).toLocaleString()}
+                                </p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    console.error("Pengumuman tidak ditemukan untuk slug:", slug);
+                }
+            })
+            .catch((error) => {
+                console.error("Gagal memuat data pengumuman:", error);
+            });
+
+        if (isInitialLoad) {
+            history.replaceState(currentState, "Pengumuman", path);
+        }
+    }
+
+    // 🔹 Halaman lainnya
+    else if (path.includes("halaman-arduino")) {
         currentState.page = "arduino";
         showPageContent(document.getElementById("page2"));
-        if (isInitialLoad) {
-            history.replaceState(currentState, "Arduino", "/halaman-arduino");
-        }
-    } 
+        if (isInitialLoad) history.replaceState(currentState, "Arduino", "/halaman-arduino");
+    }
+
     else if (path.includes("halaman-iot")) {
         currentState.page = "iot";
         showPageContent(document.getElementById("page3"));
-        if (isInitialLoad) {
-            history.replaceState(currentState, "IoT", "/halaman-iot");
-        }
-    } 
+        if (isInitialLoad) history.replaceState(currentState, "IoT", "/halaman-iot");
+    }
+
     else if (path.includes("halaman-blog")) {
         currentState.page = "blog";
         showPageContent(document.getElementById("page4"));
-        if (isInitialLoad) {
-            history.replaceState(currentState, "Blog", "/halaman-blog");
-        }
-    } 
+        if (isInitialLoad) history.replaceState(currentState, "Blog", "/halaman-blog");
+    }
+
     else if (path.includes("halaman-kumpulan-blog")) {
         currentState.page = "kumpulan-blog";
         showPageContent(document.getElementById("page5"));
-        if (isInitialLoad) {
-            history.replaceState(currentState, "Kumpulan Blog", "/halaman-kumpulan-blog");
-        }
-    } 
+        if (isInitialLoad) history.replaceState(currentState, "Kumpulan Blog", "/halaman-kumpulan-blog");
+    }
+
     else if (path.includes("halaman-tentang-kami")) {
         currentState.page = "tentang-kami";
         showPageContent(document.getElementById("page6"));
-        if (isInitialLoad) {
-            history.replaceState(currentState, "Tentang Kami", "/halaman-tentang-kami");
-        }
-    } 
+        if (isInitialLoad) history.replaceState(currentState, "Tentang Kami", "/halaman-tentang-kami");
+    }
+
     else if (path.includes("halaman-masukan")) {
         currentState.page = "masukan";
         showPageContent(document.getElementById("page7"));
         loadFeedback().catch(console.error);
-        if (isInitialLoad) {
-            history.replaceState(currentState, "Masukan", "/halaman-masukan");
-        }
-    } 
+        if (isInitialLoad) history.replaceState(currentState, "Masukan", "/halaman-masukan");
+    }
+
     else if (path.includes("halaman-forum")) {
         currentState.page = "forum";
         showPageContent(document.getElementById("page8"));
-        if (isInitialLoad) {
-            history.replaceState(currentState, "Forum", "/halaman-forum");
-        }
-    } 
+        if (isInitialLoad) history.replaceState(currentState, "Forum", "/halaman-forum");
+    }
+
     else {
         currentState.page = "home";
         showPageContent(document.getElementById("page1"));
-        if (isInitialLoad) {
-            history.replaceState(currentState, "Beranda", "/");
-        }
+        if (isInitialLoad) history.replaceState(currentState, "Beranda", "/");
     }
 }
+
+
+
+
+
+
+
+
 async function showAnnouncementDetail(announcementId) {
     // Simpan state saat ini
     currentState.page = "announcementDetail";
