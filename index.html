@@ -3929,7 +3929,9 @@ function renderAnnouncements(announcements) {
         
         const announcementItem = document.createElement('div');
         announcementItem.className = 'pinned-item';
-        announcementItem.setAttribute('data-id', announcement.id);
+		announcementItem.setAttribute('data-id', announcement.id);
+announcementItem.setAttribute('data-slug', announcement.slug || createSlug(announcement.title));
+
         announcementItem.style.cssText = `
             margin-bottom: 15px;
             padding: 15px;
@@ -3984,13 +3986,15 @@ function renderAnnouncements(announcements) {
             </button>
         `;
 		
-		// Dalam fungsi renderAnnouncements atau renderPinnedAnnouncementItem
-announcementItem.addEventListener('click', async (e) => {
+		announcementItem.addEventListener('click', async (e) => {
     if (!e.target.closest('.like-btn, .reply-btn, .view-announcement-btn')) {
         e.preventDefault();
-        const announcementId = announcementItem.getAttribute('data-id');
-		            await showAnnouncementDetailBySlug(slug);
 
+        const slug = announcementItem.getAttribute('data-slug');
+        if (slug) {
+            history.pushState({ page: "detail-pengumuman" }, "", `/halaman-masukan-${slug}`);
+            await showAnnouncementDetailBySlug(slug);
+        }
     }
 });
 
@@ -5808,7 +5812,7 @@ let currentState = {
 
 
 
-function handlePageLoad(isInitialLoad = true) {
+async function handlePageLoad(isInitialLoad = true) {
     const path = window.location.pathname || "/";
 
     currentState = {
@@ -5890,6 +5894,8 @@ function handlePageLoad(isInitialLoad = true) {
         currentState.page = "masukan";
         showPageContent(document.getElementById("page7"));
         loadFeedback().catch(console.error);
+		 currentState.page = "detail-pengumuman";
+    await showAnnouncementDetailBySlug(slug);
         if (isInitialLoad) history.replaceState(currentState, "Masukan", path);
     }
 
@@ -5931,16 +5937,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-document.getElementById("backToFeedbackPage").addEventListener("click", () => {
-  history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-  handlePageLoad(false);
-});
-
-document.getElementById("backToAnnouncements").addEventListener("click", () => {
-  history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-  handlePageLoad(false);
-});
-
 
 
 
@@ -5970,9 +5966,6 @@ async function renderMasukanDetailBySlug(slug) {
 
 
 
-
-
-
 async function showAnnouncementDetailBySlug(slug) {
   try {
     showPageContent(document.getElementById("page9"));
@@ -5980,17 +5973,13 @@ async function showAnnouncementDetailBySlug(slug) {
     const q = query(collection(db, "announcements"), where("slug", "==", slug), limit(1));
     const querySnapshot = await getDocs(q);
 
-    if (querySnapshot.empty) {
-      throw new Error("Pengumuman tidak ditemukan");
-    }
+    if (querySnapshot.empty) throw new Error("Pengumuman tidak ditemukan");
 
     const doc = querySnapshot.docs[0];
     const data = doc.data();
 
-    // Update browser title
     document.title = `${data.title} - Life Is What It Is Learn`;
 
-    // Tampilkan kontennya
     const detailContainer = document.getElementById("announcementDetailContainer");
     detailContainer.innerHTML = `
       <div style="padding: 20px; color: white;">
@@ -6015,8 +6004,6 @@ async function showAnnouncementDetailBySlug(slug) {
 
 
 
-
-
 function backToFeedbackPage() {
     showPageContent(document.getElementById("page7"));
     loadFeedback().catch(console.error);
@@ -6033,28 +6020,27 @@ document.getElementById('backToFeedbackPage')?.addEventListener('click', backToF
 
 
 
-
-
-
-
-
-
-
-
-// Event listener untuk tombol kembali di halaman 9
-document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
-
-// Modifikasi event listener untuk klik pengumuman
 document.addEventListener('click', async (e) => {
     const announcementItem = e.target.closest('.pinned-item, .announcement-item');
     if (announcementItem) {
         e.preventDefault();
-        const announcementId = announcementItem.getAttribute('data-id');
-        if (announcementId) {
-                        await showAnnouncementDetailBySlug(slug);
+
+        const slug = announcementItem.getAttribute('data-slug');
+        if (slug) {
+            history.pushState({ page: "detail-pengumuman" }, "Pengumuman", `/halaman-masukan-${slug}`);
+            await showAnnouncementDetailBySlug(slug);
+        } else {
+            console.warn("Slug tidak ditemukan di data-slug attribute.");
         }
     }
 });
+
+
+
+
+
+
+
 
 window.addEventListener('popstate', function(event) {
     if (event.state) {
