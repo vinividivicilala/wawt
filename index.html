@@ -754,7 +754,10 @@
 
 
 
-
+#backToFeedbackPage:hover {
+  background: rgba(78, 161, 255, 0.1);
+  transition: background 0.3s ease;
+}
 
 
 
@@ -2317,6 +2320,15 @@
   </div>
 </div>
 
+<div id="page9" style="display: none;">
+  <!-- Tambahkan tombol kembali di sini -->
+  <div style="text-align: left; margin-bottom: 20px; padding: 0 30px;">
+    <button id="backToFeedbackPage" style="padding: 8px 16px; background: none; border: 1px solid #4ea1ff; color: #4ea1ff; border-radius: 4px; cursor: pointer;">
+      ← Kembali ke Halaman Masukan
+    </button>
+  </div>
+
+
 
 
 
@@ -2471,79 +2483,29 @@
 	 
 	 
 	 
-	 
-	 
-	 
-	 
-	 
-	 async function findAnnouncementIdBySlug(slug) {
-    try {
-        const q = query(
-            collection(db, "announcements"),
-            where("slug", "==", slug)
-        );
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            return querySnapshot.docs[0].id;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error finding announcement by slug:", error);
-        return null;
-    }
-}
-	 
-	 
-	 
-	 
-// Fungsi untuk membuat slug
-function createSlug(title) {
-    return title.toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-}
-
-
-
-
-
-
+	 // Fungsi utama untuk menampilkan halaman
 function showPageContent(pageElement) {
-    const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9"];
-    
-    // Sembunyikan semua halaman
-    pageIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = "none";
-    });
+  const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9"];
+  
+  // Sembunyikan semua halaman
+  pageIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
 
-    // Tampilkan halaman yang dipilih
-    if (pageElement) {
-        pageElement.style.display = "block";
-        
-        // Jika page9, muat konten jika ada ID di URL
-        if (pageElement.id === "page9") {
-            const path = window.location.pathname;
-            if (path.includes('halaman-masukan-')) {
-                const announcementId = path.split('halaman-masukan-')[1];
-                if (announcementId) {
-                    loadAnnouncementDetail(announcementId);
-                }
-            }
-        }
-        
-        // Jika page7, muat pengumuman dan masukan
-        if (pageElement.id === "page7") {
-            loadPinnedAnnouncements();
-            loadFeedback().catch(console.error);
-        }
+  // Tampilkan halaman yang dipilih
+  if (pageElement) {
+    pageElement.style.display = "block";
+    
+    // Jika page7, muat pengumuman dan masukan
+    if (pageElement.id === "page7") {
+      loadPinnedAnnouncements();
+      loadFeedback().catch(console.error);
     }
-    
-    window.scrollTo(0, 0);
+  }
+  
+  window.scrollTo(0, 0);
 }
-
 
 
 
@@ -4043,16 +4005,6 @@ function renderAnnouncements(announcements) {
                 await viewAnnouncementDetails(announcement.id);
             });
         }
-
-        announcementItem.addEventListener('click', async () => {
-            showPageContent(document.getElementById("page9"));
-            await loadAnnouncementDetail(announcement.id);
-            history.pushState(
-                { page: "announcementDetail", id: announcement.id },
-                "Detail Pengumuman",
-                `/halaman-masukan-${announcement.id}`
-            );
-        });
     });
 }
 
@@ -4345,18 +4297,6 @@ async function loadAnnouncementReplies(announcementId) {
 
 
 
-
-
-
-// Ganti ini:
-document.querySelectorAll('.announcement-item').forEach(item => {
-  item.addEventListener('click', () => {
-    // Load detail pengumuman jika ada ID-nya, misalnya:
-    const announcementId = item.getAttribute('data-id');
-    loadAnnouncementDetail(announcementId);  // <- kamu buat fungsi ini
-    showPageContent(document.getElementById("page9"));
-  });
-});
 
 
 
@@ -4883,48 +4823,6 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
-
-
-// Fungsi untuk menampilkan detail pengumuman (digunakan dari halaman lain)
-async function showAnnouncementDetail(announcementId) {
-  showPageContent(document.getElementById("page9"));
-  await loadAnnouncementDetail(announcementId);
-  history.pushState(
-    { page: "announcementDetail", id: announcementId },
-    "Detail Pengumuman",
-    `/halaman-masukan-${announcementId}`
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Fungsi untuk setup event listeners di halaman detail
 function setupAnnouncementDetailEvents(announcementId) {
   // Tombol like
@@ -5018,26 +4916,6 @@ async function submitAnnouncementReply(announcementId) {
   }
 }
 
-// Panggil fungsi setup saat halaman dimuat
-document.addEventListener('DOMContentLoaded', () => {
-  // Tangani klik pada daftar pengumuman di halaman 7
-  document.addEventListener('click', (e) => {
-    const announcementItem = e.target.closest('.pinned-item, .announcement-item');
-    if (announcementItem) {
-      const announcementId = announcementItem.getAttribute('data-id');
-      if (announcementId) {
-        e.preventDefault();
-        showAnnouncementDetail(announcementId);
-      }
-    }
-  });
-
-  // Tangani tombol kembali di halaman 9
-  document.getElementById('backToAnnouncements')?.addEventListener('click', () => {
-    document.getElementById('page9').style.display = 'none';
-    document.getElementById('page7').style.display = 'block';
-  });
-});
 
 
 
@@ -5773,6 +5651,12 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 		
 		
 		
+		
+		
+		
+		
+		
+		
 	// Fungsi untuk menangani navigasi saat halaman dimuat
 function handleInitialNavigation() {
     const path = window.location.pathname;
@@ -5799,12 +5683,8 @@ function handleInitialNavigation() {
    
    
    
-   
-   
-   
-   
-   
-  // Fungsi utama untuk menangani loading halaman
+
+// Fungsi utama untuk menangani loading halaman
 window.onload = function() {
     handlePageLoad();
     initializeBlogPagination();
@@ -5815,207 +5695,169 @@ window.addEventListener("popstate", function(event) {
     handlePageLoad(false); // false berarti bukan initial load
 });
 
+// Variabel untuk menyimpan state saat ini
+let currentState = {
+    page: "home",
+    announcementId: null
+};
+
 // Fungsi utama untuk menangani navigasi halaman
 function handlePageLoad(isInitialLoad = true) {
     const path = window.location.pathname || "/";
-    const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
+    
+    // Reset state
+    currentState = {
+        page: "home",
+        announcementId: null
+    };
 
-    if (isAnnouncementDetail) {
-        const slug = path.replace('/halaman-masukan-', '');
-        findAnnouncementIdBySlug(slug)
-            .then(id => {
-                if (id) {
-                    			 showPageContent(document.getElementById("page9"));
-                    loadAnnouncementDetail(id);
-                    if (isInitialLoad) {
-                        history.replaceState({ 
-                            page: "announcementDetail",
-                            id: id
-                        }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
-                    }
-                } else {
-                    // Fallback ke halaman masukan jika tidak ditemukan
-                    			 showPageContent(document.getElementById("page7"));
-                    if (isInitialLoad) {
-                        history.replaceState({ 
-                            page: "masukan" 
-                        }, "Masukan", "/halaman-masukan");
-                    }
-                }
-            })
-            .catch(error => {
-                console.error("Error loading announcement:", error);
-                 showPageContent(document.getElementById("page7"));
-            });
-    } 
-    else if (path.includes("halaman-arduino")) {
+    if (path.includes("halaman-arduino")) {
+        currentState.page = "arduino";
         showPageContent(document.getElementById("page2"));
         if (isInitialLoad) {
-            history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+            history.replaceState(currentState, "Arduino", "/halaman-arduino");
         }
     } 
     else if (path.includes("halaman-iot")) {
-      showPageContent(document.getElementById("page3"));
+        currentState.page = "iot";
+        showPageContent(document.getElementById("page3"));
         if (isInitialLoad) {
-            history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
+            history.replaceState(currentState, "IoT", "/halaman-iot");
         }
     } 
     else if (path.includes("halaman-blog")) {
-         showPageContent(document.getElementById("page4"));
+        currentState.page = "blog";
+        showPageContent(document.getElementById("page4"));
         if (isInitialLoad) {
-            history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
+            history.replaceState(currentState, "Blog", "/halaman-blog");
         }
     } 
     else if (path.includes("halaman-kumpulan-blog")) {
-         showPageContent(document.getElementById("page5"));
+        currentState.page = "kumpulan-blog";
+        showPageContent(document.getElementById("page5"));
         if (isInitialLoad) {
-            history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
+            history.replaceState(currentState, "Kumpulan Blog", "/halaman-kumpulan-blog");
         }
     } 
     else if (path.includes("halaman-tentang-kami")) {
-         showPageContent(document.getElementById("page6"));
+        currentState.page = "tentang-kami";
+        showPageContent(document.getElementById("page6"));
         if (isInitialLoad) {
-            history.replaceState({ page: "tentang-kami" }, "Tentang Kami", "/halaman-tentang-kami");
+            history.replaceState(currentState, "Tentang Kami", "/halaman-tentang-kami");
         }
     } 
     else if (path.includes("halaman-masukan")) {
-         showPageContent(document.getElementById("page7"));
+        currentState.page = "masukan";
+        showPageContent(document.getElementById("page7"));
         loadFeedback().catch(console.error);
         if (isInitialLoad) {
-            history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+            history.replaceState(currentState, "Masukan", "/halaman-masukan");
         }
     } 
     else if (path.includes("halaman-forum")) {
+        currentState.page = "forum";
         showPageContent(document.getElementById("page8"));
         if (isInitialLoad) {
-            history.replaceState({ page: "forum" }, "Forum", "/halaman-forum");
+            history.replaceState(currentState, "Forum", "/halaman-forum");
         }
     } 
     else {
-         showPageContent(document.getElementById("page1"));
+        currentState.page = "home";
+        showPageContent(document.getElementById("page1"));
         if (isInitialLoad) {
-            history.replaceState({ page: "home" }, "Beranda", "/");
+            history.replaceState(currentState, "Beranda", "/");
         }
     }
 }
 
-
-
-
-
-
-
-
-
-
-document.addEventListener('click', async (e) => {
-  const announcementItem = e.target.closest('.pinned-item, .announcement-item');
-  if (announcementItem) {
-    const announcementId = announcementItem.getAttribute('data-id');
-    if (announcementId) {
-      e.preventDefault();
-      showPageContent(document.getElementById("page9"));
-      await loadAnnouncementDetail(announcementId);
-      history.pushState({ page: "announcementDetail", id: announcementId }, "Detail Pengumuman", `/halaman-masukan-${announcementId}`);
-    }
-  }
-});
-
-
-document.addEventListener('click', (e) => {
-  // Handle tombol kembali di halaman detail
-  if (e.target.closest('#back-announcement')) {
-      e.preventDefault();
-	  			 showPageContent(document.getElementById("page7"));
-      history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-  }
-});
-
-
-
-
-
-// Fungsi bantu untuk mendapatkan slug pengumuman 
-async function getAnnouncementSlug(announcementId) {
-    try {
-        const docRef = doc(db, "announcements", announcementId);
-        const docSnap = await getDoc(docRef);
-        return docSnap.exists() ? docSnap.data().slug : null;
-    } catch (error) {
-        console.error("Error getting slug:", error);
-        return null;
-    }
+// Fungsi untuk menampilkan detail pengumuman tanpa mengubah URL
+function showAnnouncementDetail(announcementId) {
+    // Simpan state saat ini
+    currentState.page = "announcementDetail";
+    currentState.announcementId = announcementId;
+    
+    // Tampilkan halaman 9
+    showPageContent(document.getElementById("page9"));
+    loadAnnouncementDetail(announcementId);
+    
+    // Update state tanpa mengubah URL
+    history.pushState(currentState, "Detail Pengumuman", "/halaman-masukan");
 }
 
-}
-
-
-
-  
-
-// Tangani perubahan state history (back/forward button)
-window.addEventListener('popstate', (event) => {
-  if (event.state?.page === "announcementDetail") {
-    showAnnouncementDetail(event.state.id);
-  } else if (event.state?.page === "masukan") {
+// Fungsi untuk kembali ke halaman masukan
+function backToFeedbackPage() {
+    currentState.page = "masukan";
+    currentState.announcementId = null;
+    
+    // Tampilkan halaman 7
     showPageContent(document.getElementById("page7"));
-  } else {
-    showPageContent(document.getElementById("page1"));
-  }
-});
-
-
-
-
-// Setup event listeners untuk pengumuman yang dipin
-function setupAnnouncementClickHandlers() {
-  document.querySelectorAll('.pinned-item, .announcement-item').forEach(item => {
-    item.addEventListener('click', function() {
-      const announcementId = this.getAttribute('data-id');
-      if (announcementId) {
-        showPageContent(document.getElementById("page9"));
-        loadAnnouncementDetail(announcementId);
-        history.pushState(
-          { page: "announcementDetail", id: announcementId },
-          "Detail Pengumuman",
-          `/halaman-masukan-${announcementId}`
-        );
-      }
-    });
-  });
+    
+    // Update state tanpa mengubah URL
+    history.pushState(currentState, "Masukan", "/halaman-masukan");
 }
 
-// Panggil setup saat halaman dimuat
-document.addEventListener('DOMContentLoaded', setupAnnouncementClickHandlers);
+// Event listener untuk tombol kembali di halaman 9
+document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
 
-
-
-// Fungsi untuk memeriksa URL saat pertama kali dimuat
-function checkInitialURL() {
-  const path = window.location.pathname;
-  
-  // Jika URL mengarah ke halaman detail pengumuman
-  if (path.includes('halaman-masukan-')) {
-    const announcementId = path.split('halaman-masukan-')[1];
-    if (announcementId) {
-      showAnnouncementDetail(announcementId);
+// Modifikasi event listener untuk klik pengumuman
+document.addEventListener('click', async (e) => {
+    const announcementItem = e.target.closest('.pinned-item, .announcement-item');
+    if (announcementItem) {
+        e.preventDefault();
+        const announcementId = announcementItem.getAttribute('data-id');
+        if (announcementId) {
+            await showAnnouncementDetail(announcementId);
+        }
     }
-  }
+});
+
+// Handle popstate event
+window.addEventListener('popstate', function(event) {
+    if (event.state) {
+        currentState = event.state;
+        
+        if (currentState.page === "announcementDetail" && currentState.announcementId) {
+            showPageContent(document.getElementById("page9"));
+            loadAnnouncementDetail(currentState.announcementId);
+        } else {
+            // Tampilkan halaman sesuai state
+            switch(currentState.page) {
+                case "arduino":
+                    showPageContent(document.getElementById("page2"));
+                    break;
+                case "iot":
+                    showPageContent(document.getElementById("page3"));
+                    break;
+                case "blog":
+                    showPageContent(document.getElementById("page4"));
+                    break;
+                case "kumpulan-blog":
+                    showPageContent(document.getElementById("page5"));
+                    break;
+                case "tentang-kami":
+                    showPageContent(document.getElementById("page6"));
+                    break;
+                case "masukan":
+                    showPageContent(document.getElementById("page7"));
+                    loadFeedback().catch(console.error);
+                    break;
+                case "forum":
+                    showPageContent(document.getElementById("page8"));
+                    break;
+                default:
+                    showPageContent(document.getElementById("page1"));
+            }
+        }
+    }
+});
+
 }
 
-// Panggil fungsi ini saat halaman dimuat
-window.addEventListener('load', checkInitialURL);
 
 
 
 
 
-
-// Di akhir file, tambahkan:
-window.addEventListener('load', function() {
-  checkInitialURL();
-  setupAnnouncementClickHandlers();
-});
 
   
    
