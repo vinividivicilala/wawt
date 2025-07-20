@@ -1,9 +1,4 @@
 
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5968,42 +5963,46 @@ async function renderMasukanDetailBySlug(slug) {
 
 
 
-async function showAnnouncementDetail(announcementId) {
-    try {
-        // Show page 9
-        showPageContent(document.getElementById("page9"));
-        
-        // Load the announcement data
-        const docRef = doc(db, "announcements", announcementId);
-        const docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
-            throw new Error("Pengumuman tidak ditemukan");
-        }
-        
-        const announcement = docSnap.data();
-        const slug = announcement.slug || createSlug(announcement.title);
-        
-        // Update browser history
-        history.pushState(
-            { page: "announcementDetail", announcementId: announcementId },
-            announcement.title,
-            `/halaman-masukan-${slug}`
-        );
-        
-        // Update browser title
-        document.title = `${announcement.title} - Life Is What It Is Learn`;
-        
-        // Load the announcement content
-        await loadAnnouncementDetail(announcementId);
-        
-    } catch (error) {
-        console.error("Error showing announcement detail:", error);
-        // Fallback to feedback page
-        showPageContent(document.getElementById("page7"));
-        await loadFeedback();
+
+
+async function showAnnouncementDetailBySlug(slug) {
+  try {
+    showPageContent(document.getElementById("page9"));
+
+    const q = query(collection(db, "announcements"), where("slug", "==", slug), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error("Pengumuman tidak ditemukan");
     }
+
+    const doc = querySnapshot.docs[0];
+    const data = doc.data();
+
+    // Update browser title
+    document.title = `${data.title} - Life Is What It Is Learn`;
+
+    // Tampilkan kontennya
+    const detailContainer = document.getElementById("announcementDetailContainer");
+    detailContainer.innerHTML = `
+      <div style="padding: 20px; color: white;">
+        <h2 style="font-size: 32px; font-weight: bold;">${data.title}</h2>
+        <p style="margin-top: 10px;">${data.content}</p>
+        <p style="margin-top: 20px; font-size: 14px; color: gray;">
+          Diposting pada ${new Date(data.createdAt?.seconds * 1000).toLocaleString()}
+        </p>
+      </div>
+    `;
+  } catch (error) {
+    console.error("Error loading announcement by slug:", error);
+    showPageContent(document.getElementById("page7"));
+    await loadFeedback();
+  }
 }
+
+
+
+
 
 
 
