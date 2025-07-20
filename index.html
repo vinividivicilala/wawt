@@ -4607,40 +4607,20 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-// Fungsi untuk menangani klik pada pengumuman
-function setupAnnouncementClickHandlers() {
-  document.querySelectorAll('.pinned-item, .announcement-item').forEach(item => {
-    item.addEventListener('click', async (e) => {
-      // Cegah event bubbling jika mengklik elemen child tertentu
-      if (e.target.classList.contains('like-btn')) return;
-      if (e.target.classList.contains('reply-btn')) return;
-      if (e.target.classList.contains('view-announcement-btn')) return;
-      
-      const announcementId = item.getAttribute('data-id');
-      if (announcementId) {
-        await showAnnouncementDetail(announcementId);
-      }
-    });
-  });
-}
 
-// Fungsi yang diperbarui untuk menampilkan detail pengumuman
+
+
+
+// Fungsi utama untuk menampilkan detail pengumuman
 async function showAnnouncementDetail(announcementId) {
   try {
-    // Sembunyikan semua halaman
+    // Sembunyikan semua halaman dan tampilkan halaman 9
     document.querySelectorAll('[id^="page"]').forEach(page => {
       page.style.display = 'none';
     });
+    document.getElementById('page9').style.display = 'block';
 
-    // Tampilkan halaman 9
-    const page9 = document.getElementById('page9');
-    if (!page9) throw new Error("Halaman detail tidak ditemukan");
-    page9.style.display = 'block';
-
-    // Tunggu sebentar untuk memastikan DOM siap
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    // Muat detail pengumuman
+    // Muat data pengumuman dari Firestore
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
 
@@ -4651,37 +4631,37 @@ async function showAnnouncementDetail(announcementId) {
     const announcement = docSnap.data();
     const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
 
-    // Render konten utama
+    // Render konten utama pengumuman
     const container = document.getElementById('announcementDetailContainer');
     container.innerHTML = `
-      <div style="margin-bottom: 30px;">
+      <div style="margin-bottom: 20px;">
         <h2 style="color: #ff6b6b; font-size: 28px; margin-bottom: 15px;">
           ${announcement.title || "Tanpa Judul"}
         </h2>
         
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-          <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
+          <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 50%;">
             ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
           </div>
           <div>
             <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)} • ${waktu.toLocaleDateString('id-ID')}</div>
           </div>
         </div>
         
-        <div style="font-size: 16px; line-height: 1.6; color: #ddd; white-space: pre-line;">
+        <div style="font-size: 16px; line-height: 1.6; color: #ddd; white-space: pre-line; margin-bottom: 20px;">
           ${announcement.content || "Tidak ada konten"}
         </div>
         
-        <div style="display: flex; gap: 20px; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-          <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer; padding: 5px 10px; border-radius: 5px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
               <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
             </svg>
-            <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+            <span class="like-count">${announcement.likesCount || 0}</span>
           </button>
           
-          <div style="display: flex; align-items: center; color: #ccc;">
+          <div style="display: flex; align-items: center; color: #ccc; padding: 5px 10px;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
@@ -4692,8 +4672,8 @@ async function showAnnouncementDetail(announcementId) {
       </div>
     `;
 
-    // Tambahkan event listener untuk like button
-    container.querySelector('.like-btn')?.addEventListener('click', () => toggleAnnouncementLike(announcementId));
+    // Setup event listeners
+    setupAnnouncementDetailEvents(announcementId);
 
     // Muat balasan dan pengumuman terkait
     await Promise.all([
@@ -4711,33 +4691,123 @@ async function showAnnouncementDetail(announcementId) {
 
   } catch (error) {
     console.error("Error showing announcement detail:", error);
-    
-    const container = document.getElementById('announcementDetailContainer') || document.getElementById('feedbackListContainer');
-    if (container) {
-      container.innerHTML = `
-        <div style="color: #ff6b6b; text-align: center; padding: 30px;">
-          Gagal memuat pengumuman: ${error.message}
-          <button onclick="loadPinnedAnnouncements()" style="margin-top: 15px; padding: 8px 15px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Kembali ke Daftar Pengumuman
-          </button>
-        </div>
-      `;
-    }
+    showErrorPage(error.message);
   }
 }
 
-// Panggil fungsi setup saat halaman dimuat dan setelah memuat pengumuman
-document.addEventListener('DOMContentLoaded', setupAnnouncementClickHandlers)
+// Fungsi untuk setup event listeners di halaman detail
+function setupAnnouncementDetailEvents(announcementId) {
+  // Tombol like
+  document.querySelector('#announcementDetailContainer .like-btn')?.addEventListener('click', async () => {
+    await toggleAnnouncementLike(announcementId);
+    // Update like count
+    const likesCount = await getAnnouncementLikesCount(announcementId);
+    document.querySelector('#announcementDetailContainer .like-count').textContent = likesCount;
+  });
 
+  // Tombol kembali
+  document.getElementById('backToAnnouncements')?.addEventListener('click', () => {
+    document.getElementById('page9').style.display = 'none';
+    document.getElementById('page7').style.display = 'block';
+    history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
+  });
 
+  // Form balasan
+  document.getElementById('announcementReplyForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await submitAnnouncementReply(announcementId);
+  });
+}
 
+// Fungsi untuk menampilkan halaman error
+function showErrorPage(message) {
+  const container = document.getElementById('announcementDetailContainer');
+  if (container) {
+    container.innerHTML = `
+      <div style="color: #ff6b6b; text-align: center; padding: 30px;">
+        <h3 style="margin-bottom: 15px;">Terjadi Kesalahan</h3>
+        <p style="margin-bottom: 20px;">${message}</p>
+        <button onclick="location.reload()" style="padding: 8px 16px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Muat Ulang Halaman
+        </button>
+      </div>
+    `;
+  }
+}
 
+// Fungsi untuk mengirim balasan pengumuman
+async function submitAnnouncementReply(announcementId) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login untuk membalas pengumuman');
+    return;
+  }
 
+  const content = document.getElementById('announcementReplyContent').value.trim();
+  if (!content) {
+    alert('Isi balasan tidak boleh kosong');
+    return;
+  }
 
+  const submitBtn = document.querySelector('#announcementReplyForm button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Mengirim...';
 
+  try {
+    // Tambahkan balasan ke Firestore
+    const repliesRef = collection(db, "announcements", announcementId, "replies");
+    await addDoc(repliesRef, {
+      content,
+      userId: user.uid,
+      userName: user.displayName || 'Anonymous',
+      userEmail: user.email,
+      timestamp: serverTimestamp()
+    });
 
+    // Update jumlah balasan
+    const announcementRef = doc(db, "announcements", announcementId);
+    await updateDoc(announcementRef, {
+      repliesCount: increment(1)
+    });
 
+    // Perbarui tampilan
+    const repliesCount = await getAnnouncementRepliesCount(announcementId);
+    document.getElementById('repliesCount').textContent = repliesCount;
+    await loadAnnouncementReplies(announcementId);
 
+    // Reset form
+    document.getElementById('announcementReplyContent').value = '';
+
+  } catch (error) {
+    console.error("Error submitting reply:", error);
+    alert('Gagal mengirim balasan');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+  }
+}
+
+// Panggil fungsi setup saat halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+  // Tangani klik pada daftar pengumuman di halaman 7
+  document.addEventListener('click', (e) => {
+    const announcementItem = e.target.closest('.pinned-item, .announcement-item');
+    if (announcementItem) {
+      const announcementId = announcementItem.getAttribute('data-id');
+      if (announcementId) {
+        e.preventDefault();
+        showAnnouncementDetail(announcementId);
+      }
+    }
+  });
+
+  // Tangani tombol kembali di halaman 9
+  document.getElementById('backToAnnouncements')?.addEventListener('click', () => {
+    document.getElementById('page9').style.display = 'none';
+    document.getElementById('page7').style.display = 'block';
+  });
+});
 
 
 
