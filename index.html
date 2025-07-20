@@ -1814,14 +1814,13 @@
         <!-- Kolom 2 - Kategori -->
         <div style="grid-column: 2;">
           <label for="feedbackCategory" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Kategori</label>
-          <select id="feedbackCategory" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; required">
-   <option value="design">Desain</option>
+        <select id="feedbackCategory" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; required">
+    <option value="design">Desain</option>
     <option value="feature">Fitur</option>
     <option value="content">Konten</option>
     <option value="bug">Bug/Masalah</option>
     <option value="arduino">Arduino</option>
     <option value="other">Lainnya</option>
-
 </select>
         </div>
         
@@ -2937,14 +2936,15 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
     if (!feedbackList) return;
     
     
-    
-   // Validasi kategori yang lebih ketat
-    const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'announcement', 'other'];
+    // Pastikan kategori yang ditampilkan sesuai dengan yang disimpan
+    const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
     const category = feedback.category && validCategories.includes(feedback.category.toLowerCase()) 
         ? feedback.category.toLowerCase() 
         : 'other';
     const categoryClass = validCategories.includes(category) ? category : 'other';
-    const categoryLabel = getCategoryLabel(categoryClass);
+    const categoryLabel = getCategoryLabel(category); // Gunakan fungsi getCategoryLabel
+    
+
 
     const waktu = feedback.timestamp?.toDate ? feedback.timestamp.toDate() : new Date(feedback.timestamp || Date.now());
     const initials = feedback.userName ? feedback.userName.charAt(0).toUpperCase() : 'A';
@@ -2972,7 +2972,7 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
             <div class="feedback-time" style="white-space: nowrap;">${formatTimeAgo(waktu)}${feedback.isCached ? ' (offline)' : ''}</div>
         </div>
         <div class="feedback-title">${feedback.title || 'Tanpa judul'}</div>
-        <span class="feedback-category category-${categoryClass}">${categoryLabel}</span>
+		<span class="feedback-category category-${categoryClass}">${categoryLabel}</span>
         <div class="feedback-content">${feedback.content || 'Tidak ada konten'}</div>
         
         <!-- Action buttons -->
@@ -3016,6 +3016,7 @@ function renderFeedbackItem(feedback, repliesCount = 0, likesCount = 0, userLike
     if (feedback.id) incrementViewCount(feedback.id);
 }
 
+	 
 	 
 	 
 	 
@@ -3266,10 +3267,13 @@ window.addEventListener('online', () => {
 // Event listener untuk form
 document.getElementById('masukanForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+  
+     
+    // Deklarasi semua variabel yang dibutuhkan
     const title = document.getElementById('feedbackTitle').value.trim();
     const category = document.getElementById('feedbackCategory').value;
     const content = document.getElementById('feedbackContent').value.trim();
+    
     
     if (!title || !content) {
         alert('Judul dan isi masukan tidak boleh kosong!');
@@ -3314,23 +3318,49 @@ document.getElementById('masukanForm')?.addEventListener('submit', async functio
 
 
 
-
-
-// Update getCategoryLabel to include arduino
 function getCategoryLabel(category) {
     const categoryMap = {
         'design': 'Desain',
         'feature': 'Fitur',
         'content': 'Konten',
         'bug': 'Bug/Masalah',
-        'arduino': 'Arduino', // Added arduino category
-        'announcement': 'Pengumuman',
+        'arduino': 'Arduino',
         'other': 'Lainnya'
     };
     
     const normalizedCategory = String(category).toLowerCase().trim();
     return categoryMap[normalizedCategory] || categoryMap['other'];
 }
+
+
+
+
+function renderPinnedAnnouncementItem(announcement) {
+  const item = document.createElement("div");
+  item.classList.add("announcement-item");
+
+  // Pastikan judul bisa diklik dan memuat detail
+  item.innerHTML = `
+    <div class="announcement-title" style="cursor: pointer; color: yellow;" data-id="${announcement.id}">
+      ${announcement.title}
+    </div>
+    <div class="announcement-date">${announcement.date}</div>
+  `;
+
+  item.querySelector(".announcement-title").addEventListener("click", () => {
+    loadAnnouncementDetail(announcement.id);
+  });
+
+  return item;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -3342,8 +3372,11 @@ function getCategoryLabel(category) {
 async function submitFeedback(e) {
     e.preventDefault();
     
+   
     const title = document.getElementById('feedbackTitle').value.trim();
-    let category = document.getElementById('feedbackCategory').value;
+    const category = document.getElementById('feedbackCategory').value;
+const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
+const normalizedCategory = validCategories.includes(category) ? category : 'other';
     const content = document.getElementById('feedbackContent').value.trim();
     
     // Validasi input
@@ -3352,9 +3385,7 @@ async function submitFeedback(e) {
         return;
     }
     
-    // Validasi kategori yang lebih ketat
-    const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
-    category = validCategories.includes(category) ? category : 'other';
+   
     
     const submitBtn = document.getElementById('submitFeedback');
     const originalBtnText = submitBtn.innerHTML;
@@ -3364,7 +3395,7 @@ async function submitFeedback(e) {
     const user = auth.currentUser;
     const feedbackData = {
         title,
-        category,
+            category: normalizedCategory, // Pastikan kategori yang disimpan sudah dinormalisasi
         content,
         userName: user?.displayName || 'Anonymous',
         userEmail: user?.email || null,
@@ -3720,6 +3751,9 @@ async function loadPinnedAnnouncements() {
         console.error("Error loading pinned announcements:", error);
         // Fallback ke cache jika error
         displayCachedAnnouncements();
+		
+		// Setelah render selesai
+  setupAnnouncementClickHandlers();
     }
 }
 
@@ -4566,23 +4600,47 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
+
+
+
+
+
+
+
+// Fungsi untuk menangani klik pada pengumuman
+function setupAnnouncementClickHandlers() {
+  document.querySelectorAll('.pinned-item, .announcement-item').forEach(item => {
+    item.addEventListener('click', async (e) => {
+      // Cegah event bubbling jika mengklik elemen child tertentu
+      if (e.target.classList.contains('like-btn')) return;
+      if (e.target.classList.contains('reply-btn')) return;
+      if (e.target.classList.contains('view-announcement-btn')) return;
+      
+      const announcementId = item.getAttribute('data-id');
+      if (announcementId) {
+        await showAnnouncementDetail(announcementId);
+      }
+    });
+  });
+}
+
+// Fungsi yang diperbarui untuk menampilkan detail pengumuman
 async function showAnnouncementDetail(announcementId) {
   try {
-    // Sembunyikan semua page
-    document.querySelectorAll('[id^="page"]').forEach(page => page.style.display = 'none');
+    // Sembunyikan semua halaman
+    document.querySelectorAll('[id^="page"]').forEach(page => {
+      page.style.display = 'none';
+    });
 
-    // Tampilkan halaman detail
+    // Tampilkan halaman 9
     const page9 = document.getElementById('page9');
-    if (!page9) throw new Error("Halaman page9 tidak ditemukan");
+    if (!page9) throw new Error("Halaman detail tidak ditemukan");
     page9.style.display = 'block';
 
-    // Tunggu supaya elemen DOM ter-render
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Tunggu sebentar untuk memastikan DOM siap
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    const container = document.getElementById("announcementDetailContainer");
-    if (!container) throw new Error("Container detail pengumuman tidak ditemukan");
-
-    // Ambil data dari Firestore
+    // Muat detail pengumuman
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
 
@@ -4590,37 +4648,101 @@ async function showAnnouncementDetail(announcementId) {
       throw new Error("Pengumuman tidak ditemukan");
     }
 
-    const data = docSnap.data();
-    console.log("✅ Data berhasil dimuat:", data);
+    const announcement = docSnap.data();
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
 
-    const waktu = data.timestamp?.toDate?.() || new Date();
-
-    // Render konten
+    // Render konten utama
+    const container = document.getElementById('announcementDetailContainer');
     container.innerHTML = `
-      <div style="color:white;">
-        <h2 style="font-size: 28px; margin-bottom: 10px;">${data.title || "Tanpa Judul"}</h2>
-        <p style="font-size: 16px; line-height: 1.6;">${data.content || "Tanpa Konten"}</p>
-        <div style="font-size: 12px; color: #aaa; margin-top: 15px;">
-          ${formatTimeAgo(waktu)} &nbsp;|&nbsp; Dilihat: ${data.views || 0}
+      <div style="margin-bottom: 30px;">
+        <h2 style="color: #ff6b6b; font-size: 28px; margin-bottom: 15px;">
+          ${announcement.title || "Tanpa Judul"}
+        </h2>
+        
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+          <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
+            ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
+          </div>
+          <div>
+            <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
+            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+          </div>
+        </div>
+        
+        <div style="font-size: 16px; line-height: 1.6; color: #ddd; white-space: pre-line;">
+          ${announcement.content || "Tidak ada konten"}
+        </div>
+        
+        <div style="display: flex; gap: 20px; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+            </svg>
+            <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+          </button>
+          
+          <div style="display: flex; align-items: center; color: #ccc;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span class="view-count">${announcement.views || 0}</span>
+          </div>
         </div>
       </div>
     `;
 
-    // Load balasan
-    await loadAnnouncementReplies(announcementId);
-    const repliesCount = await getAnnouncementRepliesCount(announcementId);
-    const repliesCountEl = document.getElementById("repliesCount");
-    if (repliesCountEl) repliesCountEl.textContent = repliesCount;
+    // Tambahkan event listener untuk like button
+    container.querySelector('.like-btn')?.addEventListener('click', () => toggleAnnouncementLike(announcementId));
+
+    // Muat balasan dan pengumuman terkait
+    await Promise.all([
+      loadAnnouncementReplies(announcementId),
+      loadRelatedAnnouncements(announcementId),
+      incrementAnnouncementViews(announcementId)
+    ]);
+
+    // Update history state
+    history.pushState(
+      { page: "announcementDetail", id: announcementId },
+      announcement.title,
+      `/halaman-masukan-${announcementId}`
+    );
 
   } catch (error) {
-    console.error("Error loading announcement:", error);
-
-  const container = document.getElementById("announcementDetailContainer");
+    console.error("Error showing announcement detail:", error);
+    
+    const container = document.getElementById('announcementDetailContainer') || document.getElementById('feedbackListContainer');
     if (container) {
-      container.innerHTML = `<div style="color:red;">${error.message}</div>`;
+      container.innerHTML = `
+        <div style="color: #ff6b6b; text-align: center; padding: 30px;">
+          Gagal memuat pengumuman: ${error.message}
+          <button onclick="loadPinnedAnnouncements()" style="margin-top: 15px; padding: 8px 15px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Kembali ke Daftar Pengumuman
+          </button>
+        </div>
+      `;
     }
   }
 }
+
+// Panggil fungsi setup saat halaman dimuat dan setelah memuat pengumuman
+document.addEventListener('DOMContentLoaded', setupAnnouncementClickHandlers)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
