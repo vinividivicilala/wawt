@@ -5708,42 +5708,6 @@ function handleInitialNavigation() {
    
    
    
-   async function renderAnnouncementDetailBySlug(slug) {
-  try {
-    const q = query(collection(db, "pengumuman"), where("slug", "==", slug));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      const doc = querySnapshot.docs[0];
-      const data = doc.data();
-      const id = doc.id;
-
-      showPage(page9); // Tampilkan halaman detail
-
-      // Render konten
-      const container = document.getElementById("announcementDetailContainer");
-      container.innerHTML = `
-        <h1 style="color:white;">${data.title}</h1>
-        <p style="color:#ccc; line-height: 1.7;">${data.content}</p>
-        <div style="margin-top: 10px; font-size: 14px; color: #999;">
-          Dilihat ${data.viewsCount || 0} kali • ${data.likesCount || 0} suka
-        </div>
-      `;
-
-      // Optional: Set judul halaman browser
-      document.title = `${data.title} - Life Is What It Is Learn`;
-
-    } else {
-      showNotification("Pengumuman tidak ditemukan.", "error");
-    }
-  } catch (err) {
-    console.error("Gagal ambil pengumuman:", err);
-    showNotification("Terjadi kesalahan saat memuat pengumuman.", "error");
-  }
-}
-
-   
-   
    
    
    
@@ -6042,6 +6006,37 @@ window.addEventListener('popstate', function(event) {
     
 
 
+async function renderAnnouncementDetailBySlug(slug) {
+  const q = query(collection(db, "pengumuman"), where("slug", "==", slug));
+  const querySnapshot = await getDocs(q);
+
+  if (!querySnapshot.empty) {
+    const doc = querySnapshot.docs[0];
+    const data = doc.data();
+    const id = doc.id;
+
+    // Tampilkan halaman 9
+    showPage(page9);
+
+    // Render konten ke kontainer
+    const container = document.getElementById("announcementDetailContainer");
+    container.innerHTML = `
+      <h2 style="color:white; font-size: 28px;">${data.title}</h2>
+      <div style="color:#ccc; margin-top:10px; line-height:1.6;">
+        ${data.content}
+      </div>
+      <div style="margin-top:15px; font-size:13px; color:#888;">
+        Dilihat ${data.viewsCount || 0} kali • ${data.likesCount || 0} suka
+      </div>
+    `;
+
+    // Update judul halaman browser
+    document.title = `${data.title} - Life Is What It Is Learn`;
+
+  } else {
+    alert("Pengumuman tidak ditemukan.");
+  }
+}
 
 
 
@@ -6054,6 +6049,7 @@ window.addEventListener('popstate', function(event) {
 </script>
 </body>
 </html>
+
 
 
 
