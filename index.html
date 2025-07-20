@@ -3659,46 +3659,42 @@ auth.onAuthStateChanged((user) => {
 
 async function submitAnnouncement(e) {
     e.preventDefault();
-    
+
     const title = document.getElementById('announcementTitle').value.trim();
     const content = document.getElementById('announcementContent').value.trim();
-    
+
     if (!title || !content) {
         showNotification('Judul dan isi pengumuman tidak boleh kosong!', 'error');
         return;
     }
-    
+
     const user = auth.currentUser;
     if (!user || !checkAdminStatus(user)) {
         showNotification('Anda tidak memiliki izin untuk membuat pengumuman!', 'error');
         return;
     }
-    
+
     const submitBtn = document.getElementById('submitAnnouncement');
     const originalBtnText = submitBtn.innerHTML;
     submitBtn.disabled = true;
     submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
-    
+
     try {
-      const slug = title.toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-        const announcementData = {
-            title,
-            content,
-            userEmail: user.email,
-            userName: user.displayName || 'Admin',
-            timestamp: serverTimestamp(),
-            type: 'announcement',
-            isPriority: true,
-            pinned: true,
-            pinnedAt: serverTimestamp(),
-            views: 0,
-            likesCount: 0,
-            repliesCount: 0,
-            slug: slug // Tambahkan slug
-        };
+       const slug = createSlug(title);
+const announcementData = {
+    title,
+    content,
+    userEmail: user.email,
+    userName: user.displayName || 'Admin',
+    timestamp: serverTimestamp(),
+    type: 'announcement',
+    pinned: true,
+    pinnedAt: serverTimestamp(),
+    views: 0,
+    likesCount: 0,
+    repliesCount: 0,
+    slug: slug // This is where the slug is being used
+};
 
         const announcementsRef = collection(db, "announcements");
         const docRef = await addDoc(announcementsRef, announcementData);
@@ -3721,7 +3717,7 @@ async function submitAnnouncement(e) {
             likesCount: 0,
             repliesCount: 0
         }, ...(existingCache?.data || [])];
-        
+
         localStorage.setItem('cachedAnnouncements', JSON.stringify({
             data: updatedAnnouncements,
             timestamp: new Date().getTime(),
@@ -3736,6 +3732,21 @@ async function submitAnnouncement(e) {
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
+
+
+
+function createSlug(text) {
+  return text.toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove non-word characters except spaces and hyphens
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ''); // Trim hyphens from start and end
+}
+
+
+
 
 
 
@@ -3974,6 +3985,15 @@ function renderAnnouncements(announcements) {
                 Baca Selengkapnya
             </button>
         `;
+		
+		// Dalam fungsi renderAnnouncements atau renderPinnedAnnouncementItem
+announcementItem.addEventListener('click', async (e) => {
+    if (!e.target.closest('.like-btn, .reply-btn, .view-announcement-btn')) {
+        e.preventDefault();
+        const announcementId = announcementItem.getAttribute('data-id');
+        showAnnouncementDetail(announcementId);
+    }
+});
 
         pinnedContainer.appendChild(announcementItem);
         
@@ -5769,8 +5789,6 @@ function handlePageLoad(isInitialLoad = true) {
         }
     }
 }
-
-// Fungsi untuk menampilkan detail pengumuman tanpa mengubah URL
 function showAnnouncementDetail(announcementId) {
     // Simpan state saat ini
     currentState.page = "announcementDetail";
@@ -5780,11 +5798,11 @@ function showAnnouncementDetail(announcementId) {
     showPageContent(document.getElementById("page9"));
     loadAnnouncementDetail(announcementId);
     
-    // Update state tanpa mengubah URL
-    history.pushState(currentState, "Detail Pengumuman", "/halaman-masukan");
+    // Update URL dengan slug atau ID pengumuman
+    const announcementTitle = document.querySelector(`.pinned-item[data-id="${announcementId}"] h3`).textContent;
+    const slug = createSlug(announcementTitle);
+    history.pushState(currentState, "Detail Pengumuman", `/halaman-masukan-${slug}`);
 }
-
-// Fungsi untuk kembali ke halaman masukan
 function backToFeedbackPage() {
     currentState.page = "masukan";
     currentState.announcementId = null;
@@ -5792,7 +5810,7 @@ function backToFeedbackPage() {
     // Tampilkan halaman 7
     showPageContent(document.getElementById("page7"));
     
-    // Update state tanpa mengubah URL
+    // Update URL ke halaman masukan
     history.pushState(currentState, "Masukan", "/halaman-masukan");
 }
 
