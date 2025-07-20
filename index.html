@@ -5707,6 +5707,56 @@ function handleInitialNavigation() {
    
    
    
+   
+   async function renderAnnouncementDetailBySlug(slug) {
+  try {
+    const q = query(collection(db, "pengumuman"), where("slug", "==", slug));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      const data = doc.data();
+      const id = doc.id;
+
+      showPage(page9); // Tampilkan halaman detail
+
+      // Render konten
+      const container = document.getElementById("announcementDetailContainer");
+      container.innerHTML = `
+        <h1 style="color:white;">${data.title}</h1>
+        <p style="color:#ccc; line-height: 1.7;">${data.content}</p>
+        <div style="margin-top: 10px; font-size: 14px; color: #999;">
+          Dilihat ${data.viewsCount || 0} kali • ${data.likesCount || 0} suka
+        </div>
+      `;
+
+      // Optional: Set judul halaman browser
+      document.title = `${data.title} - Life Is What It Is Learn`;
+
+    } else {
+      showNotification("Pengumuman tidak ditemukan.", "error");
+    }
+  } catch (err) {
+    console.error("Gagal ambil pengumuman:", err);
+    showNotification("Terjadi kesalahan saat memuat pengumuman.", "error");
+  }
+}
+
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
    async function findAnnouncementBySlugOrId(slugOrId) {
     try {
         // Coba cari berdasarkan ID langsung
@@ -5738,12 +5788,20 @@ function handleInitialNavigation() {
    
    
    
+window.onload = async function () {
+  const path = window.location.pathname || "/";
+  const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
 
-// Fungsi utama untuk menangani loading halaman
-window.onload = function() {
-    handlePageLoad();
-    initializeBlogPagination();
+  if (isAnnouncementDetail) {
+    const slug = decodeURIComponent(path.replace('/halaman-masukan-', ''));
+    await renderAnnouncementDetailBySlug(slug); // fungsi untuk ambil data & tampilkan page9
+    return;
+  }
+
+  handlePageLoad();
+  initializeBlogPagination();
 };
+
 
 // Fungsi untuk menangani perubahan URL (back/forward browser)
 window.addEventListener("popstate", function(event) {
@@ -5859,6 +5917,27 @@ function handlePageLoad(isInitialLoad = true) {
 }
 
 
+async function renderMasukanDetailBySlug(slug) {
+    const masukanRef = collection(db, "masukan");
+    const q = query(masukanRef, where("slug", "==", slug));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+
+        // Tampilkan halaman 9
+        showPage(page9);
+
+        // Render konten ke elemen yang sesuai
+        document.getElementById("masukanDetailTitle").textContent = data.title || "(Tanpa Judul)";
+        document.getElementById("masukanDetailContent").innerHTML = data.content || "";
+        document.title = data.title + " - Life Is What It Is Learn";
+
+    } else {
+        showNotification("Masukan tidak ditemukan.", "error");
+    }
+}
 
 
 
