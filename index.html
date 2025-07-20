@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -2506,41 +2507,18 @@ function createSlug(title) {
 
 
 
-
-
-
-function showPageContent(pageElement) {
-    const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9"];
-    
-    // Sembunyikan semua halaman
-    pageIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = "none";
-    });
-
-    // Tampilkan halaman yang dipilih
-    if (pageElement) {
-        pageElement.style.display = "block";
-        
-        // Jika page9, muat konten jika ada ID di URL
-        if (pageElement.id === "page9") {
-            const path = window.location.pathname;
-            if (path.includes('halaman-masukan-')) {
-                const announcementId = path.split('halaman-masukan-')[1];
-                if (announcementId) {
-                    loadAnnouncementDetail(announcementId);
-                }
-            }
-        }
-        
-        // Jika page7, muat pengumuman dan masukan
-        if (pageElement.id === "page7") {
-            loadPinnedAnnouncements();
-            loadFeedback().catch(console.error);
-        }
-    }
-    
-    window.scrollTo(0, 0);
+function showPageContent(pageId) {
+  // Hide all page contents
+  const allPages = document.querySelectorAll('.page-content'); // assuming each page content has this class
+  allPages.forEach(page => {
+    page.style.display = 'none';
+  });
+  
+  // Show the requested page content
+  const pageToShow = document.getElementById(pageId);
+  if (pageToShow) {
+    pageToShow.style.display = 'block';
+  }
 }
 
 
@@ -2681,6 +2659,25 @@ if (document.getElementById('back-forum')) {
         history.pushState({ page: "home" }, "Beranda", "/");
     });
 }
+		
+		
+		
+		// Forum Diskusi navigation
+document.querySelectorAll('.forumLink').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+       showPageContent(document.getElementById("page8"));
+        history.pushState({ page: "announcement" }, "Announcement", "/masukan-announcement");
+		initializeForumPage();
+    });
+});
+	
+		
+		
+		
+		
+		
+		
 		
 		
 		
@@ -5797,108 +5794,71 @@ function handleInitialNavigation() {
    
    
    
-   
-   
-   
-   
-   
-   
-  // Fungsi utama untuk menangani loading halaman
-window.onload = function() {
-    handlePageLoad();
-    initializeBlogPagination();
-};
-
-// Fungsi untuk menangani perubahan URL (back/forward browser)
+   // 3. Then add your event listeners and routing logic
 window.addEventListener("popstate", function(event) {
-    handlePageLoad(false); // false berarti bukan initial load
+  if (event.state && event.state.page) {
+    if (event.state.page === "arduino") {
+      showPage(page2);
+    } else if (event.state.page === "iot") {
+      showPage(page3);
+    } else if (event.state.page === "blog") {
+      showPage(page4);
+    } else if (event.state.page === "kumpulan-blog") {
+      showPage(page5);
+    } else if (event.state.page === "halaman-tentang-kami") {
+      showPage(page6);
+    } else if (event.state.page === "halaman-masukan") { 
+      showPage(page7);
+    } else if (event.state.page === "halaman-forum") { 
+      showPage(page8);
+    } else if (event.state.page === "announcement") { 
+      showPage(page9);
+    } else {
+      showPage(page1);
+    }
+  } else {
+    showPage(page1);
+  }
 });
 
-// Fungsi utama untuk menangani navigasi halaman
-function handlePageLoad(isInitialLoad = true) {
-    const path = window.location.pathname || "/";
-    const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
+// 4. Handle initial page load
+const path = window.location.pathname || "/";
 
-    if (isAnnouncementDetail) {
-        const slug = path.replace('/halaman-masukan-', '');
-        findAnnouncementIdBySlug(slug)
-            .then(id => {
-                if (id) {
-                    			 showPageContent(document.getElementById("page9"));
-                    loadAnnouncementDetail(id);
-                    if (isInitialLoad) {
-                        history.replaceState({ 
-                            page: "announcementDetail",
-                            id: id
-                        }, "Detail Pengumuman", `/halaman-masukan-${slug}`);
-                    }
-                } else {
-                    // Fallback ke halaman masukan jika tidak ditemukan
-                    			 showPageContent(document.getElementById("page7"));
-                    if (isInitialLoad) {
-                        history.replaceState({ 
-                            page: "masukan" 
-                        }, "Masukan", "/halaman-masukan");
-                    }
-                }
-            })
-            .catch(error => {
-                console.error("Error loading announcement:", error);
-                 showPageContent(document.getElementById("page7"));
-            });
-    } 
-    else if (path.includes("halaman-arduino")) {
-        showPageContent(document.getElementById("page2"));
-        if (isInitialLoad) {
-            history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
-        }
-    } 
-    else if (path.includes("halaman-iot")) {
-      showPageContent(document.getElementById("page3"));
-        if (isInitialLoad) {
-            history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
-        }
-    } 
-    else if (path.includes("halaman-blog")) {
-         showPageContent(document.getElementById("page4"));
-        if (isInitialLoad) {
-            history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
-        }
-    } 
-    else if (path.includes("halaman-kumpulan-blog")) {
-         showPageContent(document.getElementById("page5"));
-        if (isInitialLoad) {
-            history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
-        }
-    } 
-    else if (path.includes("halaman-tentang-kami")) {
-         showPageContent(document.getElementById("page6"));
-        if (isInitialLoad) {
-            history.replaceState({ page: "tentang-kami" }, "Tentang Kami", "/halaman-tentang-kami");
-        }
-    } 
-    else if (path.includes("halaman-masukan")) {
-         showPageContent(document.getElementById("page7"));
-        loadFeedback().catch(console.error);
-        if (isInitialLoad) {
-            history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-        }
-    } 
-    else if (path.includes("halaman-forum")) {
-        showPageContent(document.getElementById("page8"));
-        if (isInitialLoad) {
-            history.replaceState({ page: "forum" }, "Forum", "/halaman-forum");
-        }
-    } 
-    else {
-         showPageContent(document.getElementById("page1"));
-        if (isInitialLoad) {
-            history.replaceState({ page: "home" }, "Beranda", "/");
-        }
-    }
+if (path.includes("/halaman-arduino")) {
+  showPageContent(page2);
+  history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
+} else if (path.includes("/halaman-iot")) {
+  showPageContent(page3);
+  history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
+} else if (path.includes("/halaman-blog")) {
+  showPageContent(page4);
+  history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
+} else if (path.includes("/halaman-kumpulan-blog")) {
+  showPageContent(page5);
+  history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
+} else if (path.includes("/halaman-tentang-kami")) {
+  showPageContent(page6);
+  history.replaceState({ page: "halaman-tentang-kami" }, "Tentang Kami", "/halaman-tentang-kami");
+} else if (path.includes("/halaman-masukan")) {
+  showPageContent(page7);
+  history.replaceState({ page: "halaman-masukan" }, "Masukan", "/halaman-masukan");
+  loadPinnedAnnouncements();
+} else if (path.includes("/halaman-forum")) {
+  showPageContent(page8);
+  history.replaceState({ page: "halaman-forum" }, "Forum", "/halaman-forum");
+} else if (path.includes("/masukan-announcement")) {
+  showPageContent(page9);
+  history.replaceState({ page: "announcement" }, "Announcement", "/masukan-announcement");
+  loadPinnedAnnouncements();
+} else {
+  showPageContent(page1);
+  history.replaceState({ page: "home" }, "Beranda", "/");
 }
-
-
+}
+   
+   
+   
+   
 
 
 
@@ -5946,7 +5906,7 @@ async function getAnnouncementSlug(announcementId) {
     }
 }
 
-}
+
 
 
 
