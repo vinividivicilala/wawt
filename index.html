@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -4142,8 +4143,6 @@ async function getAnnouncementLikesCount(announcementId) {
 
 
 
-
-
 async function loadAnnouncementDetail(announcementId) {
     try {
         const container = document.getElementById('announcementDetailContainer');
@@ -4159,7 +4158,7 @@ async function loadAnnouncementDetail(announcementId) {
         const announcement = docSnap.data();
         const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
         
-        // Render detail pengumuman
+        // Render the announcement
         container.innerHTML = `
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
@@ -4200,41 +4199,23 @@ async function loadAnnouncementDetail(announcementId) {
             </div>
         `;
         
-        // Setup event listeners
-        container.querySelector('.like-btn').addEventListener('click', async () => {
-            await toggleAnnouncementLike(announcementId);
-            const likesCount = await getAnnouncementLikesCount(announcementId);
-            container.querySelector('.like-count').textContent = likesCount;
-        });
-        
-        // Setup form admin jika user adalah admin
-        if (isUserAdmin(auth.currentUser)) {
-            const adminForm = document.querySelector('#page9 #adminAnnouncementForm');
-            adminForm.style.display = 'block';
-            
-            document.getElementById('editAnnouncementTitle').value = announcement.title;
-            document.getElementById('editAnnouncementContent').value = announcement.content;
-            
-            document.getElementById('editAnnouncementForm').onsubmit = async (e) => {
-                e.preventDefault();
-                await updateAnnouncement(announcementId);
-            };
-            
-            document.getElementById('deleteAnnouncement').onclick = async () => {
-                if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
-                    await deleteAnnouncement(announcementId);
-                }
-            };
-        }
-        
-        // Muat balasan
+        // Load replies
         await loadAnnouncementReplies(announcementId);
+        
+        // Setup admin controls if user is admin
+        if (isUserAdmin(auth.currentUser)) {
+            setupAdminAnnouncementUI(auth.currentUser, announcementId, announcement);
+        }
         
     } catch (error) {
         console.error("Error loading announcement:", error);
-        document.getElementById('announcementDetailContainer').innerHTML = `
+        const container = document.getElementById('announcementDetailContainer');
+        container.innerHTML = `
             <div style="color:#ff6b6b; text-align:center; padding:30px;">
                 Gagal memuat pengumuman: ${error.message}
+                <button onclick="backToFeedbackPage()" style="margin-top: 15px; padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
+                    Kembali ke Halaman Masukan
+                </button>
             </div>
         `;
     }
@@ -5671,44 +5652,88 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 		
 		
 		
-		
-		
-		
-function handleInitialNavigation() {
-    const path = window.location.pathname;
+		async function handleInitialNavigation() {
+    const path = window.location.pathname || "/";
     
-    // Jika URL mengarah ke halaman detail pengumuman
+    // Handle announcement detail pages
     if (path.includes('halaman-masukan-')) {
         const slugOrId = path.split('halaman-masukan-')[1];
         if (slugOrId) {
             showPageContent(document.getElementById("page9"));
             
-            // Cari pengumuman berdasarkan slug atau ID
-            findAnnouncementBySlugOrId(slugOrId).then(announcement => {
-                if (announcement) {
-                    loadAnnouncementDetail(announcement.id);
-                } else {
-                    // Jika tidak ditemukan, kembali ke halaman masukan
-                    showPageContent(document.getElementById("page7"));
-                    loadFeedback().catch(console.error);
-                }
-            });
+            // Find and load the announcement
+            const announcement = await findAnnouncementBySlugOrId(slugOrId);
+            if (announcement) {
+                await loadAnnouncementDetail(announcement.id);
+                // Update browser title
+                document.title = `${announcement.title} - Life Is What It Is Learn`;
+            } else {
+                // Fallback to feedback page if announcement not found
+                showPageContent(document.getElementById("page7"));
+                await loadFeedback();
+            }
+            return;
         }
-    } else if (path.includes("halaman-masukan")) {
-        currentState.page = "masukan";
+    }
+    
+    // Handle other pages
+    if (path.includes("halaman-arduino")) {
+        showPageContent(document.getElementById("page2"));
+    } 
+    else if (path.includes("halaman-iot")) {
+        showPageContent(document.getElementById("page3"));
+    }
+    else if (path.includes("halaman-blog")) {
+        showPageContent(document.getElementById("page4"));
+    }
+    else if (path.includes("halaman-kumpulan-blog")) {
+        showPageContent(document.getElementById("page5"));
+    }
+    else if (path.includes("halaman-tentang-kami")) {
+        showPageContent(document.getElementById("page6"));
+    }
+    else if (path.includes("halaman-masukan")) {
         showPageContent(document.getElementById("page7"));
-        loadFeedback().catch(console.error);
-    } else {
-        // Default ke halaman 1 jika tidak ada path khusus
+        await loadFeedback();
+    }
+    else if (path.includes("halaman-forum")) {
+        showPageContent(document.getElementById("page8"));
+    }
+    else {
+        // Default to home page
         showPageContent(document.getElementById("page1"));
     }
-}		
+}
    
    
    
    
    
-   
+   // Add this to your event listeners setup
+document.addEventListener('click', async (e) => {
+    // Handle clicks on announcement titles
+    const announcementTitle = e.target.closest('.announcement-title');
+    if (announcementTitle) {
+        e.preventDefault();
+        const announcementId = announcementTitle.getAttribute('data-id');
+        if (announcementId) {
+            await showAnnouncementDetail(announcementId);
+        }
+    }
+    
+    // Handle clicks on "View Details" buttons
+    const viewDetailsBtn = e.target.closest('.view-details-btn, .view-announcement-btn');
+    if (viewDetailsBtn) {
+        e.preventDefault();
+        const feedbackItem = viewDetailsBtn.closest('.feedback-item, .pinned-item');
+        if (feedbackItem) {
+            const announcementId = feedbackItem.getAttribute('data-id');
+            if (announcementId) {
+                await showAnnouncementDetail(announcementId);
+            }
+        }
+    }
+});
    
    
    
@@ -5906,44 +5931,71 @@ async function renderMasukanDetailBySlug(slug) {
 
 
 
-
-
 async function showAnnouncementDetail(announcementId) {
-    // Simpan state saat ini
-    currentState.page = "announcementDetail";
-    currentState.announcementId = announcementId;
-    
-    // Tampilkan halaman 9
-    showPageContent(document.getElementById("page9"));
-    
-    // Muat detail pengumuman
-    await loadAnnouncementDetail(announcementId);
-    
-    // Dapatkan data pengumuman untuk membuat slug
-    const docRef = doc(db, "announcements", announcementId);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
+    try {
+        // Show page 9
+        showPageContent(document.getElementById("page9"));
+        
+        // Load the announcement data
+        const docRef = doc(db, "announcements", announcementId);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
+            throw new Error("Pengumuman tidak ditemukan");
+        }
+        
         const announcement = docSnap.data();
         const slug = announcement.slug || createSlug(announcement.title);
         
-        // Update URL dengan slug pengumuman
-        history.pushState(currentState, announcement.title, `/halaman-masukan-${slug}`);
-    } else {
-        // Jika pengumuman tidak ditemukan, kembali ke halaman masukan
-        backToFeedbackPage();
+        // Update browser history
+        history.pushState(
+            { page: "announcementDetail", announcementId: announcementId },
+            announcement.title,
+            `/halaman-masukan-${slug}`
+        );
+        
+        // Update browser title
+        document.title = `${announcement.title} - Life Is What It Is Learn`;
+        
+        // Load the announcement content
+        await loadAnnouncementDetail(announcementId);
+        
+    } catch (error) {
+        console.error("Error showing announcement detail:", error);
+        // Fallback to feedback page
+        showPageContent(document.getElementById("page7"));
+        await loadFeedback();
     }
 }
+
+
+
+
+
+
 function backToFeedbackPage() {
-    currentState.page = "masukan";
-    currentState.announcementId = null;
-    
-    // Tampilkan halaman 7
     showPageContent(document.getElementById("page7"));
-    
-    // Update URL ke halaman masukan
-    history.pushState(currentState, "Masukan", "/halaman-masukan");
+    loadFeedback().catch(console.error);
+    history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
+    document.title = "Masukan - Life Is What It Is Learn";
 }
+
+// Add event listener for back button
+document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
+document.getElementById('backToFeedbackPage')?.addEventListener('click', backToFeedbackPage);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Event listener untuk tombol kembali di halaman 9
 document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
