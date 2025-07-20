@@ -3660,18 +3660,6 @@ async function submitAnnouncement(e) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// Fungsi utama untuk memuat pengumuman
 async function loadPinnedAnnouncements() {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
@@ -3690,11 +3678,11 @@ async function loadPinnedAnnouncements() {
         
         const querySnapshot = await getDocs(q);
         
-      if (querySnapshot.empty) {
-    console.warn('Pengumuman kosong dari Firebase, coba tampilkan cache');
-    displayCachedAnnouncements();
-    return;
-}
+        if (querySnapshot.empty) {
+            console.warn('Pengumuman kosong dari Firebase, coba tampilkan cache');
+            displayCachedAnnouncements();
+            return;
+        }
 
         const announcements = [];
         
@@ -3735,17 +3723,22 @@ async function loadPinnedAnnouncements() {
     }
 }
 
-function displayCachedAnnouncements() {
-    const cached = JSON.parse(localStorage.getItem('cachedAnnouncements'));
-    if (cached && cached.data && Array.isArray(cached.data)) {
-        renderAnnouncements(cached.data);
-    } else {
-        const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-        if (pinnedContainer) {
-            pinnedContainer.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Tidak ada data cache pengumuman</div>';
-        }
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3825,6 +3818,11 @@ window.addEventListener('online', sendPendingFeedback);
 
 
 
+
+
+
+
+
 function renderAnnouncements(announcements) {
     const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
     if (!pinnedContainer) return;
@@ -3845,18 +3843,6 @@ function renderAnnouncements(announcements) {
             border-left: 4px solid #ff6b6b;
             cursor: pointer;
         `;
-		
-		 // Tambahkan event listener untuk membuka detail
-    announcementItem.addEventListener('click', () => {
-      showAnnouncementDetail(announcement.id);
-    });
-	
-	announcementItem.addEventListener('click', () => {
-  showPageContent(page9);
-  loadAnnouncementDetail(announcement.id);
-});
-
-    
         
         announcementItem.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
@@ -3902,20 +3888,6 @@ function renderAnnouncements(announcements) {
                 Baca Selengkapnya
             </button>
         `;
-		
-		// Tambahkan event listener untuk klik
-        announcementItem.addEventListener('click', (e) => {
-            // Cegah trigger jika mengklik tombol di dalam item
-            if (!e.target.closest('button')) {
-                showPageContent(page9);
-                history.pushState(
-                    { page: "announcementDetail", id: announcement.id },
-                    announcement.title,
-                    `/halaman-masukan-${announcement.id}`
-                );
-                loadAnnouncementDetail(announcement.id);
-            }
-        });
 
         pinnedContainer.appendChild(announcementItem);
         
@@ -3924,18 +3896,9 @@ function renderAnnouncements(announcements) {
         const replyBtn = announcementItem.querySelector('.reply-btn');
         const viewBtn = announcementItem.querySelector('.view-announcement-btn');
         
-        // Prevent event bubbling for buttons
-        [likeBtn, replyBtn, viewBtn].forEach(btn => {
-            if (btn) {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-            }
-        });
-        
         if (likeBtn) {
-            likeBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
+            likeBtn.addEventListener('click', async (event) => {
+                event.stopPropagation();
                 await toggleAnnouncementLike(announcement.id);
                 // Update UI after like
                 const updatedLikes = await getAnnouncementLikesCount(announcement.id);
@@ -3944,32 +3907,40 @@ function renderAnnouncements(announcements) {
         }
         
         if (replyBtn) {
-            replyBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            replyBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
                 viewAnnouncementDetails(announcement.id);
             });
         }
 
-       // Dalam fungsi renderAnnouncements, perbaiki bagian event listener:
-if (viewBtn) {
-    viewBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        await viewAnnouncementDetails(announcement.id);
+        if (viewBtn) {
+            viewBtn.addEventListener('click', async (event) => {
+                event.stopPropagation();
+                await viewAnnouncementDetails(announcement.id);
+            });
+        }
+
+        announcementItem.addEventListener('click', async () => {
+            showPageContent(page9);
+            await loadAnnouncementDetail(announcement.id);
+            history.pushState(
+                { page: "announcementDetail", id: announcement.id },
+                "Detail Pengumuman",
+                `/halaman-masukan-${announcement.id}`
+            );
+        });
     });
 }
 
-announcementItem.addEventListener('click', async (e) => {
-  if (!e.target.closest('button')) {
-    showPageContent(page9);
-    await loadAnnouncementDetail(announcement.id);
-    history.pushState(
-      { page: "announcementDetail", id: announcement.id },
-      "Detail Pengumuman",
-      `/halaman-masukan-${announcement.id}`
-    );
-  }
-});
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5515,16 +5486,22 @@ document.addEventListener('click', function(e) {
   }
 });
 
-    
-    // Handle tombol kembali di halaman detail
-    if (e.target.closest('#back-announcement')) {
-        e.preventDefault();
-        showPageContent(page7);
-        history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
-    }
+
+
+document.addEventListener('click', (e) => {
+  // Handle tombol kembali di halaman detail
+  if (e.target.closest('#back-announcement')) {
+      e.preventDefault();
+      showPageContent(page7);
+      history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+  }
 });
 
-// Fungsi bantu untuk mendapatkan slug pengumuman
+
+
+
+
+// Fungsi bantu untuk mendapatkan slug pengumuman 
 async function getAnnouncementSlug(announcementId) {
     try {
         const docRef = doc(db, "announcements", announcementId);
@@ -5535,11 +5512,11 @@ async function getAnnouncementSlug(announcementId) {
         return null;
     }
 }
-  
-  }
-  }
-  
-  
+
+}
+
+
+
   
   
    
