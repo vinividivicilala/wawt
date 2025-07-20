@@ -3606,18 +3606,21 @@ function checkAdminStatus(user) {
 
 
 
-
-
-
-
 // Fungsi untuk menampilkan/menyembunyikan form admin
 function toggleAdminForms() {
   const user = auth.currentUser;
-  const isAdmin = checkAdminStatus(user);
+  const isAdmin = isUserAdmin(user);
   
-  const adminForm = document.getElementById('adminAnnouncementForm');
-  if (adminForm) {
-    adminForm.style.display = isAdmin ? 'block' : 'none';
+  // Toggle form admin di halaman 7 (daftar pengumuman)
+  const adminFormPage7 = document.getElementById('adminAnnouncementForm');
+  if (adminFormPage7) {
+    adminFormPage7.style.display = isAdmin ? 'block' : 'none';
+  }
+  
+  // Toggle form admin di halaman 9 (detail pengumuman)
+  const adminFormPage9 = document.getElementById('adminAnnouncementForm');
+  if (adminFormPage9) {
+    adminFormPage9.style.display = isAdmin ? 'block' : 'none';
   }
   
   // Tambahkan badge admin jika diperlukan
@@ -3629,6 +3632,57 @@ function toggleAdminForms() {
     }
   });
 }
+
+
+
+
+// Fungsi untuk mengecek status admin dan menampilkan form edit jika admin
+function setupAdminFormForAnnouncement(announcementId, announcement) {
+  const user = auth.currentUser;
+  const isAdmin = isUserAdmin(user);
+  const adminForm = document.getElementById('adminAnnouncementForm');
+  
+  if (isAdmin && adminForm) {
+    adminForm.style.display = 'block';
+
+    // Isi form edit dengan data pengumuman
+    document.getElementById('editAnnouncementTitle').value = announcement.title;
+    document.getElementById('editAnnouncementContent').value = announcement.content;
+
+    // Setup event listeners untuk form edit
+    document.getElementById('editAnnouncementForm').onsubmit = (e) => {
+      e.preventDefault();
+      updateAnnouncement(announcementId);
+    };
+
+    document.getElementById('cancelEditAnnouncement').onclick = () => {
+      adminForm.style.display = 'none';
+    };
+
+    document.getElementById('deleteAnnouncement').onclick = () => {
+      if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
+        deleteAnnouncement(announcementId);
+      }
+    };
+  } else if (adminForm) {
+    adminForm.style.display = 'none';
+  }
+}
+
+// Panggil toggleAdminForms saat auth state berubah
+auth.onAuthStateChanged((user) => {
+  toggleAdminForms();
+  checkAndLoadFeedback();
+});
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4108,13 +4162,17 @@ async function getAnnouncementLikesCount(announcementId) {
 
 
 
+
+
+
+// Fungsi untuk memuat detail pengumuman (diperbarui)
 async function loadAnnouncementDetail(announcementId) {
   try {
     // Tampilkan loading state
     document.getElementById('announcementDetailContainer').innerHTML = 
       '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
     
-    // Ambil data pengumuman
+    // Ambil data pengumuman dari Firestore
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
     
@@ -4125,16 +4183,16 @@ async function loadAnnouncementDetail(announcementId) {
     const announcement = docSnap.data();
     const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
     
-    // Render detail
+    // Render detail pengumuman
     renderAnnouncementDetail(announcement, waktu);
     
-    // Setup admin UI (replaced checkAdminStatus with this)
-    setupAdminAnnouncementUI(auth.currentUser, announcementId, announcement);
+    // Periksa status admin untuk menampilkan form edit
+    setupAdminFormForAnnouncement(announcementId, announcement);
     
-    // Setup form reply
-    setupReplyForm();
+    // Setup form reply berdasarkan status login
+    setupReplyForm(announcementId);
     
-    // Muat balasan dan terkait
+    // Muat balasan dan pengumuman terkait
     await Promise.all([
       loadAnnouncementReplies(announcementId),
       loadRelatedAnnouncements(announcementId),
@@ -4150,12 +4208,6 @@ async function loadAnnouncementDetail(announcementId) {
     `;
   }
 }
-
-
-
-
-
-
 
 
 
@@ -4525,12 +4577,24 @@ function renderAnnouncementDetail(announcement, waktu) {
 
 
 
-// Function to just check if user is admin (no UI logic)
+
+
+
+// Fungsi untuk mengecek apakah user adalah admin/contributor
 function isUserAdmin(user) {
-  const ALLOWED_EMAILS = ['faridardiansyah061@gmail.com'];
   if (!user || !user.email) return false;
   return ALLOWED_EMAILS.includes(user.email.toLowerCase());
 }
+
+
+
+
+
+
+
+
+
+
 
 // Function to handle admin UI for announcements
 function setupAdminAnnouncementUI(user, announcementId, announcement) {
@@ -4613,12 +4677,8 @@ const isAdmin = checkAdminStatus(user); // Use the existing function
 
 
 
-
-
-
-
 // Fungsi untuk setup form reply berdasarkan status login
-function setupReplyForm() {
+function setupReplyForm(announcementId) {
   const user = auth.currentUser;
   const replyForm = document.getElementById('announcementReplyForm');
   const loginToReply = document.getElementById('loginToReply');
@@ -4644,6 +4704,17 @@ function setupReplyForm() {
     };
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 // Fungsi untuk update pengumuman (admin only)
 async function updateAnnouncement(announcementId) {
