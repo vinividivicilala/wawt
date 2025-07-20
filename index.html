@@ -5673,33 +5673,67 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 		
 		
 		
-		
-		
-		
-		
-	// Fungsi untuk menangani navigasi saat halaman dimuat
 function handleInitialNavigation() {
     const path = window.location.pathname;
     
     // Jika URL mengarah ke halaman detail pengumuman
     if (path.includes('halaman-masukan-')) {
-        const announcementId = path.split('halaman-masukan-')[1];
-        if (announcementId) {
+        const slugOrId = path.split('halaman-masukan-')[1];
+        if (slugOrId) {
             showPageContent(document.getElementById("page9"));
-            loadAnnouncementDetail(announcementId);
+            
+            // Cari pengumuman berdasarkan slug atau ID
+            findAnnouncementBySlugOrId(slugOrId).then(announcement => {
+                if (announcement) {
+                    loadAnnouncementDetail(announcement.id);
+                } else {
+                    // Jika tidak ditemukan, kembali ke halaman masukan
+                    showPageContent(document.getElementById("page7"));
+                    loadFeedback().catch(console.error);
+                }
+            });
         }
+    } else if (path.includes("halaman-masukan")) {
+        currentState.page = "masukan";
+        showPageContent(document.getElementById("page7"));
+        loadFeedback().catch(console.error);
     } else {
         // Default ke halaman 1 jika tidak ada path khusus
         showPageContent(document.getElementById("page1"));
     }
-}	
-
+}		
    
    
    
    
-   
-   
+   async function findAnnouncementBySlugOrId(slugOrId) {
+    try {
+        // Coba cari berdasarkan ID langsung
+        const docRef = doc(db, "announcements", slugOrId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() };
+        }
+        
+        // Jika tidak ditemukan, cari berdasarkan slug
+        const q = query(
+            collection(db, "announcements"),
+            where("slug", "==", slugOrId),
+            limit(1)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error("Error finding announcement:", error);
+        return null;
+    }
+}
    
    
    
@@ -5789,19 +5823,31 @@ function handlePageLoad(isInitialLoad = true) {
         }
     }
 }
-function showAnnouncementDetail(announcementId) {
+async function showAnnouncementDetail(announcementId) {
     // Simpan state saat ini
     currentState.page = "announcementDetail";
     currentState.announcementId = announcementId;
     
     // Tampilkan halaman 9
     showPageContent(document.getElementById("page9"));
-    loadAnnouncementDetail(announcementId);
     
-    // Update URL dengan slug atau ID pengumuman
-    const announcementTitle = document.querySelector(`.pinned-item[data-id="${announcementId}"] h3`).textContent;
-    const slug = createSlug(announcementTitle);
-    history.pushState(currentState, "Detail Pengumuman", `/halaman-masukan-${slug}`);
+    // Muat detail pengumuman
+    await loadAnnouncementDetail(announcementId);
+    
+    // Dapatkan data pengumuman untuk membuat slug
+    const docRef = doc(db, "announcements", announcementId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+        const announcement = docSnap.data();
+        const slug = announcement.slug || createSlug(announcement.title);
+        
+        // Update URL dengan slug pengumuman
+        history.pushState(currentState, announcement.title, `/halaman-masukan-${slug}`);
+    } else {
+        // Jika pengumuman tidak ditemukan, kembali ke halaman masukan
+        backToFeedbackPage();
+    }
 }
 function backToFeedbackPage() {
     currentState.page = "masukan";
@@ -5829,7 +5875,6 @@ document.addEventListener('click', async (e) => {
     }
 });
 
-// Handle popstate event
 window.addEventListener('popstate', function(event) {
     if (event.state) {
         currentState = event.state;
@@ -5838,6 +5883,13 @@ window.addEventListener('popstate', function(event) {
             showPageContent(document.getElementById("page9"));
             loadAnnouncementDetail(currentState.announcementId);
         } else {
+            handlePageLoad(false); // false berarti bukan initial load
+        }
+    } else {
+        // Jika tidak ada state, tangani berdasarkan URL
+        handleInitialNavigation();
+    }
+});
             // Tampilkan halaman sesuai state
             switch(currentState.page) {
                 case "arduino":
@@ -5866,10 +5918,8 @@ window.addEventListener('popstate', function(event) {
                     showPageContent(document.getElementById("page1"));
             }
         }
-    }
-});
+    
 
-}
 
 
 
