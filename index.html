@@ -1,4 +1,9 @@
 
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -3984,7 +3989,8 @@ announcementItem.addEventListener('click', async (e) => {
     if (!e.target.closest('.like-btn, .reply-btn, .view-announcement-btn')) {
         e.preventDefault();
         const announcementId = announcementItem.getAttribute('data-id');
-        showAnnouncementDetail(announcementId);
+		            await showAnnouncementDetailBySlug(slug);
+
     }
 });
 
@@ -5708,7 +5714,8 @@ document.addEventListener('click', async (e) => {
         e.preventDefault();
         const announcementId = announcementTitle.getAttribute('data-id');
         if (announcementId) {
-            await showAnnouncementDetail(announcementId);
+                        await showAnnouncementDetailBySlug(slug);
+
         }
     }
     
@@ -5720,7 +5727,8 @@ document.addEventListener('click', async (e) => {
         if (feedbackItem) {
             const announcementId = feedbackItem.getAttribute('data-id');
             if (announcementId) {
-                await showAnnouncementDetail(announcementId);
+            await showAnnouncementDetailBySlug(slug);
+
             }
         }
     }
@@ -6043,7 +6051,7 @@ document.addEventListener('click', async (e) => {
         e.preventDefault();
         const announcementId = announcementItem.getAttribute('data-id');
         if (announcementId) {
-            await showAnnouncementDetail(announcementId);
+                        await showAnnouncementDetailBySlug(slug);
         }
     }
 });
