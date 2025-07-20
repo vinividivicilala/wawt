@@ -4503,28 +4503,30 @@ function renderAnnouncementDetail(announcement, waktu) {
 
 
 
+
+
 // Fungsi untuk mengecek status admin dan menampilkan form edit jika admin
-function checkAdminStatus(user, announcementId) {
-  const isAdmin = checkAdminStatus(user); // Fungsi yang sudah ada
+function checkAdminStatus(user, announcementId, announcement) {
+  const isAdmin = isUserAdmin(user); // GANTI nama fungsi agar tidak memanggil dirinya sendiri
   const adminForm = document.getElementById('adminAnnouncementForm');
   
   if (isAdmin) {
     adminForm.style.display = 'block';
-    
+
     // Isi form edit dengan data pengumuman
     document.getElementById('editAnnouncementTitle').value = announcement.title;
     document.getElementById('editAnnouncementContent').value = announcement.content;
-    
+
     // Setup event listeners untuk form edit
     document.getElementById('editAnnouncementForm').onsubmit = (e) => {
       e.preventDefault();
       updateAnnouncement(announcementId);
     };
-    
+
     document.getElementById('cancelEditAnnouncement').onclick = () => {
       adminForm.style.display = 'none';
     };
-    
+
     document.getElementById('deleteAnnouncement').onclick = () => {
       if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
         deleteAnnouncement(announcementId);
@@ -4534,6 +4536,18 @@ function checkAdminStatus(user, announcementId) {
     adminForm.style.display = 'none';
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Fungsi untuk setup form reply berdasarkan status login
 function setupReplyForm() {
