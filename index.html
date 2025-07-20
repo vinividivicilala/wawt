@@ -5919,6 +5919,75 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+async function showDetailPengumumanBySlug(slug) {
+  const db = getFirestore();
+  const pengumumanRef = collection(db, "pengumuman");
+
+  try {
+    const q = query(pengumumanRef, where("slug", "==", slug));
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      const data = doc.data();
+
+      // Tampilkan konten ke dalam kontainer detail
+      const container = document.getElementById("announcementDetailContainer");
+      container.innerHTML = `
+        <h2 style="color: white; font-size: 28px; margin-bottom: 10px;">${data.title}</h2>
+        <p style="color: #ccc; font-size: 14px; margin-bottom: 20px;">Diposting: ${formatTimestamp(data.timestamp)}</p>
+        <div style="color: white; font-size: 16px; line-height: 1.6;">${data.content}</div>
+      `;
+
+      // Kamu bisa tampilkan balasan dan related juga di sini
+
+      showPage(page9); // Tampilkan halaman 9
+    } else {
+      // Tidak ditemukan
+      document.getElementById("announcementDetailContainer").innerHTML = `
+        <h2 style="color: white;">Pengumuman tidak ditemukan</h2>
+        <p style="color: #ccc;">Slug: ${slug}</p>
+      `;
+      showPage(page9);
+    }
+  } catch (err) {
+    console.error("Gagal mengambil pengumuman:", err);
+    alert("Gagal memuat detail pengumuman.");
+  }
+}
+
+
+
+
+
+
+function renderPengumuman(doc) {
+  const data = doc.data();
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "pinned-item"; // pengumuman penting
+
+  const judulElement = document.createElement("h3");
+  judulElement.innerText = data.title;
+
+  // ⬇️ Tambahkan baris ini agar bisa diklik dan navigasi ke page9
+  judulElement.classList.add("pinned-item-title");
+  judulElement.setAttribute("data-slug", data.slug); // penting!
+  judulElement.style.cursor = "pointer";
+
+  wrapper.appendChild(judulElement);
+  // tambahkan konten lainnya seperti ringkasan, waktu, dll
+
+  document.getElementById("containerPengumuman").appendChild(wrapper);
+}
+
+
+
+
+
+
+
+
 
 
 
