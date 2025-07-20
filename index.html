@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -3955,7 +3956,7 @@ function renderAnnouncements(announcements) {
         }
 
         announcementItem.addEventListener('click', async () => {
-            showPageContent(page9);
+            showPageContent(document.getElementById("page9"));
             await loadAnnouncementDetail(announcement.id);
             history.pushState(
                 { page: "announcementDetail", id: announcement.id },
@@ -4084,21 +4085,11 @@ async function getAnnouncementLikesCount(announcementId) {
 
 
 
-
-
+// Fungsi untuk memuat detail pengumuman
 async function loadAnnouncementDetail(announcementId) {
   try {
-    // Tampilkan halaman page9
-    document.querySelectorAll('[id^="page"]').forEach(p => p.style.display = "none");
-    document.getElementById("page9").style.display = "block";
-
-    // Tunggu supaya DOM benar-benar render
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    let container = document.getElementById('announcementDetailContainer');
-    if (!container) {
-      throw new Error("Container detail pengumuman tidak ditemukan");
-    }
+    const container = document.getElementById('announcementDetailContainer');
+    if (!container) throw new Error("Container detail pengumuman tidak ditemukan");
 
     const announcementRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(announcementRef);
@@ -4110,41 +4101,39 @@ async function loadAnnouncementDetail(announcementId) {
     const announcement = docSnap.data();
     const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
 
+    // Render konten pengumuman
     container.innerHTML = `
-      <div style="color:white; margin-bottom: 30px;">
-        <h2>${announcement.title}</h2>
-        <p>${announcement.content}</p>
-        <div style="font-size:12px; color: #aaa;">${formatTimeAgo(waktu)} • Dilihat: ${announcement.views || 0}</div>
+      <div style="color: #ccc; font-size: 14px; margin-bottom: 10px;">${formatTanggalLengkap(waktu)}</div>
+      <h2 style="color: white; font-size: 26px; margin-bottom: 15px;">${announcement.title}</h2>
+      <div style="color: #ddd; font-size: 16px; line-height: 1.6;">${announcement.content || 'Tidak ada konten'}</div>
+      <div style="margin-top: 20px; display: flex; align-items: center; gap: 10px;">
+        <span style="color: #ccc; font-size: 14px;">Dilihat: ${announcement.views || 0}</span>
       </div>
     `;
 
-    // Load replies & increment view
-    await Promise.all([
-      loadAnnouncementReplies(announcementId),
-      incrementAnnouncementViews(announcementId)
-    ]);
+    // Muat balasan
+    await loadAnnouncementReplies(announcementId);
+
+    // Event listener untuk tombol kembali
+    document.getElementById('back-announcement')?.addEventListener('click', function (e) {
+      e.preventDefault();
+      showPageContent(document.getElementById("page7"));
+      history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    });
 
   } catch (error) {
-    console.error("Error loading announcement:", error);
-    showPageContent(document.getElementById("page7"));
-    const feedbackList = document.getElementById('feedbackListContainer');
-    if (feedbackList) {
-      feedbackList.innerHTML = `
-        <div style="color:#ff6b6b; text-align:center; padding:30px;">
-          Gagal memuat pengumuman: ${error.message}
-          <button onclick="location.reload()" style="margin-top:15px; padding:8px 16px; background:#ff6b6b; color:white; border:none; border-radius:4px; cursor:pointer;">
-            Muat Ulang
-          </button>
-        </div>
-      `;
-    }
+    console.error("Error loading announcement detail:", error);
+    document.getElementById('announcementDetailContainer').innerHTML = `
+      <div style="color: #ff6b6b; text-align: center; padding: 30px;">
+        <h3 style="margin-bottom: 15px;">Gagal memuat detail pengumuman</h3>
+        <p>${error.message}</p>
+        <button onclick="location.reload()" style="padding: 8px 16px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Muat Ulang
+        </button>
+      </div>
+    `;
   }
 }
-
-
-
-
-
 
 
 
@@ -4224,7 +4213,7 @@ document.querySelectorAll('.announcement-item').forEach(item => {
     // Load detail pengumuman jika ada ID-nya, misalnya:
     const announcementId = item.getAttribute('data-id');
     loadAnnouncementDetail(announcementId);  // <- kamu buat fungsi ini
-    showPageContent(page9);
+    showPageContent(document.getElementById("page9"));
   });
 });
 
@@ -5571,7 +5560,7 @@ function handlePageLoad(isInitialLoad = true) {
         findAnnouncementIdBySlug(slug)
             .then(id => {
                 if (id) {
-                    showPageContent(page9);
+                    			 showPageContent(document.getElementById("page9"));
                     loadAnnouncementDetail(id);
                     if (isInitialLoad) {
                         history.replaceState({ 
@@ -5581,7 +5570,7 @@ function handlePageLoad(isInitialLoad = true) {
                     }
                 } else {
                     // Fallback ke halaman masukan jika tidak ditemukan
-                    showPageContent(page7);
+                    			 showPageContent(document.getElementById("page7"));
                     if (isInitialLoad) {
                         history.replaceState({ 
                             page: "masukan" 
@@ -5591,54 +5580,54 @@ function handlePageLoad(isInitialLoad = true) {
             })
             .catch(error => {
                 console.error("Error loading announcement:", error);
-                showPageContent(page7);
+                 showPageContent(document.getElementById("page7"));
             });
     } 
     else if (path.includes("halaman-arduino")) {
-        showPageContent(page2);
+        showPageContent(document.getElementById("page2"));
         if (isInitialLoad) {
             history.replaceState({ page: "arduino" }, "Arduino", "/halaman-arduino");
         }
     } 
     else if (path.includes("halaman-iot")) {
-        showPageContent(page3);
+      showPageContent(document.getElementById("page3"));
         if (isInitialLoad) {
             history.replaceState({ page: "iot" }, "IoT", "/halaman-iot");
         }
     } 
     else if (path.includes("halaman-blog")) {
-        showPageContent(page4);
+         showPageContent(document.getElementById("page4"));
         if (isInitialLoad) {
             history.replaceState({ page: "blog" }, "Blog", "/halaman-blog");
         }
     } 
     else if (path.includes("halaman-kumpulan-blog")) {
-        showPageContent(page5);
+         showPageContent(document.getElementById("page5"));
         if (isInitialLoad) {
             history.replaceState({ page: "kumpulan-blog" }, "Kumpulan Blog", "/halaman-kumpulan-blog");
         }
     } 
     else if (path.includes("halaman-tentang-kami")) {
-        showPageContent(page6);
+         showPageContent(document.getElementById("page6"));
         if (isInitialLoad) {
             history.replaceState({ page: "tentang-kami" }, "Tentang Kami", "/halaman-tentang-kami");
         }
     } 
     else if (path.includes("halaman-masukan")) {
-        showPageContent(page7);
+         showPageContent(document.getElementById("page7"));
         loadFeedback().catch(console.error);
         if (isInitialLoad) {
             history.replaceState({ page: "masukan" }, "Masukan", "/halaman-masukan");
         }
     } 
     else if (path.includes("halaman-forum")) {
-        showPageContent(page8);
+        showPageContent(document.getElementById("page8"));
         if (isInitialLoad) {
             history.replaceState({ page: "forum" }, "Forum", "/halaman-forum");
         }
     } 
     else {
-        showPageContent(page1);
+         showPageContent(document.getElementById("page1"));
         if (isInitialLoad) {
             history.replaceState({ page: "home" }, "Beranda", "/");
         }
@@ -5654,37 +5643,25 @@ function handlePageLoad(isInitialLoad = true) {
 
 
 
-
-
-
-
-
-document.addEventListener('click', function(e) {
-  const announcementItem = e.target.closest('.announcement-item, .pinned-item');
+document.addEventListener('click', async (e) => {
+  const announcementItem = e.target.closest('.pinned-item, .announcement-item');
   if (announcementItem) {
-    e.preventDefault();
     const announcementId = announcementItem.getAttribute('data-id');
     if (announcementId) {
-      getAnnouncementSlug(announcementId).then(slug => {
-        showPageContent(page9);
-        loadAnnouncementDetail(announcementId);
-        history.pushState(
-          { page: "announcementDetail", id: announcementId },
-          "Detail Pengumuman", 
-          `/halaman-masukan-${slug || announcementId}`
-        );
-      });
+      e.preventDefault();
+      showPageContent(document.getElementById("page9"));
+      await loadAnnouncementDetail(announcementId);
+      history.pushState({ page: "announcementDetail", id: announcementId }, "Detail Pengumuman", `/halaman-masukan-${announcementId}`);
     }
   }
 });
-
 
 
 document.addEventListener('click', (e) => {
   // Handle tombol kembali di halaman detail
   if (e.target.closest('#back-announcement')) {
       e.preventDefault();
-      showPageContent(page7);
+	  			 showPageContent(document.getElementById("page7"));
       history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
   }
 });
