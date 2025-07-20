@@ -2243,7 +2243,6 @@
 
 
 
-
 <div id="page9" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
     Detail Pengumuman
@@ -2254,30 +2253,24 @@
     <!-- Konten akan dimuat oleh JavaScript -->
   </div>
 
-  <!-- Form Pengumuman (Hanya untuk Admin) -->
+  <!-- Form Edit (Admin) -->
   <div id="adminAnnouncementForm" style="display: none; width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
     <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
       Edit Pengumuman
     </h2>
     <form id="editAnnouncementForm" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
       <div>
-        <label for="editAnnouncementTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Pengumuman</label>
-        <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+        <label for="editAnnouncementTitle" style="color: white; display: block; margin-bottom: 8px;">Judul Pengumuman</label>
+        <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2);">
       </div>
       <div>
-        <label for="editAnnouncementContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Pengumuman</label>
-        <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
+        <label for="editAnnouncementContent" style="color: white; display: block; margin-bottom: 8px;">Isi Pengumuman</label>
+        <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2);"></textarea>
       </div>
       <div style="display: flex; justify-content: space-between;">
-        <button type="button" id="cancelEditAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
-          Batal
-        </button>
-        <button type="submit" id="submitEditAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
-          Simpan Perubahan
-        </button>
-        <button type="button" id="deleteAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
-          Hapus Pengumuman
-        </button>
+        <button type="button" id="cancelEditAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer;">Batal</button>
+        <button type="submit" id="submitEditAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer;">Simpan Perubahan</button>
+        <button type="button" id="deleteAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer;">Hapus Pengumuman</button>
       </div>
     </form>
   </div>
@@ -2289,29 +2282,28 @@
     </h2>
     <div id="announcementRepliesList" style="display: flex; flex-direction: column; gap: 15px;"></div>
 
-    <!-- Form Balasan (untuk semua user yang login) -->
+    <!-- Form Balasan -->
     <form id="announcementReplyForm" style="margin-top: 20px; display: none;">
       <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
-                style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
+        style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 15px;"></textarea>
       <div style="display: flex; justify-content: flex-end;">
         <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
           Kirim Balasan
         </button>
       </div>
     </form>
+
     <div id="loginToReply" style="text-align: center; padding: 20px; color: #ccc; display: none;">
       Silakan <a href="#" style="color: #4ea1ff;" id="loginLink">login</a> untuk membalas pengumuman ini.
     </div>
   </div>
 
   <!-- Pengumuman Terkait -->
-  <div id="relatedAnnouncementsContainer" style="width: calc(100% - 200px); margin: 0 100px 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+  <div id="relatedAnnouncementsContainer" style="width: calc(100% - 200px); margin: 0 100px 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
     <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
       Pengumuman Terkait
     </h2>
-    <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
-      <!-- Daftar pengumuman terkait akan dimuat di sini -->
-    </div>
+    <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;"></div>
   </div>
 
   <!-- Tombol Kembali -->
@@ -2319,16 +2311,20 @@
     <button id="backToAnnouncements" style="padding: 10px 20px; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; cursor: pointer;">
       ← Kembali ke Daftar Pengumuman
     </button>
-  </div>
-</div>
 
-<div id="page9" style="display: none;">
-  <!-- Tambahkan tombol kembali di sini -->
-  <div style="text-align: left; margin-bottom: 20px; padding: 0 30px;">
-    <button id="backToFeedbackPage" style="padding: 8px 16px; background: none; border: 1px solid #4ea1ff; color: #4ea1ff; border-radius: 4px; cursor: pointer;">
+    <button id="backToFeedbackPage" style="margin-left: 10px; padding: 10px 20px; background: none; border: 1px solid #4ea1ff; color: #4ea1ff; border-radius: 8px; cursor: pointer;">
       ← Kembali ke Halaman Masukan
     </button>
   </div>
+</div>
+
+
+
+
+
+
+
+
 
 
 
@@ -5909,11 +5905,38 @@ function handlePageLoad(isInitialLoad = true) {
 
 
 
+document.addEventListener("DOMContentLoaded", () => {
+  const backToMasukan = document.getElementById("backToFeedbackPage");
+  const backToPengumuman = document.getElementById("backToAnnouncements");
+
+  if (backToMasukan) {
+    backToMasukan.addEventListener("click", () => {
+      history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+      handlePageLoad(false);
+    });
+  }
+
+  if (backToPengumuman) {
+    backToPengumuman.addEventListener("click", () => {
+      history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+      handlePageLoad(false);
+    });
+  }
+});
 
 
 
 
 
+document.getElementById("backToFeedbackPage").addEventListener("click", () => {
+  history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+  handlePageLoad(false);
+});
+
+document.getElementById("backToAnnouncements").addEventListener("click", () => {
+  history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+  handlePageLoad(false);
+});
 
 
 
