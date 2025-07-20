@@ -2475,8 +2475,7 @@
 	 
 	 
 	 
-	 
-	 async function findAnnouncementBySlug(slug) {
+	 async function findAnnouncementIdBySlug(slug) {
     try {
         const q = query(
             collection(db, "announcements"),
@@ -2485,8 +2484,7 @@
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-            const doc = querySnapshot.docs[0];
-            return { id: doc.id, ...doc.data() };
+            return querySnapshot.docs[0].id;
         }
         return null;
     } catch (error) {
@@ -2498,19 +2496,22 @@
 	 
 	 
 	 
-	 
-	 // Fungsi untuk membuat slug dari judul
+// Fungsi untuk membuat slug
 function createSlug(title) {
     return title.toLowerCase()
-        .replace(/[^\w\s-]/g, '') // Hapus karakter non-word
-        .replace(/[\s_-]+/g, '-') // Ganti spasi/underscore dengan dash
-        .replace(/^-+|-+$/g, ''); // Hapus dash di awal/akhir
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
 }
+
+
+
+
 
 
 function showPageContent(pageElement) {
     const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9"];
-
+    
     // Sembunyikan semua halaman
     pageIds.forEach(id => {
         const el = document.getElementById(id);
@@ -2520,34 +2521,27 @@ function showPageContent(pageElement) {
     // Tampilkan halaman yang dipilih
     if (pageElement) {
         pageElement.style.display = "block";
-
-        // Jika page9, update teks header dan muat konten jika ada ID di URL
+        
+        // Jika page9, muat konten jika ada ID di URL
         if (pageElement.id === "page9") {
-            const dynamicText = document.getElementById("dynamicText");
-            if (dynamicText) dynamicText.textContent = "Detail Pengumuman";
-            
-            // Cek apakah ada ID pengumuman di URL
             const path = window.location.pathname;
             if (path.includes('halaman-masukan-')) {
                 const announcementId = path.split('halaman-masukan-')[1];
                 if (announcementId) {
-                    showAnnouncementDetail(announcementId);
+                    loadAnnouncementDetail(announcementId);
                 }
             }
         }
-
-        // Jika page7, jalankan fungsi khusus
+        
+        // Jika page7, muat pengumuman dan masukan
         if (pageElement.id === "page7") {
-            if (typeof loadPinnedAnnouncements === "function") loadPinnedAnnouncements();
-            if (typeof loadFeedback === "function") loadFeedback().catch(console.error);
+            loadPinnedAnnouncements();
+            loadFeedback().catch(console.error);
         }
     }
-
-    window.scrollTo(0, 0); // Scroll ke atas
+    
+    window.scrollTo(0, 0);
 }
-
-
-
 
 
 
@@ -2690,90 +2684,97 @@ if (document.getElementById('back-forum')) {
 		
 		
 		
-// Event listener untuk tombol kembali di halaman detail
-document.getElementById('back-announcement')?.addEventListener('click', function(e) {
-    e.preventDefault();
-   showPageContent(document.getElementById("page7"));
-    history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+		
+
+// Panggil saat halaman dimuat
+window.addEventListener('load', function() {
+    handleInitialNavigation();
+    toggleAdminForms();
+    
+    // Setup event listener untuk tombol kembali di halaman 9
+    document.getElementById('backToAnnouncements')?.addEventListener('click', function() {
+        showPageContent(document.getElementById("page7"));
+        history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    });
 });		
 		
 		
 		
 		
 		
-		
-		
-		
-// Event listener untuk form balasan
-document.getElementById('announcementReplyForm')?.addEventListener('submit', async function(e) {
-  e.preventDefault();
-  
-  const user = auth.currentUser;
-  if (!user) {
-    alert('Silakan login terlebih dahulu untuk membalas pengumuman');
-    return;
-  }
-  
-  const content = document.getElementById('announcementReplyContent').value.trim();
-  if (!content) {
-    alert('Isi balasan tidak boleh kosong');
-    return;
-  }
-  
-  // Get announcement ID from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const announcementId = urlParams.get('id');
-  if (!announcementId) {
-    alert('Tidak dapat menemukan pengumuman');
-    return;
-  }
-  
-  const submitBtn = document.querySelector('#announcementReplyForm button[type="submit"]');
-  const originalBtnText = submitBtn.innerHTML;
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = 'Mengirim...';
-  
-  try {
-    // Add reply to subcollection
-    const repliesRef = collection(db, "announcements", announcementId, "replies");
-    await addDoc(repliesRef, {
-      content,
-      userId: user.uid,
-      userName: user.displayName || 'Anonymous',
-      userEmail: user.email,
-      timestamp: serverTimestamp()
-    });
+document.getElementById('announcementForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
     
-    // Update reply count in main announcement
-    const announcementRef = doc(db, "announcements", announcementId);
-    await updateDoc(announcementRef, {
-      repliesCount: increment(1)
-    });
+    const title = document.getElementById('announcementTitle').value.trim();
+    const content = document.getElementById('announcementContent').value.trim();
     
-    // Clear form
-    document.getElementById('announcementReplyContent').value = '';
+    if (!title || !content) {
+        alert('Judul dan isi pengumuman tidak boleh kosong!');
+        return;
+    }
     
-    // Reload replies
-    await loadAnnouncementReplies(announcementId);
+    const user = auth.currentUser;
+    if (!user || !isUserAdmin(user)) {
+        alert('Anda tidak memiliki izin untuk membuat pengumuman!');
+        return;
+    }
     
-    // Show success message
-    alert('Balasan berhasil dikirim!');
+    const submitBtn = document.getElementById('submitAnnouncement');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Mengirim...';
     
-  } catch (error) {
-    console.error("Error submitting reply:", error);
-    alert('Gagal mengirim balasan. Silakan coba lagi nanti.');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = originalBtnText;
-  }
-});
+    try {
+        const slug = createSlug(title);
+        const announcementData = {
+            title,
+            content,
+            userEmail: user.email,
+            userName: user.displayName || 'Admin',
+            timestamp: serverTimestamp(),
+            type: 'announcement',
+            pinned: true,
+            pinnedAt: serverTimestamp(),
+            views: 0,
+            likesCount: 0,
+            repliesCount: 0,
+            slug: slug
+        };
 
-// Event listener untuk tombol kembali
-document.getElementById('backToAnnouncements')?.addEventListener('click', function(e) {
-  e.preventDefault();
-  showPageContent(document.getElementById("page7"));
-  history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+        const announcementsRef = collection(db, "announcements");
+        await addDoc(announcementsRef, announcementData);
+
+        // Reset form
+        e.target.reset();
+        alert('Pengumuman berhasil diposting!');
+        
+        // Muat ulang daftar pengumuman
+        await loadPinnedAnnouncements();
+        
+    } catch (error) {
+        console.error('Error submitting announcement:', error);
+        alert('Gagal mengirim pengumuman: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 });
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		
 		
@@ -3606,32 +3607,33 @@ function checkAdminStatus(user) {
 
 
 
-// Fungsi untuk menampilkan/menyembunyikan form admin
+
+
+
 function toggleAdminForms() {
-  const user = auth.currentUser;
-  const isAdmin = isUserAdmin(user);
-  
-  // Toggle form admin di halaman 7 (daftar pengumuman)
-  const adminFormPage7 = document.getElementById('adminAnnouncementForm');
-  if (adminFormPage7) {
-    adminFormPage7.style.display = isAdmin ? 'block' : 'none';
-  }
-  
-  // Toggle form admin di halaman 9 (detail pengumuman)
-  const adminFormPage9 = document.getElementById('adminAnnouncementForm');
-  if (adminFormPage9) {
-    adminFormPage9.style.display = isAdmin ? 'block' : 'none';
-  }
-  
-  // Tambahkan badge admin jika diperlukan
-  const userDisplayElements = document.querySelectorAll('.feedback-user div:first-child');
-  userDisplayElements.forEach(el => {
-    const userEmail = el.nextElementSibling?.textContent?.trim();
-    if (userEmail && ALLOWED_EMAILS.includes(userEmail.toLowerCase())) {
-      el.innerHTML += ' <span style="background: #ff6b6b; color: white; font-size: 12px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">ADMIN</span>';
+    const user = auth.currentUser;
+    const isAdmin = isUserAdmin(user);
+    
+    // Toggle form admin di halaman 7
+    const adminFormPage7 = document.getElementById('adminAnnouncementForm');
+    if (adminFormPage7) {
+        adminFormPage7.style.display = isAdmin ? 'block' : 'none';
     }
-  });
+    
+    // Toggle form admin di halaman 9
+    const adminFormPage9 = document.querySelector('#page9 #adminAnnouncementForm');
+    if (adminFormPage9) {
+        adminFormPage9.style.display = isAdmin ? 'block' : 'none';
+    }
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -4165,49 +4167,115 @@ async function getAnnouncementLikesCount(announcementId) {
 
 
 
-// Fungsi untuk memuat detail pengumuman (diperbarui)
+
+
+
 async function loadAnnouncementDetail(announcementId) {
-  try {
-    // Tampilkan loading state
-    document.getElementById('announcementDetailContainer').innerHTML = 
-      '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
-    
-    // Ambil data pengumuman dari Firestore
-    const docRef = doc(db, "announcements", announcementId);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      throw new Error("Pengumuman tidak ditemukan");
+    try {
+        const container = document.getElementById('announcementDetailContainer');
+        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
+        
+        const docRef = doc(db, "announcements", announcementId);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
+            throw new Error("Pengumuman tidak ditemukan");
+        }
+        
+        const announcement = docSnap.data();
+        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
+        
+        // Render detail pengumuman
+        container.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title}</h2>
+                    <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
+                        ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                    <div>
+                        <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
+                        <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
+                    </div>
+                </div>
+                
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+                    ${announcement.content}
+                </div>
+                
+                <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+                    </button>
+                    
+                    <div style="display: flex; align-items: center; color: #ccc;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Setup event listeners
+        container.querySelector('.like-btn').addEventListener('click', async () => {
+            await toggleAnnouncementLike(announcementId);
+            const likesCount = await getAnnouncementLikesCount(announcementId);
+            container.querySelector('.like-count').textContent = likesCount;
+        });
+        
+        // Setup form admin jika user adalah admin
+        if (isUserAdmin(auth.currentUser)) {
+            const adminForm = document.querySelector('#page9 #adminAnnouncementForm');
+            adminForm.style.display = 'block';
+            
+            document.getElementById('editAnnouncementTitle').value = announcement.title;
+            document.getElementById('editAnnouncementContent').value = announcement.content;
+            
+            document.getElementById('editAnnouncementForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await updateAnnouncement(announcementId);
+            };
+            
+            document.getElementById('deleteAnnouncement').onclick = async () => {
+                if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
+                    await deleteAnnouncement(announcementId);
+                }
+            };
+        }
+        
+        // Muat balasan
+        await loadAnnouncementReplies(announcementId);
+        
+    } catch (error) {
+        console.error("Error loading announcement:", error);
+        document.getElementById('announcementDetailContainer').innerHTML = `
+            <div style="color:#ff6b6b; text-align:center; padding:30px;">
+                Gagal memuat pengumuman: ${error.message}
+            </div>
+        `;
     }
-    
-    const announcement = docSnap.data();
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
-    
-    // Render detail pengumuman
-    renderAnnouncementDetail(announcement, waktu);
-    
-    // Periksa status admin untuk menampilkan form edit
-    setupAdminFormForAnnouncement(announcementId, announcement);
-    
-    // Setup form reply berdasarkan status login
-    setupReplyForm(announcementId);
-    
-    // Muat balasan dan pengumuman terkait
-    await Promise.all([
-      loadAnnouncementReplies(announcementId),
-      loadRelatedAnnouncements(announcementId),
-      incrementAnnouncementViews(announcementId)
-    ]);
-    
-  } catch (error) {
-    console.error("Error loading announcement:", error);
-    document.getElementById('announcementDetailContainer').innerHTML = `
-      <div style="color:#ff6b6b; text-align:center; padding:30px;">
-        Gagal memuat pengumuman: ${error.message}
-      </div>
-    `;
-  }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4579,15 +4647,11 @@ function renderAnnouncementDetail(announcement, waktu) {
 
 
 
-
-// Fungsi untuk mengecek apakah user adalah admin/contributor
 function isUserAdmin(user) {
-  if (!user || !user.email) return false;
-  return ALLOWED_EMAILS.includes(user.email.toLowerCase());
+    const ALLOWED_EMAILS = ['faridardiansyah061@gmail.com'];
+    if (!user || !user.email) return false;
+    return ALLOWED_EMAILS.includes(user.email.toLowerCase());
 }
-
-
-
 
 
 
@@ -5708,8 +5772,35 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 		
 		
 		
-		
+	// Fungsi untuk menangani navigasi saat halaman dimuat
+function handleInitialNavigation() {
+    const path = window.location.pathname;
+    
+    // Jika URL mengarah ke halaman detail pengumuman
+    if (path.includes('halaman-masukan-')) {
+        const announcementId = path.split('halaman-masukan-')[1];
+        if (announcementId) {
+            showPageContent(document.getElementById("page9"));
+            loadAnnouncementDetail(announcementId);
+        }
+    } else {
+        // Default ke halaman 1 jika tidak ada path khusus
+        showPageContent(document.getElementById("page1"));
+    }
+}	
 
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
    
    
   // Fungsi utama untuk menangani loading halaman
@@ -5913,21 +6004,6 @@ function checkInitialURL() {
 
 // Panggil fungsi ini saat halaman dimuat
 window.addEventListener('load', checkInitialURL);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
