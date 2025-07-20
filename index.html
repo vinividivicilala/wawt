@@ -2651,6 +2651,8 @@ if (document.getElementById('back-forum')) {
 window.addEventListener('load', function() {
     handleInitialNavigation();
     toggleAdminForms();
+	 handlePageLoad(true);
+    initializeBlogPagination();
     
     // Setup event listener untuk tombol kembali di halaman 9
     document.getElementById('backToAnnouncements')?.addEventListener('click', function() {
@@ -3645,16 +3647,6 @@ auth.onAuthStateChanged((user) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
 async function submitAnnouncement(e) {
     e.preventDefault();
 
@@ -3678,58 +3670,72 @@ async function submitAnnouncement(e) {
     submitBtn.innerHTML = 'Mengirim... <span class="loading-spinner"></span>';
 
     try {
-       const slug = createSlug(title);
-const announcementData = {
-    title,
-    content,
-    userEmail: user.email,
-    userName: user.displayName || 'Admin',
-    timestamp: serverTimestamp(),
-    type: 'announcement',
-    pinned: true,
-    pinnedAt: serverTimestamp(),
-    views: 0,
-    likesCount: 0,
-    repliesCount: 0,
-    slug: slug // This is where the slug is being used
-};
+        // Create a URL-friendly slug
+        const slug = title.toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
 
+        const announcementData = {
+            title,
+            content,
+            slug,
+            userEmail: user.email,
+            userName: user.displayName || 'Admin',
+            timestamp: serverTimestamp(),
+            type: 'announcement',
+            pinned: true,
+            pinnedAt: serverTimestamp(),
+            views: 0,
+            likesCount: 0,
+            repliesCount: 0
+        };
+
+        // Add to Firestore
         const announcementsRef = collection(db, "announcements");
         const docRef = await addDoc(announcementsRef, announcementData);
 
         // Reset form
         e.target.reset();
+        showNotification('Pengumuman berhasil diposting!', 'success');
 
-        // ⏳ Tambahkan delay agar serverTimestamp tersimpan
-        setTimeout(async () => {
-            await loadPinnedAnnouncements();
-            showNotification('Pengumuman berhasil diposting!', 'success');
-        }, 1500);
-
-        // ✅ Simpan ke cache lokal
-        const existingCache = JSON.parse(localStorage.getItem('cachedAnnouncements') || '{}');
-        const updatedAnnouncements = [{
+        // Update cache
+        const cachedAnnouncements = JSON.parse(localStorage.getItem('cachedAnnouncements') || '[]');
+        cachedAnnouncements.unshift({
             ...announcementData,
-            id: docRef.id,
-            views: 0,
-            likesCount: 0,
-            repliesCount: 0
-        }, ...(existingCache?.data || [])];
+            id: docRef.id
+        });
+        localStorage.setItem('cachedAnnouncements', JSON.stringify(cachedAnnouncements));
 
-        localStorage.setItem('cachedAnnouncements', JSON.stringify({
-            data: updatedAnnouncements,
-            timestamp: new Date().getTime(),
-            source: 'local'
-        }));
+        // Reload announcements
+        await loadPinnedAnnouncements();
 
     } catch (error) {
         console.error('Error submitting announcement:', error);
         showNotification('Gagal mengirim pengumuman: ' + error.message, 'error');
+        
+        // Try to save locally if offline
+        if (error.code === 'unavailable') {
+            const pendingAnnouncements = JSON.parse(localStorage.getItem('pendingAnnouncements') || '[]');
+            pendingAnnouncements.push({
+                title,
+                content,
+                timestamp: new Date().toISOString(),
+                userName: user?.displayName || 'Admin'
+            });
+            localStorage.setItem('pendingAnnouncements', JSON.stringify(pendingAnnouncements));
+            showNotification('Pengumuman disimpan offline dan akan dikirim ketika online', 'warning');
+        }
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     }
 }
+
+
+
+
+
 
 
 
@@ -4033,21 +4039,18 @@ announcementItem.setAttribute('data-slug', announcement.slug || createSlug(annou
 
 
 
-
-
-// Fungsi untuk menambah view count pengumuman
+// Function to increment announcement views
 async function incrementAnnouncementViews(announcementId) {
-  try {
-    const announcementRef = doc(db, "announcements", announcementId);
-    await updateDoc(announcementRef, {
-      views: increment(1),
-      lastViewed: serverTimestamp()
-    });
-  } catch (error) {
-    console.error("Error incrementing announcement views:", error);
-  }
+    try {
+        const announcementRef = doc(db, "announcements", announcementId);
+        await updateDoc(announcementRef, {
+            views: increment(1),
+            lastViewed: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error incrementing announcement views:", error);
+    }
 }
-
 
 
 
@@ -5812,6 +5815,9 @@ let currentState = {
 
 
 
+
+
+
 async function handlePageLoad(isInitialLoad = true) {
     const path = window.location.pathname || "/";
 
@@ -5820,97 +5826,71 @@ async function handlePageLoad(isInitialLoad = true) {
         announcementId: null
     };
 
-    // 🔹 Tangani detail pengumuman (HALAMAN 9)
+    // 🔹 Halaman Detail Pengumuman (misalnya: /halaman-masukan-halo)
     if (path.startsWith("/halaman-masukan-")) {
         const slug = path.replace("/halaman-masukan-", "");
         currentState.page = "detail-pengumuman";
-        showPageContent(document.getElementById("page9"));
-
-        const q = query(collection(db, "announcements"), where("slug", "==", slug), limit(1));
-        getDocs(q)
-            .then((querySnapshot) => {
-                if (!querySnapshot.empty) {
-                    const doc = querySnapshot.docs[0];
-                    const data = doc.data();
-
-                    const detailContainer = document.getElementById("announcementDetailContainer");
-                    if (detailContainer) {
-                        detailContainer.innerHTML = `
-                            <div style="padding: 20px; color: white;">
-                                <h2 style="font-size: 32px; font-weight: bold;">${data.title}</h2>
-                                <p style="margin-top: 10px;">${data.content}</p>
-                                <p style="margin-top: 20px; font-size: 14px; color: gray;">
-                                    Diposting pada ${new Date(data.createdAt?.seconds * 1000).toLocaleString()}
-                                </p>
-                            </div>
-                        `;
-                    }
-                } else {
-                    console.error("Pengumuman tidak ditemukan untuk slug:", slug);
-                }
-            })
-            .catch((error) => {
-                console.error("Gagal memuat data pengumuman:", error);
-            });
-
+        await showAnnouncementDetailBySlug(slug); // ✅ panggil fungsi detail
         if (isInitialLoad) {
             history.replaceState(currentState, "Pengumuman", path);
         }
-        return; // 🔴 Tambahkan return agar tidak lanjut ke bawah
+        return; // ❗ Jangan lanjut ke bawah
     }
 
-    // 🔹 Halaman lainnya (TANPA slug)
-    if (path === "/halaman-arduino") {
-        currentState.page = "arduino";
-        showPageContent(document.getElementById("page2"));
-        if (isInitialLoad) history.replaceState(currentState, "Arduino", path);
-    }
-
-    else if (path === "/halaman-iot") {
-        currentState.page = "iot";
-        showPageContent(document.getElementById("page3"));
-        if (isInitialLoad) history.replaceState(currentState, "IoT", path);
-    }
-
-    else if (path === "/halaman-blog") {
-        currentState.page = "blog";
-        showPageContent(document.getElementById("page4"));
-        if (isInitialLoad) history.replaceState(currentState, "Blog", path);
-    }
-
-    else if (path === "/halaman-kumpulan-blog") {
-        currentState.page = "kumpulan-blog";
-        showPageContent(document.getElementById("page5"));
-        if (isInitialLoad) history.replaceState(currentState, "Kumpulan Blog", path);
-    }
-
-    else if (path === "/halaman-tentang-kami") {
-        currentState.page = "tentang-kami";
-        showPageContent(document.getElementById("page6"));
-        if (isInitialLoad) history.replaceState(currentState, "Tentang Kami", path);
-    }
-
+    // 🔹 Halaman Masukan biasa (daftar semua masukan/pengumuman)
     else if (path === "/halaman-masukan") {
         currentState.page = "masukan";
         showPageContent(document.getElementById("page7"));
-        loadFeedback().catch(console.error);
-		 currentState.page = "detail-pengumuman";
-    await showAnnouncementDetailBySlug(slug);
-        if (isInitialLoad) history.replaceState(currentState, "Masukan", path);
+        await loadFeedback().catch(console.error);
+        if (isInitialLoad) {
+            history.replaceState(currentState, "Masukan", path);
+        }
+        return;
     }
 
-    else if (path === "/halaman-forum") {
+    // 🔹 Halaman lainnya
+    else if (path === "/halaman-arduino") {
+        currentState.page = "arduino";
+        showPageContent(document.getElementById("page2"));
+        if (isInitialLoad) history.replaceState(currentState, "Arduino", path);
+    } else if (path === "/halaman-iot") {
+        currentState.page = "iot";
+        showPageContent(document.getElementById("page3"));
+        if (isInitialLoad) history.replaceState(currentState, "IoT", path);
+    } else if (path === "/halaman-blog") {
+        currentState.page = "blog";
+        showPageContent(document.getElementById("page4"));
+        if (isInitialLoad) history.replaceState(currentState, "Blog", path);
+    } else if (path === "/halaman-kumpulan-blog") {
+        currentState.page = "kumpulan-blog";
+        showPageContent(document.getElementById("page5"));
+        if (isInitialLoad) history.replaceState(currentState, "Kumpulan Blog", path);
+    } else if (path === "/halaman-tentang-kami") {
+        currentState.page = "tentang-kami";
+        showPageContent(document.getElementById("page6"));
+        if (isInitialLoad) history.replaceState(currentState, "Tentang Kami", path);
+    } else if (path === "/halaman-forum") {
         currentState.page = "forum";
         showPageContent(document.getElementById("page8"));
         if (isInitialLoad) history.replaceState(currentState, "Forum", path);
-    }
-
-    else {
+    } else {
+        // 🔹 Beranda
         currentState.page = "home";
         showPageContent(document.getElementById("page1"));
         if (isInitialLoad) history.replaceState(currentState, "Beranda", "/");
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5966,35 +5946,117 @@ async function renderMasukanDetailBySlug(slug) {
 
 
 
+
+
+
+
+
 async function showAnnouncementDetailBySlug(slug) {
-  try {
+    if (!slug || typeof slug !== 'string') {
+        throw new Error("Slug tidak valid");
+    }
+
     showPageContent(document.getElementById("page9"));
-
-    const q = query(collection(db, "announcements"), where("slug", "==", slug), limit(1));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) throw new Error("Pengumuman tidak ditemukan");
-
-    const doc = querySnapshot.docs[0];
-    const data = doc.data();
-
-    document.title = `${data.title} - Life Is What It Is Learn`;
-
-    const detailContainer = document.getElementById("announcementDetailContainer");
-    detailContainer.innerHTML = `
-      <div style="padding: 20px; color: white;">
-        <h2 style="font-size: 32px; font-weight: bold;">${data.title}</h2>
-        <p style="margin-top: 10px;">${data.content}</p>
-        <p style="margin-top: 20px; font-size: 14px; color: gray;">
-          Diposting pada ${new Date(data.createdAt?.seconds * 1000).toLocaleString()}
-        </p>
-      </div>
+    document.getElementById("announcementDetailContainer").innerHTML = `
+        <div style="color:#ccc; text-align:center; padding:30px;">
+            Memuat pengumuman...
+        </div>
     `;
-  } catch (error) {
-    console.error("Error loading announcement by slug:", error);
-    showPageContent(document.getElementById("page7"));
-    await loadFeedback();
-  }
+
+    try {
+        const q = query(
+            collection(db, "announcements"),
+            where("slug", "==", slug),
+            limit(1)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            throw new Error(`Pengumuman dengan slug "${slug}" tidak ditemukan`);
+        }
+
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+        const waktu = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+
+        // Update browser history
+        history.pushState(
+            { page: "detail-pengumuman", announcementId: doc.id },
+            data.title,
+            `/halaman-masukan-${slug}`
+        );
+
+        // Render announcement detail
+        document.getElementById("announcementDetailContainer").innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${data.title}</h2>
+                    <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
+                        ${data.userName?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                    <div>
+                        <div style="color: white; font-weight: 500;">${data.userName || 'Admin'}</div>
+                        <div style="color: #aaa; font-size: 12px;">${data.userEmail || ''}</div>
+                    </div>
+                </div>
+                
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+                    ${data.content}
+                </div>
+                
+                <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                        <span class="like-count" style="margin-left: 5px;">${data.likesCount || 0}</span>
+                    </button>
+                    
+                    <div style="display: flex; align-items: center; color: #ccc;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span class="view-count" style="margin-left: 5px;">${data.views || 0}</span>
+                    </div>
+                </div>
+                
+                <button onclick="backToFeedbackPage()" style="margin-top: 30px; padding: 8px 16px; background: none; border: 1px solid #4ea1ff; color: #4ea1ff; cursor: pointer;">
+                    Kembali ke Halaman Masukan
+                </button>
+            </div>
+        `;
+
+        // Update document title
+        document.title = `${data.title} - Life Is What It Is Learn`;
+
+        // Increment view count
+        await incrementAnnouncementViews(doc.id);
+
+    } catch (error) {
+        console.error("Error loading announcement by slug:", error);
+        
+        // Show error message
+        document.getElementById("announcementDetailContainer").innerHTML = `
+            <div style="color: #ff6b6b; text-align: center; padding: 30px;">
+                <h3 style="margin-bottom: 15px;">Gagal Memuat Pengumuman</h3>
+                <p style="margin-bottom: 20px;">${error.message}</p>
+                <button onclick="backToFeedbackPage()" style="padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
+                    Kembali ke Halaman Masukan
+                </button>
+            </div>
+        `;
+        
+        // Fallback to feedback page
+        setTimeout(() => {
+            showPageContent(document.getElementById("page7"));
+            loadFeedback();
+        }, 3000);
+    }
 }
 
 
@@ -6003,13 +6065,39 @@ async function showAnnouncementDetailBySlug(slug) {
 
 
 
-
+// Function to go back to feedback page
 function backToFeedbackPage() {
     showPageContent(document.getElementById("page7"));
     loadFeedback().catch(console.error);
     history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
     document.title = "Masukan - Life Is What It Is Learn";
 }
+
+// Improved formatTimeAgo function
+function formatTimeAgo(timestamp) {
+    if (!timestamp) return 'baru saja';
+    
+    const now = new Date();
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'baru saja';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
+    
+    return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+}
+
+
+
+
+
+
 
 // Add event listener for back button
 document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
@@ -6018,23 +6106,23 @@ document.getElementById('backToFeedbackPage')?.addEventListener('click', backToF
 
 
 
-
-
+// Handle clicks on announcement items
 document.addEventListener('click', async (e) => {
     const announcementItem = e.target.closest('.pinned-item, .announcement-item');
     if (announcementItem) {
         e.preventDefault();
-
         const slug = announcementItem.getAttribute('data-slug');
         if (slug) {
-            history.pushState({ page: "detail-pengumuman" }, "Pengumuman", `/halaman-masukan-${slug}`);
             await showAnnouncementDetailBySlug(slug);
-        } else {
-            console.warn("Slug tidak ditemukan di data-slug attribute.");
         }
     }
-});
 
+    // Handle back to feedback button
+    if (e.target.matches('#backToFeedbackPage, #backToAnnouncements')) {
+        e.preventDefault();
+        backToFeedbackPage();
+    }
+});
 
 
 
@@ -6045,47 +6133,56 @@ document.addEventListener('click', async (e) => {
 window.addEventListener('popstate', function(event) {
     if (event.state) {
         currentState = event.state;
-        
-        if (currentState.page === "announcementDetail" && currentState.announcementId) {
-            showPageContent(document.getElementById("page9"));
-            loadAnnouncementDetail(currentState.announcementId);
-        } else {
-            handlePageLoad(false); // false berarti bukan initial load
+
+        // Tangani sesuai state yang disimpan
+        switch (currentState.page) {
+            case "announcementDetail":
+                if (currentState.announcementId) {
+                    showPageContent(document.getElementById("page9"));
+                    loadAnnouncementDetail(currentState.announcementId);
+                }
+                break;
+            case "arduino":
+                showPageContent(document.getElementById("page2"));
+                break;
+            case "iot":
+                showPageContent(document.getElementById("page3"));
+                break;
+            case "blog":
+                showPageContent(document.getElementById("page4"));
+                break;
+            case "kumpulan-blog":
+                showPageContent(document.getElementById("page5"));
+                break;
+            case "tentang-kami":
+                showPageContent(document.getElementById("page6"));
+                break;
+            case "masukan":
+                showPageContent(document.getElementById("page7"));
+                loadFeedback().catch(console.error);
+                break;
+            case "forum":
+                showPageContent(document.getElementById("page8"));
+                break;
+            default:
+                showPageContent(document.getElementById("page1"));
         }
     } else {
-        // Jika tidak ada state, tangani berdasarkan URL
-        handleInitialNavigation();
+        // Jika tidak ada state, handle langsung dari URL
+        handlePageLoad(false);
     }
 });
-            // Tampilkan halaman sesuai state
-            switch(currentState.page) {
-                case "arduino":
-                    showPageContent(document.getElementById("page2"));
-                    break;
-                case "iot":
-                    showPageContent(document.getElementById("page3"));
-                    break;
-                case "blog":
-                    showPageContent(document.getElementById("page4"));
-                    break;
-                case "kumpulan-blog":
-                    showPageContent(document.getElementById("page5"));
-                    break;
-                case "tentang-kami":
-                    showPageContent(document.getElementById("page6"));
-                    break;
-                case "masukan":
-                    showPageContent(document.getElementById("page7"));
-                    loadFeedback().catch(console.error);
-                    break;
-                case "forum":
-                    showPageContent(document.getElementById("page8"));
-                    break;
-                default:
-                    showPageContent(document.getElementById("page1"));
-            }
-        }
-    
+
+
+
+
+
+
+
+
+
+
+
 
 function renderAnnouncementDetail(data) {
   const container = document.getElementById("page9");
@@ -6115,7 +6212,7 @@ async function loadAnnouncementBySlug(slug) {
     console.error("Gagal memuat pengumuman:", error);
   }
 }
-
+}
 
 
 
