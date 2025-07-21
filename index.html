@@ -2240,6 +2240,13 @@
   </a>
 
 
+
+
+
+
+
+
+
 <div id="page9" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
     Detail Pengumuman Penting
@@ -5675,63 +5682,6 @@ document.getElementById('newDiscussionForm')?.addEventListener('submit', async f
 		
 		
 		
-		
-		
-		
-		async function handleInitialNavigation() {
-    const path = window.location.pathname || "/";
-    
-    // Handle announcement detail pages
-    if (path.includes('halaman-masukan-')) {
-        const slugOrId = path.split('halaman-masukan-')[1];
-        if (slugOrId) {
-            showPageContent(document.getElementById("page9"));
-            
-            // Find and load the announcement
-            const announcement = await findAnnouncementBySlugOrId(slugOrId);
-            if (announcement) {
-                await loadAnnouncementDetail(announcement.id);
-                // Update browser title
-                document.title = `${announcement.title} - Life Is What It Is Learn`;
-            } else {
-                // Fallback to feedback page if announcement not found
-                showPageContent(document.getElementById("page7"));
-                await loadFeedback();
-            }
-            return;
-        }
-    }
-    
-    // Handle other pages
-    if (path.includes("halaman-arduino")) {
-        showPageContent(document.getElementById("page2"));
-    } 
-    else if (path.includes("halaman-iot")) {
-        showPageContent(document.getElementById("page3"));
-    }
-    else if (path.includes("halaman-blog")) {
-        showPageContent(document.getElementById("page4"));
-    }
-    else if (path.includes("halaman-kumpulan-blog")) {
-        showPageContent(document.getElementById("page5"));
-    }
-    else if (path.includes("halaman-tentang-kami")) {
-        showPageContent(document.getElementById("page6"));
-    }
-    else if (path.includes("halaman-masukan")) {
-        showPageContent(document.getElementById("page7"));
-        await loadFeedback();
-    }
-    else if (path.includes("halaman-forum")) {
-        showPageContent(document.getElementById("page8"));
-    }
-    else {
-        // Default to home page
-        showPageContent(document.getElementById("page1"));
-    }
-}
-   
-   
    
    
    
@@ -5804,21 +5754,18 @@ document.addEventListener('click', async (e) => {
 }
    
    
-   
-window.onload = async function () {
-  const path = window.location.pathname || "/";
-  const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
+   window.onload = async function() {
+    const path = window.location.pathname || "/";
+    const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
 
-  if (isAnnouncementDetail) {
-    const slug = decodeURIComponent(path.replace('/halaman-masukan-', ''));
-    await renderAnnouncementDetailBySlug(slug); // fungsi untuk ambil data & tampilkan page9
-    return;
-  }
+    if (isAnnouncementDetail) {
+        const slug = decodeURIComponent(path.replace('/halaman-masukan-', ''));
+        await showAnnouncementDetailBySlug(slug);
+        return;
+    }
 
-  handlePageLoad();
-  initializeBlogPagination();
+    await handlePageLoad(true); // true indicates this is the initial load
 };
-
 
 // Fungsi untuk menangani perubahan URL (back/forward browser)
 window.addEventListener("popstate", function(event) {
@@ -5831,10 +5778,7 @@ let currentState = {
     announcementId: null
 };
 
-
-
-// Handle initial page load and URL routing
-async function handleInitialNavigation() {
+async function handlePageLoad(isInitialLoad = true) {
     const path = window.location.pathname || "/";
     
     // Handle announcement detail pages
@@ -5847,7 +5791,7 @@ async function handleInitialNavigation() {
         }
     }
     
-    // Handle other pages normally
+    // Handle other pages
     if (path.includes("halaman-arduino")) {
         showPageContent(document.getElementById("page2"));
     } 
@@ -5874,7 +5818,27 @@ async function handleInitialNavigation() {
         // Default to home page
         showPageContent(document.getElementById("page1"));
     }
+    
+    // Additional initialization for initial load
+    if (isInitialLoad) {
+        initializeBlogPagination();
+        // Any other initializations you need
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
