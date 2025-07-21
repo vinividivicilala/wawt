@@ -1,13 +1,4 @@
 
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -658,6 +649,82 @@
 
 
 
+ /* Gaya dasar untuk halaman 9 */
+  #page9 {
+    background-color: #121212;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+  }
+  
+  /* Gaya untuk kontainer utama */
+  #page9 > div {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* Gaya untuk card/cotainer */
+  #announcementDetailContainer,
+  #adminAnnouncementForm,
+  #announcementRepliesContainer,
+  #relatedAnnouncementsContainer {
+    background: rgba(30, 30, 30, 0.8);
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Gaya untuk tombol */
+  #page9 button {
+    transition: all 0.3s ease;
+  }
+  
+  #page9 button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  
+  /* Gaya untuk input dan textarea */
+  #page9 input,
+  #page9 textarea {
+    transition: all 0.3s ease;
+  }
+  
+  #page9 input:focus,
+  #page9 textarea:focus {
+    border-color: #4ea1ff !important;
+    box-shadow: 0 0 0 2px rgba(78, 161, 255, 0.2);
+    outline: none;
+  }
+  
+  /* Gaya untuk avatar pengguna */
+  .feedback-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .pin-icon {
     width: 16px;
     height: 16px;
@@ -765,15 +832,6 @@
   transition: background 0.3s ease;
 }
 
-
-
-/* Style dasar halaman 9 */
-#page9 {
-    padding: 20px;
-    max-width: 1000px;
-    margin: 0 auto;
-    color: white;
-}
 
 /* Container utama */
 #announcementDetailContainer {
@@ -2454,85 +2512,95 @@
 
 
 
-<div id="page9" style="display: none;">
-  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
-    Detail Pengumuman
-  </div>
-
-  <!-- Konten Pengumuman -->
-  <div id="announcementDetailContainer" style="margin: 30px 100px 0 100px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 15px;">
-    <!-- Konten akan dimuat oleh JavaScript -->
-  </div>
-
-  <!-- Form Pengumuman (Hanya untuk Admin) -->
-  <div id="adminAnnouncementForm" style="display: none; width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-    <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-      Edit Pengumuman
-    </h2>
-    <form id="editAnnouncementForm" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
-      <div>
-        <label for="editAnnouncementTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Pengumuman</label>
-        <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
-      </div>
-      <div>
-        <label for="editAnnouncementContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Pengumuman</label>
-        <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
-      </div>
-      <div style="display: flex; justify-content: space-between;">
-        <button type="button" id="cancelEditAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
-          Batal
-        </button>
-        <button type="submit" id="submitEditAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
-          Simpan Perubahan
-        </button>
-        <button type="button" id="deleteAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
-          Hapus Pengumuman
-        </button>
-      </div>
-    </form>
-  </div>
-  
-  
-
-  <!-- Balasan -->
-  <div id="announcementRepliesContainer" style="width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-    <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-      Balasan (<span id="repliesCount">0</span>)
-    </h2>
-    <div id="announcementRepliesList" style="display: flex; flex-direction: column; gap: 15px;"></div>
-
-    <!-- Form Balasan (untuk semua user yang login) -->
-    <form id="announcementReplyForm" style="margin-top: 20px; display: none;">
-      <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
-                style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
-      <div style="display: flex; justify-content: flex-end;">
-        <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-          Kirim Balasan
-        </button>
-      </div>
-    </form>
-    <div id="loginToReply" style="text-align: center; padding: 20px; color: #ccc; display: none;">
-      Silakan <a href="#" style="color: #4ea1ff;" id="loginLink">login</a> untuk membalas pengumuman ini.
+<div id="page9" style="display: none; min-height: 100vh; background-color: #121212; padding: 20px;">
+  <div style="max-width: 900px; margin: 0 auto;">
+    <!-- Header -->
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #ffffff; font-size: 28px; margin-bottom: 10px;">Detail Pengumuman</h1>
+      <div style="height: 2px; background: linear-gradient(90deg, transparent, #4ea1ff, transparent);"></div>
     </div>
-  </div>
 
-  <!-- Pengumuman Terkait -->
-  <div id="relatedAnnouncementsContainer" style="width: calc(100% - 200px); margin: 0 100px 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-    <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-      Pengumuman Terkait
-    </h2>
-    <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
-      <!-- Daftar pengumuman terkait akan dimuat di sini -->
+    <!-- Konten Utama -->
+    <div id="announcementDetailContainer" style="background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
+      <!-- Konten akan diisi oleh JavaScript -->
     </div>
-  </div>
 
-  <!-- Tombol Kembali -->
-  <div style="width: 100%; text-align: left; padding: 0 100px 40px;">
-    <button id="backToAnnouncements" style="padding: 10px 20px; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; cursor: pointer;">
-      ← Kembali ke Daftar Pengumuman
-    </button>
+    <!-- Form Admin (Hanya tampil untuk admin) -->
+    <div id="adminAnnouncementForm" style="display: none; background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Edit Pengumuman
+      </h2>
+      <form id="editAnnouncementForm" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+        <div>
+          <label for="editAnnouncementTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Pengumuman</label>
+          <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+        </div>
+        <div>
+          <label for="editAnnouncementContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Pengumuman</label>
+          <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <button type="button" id="cancelEditAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+            Batal
+          </button>
+          <button type="submit" id="submitEditAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+            Simpan Perubahan
+          </button>
+          <button type="button" id="deleteAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+            Hapus Pengumuman
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Bagian Balasan -->
+    <div id="announcementRepliesContainer" style="background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Balasan (<span id="repliesCount">0</span>)
+      </h2>
+      <div id="announcementRepliesList" style="display: flex; flex-direction: column; gap: 15px;"></div>
+
+      <!-- Form Balasan -->
+      <form id="announcementReplyForm" style="margin-top: 20px; display: none;">
+        <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
+                  style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
+            Kirim Balasan
+          </button>
+        </div>
+      </form>
+      <div id="loginToReply" style="text-align: center; padding: 20px; color: #ccc; display: none;">
+        Silakan <a href="#" style="color: #4ea1ff;" id="loginLink">login</a> untuk membalas pengumuman ini.
+      </div>
+    </div>
+
+    <!-- Pengumuman Terkait -->
+    <div id="relatedAnnouncementsContainer" style="background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Pengumuman Terkait
+      </h2>
+      <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Daftar pengumuman terkait akan dimuat di sini -->
+      </div>
+    </div>
+
+    <!-- Tombol Kembali -->
+    <div style="text-align: left; margin-bottom: 40px;">
+      <button id="backToAnnouncements" style="padding: 10px 20px; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; cursor: pointer;">
+        ← Kembali ke Daftar Pengumuman
+      </button>
+    </div>
   </div>
 </div>
+
+
+
+
+
+
+
+
 
 
 
@@ -4453,84 +4521,61 @@ async function loadAnnouncementDetail(announcementId) {
 
 
 
-
-
-
-
-// Update your loadAnnouncementReplies function with logging
+// Fungsi untuk memuat balasan
 async function loadAnnouncementReplies(announcementId) {
-    console.log('[Debug] loadAnnouncementReplies called for ID:', announcementId);
+  const repliesList = document.getElementById('announcementRepliesList');
+  if (!repliesList) return;
+
+  repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat balasan...</div>';
+
+  try {
+    const q = query(
+      collection(db, "announcements", announcementId, "replies"),
+      orderBy("timestamp", "asc")
+    );
     
-    const repliesList = document.getElementById('announcementRepliesList');
-    if (!repliesList) {
-        console.error('[Error] repliesList element not found');
-        return;
+    const querySnapshot = await getDocs(q);
+    
+    repliesList.innerHTML = '';
+    
+    if (querySnapshot.empty) {
+      repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
+      return;
     }
+    
+    querySnapshot.forEach(doc => {
+      const reply = doc.data();
+      const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
+      
+      const replyElement = document.createElement('div');
+      replyElement.style.cssText = 'padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;';
+      
+      replyElement.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 30px; height: 30px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; color: white;">
+            ${reply.userName?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <div>
+            <div style="color: white; font-size: 14px; font-weight: 500;">${reply.userName || 'User'}</div>
+            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 15px; line-height: 1.5; color: #ddd;">
+          ${reply.content}
+        </div>
+      `;
+      
+      repliesList.appendChild(replyElement);
+    });
+    
+    // Update jumlah balasan
+    document.getElementById('repliesCount').textContent = querySnapshot.size;
 
-    repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat balasan...</div>';
-    console.log('[Debug] Showing replies loading state');
-
-    try {
-        const q = query(
-            collection(db, "announcements", announcementId, "replies"),
-            orderBy("timestamp", "asc")
-        );
-        
-        const querySnapshot = await getDocs(q);
-        console.log(`[Debug] Found ${querySnapshot.size} replies`);
-        
-        repliesList.innerHTML = '';
-        
-        if (querySnapshot.empty) {
-            repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
-            console.log('[Debug] No replies found');
-            return;
-        }
-        
-        querySnapshot.forEach(doc => {
-            const reply = doc.data();
-            const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
-            
-            const replyElement = document.createElement('div');
-            replyElement.className = 'feedback-item';
-            replyElement.style.cssText = 'padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 15px;';
-            
-            replyElement.innerHTML = `
-                <div class="feedback-header">
-                    <div class="feedback-user" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                        <div class="feedback-avatar" style="width: 30px; height: 30px; font-size: 14px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                            ${reply.userName?.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                        <div>
-                            <div style="color: white; font-size: 14px; font-weight: 500;">${reply.userName || 'User'}</div>
-                            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feedback-content" style="margin-top: 10px; font-size: 15px; line-height: 1.5; color: #ddd;">
-                    ${reply.content}
-                </div>
-            `;
-            
-            repliesList.appendChild(replyElement);
-        });
-        
-        // Update replies count
-        document.getElementById('repliesCount').textContent = querySnapshot.size;
-        console.log('[Debug] Replies loaded successfully');
-
-    } catch (error) {
-        console.error('[Error] Failed to load replies:', error);
-        repliesList.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat balasan</div>';
-    }
+  } catch (error) {
+    console.error("Error loading replies:", error);
+    repliesList.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat balasan</div>';
+  }
 }
-
-
-
-
-
-
-
 
 
 
@@ -4590,11 +4635,14 @@ async function toggleAnnouncementLike(announcementId) {
 
 
 
+
 // Fungsi untuk memuat pengumuman terkait
-async function loadRelatedAnnouncements(currentAnnouncementId) {
+async function loadRelatedAnnouncements(announcementId) {
   const relatedList = document.getElementById('relatedAnnouncementsList');
+  if (!relatedList) return;
+
   relatedList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Memuat pengumuman terkait...</div>';
-  
+
   try {
     const q = query(
       collection(db, "announcements"),
@@ -4608,24 +4656,27 @@ async function loadRelatedAnnouncements(currentAnnouncementId) {
     
     let addedCount = 0;
     querySnapshot.forEach(doc => {
-      if (doc.id === currentAnnouncementId || addedCount >= 3) return;
+      if (doc.id === announcementId || addedCount >= 3) return;
       
       addedCount++;
       const announcement = doc.data();
       const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
       
-      relatedList.innerHTML += `
-        <div class="related-item" style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;"
-             onclick="showAnnouncementDetail('${doc.id}')">
-          <h3 style="color: #4ea1ff; font-size: 16px; margin-bottom: 5px;">
-            ${announcement.title.substring(0, 50)}${announcement.title.length > 50 ? '...' : ''}
-          </h3>
-          <div style="color: #aaa; font-size: 14px;">
-            ${announcement.content.substring(0, 80)}${announcement.content.length > 80 ? '...' : ''}
-          </div>
-          <div style="color: #666; font-size: 12px; margin-top: 5px;">${formatTimeAgo(waktu)}</div>
+      const item = document.createElement('div');
+      item.style.cssText = 'padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px; cursor: pointer;';
+      item.onclick = () => showAnnouncementDetailById(doc.id);
+      
+      item.innerHTML = `
+        <h3 style="color: #4ea1ff; font-size: 16px; margin-bottom: 5px;">
+          ${announcement.title.substring(0, 50)}${announcement.title.length > 50 ? '...' : ''}
+        </h3>
+        <div style="color: #aaa; font-size: 14px;">
+          ${announcement.content.substring(0, 80)}${announcement.content.length > 80 ? '...' : ''}
         </div>
+        <div style="color: #666; font-size: 12px; margin-top: 5px;">${formatTimeAgo(waktu)}</div>
       `;
+      
+      relatedList.appendChild(item);
     });
     
     if (addedCount === 0) {
@@ -4636,15 +4687,6 @@ async function loadRelatedAnnouncements(currentAnnouncementId) {
     relatedList.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:10px;">Gagal memuat pengumuman terkait</div>';
   }
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4834,11 +4876,20 @@ function renderDetailPengumuman(data) {
 
 
 
+
+// Fungsi untuk mengecek status admin
 function isUserAdmin(user) {
-    const ALLOWED_EMAILS = ['faridardiansyah061@gmail.com'];
-    if (!user || !user.email) return false;
-    return ALLOWED_EMAILS.includes(user.email.toLowerCase());
+  if (!user || !user.email) return false;
+  const adminEmails = ['faridardiansyah061@gmail.com']; // Ganti dengan email admin yang valid
+  return adminEmails.includes(user.email.toLowerCase());
 }
+
+
+
+
+
+
+
 
 
 
@@ -4926,9 +4977,7 @@ const isAdmin = checkAdminStatus(user); // Use the existing function
 
 
 
-
-
-// Fungsi untuk setup form reply berdasarkan status login
+// Fungsi untuk setup form balasan
 function setupReplyForm(announcementId) {
   const user = auth.currentUser;
   const replyForm = document.getElementById('announcementReplyForm');
@@ -4938,31 +4987,59 @@ function setupReplyForm(announcementId) {
     replyForm.style.display = 'block';
     loginToReply.style.display = 'none';
     
-    // Setup event listener untuk form reply
-    replyForm.onsubmit = (e) => {
+    replyForm.onsubmit = async (e) => {
       e.preventDefault();
-      submitAnnouncementReply(announcementId);
+      const content = document.getElementById('announcementReplyContent').value.trim();
+      
+      if (!content) {
+        alert('Isi balasan tidak boleh kosong');
+        return;
+      }
+      
+      const submitBtn = replyForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Mengirim...';
+      
+      try {
+        await addDoc(collection(db, "announcements", announcementId, "replies"), {
+          content,
+          userId: user.uid,
+          userName: user.displayName || 'Anonymous',
+          userEmail: user.email,
+          timestamp: serverTimestamp()
+        });
+        
+        // Update reply count
+        await updateDoc(doc(db, "announcements", announcementId), {
+          repliesCount: increment(1)
+        });
+        
+        // Refresh replies
+        await loadAnnouncementReplies(announcementId);
+        
+        // Reset form
+        document.getElementById('announcementReplyContent').value = '';
+        
+      } catch (error) {
+        console.error("Error submitting reply:", error);
+        alert('Gagal mengirim balasan');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
     };
   } else {
     replyForm.style.display = 'none';
     loginToReply.style.display = 'block';
     
-    // Setup event listener untuk login link
     document.getElementById('loginLink').onclick = (e) => {
       e.preventDefault();
-      // Implementasi login sesuai kebutuhan
+      // Implement login logic here
       alert('Silakan login terlebih dahulu');
     };
   }
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -6187,11 +6264,7 @@ async function renderMasukanDetailById(id) {
 
 
 
-
-
-
-
-// Fungsi untuk menampilkan detail pengumuman
+// Fungsi utama untuk menampilkan detail pengumuman
 async function showAnnouncementDetailById(announcementId) {
   try {
     // Tampilkan halaman 9
@@ -6199,14 +6272,14 @@ async function showAnnouncementDetailById(announcementId) {
     
     const container = document.getElementById('announcementDetailContainer');
     if (!container) {
-      console.error('Detail container not found');
+      console.error('Container detail tidak ditemukan');
       return;
     }
 
     // Tampilkan loading state
     container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
 
-    // Dapatkan data pengumuman dari Firestore
+    // Dapatkan data dari Firestore
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
 
@@ -6215,18 +6288,18 @@ async function showAnnouncementDetailById(announcementId) {
     }
 
     const announcement = docSnap.data();
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
 
     // Render konten pengumuman
     container.innerHTML = `
       <div style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-          <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title}</h2>
-          <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
+          <h2 style="color: #ff6b6b; font-size: 28px; margin: 0; line-height: 1.3;">${announcement.title || 'Tanpa Judul'}</h2>
+          <div style="color: #aaa; font-size: 14px; white-space: nowrap;">${formatTimeAgo(waktu)}</div>
         </div>
         
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-          <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;">
             ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
           </div>
           <div>
@@ -6236,7 +6309,7 @@ async function showAnnouncementDetailById(announcementId) {
         </div>
         
         <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
-          ${announcement.content}
+          ${announcement.content || 'Tidak ada konten'}
         </div>
         
         <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -6260,14 +6333,18 @@ async function showAnnouncementDetailById(announcementId) {
 
     // Setup admin controls jika user adalah admin
     if (isUserAdmin(auth.currentUser)) {
-      setupAdminAnnouncementUI(auth.currentUser, announcementId, announcement);
+      document.getElementById('adminAnnouncementForm').style.display = 'block';
+      document.getElementById('editAnnouncementTitle').value = announcement.title;
+      document.getElementById('editAnnouncementContent').value = announcement.content;
     }
 
-    // Muat balasan dan pengumuman terkait
+    // Muat balasan
     await loadAnnouncementReplies(announcementId);
+
+    // Muat pengumuman terkait
     await loadRelatedAnnouncements(announcementId);
 
-    // Setup form balasan berdasarkan status login
+    // Setup form balasan
     setupReplyForm(announcementId);
 
     // Update URL dan history
@@ -6286,9 +6363,10 @@ async function showAnnouncementDetailById(announcementId) {
     if (container) {
       container.innerHTML = `
         <div style="color:#ff6b6b; text-align:center; padding:30px;">
-          Gagal memuat pengumuman: ${error.message}
-          <button onclick="backToFeedbackPage()" style="margin-top: 15px; padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
-            Kembali ke Halaman Masukan
+          <h3 style="margin-bottom: 15px;">Gagal Memuat Pengumuman</h3>
+          <p style="margin-bottom: 20px;">${error.message}</p>
+          <button onclick="backToFeedbackPage()" style="padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
+            Kembali ke Daftar Pengumuman
           </button>
         </div>
       `;
@@ -6377,29 +6455,43 @@ function formatTimeAgo(timestamp) {
 
 
 
+
+
+
+
+
 // Fungsi untuk kembali ke halaman masukan
 function backToFeedbackPage() {
   showPageContent(document.getElementById("page7"));
-  loadPinnedAnnouncements();
   history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
   document.title = "Masukan - Life Is What It Is Learn";
 }
-
 
 // Event listener untuk tombol kembali
 document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
 
 // Event listener untuk klik pada item pengumuman
-document.addEventListener('click', async (e) => {
-  const announcementItem = e.target.closest('.pinned-item, .announcement-item');
-  if (announcementItem) {
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.view-details-btn, .announcement-title, .pinned-item')) {
     e.preventDefault();
-    const announcementId = announcementItem.getAttribute('data-id');
-    if (announcementId) {
-      await showAnnouncementDetailById(announcementId);
+    const item = e.target.closest('[data-id]');
+    if (item) {
+      const announcementId = item.getAttribute('data-id');
+      if (announcementId) {
+        showAnnouncementDetailById(announcementId);
+      }
     }
   }
 });
+
+
+
+
+
+
+
+
+
 
 
 
