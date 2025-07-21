@@ -2758,10 +2758,15 @@
         // Update terus setiap 10 detik
         setInterval(updateTentangRelativeTime, 10000);
         updateTentangRelativeTime();
-
+		
+		
+		
+		
+		
+		// Fungsi yang diperbaiki untuk menampilkan halaman
 function showPageContent(pageElement) {
   const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9"];
-
+  
   // Sembunyikan semua halaman
   pageIds.forEach(id => {
     const el = document.getElementById(id);
@@ -2771,44 +2776,14 @@ function showPageContent(pageElement) {
   // Tampilkan halaman yang dipilih
   if (pageElement) {
     pageElement.style.display = "block";
-
-    // Jika page7, muat pengumuman dan masukan
+    
+    // Hanya muat data jika diperlukan
     if (pageElement.id === "page7") {
       loadPinnedAnnouncements();
       loadFeedback().catch(console.error);
     }
-
-    // Jika page9, muat detail pengumuman
-    if (pageElement.id === "page9") {
-      // Cek dari URL
-      let id = null;
-      if (window.location.pathname.includes("halaman-masukan-")) {
-        id = window.location.pathname.split('halaman-masukan-')[1];
-      }
-
-      // Atau cek dari state (misalnya dari tombol klik di halaman lain)
-      if (!id && history.state && history.state.id) {
-        id = history.state.id;
-      }
-
-      if (id) {
-        showAnnouncementDetailById(id);
-      } else {
-        // Tampilkan error jika id tidak ditemukan
-        const container = document.getElementById("announcementDetailContainer");
-        if (container) {
-          container.innerHTML = `
-            <div style="color: #ff6b6b; text-align: center; padding: 30px;">
-              <h3>ID Pengumuman Tidak Ditemukan</h3>
-              <p>Silakan pilih pengumuman dari halaman masukan.</p>
-              <button onclick="backToFeedbackPage()" style="padding: 10px 20px; background: #ff6b6b; color: white; border: none; border-radius: 5px;">Kembali ke Masukan</button>
-            </div>
-          `;
-        }
-      }
-    }
   }
-
+  
   window.scrollTo(0, 0);
 }
 
@@ -6264,11 +6239,22 @@ async function renderMasukanDetailById(id) {
 
 
 
-// Fungsi utama untuk menampilkan detail pengumuman
+// Fungsi yang diperbaiki untuk menampilkan detail pengumuman
 async function showAnnouncementDetailById(announcementId) {
   try {
-    // Tampilkan halaman 9
-    showPageContent(document.getElementById("page9"));
+    // Tampilkan halaman 9 tanpa memanggil showPageContent secara rekursif
+    const page9 = document.getElementById("page9");
+    if (page9) {
+      // Sembunyikan semua halaman lain
+      const pages = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8"];
+      pages.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+      });
+      
+      // Tampilkan halaman 9
+      page9.style.display = "block";
+    }
     
     const container = document.getElementById('announcementDetailContainer');
     if (!container) {
@@ -6333,9 +6319,12 @@ async function showAnnouncementDetailById(announcementId) {
 
     // Setup admin controls jika user adalah admin
     if (isUserAdmin(auth.currentUser)) {
-      document.getElementById('adminAnnouncementForm').style.display = 'block';
-      document.getElementById('editAnnouncementTitle').value = announcement.title;
-      document.getElementById('editAnnouncementContent').value = announcement.content;
+      const adminForm = document.getElementById('adminAnnouncementForm');
+      if (adminForm) {
+        adminForm.style.display = 'block';
+        document.getElementById('editAnnouncementTitle').value = announcement.title;
+        document.getElementById('editAnnouncementContent').value = announcement.content;
+      }
     }
 
     // Muat balasan
@@ -6380,8 +6369,6 @@ async function showAnnouncementDetailById(announcementId) {
 
 
 
-
-
 async function loadAnnouncementDetailById(id) {
     if (!id) {
         throw new Error("ID pengumuman tidak valid");
@@ -6415,22 +6402,34 @@ async function loadAnnouncementDetailById(id) {
 
 
 
-
-
-
-
-
-
-
-
-
-// Function to go back to feedback page
+// Fungsi untuk kembali ke halaman masukan
 function backToFeedbackPage() {
-    showPageContent(document.getElementById("page7"));
+  const page7 = document.getElementById("page7");
+  if (page7) {
+    // Sembunyikan semua halaman lain
+    const pages = ["page1", "page2", "page3", "page4", "page5", "page6", "page8", "page9"];
+    pages.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
+    
+    // Tampilkan halaman 7
+    page7.style.display = "block";
+    
+    // Muat ulang data jika diperlukan
+    loadPinnedAnnouncements();
     loadFeedback().catch(console.error);
-    history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
-    document.title = "Masukan - Life Is What It Is Learn";
+  }
+  
+  history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
+  document.title = "Masukan - Life Is What It Is Learn";
 }
+
+
+
+
+
+
 
 
 // Improved formatTimeAgo function
@@ -6459,13 +6458,6 @@ function formatTimeAgo(timestamp) {
 
 
 
-
-// Fungsi untuk kembali ke halaman masukan
-function backToFeedbackPage() {
-  showPageContent(document.getElementById("page7"));
-  history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
-  document.title = "Masukan - Life Is What It Is Learn";
-}
 
 // Event listener untuk tombol kembali
 document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
