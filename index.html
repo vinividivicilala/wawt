@@ -766,7 +766,144 @@
 
 
 
+/* Style dasar halaman 9 */
+#page9 {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    color: white;
+}
 
+/* Container utama */
+#announcementDetailContainer {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+/* Judul pengumuman */
+.announcement-title {
+    color: #ff6b6b;
+    font-size: 28px;
+    margin-bottom: 15px;
+    word-break: break-word;
+}
+
+/* Meta info */
+.announcement-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(78, 161, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.user-name {
+    font-weight: 500;
+}
+
+.user-email {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.announcement-date {
+    color: #aaa;
+    font-size: 14px;
+}
+
+/* Konten utama */
+.announcement-content {
+    font-size: 16px;
+    line-height: 1.6;
+    white-space: pre-line;
+    margin-bottom: 25px;
+    padding: 15px 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Stats */
+.announcement-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.like-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 16px;
+}
+
+.view-count {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #ccc;
+}
+
+/* Balasan */
+#announcementRepliesContainer {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.reply-item {
+    padding: 15px;
+    margin-bottom: 15px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border-left: 3px solid rgba(78, 161, 255, 0.3);
+}
+
+/* Loading dan error state */
+.loading-state {
+    color: #ccc;
+    text-align: center;
+    padding: 30px;
+}
+
+.error-state {
+    color: #ff6b6b;
+    text-align: center;
+    padding: 30px;
+}
+
+.back-button {
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: none;
+    border: 1px solid #ff6b6b;
+    color: #ff6b6b;
+    cursor: pointer;
+    border-radius: 6px;
+}
 
 
 
@@ -5955,37 +6092,68 @@ async function renderMasukanDetailById(id) {
 
 
 
+// Test render manual
+showAnnouncementDetailById('q1IrS9qqRjbPrCEAGiBe');
 
-// Add this function to handle showing announcement details
+// Cek elemen
+console.log(document.getElementById('announcementDetailContainer'));
+
+
+
+
+
+
+console.log('Current path:', window.location.pathname);
+console.log('Page9 display:', document.getElementById("page9").style.display);
+console.log('Container exists:', !!document.getElementById('announcementDetailContainer'));
+
+
+
+
+
+// Test render tanpa Firestore
+function testRender() {
+    const container = document.getElementById('announcementDetailContainer');
+    if (container) {
+        container.innerHTML = `
+            <h1 style="color:red">TEST RENDER</h1>
+            <p>Ini adalah test render sederhana</p>
+        `;
+        console.log('Test render executed');
+    } else {
+        console.error('Container not found for test render');
+    }
+}
+testRender();
+
+
+
+
 async function showAnnouncementDetailById(id) {
-    console.log('[Debug] showAnnouncementDetailById called with ID:', id);
-    
-    // Show page 9 first
+    if (!id) return;
+
+    // Tampilkan halaman 9 terlebih dahulu
     showPageContent(document.getElementById("page9"));
     
     const container = document.getElementById('announcementDetailContainer');
     if (!container) {
-        console.error('[Error] announcementDetailContainer not found');
+        console.error("Container tidak ditemukan");
         return;
     }
 
-    // Show loading state
     container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
-    console.log('[Debug] Showing loading state');
 
     try {
-        console.log('[Debug] Fetching announcement from Firestore');
         const docRef = doc(db, "announcements", id);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
-            console.error('[Error] Announcement not found with ID:', id);
             container.innerHTML = `
                 <div style="color:#ff6b6b; text-align:center; padding:30px;">
                     <h3>Pengumuman tidak ditemukan</h3>
                     <p>ID: ${id}</p>
                     <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
-                        Kembali ke Daftar Pengumuman
+                        Kembali ke Halaman Masukan
                     </button>
                 </div>
             `;
@@ -5993,31 +6161,26 @@ async function showAnnouncementDetailById(id) {
         }
 
         const data = docSnap.data();
-        console.log('[Debug] Announcement data:', data);
-        
         const waktu = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
-        console.log('[Debug] Formatted date:', waktu);
 
-        // Render the full announcement content
         container.innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${data.title || 'Tanpa Judul'}</h2>
+            <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #ff6b6b; margin-bottom: 10px;">${data.title || "Tanpa Judul"}</h1>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="feedback-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(78, 161, 255, 0.2); display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                            ${data.userName?.charAt(0).toUpperCase() || 'A'}
+                        </div>
+                        <div>
+                            <div style="color: white; font-weight: 500;">${data.userName || 'Admin'}</div>
+                            <div style="color: #aaa; font-size: 12px;">${data.userEmail || ''}</div>
+                        </div>
+                    </div>
                     <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        ${data.userName?.charAt(0).toUpperCase() || 'A'}
-                    </div>
-                    <div>
-                        <div style="color: white; font-weight: 500;">${data.userName || 'Admin'}</div>
-                        <div style="color: #aaa; font-size: 12px;">${data.userEmail || ''}</div>
-                    </div>
-                </div>
-                
-                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
-                    ${data.content || 'Tidak ada konten'}
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 30px;">
+                    ${data.content || "Tidak ada konten"}
                 </div>
                 
                 <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -6038,42 +6201,46 @@ async function showAnnouncementDetailById(id) {
                 </div>
             </div>
         `;
-        console.log('[Debug] Announcement content rendered');
+
+        // Setup admin controls jika user adalah admin
+        if (isUserAdmin(auth.currentUser)) {
+            setupAdminFormForAnnouncement(id, data);
+        }
 
         // Load replies
-        console.log('[Debug] Loading replies...');
         await loadAnnouncementReplies(id);
-        
+
         // Load related announcements
-        console.log('[Debug] Loading related announcements...');
         await loadRelatedAnnouncements(id);
-        
-        // Setup admin controls if user is admin
-        const user = auth.currentUser;
-        if (user && isUserAdmin(user)) {
-            console.log('[Debug] User is admin, setting up admin controls');
-            setupAdminAnnouncementUI(user, id, data);
-        }
-        
-        // Setup reply form based on login status
-        console.log('[Debug] Setting up reply form');
-        setupReplyForm(id);
-        
-        console.log('[Debug] Announcement detail page fully loaded');
 
     } catch (error) {
-        console.error('[Error] Failed to load announcement:', error);
+        console.error("Error loading announcement:", error);
         container.innerHTML = `
             <div style="color:#ff6b6b; text-align:center; padding:30px;">
-                <h3>Gagal memuat pengumuman</h3>
+                <h3>Terjadi Kesalahan</h3>
                 <p>${error.message}</p>
                 <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
-                    Kembali ke Daftar Pengumuman
+                    Kembali ke Halaman Masukan
                 </button>
             </div>
         `;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6314,7 +6481,7 @@ async function loadAnnouncementById(id) {
 }
 
 
-
+showAnnouncementDetailById('ID_PENGUMUMAN_YANG_VALID');
   
    
   
