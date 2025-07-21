@@ -6185,17 +6185,28 @@ async function renderMasukanDetailById(id) {
 
 
 
+
+
+
+
+
+
+// Fungsi untuk menampilkan detail pengumuman
 async function showAnnouncementDetailById(announcementId) {
-  const container = document.getElementById("announcementDetailContainer");
-  if (!container) {
-    console.error("Container detail pengumuman tidak ditemukan");
-    return;
-  }
-
-  container.innerHTML = `<div style="text-align:center; padding:30px;">Memuat pengumuman...</div>`;
-
   try {
-    const db = getFirestore();
+    // Tampilkan halaman 9
+    showPageContent(document.getElementById("page9"));
+    
+    const container = document.getElementById('announcementDetailContainer');
+    if (!container) {
+      console.error('Detail container not found');
+      return;
+    }
+
+    // Tampilkan loading state
+    container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
+
+    // Dapatkan data pengumuman dari Firestore
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
 
@@ -6203,34 +6214,87 @@ async function showAnnouncementDetailById(announcementId) {
       throw new Error("Pengumuman tidak ditemukan");
     }
 
-    const data = docSnap.data();
+    const announcement = docSnap.data();
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
 
+    // Render konten pengumuman
     container.innerHTML = `
-      <h2 style="color: white;">${data.title || "Tanpa Judul"}</h2>
-      <p style="color: #ccc;">${data.content || "Tidak ada konten tersedia."}</p>
-      <small style="color: #999;">Dibuat pada: ${formatTimeAgo(data.timestamp?.toDate())}</small>
-      <button onclick="backToFeedbackPage()" style="margin-top: 20px; background: #ff6b6b; color: white; padding: 10px 20px; border: none; border-radius: 5px;">Kembali ke Masukan</button>
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+          <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title}</h2>
+          <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+          <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
+          </div>
+          <div>
+            <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
+            <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
+          </div>
+        </div>
+        
+        <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+          ${announcement.content}
+        </div>
+        
+        <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+            </svg>
+            <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+          </button>
+          
+          <div style="display: flex; align-items: center; color: #ccc;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
+          </div>
+        </div>
+      </div>
     `;
+
+    // Setup admin controls jika user adalah admin
+    if (isUserAdmin(auth.currentUser)) {
+      setupAdminAnnouncementUI(auth.currentUser, announcementId, announcement);
+    }
+
+    // Muat balasan dan pengumuman terkait
+    await loadAnnouncementReplies(announcementId);
+    await loadRelatedAnnouncements(announcementId);
+
+    // Setup form balasan berdasarkan status login
+    setupReplyForm(announcementId);
+
+    // Update URL dan history
+    history.pushState(
+      { page: "detail-pengumuman", id: announcementId },
+      `Pengumuman: ${announcement.title}`,
+      `/halaman-masukan-${announcementId}`
+    );
+
+    // Update judul halaman
+    document.title = `${announcement.title} - Detail Pengumuman`;
 
   } catch (error) {
-    console.error("Error memuat detail pengumuman:", error);
-    container.innerHTML = `
-      <h3 style="color: #ff6b6b;">Terjadi kesalahan</h3>
-      <p>${error.message}</p>
-      <button onclick="location.reload()" style="margin-top: 20px; background: #ff6b6b; color: white; padding: 10px 20px; border: none; border-radius: 5px;">Muat Ulang</button>
-    `;
+    console.error("Error loading announcement:", error);
+    const container = document.getElementById('announcementDetailContainer');
+    if (container) {
+      container.innerHTML = `
+        <div style="color:#ff6b6b; text-align:center; padding:30px;">
+          Gagal memuat pengumuman: ${error.message}
+          <button onclick="backToFeedbackPage()" style="margin-top: 15px; padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
+            Kembali ke Halaman Masukan
+          </button>
+        </div>
+      `;
+    }
   }
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -6313,37 +6377,29 @@ function formatTimeAgo(timestamp) {
 
 
 
-// Event listener untuk tombol kembali
-document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
-
-document.addEventListener("click", async function (e) {
-  const announcementItem = e.target.closest(".announcement-title, .pinned-item, .view-announcement-btn");
-
-  if (announcementItem) {
-    e.preventDefault();
-    const id = announcementItem.getAttribute("data-id");
-
-    if (id) {
-      history.pushState({ page: "detail-pengumuman", id }, "", `/halaman-masukan-${id}`);
-      await showAnnouncementDetailById(id);
-    }
-  }
-});
-
-
-
-
-
-
-
-
-// Fungsi untuk menangani navigasi kembali
+// Fungsi untuk kembali ke halaman masukan
 function backToFeedbackPage() {
-    showPageContent(document.getElementById("page7"));
-    history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
+  showPageContent(document.getElementById("page7"));
+  loadPinnedAnnouncements();
+  history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
+  document.title = "Masukan - Life Is What It Is Learn";
 }
 
 
+// Event listener untuk tombol kembali
+document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
+
+// Event listener untuk klik pada item pengumuman
+document.addEventListener('click', async (e) => {
+  const announcementItem = e.target.closest('.pinned-item, .announcement-item');
+  if (announcementItem) {
+    e.preventDefault();
+    const announcementId = announcementItem.getAttribute('data-id');
+    if (announcementId) {
+      await showAnnouncementDetailById(announcementId);
+    }
+  }
+});
 
 
 
