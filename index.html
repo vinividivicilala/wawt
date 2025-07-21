@@ -2503,101 +2503,46 @@
     Powered by: Manusia
   </a>
 
+</div>
+  
 
 
 
 
 
+<!-- Halaman 9 - Detail Pengumuman -->
+<div id="page9" style="display: none; min-height: 100vh; background-color: rgb(18, 18, 18); padding: 20px;">
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
+    Detail Pengumuman
+  </div>
 
+  <!-- Konten Pengumuman -->
+  <div id="announcementDetailContainer" style="margin: 30px 100px 0 100px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 15px;">
+    <!-- Konten akan dimuat oleh JavaScript -->
+  </div>
 
+  <!-- Form Pengumuman (Hanya untuk Admin) -->
+  <div id="adminAnnouncementForm" style="display: none; width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+    <!-- ... (keep your existing admin form content) ... -->
+  </div>
 
+  <!-- Balasan -->
+  <div id="announcementRepliesContainer" style="width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+    <!-- ... (keep your existing replies content) ... -->
+  </div>
 
-<div id="page9" style="display: none; min-height: 100vh; background-color: #121212; padding: 20px;">
-  <div style="max-width: 900px; margin: 0 auto;">
-    <!-- Header -->
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #ffffff; font-size: 28px; margin-bottom: 10px;">Detail Pengumuman</h1>
-      <div style="height: 2px; background: linear-gradient(90deg, transparent, #4ea1ff, transparent);"></div>
-    </div>
+  <!-- Pengumuman Terkait -->
+  <div id="relatedAnnouncementsContainer" style="width: calc(100% - 200px); margin: 0 100px 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+    <!-- ... (keep your existing related announcements content) ... -->
+  </div>
 
-    <!-- Konten Utama -->
-    <div id="announcementDetailContainer" style="background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
-      <!-- Konten akan diisi oleh JavaScript -->
-    </div>
-
-    <!-- Form Admin (Hanya tampil untuk admin) -->
-    <div id="adminAnnouncementForm" style="display: none; background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
-      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-        Edit Pengumuman
-      </h2>
-      <form id="editAnnouncementForm" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
-        <div>
-          <label for="editAnnouncementTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Pengumuman</label>
-          <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
-        </div>
-        <div>
-          <label for="editAnnouncementContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Pengumuman</label>
-          <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <button type="button" id="cancelEditAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
-            Batal
-          </button>
-          <button type="submit" id="submitEditAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
-            Simpan Perubahan
-          </button>
-          <button type="button" id="deleteAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
-            Hapus Pengumuman
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Bagian Balasan -->
-    <div id="announcementRepliesContainer" style="background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
-      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-        Balasan (<span id="repliesCount">0</span>)
-      </h2>
-      <div id="announcementRepliesList" style="display: flex; flex-direction: column; gap: 15px;"></div>
-
-      <!-- Form Balasan -->
-      <form id="announcementReplyForm" style="margin-top: 20px; display: none;">
-        <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
-                  style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
-        <div style="display: flex; justify-content: flex-end;">
-          <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-            Kirim Balasan
-          </button>
-        </div>
-      </form>
-      <div id="loginToReply" style="text-align: center; padding: 20px; color: #ccc; display: none;">
-        Silakan <a href="#" style="color: #4ea1ff;" id="loginLink">login</a> untuk membalas pengumuman ini.
-      </div>
-    </div>
-
-    <!-- Pengumuman Terkait -->
-    <div id="relatedAnnouncementsContainer" style="background: rgba(30, 30, 30, 0.8); border-radius: 10px; padding: 25px; margin-bottom: 20px;">
-      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-        Pengumuman Terkait
-      </h2>
-      <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
-        <!-- Daftar pengumuman terkait akan dimuat di sini -->
-      </div>
-    </div>
-
-    <!-- Tombol Kembali -->
-    <div style="text-align: left; margin-bottom: 40px;">
-      <button id="backToAnnouncements" style="padding: 10px 20px; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; cursor: pointer;">
-        ← Kembali ke Daftar Pengumuman
-      </button>
-    </div>
+  <!-- Tombol Kembali -->
+  <div style="width: 100%; text-align: left; padding: 0 100px 40px;">
+    <button id="backToAnnouncements" style="padding: 10px 20px; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; cursor: pointer;">
+      ← Kembali ke Daftar Pengumuman
+    </button>
   </div>
 </div>
-
-
-
-
-
 
 
 
@@ -2665,6 +2610,7 @@
             document.getElementById("page1").style.display = "block";
             document.getElementById("page2").style.display = "none";
             document.getElementById("page3").style.display = "none";
+			
 
             const hours = new Date().getHours();
             let greet = "Selamat malam";
