@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5847,6 +5848,41 @@ document.addEventListener('click', async (e) => {
 
 
 
+
+
+window.onload = async function () {
+  const path = window.location.pathname || "/";
+  const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
+
+  if (isAnnouncementDetail) {
+    const slug = decodeURIComponent(path.replace('/halaman-masukan-', ''));
+    await renderAnnouncementDetailBySlug(slug); // fungsi untuk ambil data & tampilkan page9
+    return;
+  }
+
+  handlePageLoad();
+  initializeBlogPagination();
+};
+
+
+// Fungsi untuk menangani perubahan URL (back/forward browser)
+window.addEventListener("popstate", function(event) {
+    handlePageLoad(false); // false berarti bukan initial load
+});
+
+// Variabel untuk menyimpan state saat ini
+let currentState = {
+    page: "home",
+    announcementId: null
+};
+
+
+
+
+
+
+
+
 async function handlePageLoad(isInitialLoad = true) {
     const path = window.location.pathname || "/";
     console.log('[Debug] Handling page load for path:', path);
@@ -6056,41 +6092,6 @@ async function renderMasukanDetailById(id) {
 
 
 
-// Test render manual
-showAnnouncementDetailById('ql1rSG9qRjb9rOEAGiBe');
-
-// Cek elemen
-console.log(document.getElementById('announcementDetailContainer'));
-
-
-
-
-
-
-console.log('Current path:', window.location.pathname);
-console.log('Page9 display:', document.getElementById("page9").style.display);
-console.log('Container exists:', !!document.getElementById('announcementDetailContainer'));
-
-
-
-
-
-// Test render tanpa Firestore
-function testRender() {
-    const container = document.getElementById('announcementDetailContainer');
-    if (container) {
-        container.innerHTML = `
-            <h1 style="color:red">TEST RENDER</h1>
-            <p>Ini adalah test render sederhana</p>
-        `;
-        console.log('Test render executed');
-    } else {
-        console.error('Container not found for test render');
-    }
-}
-testRender();
-
-
 
 
 async function showAnnouncementDetailById(id) {
@@ -6191,13 +6192,6 @@ async function showAnnouncementDetailById(id) {
 
 
 
-
-
-
-
-console.log("[DEBUG] Rendered title:", announcement.title);
-console.log("[DEBUG] Rendered content:", formattedContent);
-console.log("[DEBUG] HTML container:", container.innerHTML);
 
 
 
@@ -6442,7 +6436,6 @@ async function loadAnnouncementById(id) {
 }
 
 
-showAnnouncementDetailById('ID_PENGUMUMAN_YANG_VALID');
   
    
   
