@@ -5832,8 +5832,26 @@ async function handlePageLoad(isInitialLoad = true) {
 
 
 
+function handleInitialNavigation() {
+  const hash = window.location.hash;
+  const path = window.location.pathname;
+  const urlParams = new URLSearchParams(window.location.search);
+  const announcementId = urlParams.get("id");
 
-
+  if (announcementId && path.includes("halaman-masukan-halo")) {
+    // Jika URL mengandung ?id= dan sedang di halaman masukan
+    showAnnouncementDetail(announcementId);
+  } else if (path.includes("halaman-masukan-halo")) {
+    // Jika hanya buka halaman masukan tanpa ?id
+    showPageContent(document.getElementById("page7"));
+  } else if (hash) {
+    // Navigasi via hash seperti #page3
+    showPageByHash(hash);
+  } else {
+    // Default: tampilkan halaman utama
+    showPageContent(document.getElementById("page1"));
+  }
+}
 
 
 
