@@ -6116,56 +6116,110 @@ async function renderMasukanDetailById(id) {
 
 
 
-async function showAnnouncementDetailById(id) {
+
+
+async function showAnnouncementDetailById(announcementId) {
     try {
-        // Show the page9 container
+        // 1. Tampilkan halaman 9
         showPageContent(document.getElementById("page9"));
         
-        // Show loading state
+        // 2. Tampilkan loading state
         const container = document.getElementById('announcementDetailContainer');
-        container.innerHTML = '<div>Loading announcement...</div>';
+        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
         
-        // Get data from Firestore
-        const docRef = doc(db, "announcements", id);
+        // 3. Ambil data dari Firestore
+        const docRef = doc(db, "announcements", announcementId);
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
-            throw new Error('Announcement not found');
+            throw new Error("Pengumuman tidak ditemukan");
         }
         
-        // Render the announcement
-        const data = docSnap.data();
-        const waktu = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+        const announcement = docSnap.data();
+        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
         
+        // 4. Render konten utama
         container.innerHTML = `
             <div style="margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${data.title}</h2>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title}</h2>
                     <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
                 </div>
                 
-                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line;">
-                    ${data.content}
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
+                        ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                    <div>
+                        <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
+                        <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
+                    </div>
+                </div>
+                
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+                    ${announcement.content}
+                </div>
+                
+                <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+                    </button>
+                    
+                    <div style="display: flex; align-items: center; color: #ccc;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
+                    </div>
                 </div>
             </div>
         `;
         
-        // Load replies and setup admin UI if needed
-        await loadAnnouncementReplies(id);
+        // 5. Muat balasan
+        await loadAnnouncementReplies(announcementId);
+        
+        // 6. Muat pengumuman terkait
+        await loadRelatedAnnouncements(announcementId);
+        
+        // 7. Setup form balasan berdasarkan status login
+        setupReplyForm(announcementId);
+        
+        // 8. Setup admin UI jika user adalah admin
         if (isUserAdmin(auth.currentUser)) {
-            setupAdminAnnouncementUI(auth.currentUser, id, data);
+            setupAdminAnnouncementUI(auth.currentUser, announcementId, announcement);
         }
         
+        // 9. Setup event listeners
+        setupAnnouncementDetailEvents(announcementId);
+        
     } catch (error) {
-        console.error('Error loading announcement:', error);
+        console.error("Error loading announcement:", error);
         const container = document.getElementById('announcementDetailContainer');
         container.innerHTML = `
             <div style="color:#ff6b6b; text-align:center; padding:30px;">
                 Gagal memuat pengumuman: ${error.message}
+                <button onclick="backToFeedbackPage()" style="margin-top: 15px; padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
+                    Kembali ke Halaman Masukan
+                </button>
             </div>
         `;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
