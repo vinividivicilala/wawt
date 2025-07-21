@@ -6133,9 +6133,11 @@ async function showAnnouncementDetailById(announcementId) {
         
         if (!docSnap.exists()) {
             throw new Error("Pengumuman tidak ditemukan");
+			
         }
         
         const announcement = docSnap.data();
+		console.log("Konten pengumuman yang diterima:", announcement.content);
         const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
         
         // 4. Render konten utama
