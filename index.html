@@ -2623,40 +2623,65 @@
         setInterval(updateTentangRelativeTime, 10000);
         updateTentangRelativeTime();
 
-     
-	 
-	 function showPageContent(pageElement) {
+    function showPageContent(pageElement) {
     const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9"];
     
-    // Sembunyikan semua halaman
+    // Hide all pages
     pageIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = "none";
     });
-
-    // Tampilkan halaman yang dipilih
+    
+    // Show selected page
     if (pageElement) {
         pageElement.style.display = "block";
         
-        // Jika page7, muat pengumuman dan masukan
-        if (pageElement.id === "page7") {
-            loadPinnedAnnouncements();
-            loadFeedback().catch(console.error);
-        }
-        
-        // Jika page9, pastikan URL sesuai
-        if (pageElement.id === "page9" && window.location.pathname.includes("halaman-masukan-")) {
-            const id = window.location.pathname.split('halaman-masukan-')[1];
-            if (id) {
-                showAnnouncementDetailById(id);
+        // Special handling for page9
+        if (pageElement.id === "page9") {
+            const container = document.getElementById('announcementDetailContainer');
+            
+            // Initialize container if empty or doesn't contain meaningful content
+            if (!container || 
+                !container.innerHTML || 
+                container.innerHTML.trim() === '' || 
+                container.innerHTML.includes('<!-- Konten akan dimuat oleh JavaScript -->')) {
+                
+                // Show loading state
+                if (container) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #ccc;">
+                            <p>Memuat detail pengumuman...</p>
+                        </div>
+                    `;
+                }
+                
+                // Check if we have an announcement ID in URL
+                const path = window.location.pathname;
+                if (path.includes('halaman-masukan-')) {
+                    const id = path.split('halaman-masukan-')[1];
+                    if (id) {
+                        loadAnnouncementDetail(id);
+                    }
+                } else {
+                    // No specific announcement to show
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 20px; color: #ccc;">
+                                <p>Pilih pengumuman untuk melihat detail</p>
+                                <button onclick="showPageContent(document.getElementById('page7'))" 
+                                    style="margin-top: 10px; padding: 8px 16px; 
+                                    background: #4ea1ff; color: white; border: none; 
+                                    border-radius: 4px; cursor: pointer;">
+                                    Kembali ke Daftar Pengumuman
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
             }
         }
     }
-    
-    window.scrollTo(0, 0);
 }
-
-
 
 
 	 
@@ -4265,13 +4290,15 @@ async function getAnnouncementLikesCount(announcementId) {
 
 
 
-
-
 async function loadAnnouncementDetail(announcementId) {
     try {
         const container = document.getElementById('announcementDetailContainer');
-        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
+        if (!container) return;
         
+        // Show loading state
+        container.innerHTML = '<div style="text-align: center; padding: 20px;">Memuat pengumuman...</div>';
+        
+        // Get announcement data from Firestore
         const docRef = doc(db, "announcements", announcementId);
         const docSnap = await getDoc(docRef);
         
@@ -4282,72 +4309,39 @@ async function loadAnnouncementDetail(announcementId) {
         const announcement = docSnap.data();
         const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
         
-        // Render the announcement
+        // Render announcement
         container.innerHTML = `
             <div style="margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title}</h2>
-                    <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
+                <h2 style="color: #ff6b6b; font-size: 24px; margin-bottom: 10px;">
+                    ${announcement.title || 'Tanpa Judul'}
+                </h2>
+                <div style="color: #aaa; font-size: 14px; margin-bottom: 15px;">
+                    Diposting: ${formatTimeAgo(waktu)} oleh ${announcement.userName || 'Admin'}
                 </div>
-                
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
-                        ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
-                    </div>
-                    <div>
-                        <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-                        <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
-                    </div>
-                </div>
-                
-                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
-                    ${announcement.content}
-                </div>
-                
-                <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                        </svg>
-                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
-                    </button>
-                    
-                    <div style="display: flex; align-items: center; color: #ccc;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
-                    </div>
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line;">
+                    ${announcement.content || 'Tidak ada konten'}
                 </div>
             </div>
         `;
-        
-        // Load replies
-        await loadAnnouncementReplies(announcementId);
-        
-        // Setup admin controls if user is admin
-        if (isUserAdmin(auth.currentUser)) {
-            setupAdminAnnouncementUI(auth.currentUser, announcementId, announcement);
-        }
         
     } catch (error) {
         console.error("Error loading announcement:", error);
         const container = document.getElementById('announcementDetailContainer');
-        container.innerHTML = `
-            <div style="color:#ff6b6b; text-align:center; padding:30px;">
-                Gagal memuat pengumuman: ${error.message}
-                <button onclick="backToFeedbackPage()" style="margin-top: 15px; padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
-                    Kembali ke Halaman Masukan
-                </button>
-            </div>
-        `;
+        if (container) {
+            container.innerHTML = `
+                <div style="color: #ff6b6b; text-align: center; padding: 20px;">
+                    <p>Gagal memuat pengumuman: ${error.message}</p>
+                    <button onclick="showPageContent(document.getElementById('page7'))" 
+                        style="margin-top: 10px; padding: 8px 16px; 
+                        background: #ff6b6b; color: white; border: none; 
+                        border-radius: 4px; cursor: pointer;">
+                        Kembali ke Daftar Pengumuman
+                    </button>
+                </div>
+            `;
+        }
     }
 }
-
-
-
-
 
 
 
