@@ -4166,6 +4166,8 @@ function renderAnnouncements(announcements) {
     card.onclick = () => {
       loadAnnouncementDetail(announcement.id);
       showPageContent(document.getElementById("page9"));
+	    history.pushState({ page: "announcement", id: announcement.id }, "", "/pengumuman/" + announcement.id);
+
     };
 
     container.appendChild(card);
