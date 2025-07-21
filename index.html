@@ -951,6 +951,10 @@
 }
 
 
+.announcement-content {
+  white-space: pre-line;  /* Sudah bagus */
+  overflow-wrap: break-word;
+}
 
 
 
@@ -5923,6 +5927,7 @@ document.addEventListener('click', async (e) => {
 
 window.onload = async function () {
     // Biarkan handlePageLoad menangani semua routing, termasuk detail pengumuman
+	    console.log("DEBUG: window.onload dipanggil.");
     await handlePageLoad();
     initializeBlogPagination();
 };
@@ -6159,29 +6164,30 @@ async function renderMasukanDetailById(id) {
 
 
 
+// Fungsi utama untuk menampilkan detail pengumuman
 async function showAnnouncementDetailById(announcementId) {
+    console.log('[Debug] showAnnouncementDetailById called with ID:', announcementId);
+    
     try {
-        // 1. Tampilkan halaman 9
+        // Tampilkan halaman 9
         showPageContent(document.getElementById("page9"));
         
-        // 2. Tampilkan loading state
+        // Tampilkan loading state
         const container = document.getElementById('announcementDetailContainer');
         container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
         
-        // 3. Ambil data dari Firestore
+        // Dapatkan data pengumuman dari Firestore
         const docRef = doc(db, "announcements", announcementId);
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
             throw new Error("Pengumuman tidak ditemukan");
-			
         }
         
         const announcement = docSnap.data();
-		console.log("Konten pengumuman yang diterima:", announcement.content);
         const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
         
-        // 4. Render konten utama
+        // Render pengumuman ke dalam container
         container.innerHTML = `
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
@@ -6222,22 +6228,22 @@ async function showAnnouncementDetailById(announcementId) {
             </div>
         `;
         
-        // 5. Muat balasan
+        // Setup event listeners
+        setupAnnouncementDetailEvents(announcementId);
+        
+        // Load replies
         await loadAnnouncementReplies(announcementId);
         
-        // 6. Muat pengumuman terkait
+        // Load related announcements
         await loadRelatedAnnouncements(announcementId);
         
-        // 7. Setup form balasan berdasarkan status login
-        setupReplyForm(announcementId);
-        
-        // 8. Setup admin UI jika user adalah admin
+        // Setup admin UI if user is admin
         if (isUserAdmin(auth.currentUser)) {
             setupAdminAnnouncementUI(auth.currentUser, announcementId, announcement);
         }
         
-        // 9. Setup event listeners
-        setupAnnouncementDetailEvents(announcementId);
+        // Setup reply form based on login status
+        setupReplyForm(announcementId);
         
     } catch (error) {
         console.error("Error loading announcement:", error);
@@ -6252,13 +6258,6 @@ async function showAnnouncementDetailById(announcementId) {
         `;
     }
 }
-
-
-
-
-
-
-
 
 
 
@@ -6343,31 +6342,38 @@ function formatTimeAgo(timestamp) {
 
 
 
-
-// Tombol kembali
+// Event listener untuk tombol kembali
 document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
-document.getElementById('backToFeedbackPage')?.addEventListener('click', backToFeedbackPage);
 
-// Klik item pengumuman
+// Event listener untuk klik pada pengumuman
 document.addEventListener('click', async (e) => {
     const announcementItem = e.target.closest('.pinned-item, .announcement-item');
     if (announcementItem) {
         e.preventDefault();
-        const id = announcementItem.getAttribute('data-id');
-        if (id) {
-            showAnnouncementDetailById(id);
-            history.pushState({ page: "detail-pengumuman", id }, "", `/halaman-masukan-${id}`);
+        const announcementId = announcementItem.getAttribute('data-id');
+        if (announcementId) {
+            await showAnnouncementDetailById(announcementId);
+            history.pushState(
+                { page: "detail-pengumuman", id: announcementId }, 
+                "Detail Pengumuman", 
+                `/halaman-masukan-${announcementId}`
+            );
         }
-        return; // Hindari double trigger
-    }
-
-    // Tombol kembali
-    if (e.target.matches('#backToFeedbackPage, #backToAnnouncements')) {
-        e.preventDefault();
-        backToFeedbackPage();
     }
 });
 
+
+
+
+
+
+
+
+// Fungsi untuk menangani navigasi kembali
+function backToFeedbackPage() {
+    showPageContent(document.getElementById("page7"));
+    history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
+}
 
 
 
@@ -6378,8 +6384,21 @@ window.addEventListener('popstate', async function(event) {
     console.log('[Debug] popstate event triggered', event.state);
 
     try {
+        const path = window.location.pathname || "/";
+        
+        // Cek apakah URL mengandung detail pengumuman berbasis path (tanpa state)
+        if (!event.state && path.includes('halaman-masukan-')) {
+            const id = path.split('halaman-masukan-')[1];
+            console.log('[Debug] Found announcement ID in URL:', id);
+            if (id) {
+                showPageContent(document.getElementById("page9"));
+                await showAnnouncementDetailById(id);
+                return;
+            }
+        }
+
         if (event.state) {
-            currentState = event.state;
+            const currentState = event.state;
             console.log('[Debug] Current state:', currentState);
 
             switch (currentState.page) {
@@ -6420,29 +6439,12 @@ window.addEventListener('popstate', async function(event) {
                 case "forum":
                     showPageContent(document.getElementById("page8"));
                     break;
-					
-					  case "detail-pengumuman":
-                    showPageContent(document.getElementById("page9"));
-                    break;
 
                 default:
                     showPageContent(document.getElementById("page1"));
             }
-
         } else {
-            const path = window.location.pathname || "/";
-            console.log('[Debug] No state, parsing from path:', path);
-            
-            if (path.includes('halaman-masukan-')) {
-                const id = path.split('halaman-masukan-')[1];
-                console.log('[Debug] Found announcement ID in URL:', id);
-                if (id) {
-                    showPageContent(document.getElementById("page9"));
-                    await showAnnouncementDetailById(id);
-                    return;
-                }
-            }
-
+            // Jika tidak ada state dan tidak mengandung halaman detail
             await handlePageLoad(false);
         }
 
@@ -6451,7 +6453,6 @@ window.addEventListener('popstate', async function(event) {
         showPageContent(document.getElementById("page1"));
     }
 });
-
 
 
 
