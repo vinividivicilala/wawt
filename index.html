@@ -2386,42 +2386,41 @@
 
 
 
+
 <div id="page9" style="display: none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
-    Detail Pengumuman Penting
+    Detail Pengumuman
   </div>
-
-  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px;">
-    <h1 class="title-box">Judul Pengumuman</h1>
-    <p class="desc-box">
-      Ini adalah konten lengkap dari pengumuman penting. Kamu bisa menambahkan isi dinamis berdasarkan klik atau ID dari URL.
-    </p>
-  </div>
-
 
   <!-- Konten Pengumuman -->
   <div id="announcementDetailContainer" style="margin: 30px 100px 0 100px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 15px;">
     <!-- Konten akan dimuat oleh JavaScript -->
   </div>
 
-  <!-- Form Edit (Admin) -->
+  <!-- Form Pengumuman (Hanya untuk Admin) -->
   <div id="adminAnnouncementForm" style="display: none; width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
     <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
       Edit Pengumuman
     </h2>
     <form id="editAnnouncementForm" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
       <div>
-        <label for="editAnnouncementTitle" style="color: white; display: block; margin-bottom: 8px;">Judul Pengumuman</label>
-        <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <label for="editAnnouncementTitle" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Judul Pengumuman</label>
+        <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
       </div>
       <div>
-        <label for="editAnnouncementContent" style="color: white; display: block; margin-bottom: 8px;">Isi Pengumuman</label>
-        <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2);"></textarea>
+        <label for="editAnnouncementContent" style="color: white; display: block; margin-bottom: 8px; font-size: 16px;">Isi Pengumuman</label>
+        <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
       </div>
       <div style="display: flex; justify-content: space-between;">
-        <button type="button" id="cancelEditAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer;">Batal</button>
-        <button type="submit" id="submitEditAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer;">Simpan Perubahan</button>
-        <button type="button" id="deleteAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer;">Hapus Pengumuman</button>
+        <button type="button" id="cancelEditAnnouncement" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+          Batal
+        </button>
+        <button type="submit" id="submitEditAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+          Simpan Perubahan
+        </button>
+        <button type="button" id="deleteAnnouncement" style="padding: 10px 20px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+          Hapus Pengumuman
+        </button>
       </div>
     </form>
   </div>
@@ -2433,28 +2432,29 @@
     </h2>
     <div id="announcementRepliesList" style="display: flex; flex-direction: column; gap: 15px;"></div>
 
-    <!-- Form Balasan -->
+    <!-- Form Balasan (untuk semua user yang login) -->
     <form id="announcementReplyForm" style="margin-top: 20px; display: none;">
       <textarea id="announcementReplyContent" rows="5" placeholder="Tulis balasan Anda..." 
-        style="width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 15px;"></textarea>
+                style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
       <div style="display: flex; justify-content: flex-end;">
         <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
           Kirim Balasan
         </button>
       </div>
     </form>
-
     <div id="loginToReply" style="text-align: center; padding: 20px; color: #ccc; display: none;">
       Silakan <a href="#" style="color: #4ea1ff;" id="loginLink">login</a> untuk membalas pengumuman ini.
     </div>
   </div>
 
   <!-- Pengumuman Terkait -->
-  <div id="relatedAnnouncementsContainer" style="width: calc(100% - 200px); margin: 0 100px 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+  <div id="relatedAnnouncementsContainer" style="width: calc(100% - 200px); margin: 0 100px 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
     <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
       Pengumuman Terkait
     </h2>
-    <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;"></div>
+    <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;">
+      <!-- Daftar pengumuman terkait akan dimuat di sini -->
+    </div>
   </div>
 
   <!-- Tombol Kembali -->
@@ -2462,14 +2462,8 @@
     <button id="backToAnnouncements" style="padding: 10px 20px; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; cursor: pointer;">
       ← Kembali ke Daftar Pengumuman
     </button>
-
-    <button id="backToFeedbackPage" style="margin-left: 10px; padding: 10px 20px; background: none; border: 1px solid #4ea1ff; color: #4ea1ff; border-radius: 8px; cursor: pointer;">
-      ← Kembali ke Halaman Masukan
-    </button>
   </div>
 </div>
-
-
 
 
 
@@ -6129,31 +6123,41 @@ testRender();
 
 
 
-async function showAnnouncementDetailById(id) {
-    if (!id) return;
 
-    // Tampilkan halaman 9 terlebih dahulu
+
+
+
+
+// Add this function to handle showing announcement details
+async function showAnnouncementDetailById(id) {
+    console.log('[Debug] showAnnouncementDetailById called with ID:', id);
+    
+    // Show page 9 first
     showPageContent(document.getElementById("page9"));
     
     const container = document.getElementById('announcementDetailContainer');
     if (!container) {
-        console.error("Container tidak ditemukan");
+        console.error('[Error] announcementDetailContainer not found');
         return;
     }
 
+    // Show loading state
     container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
+    console.log('[Debug] Showing loading state');
 
     try {
+        console.log('[Debug] Fetching announcement from Firestore');
         const docRef = doc(db, "announcements", id);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
+            console.error('[Error] Announcement not found with ID:', id);
             container.innerHTML = `
                 <div style="color:#ff6b6b; text-align:center; padding:30px;">
                     <h3>Pengumuman tidak ditemukan</h3>
                     <p>ID: ${id}</p>
                     <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
-                        Kembali ke Halaman Masukan
+                        Kembali ke Daftar Pengumuman
                     </button>
                 </div>
             `;
@@ -6161,26 +6165,31 @@ async function showAnnouncementDetailById(id) {
         }
 
         const data = docSnap.data();
+        console.log('[Debug] Announcement data:', data);
+        
         const waktu = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+        console.log('[Debug] Formatted date:', waktu);
 
+        // Render the full announcement content
         container.innerHTML = `
-            <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #ff6b6b; margin-bottom: 10px;">${data.title || "Tanpa Judul"}</h1>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div class="feedback-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(78, 161, 255, 0.2); display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                            ${data.userName?.charAt(0).toUpperCase() || 'A'}
-                        </div>
-                        <div>
-                            <div style="color: white; font-weight: 500;">${data.userName || 'Admin'}</div>
-                            <div style="color: #aaa; font-size: 12px;">${data.userEmail || ''}</div>
-                        </div>
-                    </div>
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${data.title || 'Tanpa Judul'}</h2>
                     <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
                 </div>
                 
-                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 30px;">
-                    ${data.content || "Tidak ada konten"}
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        ${data.userName?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                    <div>
+                        <div style="color: white; font-weight: 500;">${data.userName || 'Admin'}</div>
+                        <div style="color: #aaa; font-size: 12px;">${data.userEmail || ''}</div>
+                    </div>
+                </div>
+                
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+                    ${data.content || 'Tidak ada konten'}
                 </div>
                 
                 <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -6201,35 +6210,42 @@ async function showAnnouncementDetailById(id) {
                 </div>
             </div>
         `;
-
-        // Setup admin controls jika user adalah admin
-        if (isUserAdmin(auth.currentUser)) {
-            setupAdminFormForAnnouncement(id, data);
-        }
+        console.log('[Debug] Announcement content rendered');
 
         // Load replies
+        console.log('[Debug] Loading replies...');
         await loadAnnouncementReplies(id);
-
+        
         // Load related announcements
+        console.log('[Debug] Loading related announcements...');
         await loadRelatedAnnouncements(id);
+        
+        // Setup admin controls if user is admin
+        const user = auth.currentUser;
+        if (user && isUserAdmin(user)) {
+            console.log('[Debug] User is admin, setting up admin controls');
+            setupAdminAnnouncementUI(user, id, data);
+        }
+        
+        // Setup reply form based on login status
+        console.log('[Debug] Setting up reply form');
+        setupReplyForm(id);
+        
+        console.log('[Debug] Announcement detail page fully loaded');
 
     } catch (error) {
-        console.error("Error loading announcement:", error);
+        console.error('[Error] Failed to load announcement:', error);
         container.innerHTML = `
             <div style="color:#ff6b6b; text-align:center; padding:30px;">
-                <h3>Terjadi Kesalahan</h3>
+                <h3>Gagal memuat pengumuman</h3>
                 <p>${error.message}</p>
                 <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
-                    Kembali ke Halaman Masukan
+                    Kembali ke Daftar Pengumuman
                 </button>
             </div>
         `;
     }
 }
-
-
-
-
 
 
 
