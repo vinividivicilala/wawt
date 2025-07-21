@@ -4162,13 +4162,12 @@ function renderAnnouncements(announcements) {
       </div>
     `;
 
-    // ✅ Tambahkan ini supaya page9 muncul saat diklik
-    card.onclick = () => {
-      loadAnnouncementDetail(announcement.id);
-      showPageContent(document.getElementById("page9"));
-	    history.pushState({ page: "announcement", id: announcement.id }, "", "/pengumuman/" + announcement.id);
+ card.onclick = () => {
+  history.pushState({ page: "detail-pengumuman", announcementId: announcement.id }, "", `/halaman-masukan-${announcement.id}`);
+  showAnnouncementDetailById(announcement.id);
+};
 
-    };
+
 
     container.appendChild(card);
   });
@@ -5834,6 +5833,11 @@ document.addEventListener('click', async (e) => {
         return null;
     }
 }
+
+
+
+
+
    
    // Update your initial load handler
 window.onload = async function() {
@@ -6321,84 +6325,39 @@ document.addEventListener('click', async (e) => {
 
 
 
+window.addEventListener("popstate", async function(event) {
+  console.log('[Debug] popstate event triggered', event.state);
 
+  try {
+    const state = event.state;
+    const path = window.location.pathname || "/";
 
-
-
-window.addEventListener('popstate', async function(event) {
-    console.log('[Debug] popstate event triggered', event.state);
-
-    try {
-        if (event.state) {
-            currentState = event.state;
-            console.log('[Debug] Current state:', currentState);
-
-            switch (currentState.page) {
-                case "detail-pengumuman":
-                    const idFromState = currentState.announcementId || currentState.id;
-                    console.log('[Debug] Showing announcement detail for ID:', idFromState);
-                    if (idFromState) {
-                        showPageContent(document.getElementById("page9"));
-                        await showAnnouncementDetailById(idFromState);
-                    }
-                    break;
-
-                case "arduino":
-                    showPageContent(document.getElementById("page2"));
-                    break;
-
-                case "iot":
-                    showPageContent(document.getElementById("page3"));
-                    break;
-
-                case "blog":
-                    showPageContent(document.getElementById("page4"));
-                    break;
-
-                case "kumpulan-blog":
-                    showPageContent(document.getElementById("page5"));
-                    break;
-
-                case "tentang-kami":
-                    showPageContent(document.getElementById("page6"));
-                    break;
-
-                case "masukan":
-                    showPageContent(document.getElementById("page7"));
-                    await loadFeedback().catch(console.error);
-                    break;
-
-                case "forum":
-                    showPageContent(document.getElementById("page8"));
-                    break;
-
-                default:
-                    showPageContent(document.getElementById("page1"));
-            }
-
-        } else {
-            const path = window.location.pathname || "/";
-            console.log('[Debug] No state, parsing from path:', path);
-            
-            if (path.includes('halaman-masukan-')) {
-                const id = path.split('halaman-masukan-')[1];
-                console.log('[Debug] Found announcement ID in URL:', id);
-                if (id) {
-                    showPageContent(document.getElementById("page9"));
-                    await showAnnouncementDetailById(id);
-                    return;
-                }
-            }
-
-            await handlePageLoad(false);
-        }
-
-    } catch (error) {
-        console.error('[Error] popstate handler failed:', error);
-        showPageContent(document.getElementById("page1"));
+    if (state?.page === "detail-pengumuman" && (state.announcementId || state.id)) {
+      const id = state.announcementId || state.id;
+      console.log('[Debug] Popstate: Menampilkan detail pengumuman untuk ID:', id);
+      showPageContent(document.getElementById("page9"));
+      await showAnnouncementDetailById(id);
+      return;
     }
-});
 
+    if (path.includes("halaman-masukan-")) {
+      const id = path.split("halaman-masukan-")[1];
+      if (id) {
+        console.log('[Debug] Popstate: Deteksi path dengan ID:', id);
+        showPageContent(document.getElementById("page9"));
+        await showAnnouncementDetailById(id);
+        return;
+      }
+    }
+
+    // Jika bukan detail, jalankan handler umum
+    await handlePageLoad(false);
+
+  } catch (err) {
+    console.error("[ERROR] popstate failed:", err);
+    showPageContent(document.getElementById("page1"));
+  }
+});
 
 
 
