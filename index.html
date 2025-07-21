@@ -2120,6 +2120,10 @@
       </div>
 	  
 	  
+	  <button class="pengumumanLink" data-id="ql1rSG9qRjb9rOEAGiBe">Lihat Pengumuman</button>
+
+	  
+	  
 	  <button id="newDiscussionBtn" style="padding: 10px 20px;background: linear-gradient(135deg, #4ea1ff, #0066ff);border: none;border-radius: 10px;color: white;font-weight: bold;cursor: pointer;display: flex;align-items: center;gap: 8px;">
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -2425,6 +2429,8 @@
       </div>
     </form>
   </div>
+  
+  
 
   <!-- Balasan -->
   <div id="announcementRepliesContainer" style="width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
@@ -2804,6 +2810,22 @@ if (document.getElementById('back-forum')) {
     document.getElementById('backToAnnouncements')?.addEventListener('click', function() {
         showPageContent(document.getElementById("page7"));
         history.pushState({ page: "masukan" }, "Masukan", "/halaman-masukan");
+    });
+});
+
+
+
+
+// Navigasi manual ke halaman 9 dari tombol, card, atau link (jika ada)
+document.querySelectorAll('.detail-pengumuman').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const id = this.getAttribute('data-id');
+        if (id) {
+            showAnnouncementDetailById(id);
+            showPageContent(document.getElementById("page9"));
+            history.pushState({ page: "detail-pengumuman", id }, "Detail Pengumuman", `/halaman-masukan-${id}`);
+        }
     });
 });
 
@@ -5896,7 +5918,7 @@ async function handlePageLoad(isInitialLoad = true) {
             await showAnnouncementDetailById(id);
             return;
         }
-    }
+    }     detail-pengumuman
 
     // Handle other pages
     if (path.includes("halaman-arduino")) {
@@ -5914,7 +5936,9 @@ async function handlePageLoad(isInitialLoad = true) {
         await loadFeedback().catch(console.error);
     } else if (path.includes("halaman-forum")) {
         showPageContent(document.getElementById("page8"));
-    } else {
+    } else if (path.includes("halaman-detail-pengumuman")) {
+        showPageContent(document.getElementById("page9"));
+    }else {
         // Default to home page
         showPageContent(document.getElementById("page1"));
     }
@@ -6298,6 +6322,10 @@ window.addEventListener('popstate', async function(event) {
 
                 case "forum":
                     showPageContent(document.getElementById("page8"));
+                    break;
+					
+					  case "detail-pengumuman":
+                    showPageContent(document.getElementById("page9"));
                     break;
 
                 default:
