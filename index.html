@@ -908,6 +908,29 @@
 
 
 
+#page9 .announcement-content {
+    /* Pastikan tidak ada properti yang membatasi tinggi secara paksa */
+    max-height: none !important; /* overrides all other max-heights */
+    height: auto !important;     /* overrides all other heights */
+    overflow: visible !important; /* ensures all content is visible, no scrollbar if not needed */
+
+    /* Ini sudah ada di inline style, tetapi bagus untuk ditekankan lagi di CSS */
+    white-space: pre-line;
+    word-wrap: break-word; /* Penting untuk kata-kata sangat panjang tanpa spasi */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 	
 	
   </style>
@@ -5871,19 +5894,10 @@ document.addEventListener('click', async (e) => {
 
 
 
-
 window.onload = async function () {
-  const path = window.location.pathname || "/";
-  const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
-
-  if (isAnnouncementDetail) {
-    const slug = decodeURIComponent(path.replace('/halaman-masukan-', ''));
-    await renderAnnouncementDetailBySlug(slug); // fungsi untuk ambil data & tampilkan page9
-    return;
-  }
-
-  handlePageLoad();
-  initializeBlogPagination();
+    // Biarkan handlePageLoad menangani semua routing, termasuk detail pengumuman
+    await handlePageLoad();
+    initializeBlogPagination();
 };
 
 
