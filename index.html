@@ -649,73 +649,6 @@
 
 
 
- /* Gaya dasar untuk halaman 9 */
-  #page9 {
-    background-color: #121212;
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-  }
-  
-  /* Gaya untuk kontainer utama */
-  #page9 > div {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  /* Gaya untuk card/cotainer */
-  #announcementDetailContainer,
-  #adminAnnouncementForm,
-  #announcementRepliesContainer,
-  #relatedAnnouncementsContainer {
-    background: rgba(30, 30, 30, 0.8);
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Gaya untuk tombol */
-  #page9 button {
-    transition: all 0.3s ease;
-  }
-  
-  #page9 button:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-  }
-  
-  /* Gaya untuk input dan textarea */
-  #page9 input,
-  #page9 textarea {
-    transition: all 0.3s ease;
-  }
-  
-  #page9 input:focus,
-  #page9 textarea:focus {
-    border-color: #4ea1ff !important;
-    box-shadow: 0 0 0 2px rgba(78, 161, 255, 0.2);
-    outline: none;
-  }
-  
-  /* Gaya untuk avatar pengguna */
-  .feedback-avatar {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: white;
-  }
-
-
-
-
-
 
 
 
@@ -798,234 +731,6 @@
 }
 
 
-
-
-/* Loading indicator */
-.loading-indicator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 30px;
-    color: #ccc;
-}
-
-.loading-spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: #4ea1ff;
-    animation: spin 1s ease-in-out infinite;
-    margin-left: 10px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-
-
-
-#backToFeedbackPage:hover {
-  background: rgba(78, 161, 255, 0.1);
-  transition: background 0.3s ease;
-}
-
-
-/* Container utama */
-#announcementDetailContainer {
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 20px;
-}
-
-/* Judul pengumuman */
-.announcement-title {
-    color: #ff6b6b;
-    font-size: 28px;
-    margin-bottom: 15px;
-    word-break: break-word;
-}
-
-/* Meta info */
-.announcement-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(78, 161, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-}
-
-.user-name {
-    font-weight: 500;
-}
-
-.user-email {
-    color: #aaa;
-    font-size: 12px;
-}
-
-.announcement-date {
-    color: #aaa;
-    font-size: 14px;
-}
-
-/* Konten utama */
-.announcement-content {
-    font-size: 16px;
-    line-height: 1.6;
-    white-space: pre-line;
-    margin-bottom: 25px;
-    padding: 15px 0;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Stats */
-.announcement-stats {
-    display: flex;
-    gap: 20px;
-}
-
-.like-btn {
-    background: none;
-    border: none;
-    color: #ccc;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 16px;
-}
-
-.view-count {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #ccc;
-}
-
-/* Balasan */
-#announcementRepliesContainer {
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
-.reply-item {
-    padding: 15px;
-    margin-bottom: 15px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 8px;
-    border-left: 3px solid rgba(78, 161, 255, 0.3);
-}
-
-/* Loading dan error state */
-.loading-state {
-    color: #ccc;
-    text-align: center;
-    padding: 30px;
-}
-
-.error-state {
-    color: #ff6b6b;
-    text-align: center;
-    padding: 30px;
-}
-
-.back-button {
-    margin-top: 15px;
-    padding: 8px 16px;
-    background: none;
-    border: 1px solid #ff6b6b;
-    color: #ff6b6b;
-    cursor: pointer;
-    border-radius: 6px;
-}
-
-
-
-#page9 .announcement-content {
-    /* Pastikan tidak ada properti yang membatasi tinggi secara paksa */
-    max-height: none !important; /* overrides all other max-heights */
-    height: auto !important;     /* overrides all other heights */
-    overflow: visible !important; /* ensures all content is visible, no scrollbar if not needed */
-
-    /* Ini sudah ada di inline style, tetapi bagus untuk ditekankan lagi di CSS */
-    white-space: pre-line;
-    word-wrap: break-word; /* Penting untuk kata-kata sangat panjang tanpa spasi */
-}
-
-
-
-/* Di dalam tag <style> atau file CSS Anda */
-#page9 .announcement-content {
-    /* Pastikan konten dapat meluas secara vertikal */
-    max-height: none !important; /* Timpa batasan tinggi yang mungkin ada */
-    height: auto !important;     /* Biarkan tinggi disesuaikan dengan konten */
-    overflow: visible !important; /* Pastikan tidak ada pemotongan atau scroll yang tidak diinginkan */
-
-    /* Properti yang sudah Anda miliki (penting untuk format teks) */
-    white-space: pre-line; /* Mempertahankan spasi dan baris baru */
-    word-wrap: break-word; /* Memecah kata panjang agar tidak meluber */
-
-    /* Pastikan warna dan ukuran font sudah sesuai keinginan */
-    color: #ddd;
-    font-size: 16px;
-    line-height: 1.6;
-    margin-bottom: 20px;
-}
-
-/* Pastikan juga container induk memiliki ruang yang cukup */
-#announcementDetailContainer {
-    max-height: none !important;
-    overflow: visible !important;
-}
-
-#page9 {
-    max-height: none !important;
-    overflow: visible !important;
-}
-
-
-.announcement-content {
-  white-space: pre-line;  /* Sudah bagus */
-  overflow-wrap: break-word;
-}
-
-
-
-
-#announcementDetailContainer {
-  background: rgba(255,255,255,0.05);
-  border-radius: 12px;
-  padding: 25px;
-  min-height: 300px;
-  color: white;
-  white-space: pre-line;
-  word-wrap: break-word;
-}
 
 
 	
@@ -2508,9 +2213,6 @@
 
 
 
-
-
-<!-- Halaman 9 - Detail Pengumuman -->
 <div id="page9" style="display: none; min-height: 100vh; background-color: rgb(18, 18, 18); padding: 20px;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;">
     Detail Pengumuman
@@ -2523,17 +2225,46 @@
 
   <!-- Form Pengumuman (Hanya untuk Admin) -->
   <div id="adminAnnouncementForm" style="display: none; width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-    <!-- ... (keep your existing admin form content) ... -->
+    <h3 style="color: white; margin-bottom: 15px;">Edit Pengumuman</h3>
+    <form id="editAnnouncementForm">
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; color: #aaa; margin-bottom: 5px;">Judul</label>
+        <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; color: #aaa; margin-bottom: 5px;">Isi</label>
+        <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;"></textarea>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="submit" style="padding: 8px 15px; background: #4ea1ff; border: none; border-radius: 8px; color: white; cursor: pointer;">Simpan</button>
+        <button type="button" id="cancelEditAnnouncement" style="padding: 8px 15px; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white; cursor: pointer;">Batal</button>
+        <button type="button" id="deleteAnnouncement" style="padding: 8px 15px; background: #ff4e4e; border: none; border-radius: 8px; color: white; cursor: pointer;">Hapus</button>
+      </div>
+    </form>
   </div>
 
   <!-- Balasan -->
   <div id="announcementRepliesContainer" style="width: calc(100% - 200px); margin: 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-    <!-- ... (keep your existing replies content) ... -->
+    <h3 style="color: white; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+      Balasan (<span id="repliesCount">0</span>)
+    </h3>
+    <div id="announcementRepliesList"></div>
+    
+    <div id="loginToReply" style="display: none; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
+      <p style="color: #aaa; margin-bottom: 10px;">Silakan login untuk membalas</p>
+      <a href="#" id="loginLink" style="color: #4ea1ff; text-decoration: none;">Login</a>
+    </div>
+    
+    <form id="announcementReplyForm" style="display: none; margin-top: 20px;">
+      <textarea id="announcementReplyContent" rows="3" placeholder="Tulis balasan Anda..." style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; margin-bottom: 10px;"></textarea>
+      <button type="submit" style="padding: 8px 15px; background: #4ea1ff; border: none; border-radius: 8px; color: white; cursor: pointer;">Kirim Balasan</button>
+    </form>
   </div>
 
   <!-- Pengumuman Terkait -->
   <div id="relatedAnnouncementsContainer" style="width: calc(100% - 200px); margin: 0 100px 30px 100px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-    <!-- ... (keep your existing related announcements content) ... -->
+    <h3 style="color: white; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Pengumuman Terkait</h3>
+    <div id="relatedAnnouncementsList"></div>
   </div>
 
   <!-- Tombol Kembali -->
@@ -2543,10 +2274,6 @@
     </button>
   </div>
 </div>
-
-
-
-
 
 
 
@@ -2708,8 +2435,8 @@
 		
 		
 		
-		
-		// Fungsi yang diperbaiki untuk menampilkan halaman
+	 
+	 // Fungsi utama untuk menampilkan halaman
 function showPageContent(pageElement) {
   const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9"];
   
@@ -2723,7 +2450,7 @@ function showPageContent(pageElement) {
   if (pageElement) {
     pageElement.style.display = "block";
     
-    // Hanya muat data jika diperlukan
+    // Jika page7, muat pengumuman dan masukan
     if (pageElement.id === "page7") {
       loadPinnedAnnouncements();
       loadFeedback().catch(console.error);
@@ -5974,45 +5701,58 @@ let currentState = {
 
 
 
-
-
 async function handlePageLoad(isInitialLoad = true) {
-    const path = window.location.pathname || "/";
-    console.log('[Debug] Handling page load for path:', path);
+  const path = window.location.pathname || "/";
+  console.log('[Debug] Handling page load for path:', path);
 
+  try {
     // Handle announcement detail from URL
     if (path.includes('halaman-masukan-')) {
-        const id = path.split('halaman-masukan-')[1];
-        if (id) {
-            console.log('[Debug] Showing announcement detail for ID:', id);
-            showPageContent(document.getElementById("page9"));
-            await showAnnouncementDetailById(id);
-            return;
-        }
-    }     detail-pengumuman
+      const id = path.split('halaman-masukan-')[1];
+      if (id) {
+        console.log('[Debug] Showing announcement detail for ID:', id);
+        await showAnnouncementDetailById(id);
+        return;
+      }
+    }
 
     // Handle other pages
-    if (path.includes("halaman-arduino")) {
-        showPageContent(document.getElementById("page2"));
-    } else if (path.includes("halaman-iot")) {
-        showPageContent(document.getElementById("page3"));
-    } else if (path.includes("halaman-blog")) {
-        showPageContent(document.getElementById("page4"));
-    } else if (path.includes("halaman-kumpulan-blog")) {
-        showPageContent(document.getElementById("page5"));
-    } else if (path.includes("halaman-tentang-kami")) {
-        showPageContent(document.getElementById("page6"));
-    } else if (path.includes("halaman-masukan")) {
-        showPageContent(document.getElementById("page7"));
-        await loadFeedback().catch(console.error);
-    } else if (path.includes("halaman-forum")) {
-        showPageContent(document.getElementById("page8"));
-    } else if (path.includes("halaman-detail-pengumuman")) {
-        showPageContent(document.getElementById("page9"));
-    }else {
-        // Default to home page
-        showPageContent(document.getElementById("page1"));
+    const pageMap = {
+      "halaman-arduino": "page2",
+      "halaman-iot": "page3",
+      "halaman-blog": "page4",
+      "halaman-kumpulan-blog": "page5",
+      "halaman-tentang-kami": "page6",
+      "halaman-masukan": "page7",
+      "halaman-forum": "page8",
+      "halaman-detail-pengumuman": "page9"
+    };
+
+    let pageToShow = "page1"; // default
+    for (const [pathPart, pageId] of Object.entries(pageMap)) {
+      if (path.includes(pathPart)) {
+        pageToShow = pageId;
+        break;
+      }
     }
+
+    const pageElement = document.getElementById(pageToShow);
+    if (pageElement) {
+      showPageContent(pageElement);
+      
+      // Load data khusus untuk halaman tertentu
+      if (pageToShow === "page7") {
+        await loadFeedback().catch(console.error);
+      }
+    } else {
+      console.error(`Halaman ${pageToShow} tidak ditemukan`);
+      showPageContent(document.getElementById("page1"));
+    }
+
+  } catch (error) {
+    console.error('[Error] handlePageLoad failed:', error);
+    showPageContent(document.getElementById("page1"));
+  }
 }
 
 
@@ -6185,23 +5925,25 @@ async function renderMasukanDetailById(id) {
 
 
 
-// Fungsi yang diperbaiki untuk menampilkan detail pengumuman
+
+
 async function showAnnouncementDetailById(announcementId) {
   try {
-    // Tampilkan halaman 9 tanpa memanggil showPageContent secara rekursif
+    // Pastikan halaman 9 ada sebelum melanjutkan
     const page9 = document.getElementById("page9");
-    if (page9) {
-      // Sembunyikan semua halaman lain
-      const pages = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8"];
-      pages.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = "none";
-      });
-      
-      // Tampilkan halaman 9
-      page9.style.display = "block";
+    if (!page9) {
+      console.error('Halaman detail pengumuman tidak ditemukan');
+      return;
     }
-    
+
+    // Sembunyikan semua halaman lain dan tampilkan halaman 9
+    const pages = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8"];
+    pages.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
+    page9.style.display = "block";
+
     const container = document.getElementById('announcementDetailContainer');
     if (!container) {
       console.error('Container detail tidak ditemukan');
@@ -6264,13 +6006,18 @@ async function showAnnouncementDetailById(announcementId) {
     `;
 
     // Setup admin controls jika user adalah admin
-    if (isUserAdmin(auth.currentUser)) {
-      const adminForm = document.getElementById('adminAnnouncementForm');
-      if (adminForm) {
-        adminForm.style.display = 'block';
-        document.getElementById('editAnnouncementTitle').value = announcement.title;
-        document.getElementById('editAnnouncementContent').value = announcement.content;
+    const adminForm = document.getElementById('adminAnnouncementForm');
+    if (adminForm && isUserAdmin(auth.currentUser)) {
+      adminForm.style.display = 'block';
+      const editTitle = document.getElementById('editAnnouncementTitle');
+      const editContent = document.getElementById('editAnnouncementContent');
+      
+      if (editTitle && editContent) {
+        editTitle.value = announcement.title;
+        editContent.value = announcement.content;
       }
+    } else if (adminForm) {
+      adminForm.style.display = 'none';
     }
 
     // Muat balasan
@@ -6281,16 +6028,6 @@ async function showAnnouncementDetailById(announcementId) {
 
     // Setup form balasan
     setupReplyForm(announcementId);
-
-    // Update URL dan history
-    history.pushState(
-      { page: "detail-pengumuman", id: announcementId },
-      `Pengumuman: ${announcement.title}`,
-      `/halaman-masukan-${announcementId}`
-    );
-
-    // Update judul halaman
-    document.title = `${announcement.title} - Detail Pengumuman`;
 
   } catch (error) {
     console.error("Error loading announcement:", error);
@@ -6308,6 +6045,15 @@ async function showAnnouncementDetailById(announcementId) {
     }
   }
 }
+
+
+
+
+
+
+
+
+
 
 
 
