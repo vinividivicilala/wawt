@@ -6128,124 +6128,73 @@ testRender();
 
 
 
-// Add this function to handle showing announcement details
-async function showAnnouncementDetailById(id) {
+// Make sure this is in your global scope or available where needed
+window.showAnnouncementDetailById = async function(id) {
     console.log('[Debug] showAnnouncementDetailById called with ID:', id);
     
-    // Show page 9 first
-    showPageContent(document.getElementById("page9"));
-    
-    const container = document.getElementById('announcementDetailContainer');
-    if (!container) {
-        console.error('[Error] announcementDetailContainer not found');
-        return;
-    }
-
-    // Show loading state
-    container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
-    console.log('[Debug] Showing loading state');
-
     try {
-        console.log('[Debug] Fetching announcement from Firestore');
+        // Show the announcement container page first
+        showPageContent(document.getElementById("page9"));
+        
+        const container = document.getElementById('announcementDetailContainer');
+        if (!container) {
+            console.error('Container element not found');
+            return;
+        }
+
+        // Show loading state
+        container.innerHTML = '<div class="loading-state">Memuat pengumuman...</div>';
+
+        // Check if ID is valid
+        if (!id || typeof id !== 'string') {
+            throw new Error('Invalid announcement ID');
+        }
+
+        // Get Firestore reference
         const docRef = doc(db, "announcements", id);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
-            console.error('[Error] Announcement not found with ID:', id);
-            container.innerHTML = `
-                <div style="color:#ff6b6b; text-align:center; padding:30px;">
-                    <h3>Pengumuman tidak ditemukan</h3>
-                    <p>ID: ${id}</p>
-                    <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
-                        Kembali ke Daftar Pengumuman
-                    </button>
-                </div>
-            `;
-            return;
+            throw new Error(`Announcement with ID ${id} not found`);
         }
 
         const data = docSnap.data();
-        console.log('[Debug] Announcement data:', data);
-        
         const waktu = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
-        console.log('[Debug] Formatted date:', waktu);
 
-        // Render the full announcement content
+        // Render announcement
         container.innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${data.title || 'Tanpa Judul'}</h2>
-                    <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
-                </div>
-                
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        ${data.userName?.charAt(0).toUpperCase() || 'A'}
-                    </div>
-                    <div>
-                        <div style="color: white; font-weight: 500;">${data.userName || 'Admin'}</div>
-                        <div style="color: #aaa; font-size: 12px;">${data.userEmail || ''}</div>
-                    </div>
-                </div>
-                
-                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
-                    ${data.content || 'Tidak ada konten'}
-                </div>
-                
-                <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                        </svg>
-                        <span class="like-count" style="margin-left: 5px;">${data.likesCount || 0}</span>
-                    </button>
-                    
-                    <div style="display: flex; align-items: center; color: #ccc;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span class="view-count" style="margin-left: 5px;">${data.views || 0}</span>
-                    </div>
-                </div>
+            <div class="announcement-detail">
+                <!-- Your announcement HTML template here -->
+                <!-- ... -->
             </div>
         `;
-        console.log('[Debug] Announcement content rendered');
 
-        // Load replies
-        console.log('[Debug] Loading replies...');
-        await loadAnnouncementReplies(id);
-        
-        // Load related announcements
-        console.log('[Debug] Loading related announcements...');
-        await loadRelatedAnnouncements(id);
-        
-        // Setup admin controls if user is admin
-        const user = auth.currentUser;
-        if (user && isUserAdmin(user)) {
-            console.log('[Debug] User is admin, setting up admin controls');
-            setupAdminAnnouncementUI(user, id, data);
-        }
-        
-        // Setup reply form based on login status
-        console.log('[Debug] Setting up reply form');
-        setupReplyForm(id);
-        
-        console.log('[Debug] Announcement detail page fully loaded');
+        // Update view count
+        await updateDoc(docRef, {
+            views: increment(1)
+        });
+
+        // Load additional data
+        await Promise.all([
+            loadAnnouncementReplies(id),
+            loadRelatedAnnouncements(id)
+        ]);
 
     } catch (error) {
-        console.error('[Error] Failed to load announcement:', error);
+        console.error('Error loading announcement:', error);
+        const container = document.getElementById('announcementDetailContainer') || document.body;
         container.innerHTML = `
-            <div style="color:#ff6b6b; text-align:center; padding:30px;">
+            <div class="error-state">
                 <h3>Gagal memuat pengumuman</h3>
                 <p>${error.message}</p>
-                <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
+                <button onclick="showPageContent(document.getElementById('page8'))" 
+                        class="back-button">
                     Kembali ke Daftar Pengumuman
                 </button>
             </div>
         `;
     }
-}
+};
 
 
 
@@ -6253,6 +6202,11 @@ async function showAnnouncementDetailById(id) {
 
 
 
+
+
+console.log("[DEBUG] Rendered title:", announcement.title);
+console.log("[DEBUG] Rendered content:", formattedContent);
+console.log("[DEBUG] HTML container:", container.innerHTML);
 
 
 
