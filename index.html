@@ -921,7 +921,34 @@
 
 
 
+/* Di dalam tag <style> atau file CSS Anda */
+#page9 .announcement-content {
+    /* Pastikan konten dapat meluas secara vertikal */
+    max-height: none !important; /* Timpa batasan tinggi yang mungkin ada */
+    height: auto !important;     /* Biarkan tinggi disesuaikan dengan konten */
+    overflow: visible !important; /* Pastikan tidak ada pemotongan atau scroll yang tidak diinginkan */
 
+    /* Properti yang sudah Anda miliki (penting untuk format teks) */
+    white-space: pre-line; /* Mempertahankan spasi dan baris baru */
+    word-wrap: break-word; /* Memecah kata panjang agar tidak meluber */
+
+    /* Pastikan warna dan ukuran font sudah sesuai keinginan */
+    color: #ddd;
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Pastikan juga container induk memiliki ruang yang cukup */
+#announcementDetailContainer {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+#page9 {
+    max-height: none !important;
+    overflow: visible !important;
+}
 
 
 
