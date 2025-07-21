@@ -4216,70 +4216,77 @@ async function loadAnnouncementDetail(announcementId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Fungsi untuk memuat balasan
+// Update your loadAnnouncementReplies function with logging
 async function loadAnnouncementReplies(announcementId) {
-  const repliesList = document.getElementById('announcementRepliesList');
-  repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat balasan...</div>';
-  
-  try {
-    const q = query(
-      collection(db, "announcements", announcementId, "replies"),
-      orderBy("timestamp", "asc")
-    );
+    console.log('[Debug] loadAnnouncementReplies called for ID:', announcementId);
     
-    const querySnapshot = await getDocs(q);
-    repliesList.innerHTML = '';
-    
-    if (querySnapshot.empty) {
-      repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
-      return;
+    const repliesList = document.getElementById('announcementRepliesList');
+    if (!repliesList) {
+        console.error('[Error] repliesList element not found');
+        return;
     }
-    
-    querySnapshot.forEach(doc => {
-      const reply = doc.data();
-      const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
-      
-      repliesList.innerHTML += `
-        <div class="feedback-item" style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
-          <div class="feedback-header">
-            <div class="feedback-user">
-              <div class="feedback-avatar" style="width: 30px; height: 30px; font-size: 14px;">
-                ${reply.userName?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div>
-                <div style="color: white; font-size: 14px; font-weight: 500;">${reply.userName || 'User'}</div>
-                <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
-              </div>
-            </div>
-          </div>
-          <div class="feedback-content" style="margin-top: 10px; font-size: 15px; line-height: 1.5;">
-            ${reply.content}
-          </div>
-        </div>
-      `;
-    });
-    
-    // Update replies count
-    document.getElementById('repliesCount').textContent = querySnapshot.size;
-  } catch (error) {
-    console.error("Error loading replies:", error);
-    repliesList.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat balasan</div>';
-  }
+
+    repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Memuat balasan...</div>';
+    console.log('[Debug] Showing replies loading state');
+
+    try {
+        const q = query(
+            collection(db, "announcements", announcementId, "replies"),
+            orderBy("timestamp", "asc")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        console.log(`[Debug] Found ${querySnapshot.size} replies`);
+        
+        repliesList.innerHTML = '';
+        
+        if (querySnapshot.empty) {
+            repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
+            console.log('[Debug] No replies found');
+            return;
+        }
+        
+        querySnapshot.forEach(doc => {
+            const reply = doc.data();
+            const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
+            
+            const replyElement = document.createElement('div');
+            replyElement.className = 'feedback-item';
+            replyElement.style.cssText = 'padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 15px;';
+            
+            replyElement.innerHTML = `
+                <div class="feedback-header">
+                    <div class="feedback-user" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div class="feedback-avatar" style="width: 30px; height: 30px; font-size: 14px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            ${reply.userName?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <div>
+                            <div style="color: white; font-size: 14px; font-weight: 500;">${reply.userName || 'User'}</div>
+                            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="feedback-content" style="margin-top: 10px; font-size: 15px; line-height: 1.5; color: #ddd;">
+                    ${reply.content}
+                </div>
+            `;
+            
+            repliesList.appendChild(replyElement);
+        });
+        
+        // Update replies count
+        document.getElementById('repliesCount').textContent = querySnapshot.size;
+        console.log('[Debug] Replies loaded successfully');
+
+    } catch (error) {
+        console.error('[Error] Failed to load replies:', error);
+        repliesList.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat balasan</div>';
+    }
 }
+
+
+
+
 
 
 
@@ -5699,20 +5706,21 @@ document.addEventListener('click', async (e) => {
     }
 }
    
-   
-   
-   
-   window.onload = async function () {
+   // Update your initial load handler
+window.onload = async function() {
+    console.log('[Debug] Page loaded');
     const path = window.location.pathname || "/";
-    const isAnnouncementDetail = path.startsWith('/halaman-masukan-');
+    console.log('[Debug] Initial path:', path);
 
-    if (isAnnouncementDetail) {
+    if (path.includes('halaman-masukan-')) {
         const id = decodeURIComponent(path.replace('/halaman-masukan-', ''));
+        console.log('[Debug] Initial load - showing announcement:', id);
         await showAnnouncementDetailById(id);
         return;
     }
 
-    await handlePageLoad(true); // true indicates this is the initial load
+    await handlePageLoad(true);
+    console.log('[Debug] Initial page load completed');
 };
 
 // Fungsi untuk menangani perubahan URL (back/forward browser)
@@ -5947,47 +5955,124 @@ async function renderMasukanDetailById(id) {
 
 
 
-
-
-
+// Add this function to handle showing announcement details
 async function showAnnouncementDetailById(id) {
-    if (!id) return;
-
+    console.log('[Debug] showAnnouncementDetailById called with ID:', id);
+    
+    // Show page 9 first
+    showPageContent(document.getElementById("page9"));
+    
     const container = document.getElementById('announcementDetailContainer');
+    if (!container) {
+        console.error('[Error] announcementDetailContainer not found');
+        return;
+    }
+
+    // Show loading state
     container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
+    console.log('[Debug] Showing loading state');
 
     try {
+        console.log('[Debug] Fetching announcement from Firestore');
         const docRef = doc(db, "announcements", id);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
-            container.innerHTML = `<h2 style="color: white;">Pengumuman tidak ditemukan</h2><p style="color: #ccc;">ID: ${id}</p>`;
+            console.error('[Error] Announcement not found with ID:', id);
+            container.innerHTML = `
+                <div style="color:#ff6b6b; text-align:center; padding:30px;">
+                    <h3>Pengumuman tidak ditemukan</h3>
+                    <p>ID: ${id}</p>
+                    <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
+                        Kembali ke Daftar Pengumuman
+                    </button>
+                </div>
+            `;
             return;
         }
 
         const data = docSnap.data();
+        console.log('[Debug] Announcement data:', data);
+        
         const waktu = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+        console.log('[Debug] Formatted date:', waktu);
 
+        // Render the full announcement content
         container.innerHTML = `
-            <div style="max-width: 800px; margin: 0 auto;">
-                <h1 style="color: #ff6b6b; margin-bottom: 10px;">${data.title}</h1>
-                <p style="color: #ccc; font-size: 14px; margin-bottom: 20px;">Diposting: ${waktu.toLocaleDateString('id-ID')}</p>
-                <div style="color: white; font-size: 16px; line-height: 1.6;">${data.content}</div>
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${data.title || 'Tanpa Judul'}</h2>
+                    <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        ${data.userName?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                    <div>
+                        <div style="color: white; font-weight: 500;">${data.userName || 'Admin'}</div>
+                        <div style="color: #aaa; font-size: 12px;">${data.userEmail || ''}</div>
+                    </div>
+                </div>
+                
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+                    ${data.content || 'Tidak ada konten'}
+                </div>
+                
+                <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                        <span class="like-count" style="margin-left: 5px;">${data.likesCount || 0}</span>
+                    </button>
+                    
+                    <div style="display: flex; align-items: center; color: #ccc;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span class="view-count" style="margin-left: 5px;">${data.views || 0}</span>
+                    </div>
+                </div>
             </div>
         `;
+        console.log('[Debug] Announcement content rendered');
 
-        showPageContent(document.getElementById("page9"));
+        // Load replies
+        console.log('[Debug] Loading replies...');
+        await loadAnnouncementReplies(id);
+        
+        // Load related announcements
+        console.log('[Debug] Loading related announcements...');
+        await loadRelatedAnnouncements(id);
+        
+        // Setup admin controls if user is admin
+        const user = auth.currentUser;
+        if (user && isUserAdmin(user)) {
+            console.log('[Debug] User is admin, setting up admin controls');
+            setupAdminAnnouncementUI(user, id, data);
+        }
+        
+        // Setup reply form based on login status
+        console.log('[Debug] Setting up reply form');
+        setupReplyForm(id);
+        
+        console.log('[Debug] Announcement detail page fully loaded');
+
     } catch (error) {
-        console.error("Error loading announcement:", error);
+        console.error('[Error] Failed to load announcement:', error);
         container.innerHTML = `
             <div style="color:#ff6b6b; text-align:center; padding:30px;">
-                Gagal memuat pengumuman: ${error.message}
-                <button onclick="backToFeedbackPage()" style="margin-top: 15px; padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">Kembali ke Halaman Masukan</button>
+                <h3>Gagal memuat pengumuman</h3>
+                <p>${error.message}</p>
+                <button onclick="backToFeedbackPage()" style="margin-top:15px; padding:8px 16px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; cursor:pointer;">
+                    Kembali ke Daftar Pengumuman
+                </button>
             </div>
         `;
     }
 }
-
 
 
 
@@ -6097,15 +6182,19 @@ document.addEventListener('click', async (e) => {
 
 
 
+
 window.addEventListener('popstate', async function(event) {
+    console.log('[Debug] popstate event triggered', event.state);
+
     try {
-        // If we have state data, use that
         if (event.state) {
             currentState = event.state;
+            console.log('[Debug] Current state:', currentState);
 
             switch (currentState.page) {
-                case "announcementDetail":
+                case "detail-pengumuman":
                     const idFromState = currentState.announcementId || currentState.id;
+                    console.log('[Debug] Showing announcement detail for ID:', idFromState);
                     if (idFromState) {
                         showPageContent(document.getElementById("page9"));
                         await showAnnouncementDetailById(idFromState);
@@ -6144,32 +6233,29 @@ window.addEventListener('popstate', async function(event) {
                 default:
                     showPageContent(document.getElementById("page1"));
             }
-        } 
-        // If no state, parse from URL
-        else {
+
+        } else {
             const path = window.location.pathname || "/";
+            console.log('[Debug] No state, parsing from path:', path);
             
-            // Handle announcement detail from URL
             if (path.includes('halaman-masukan-')) {
                 const id = path.split('halaman-masukan-')[1];
+                console.log('[Debug] Found announcement ID in URL:', id);
                 if (id) {
                     showPageContent(document.getElementById("page9"));
                     await showAnnouncementDetailById(id);
                     return;
                 }
             }
-            
-            // Handle other pages
+
             await handlePageLoad(false);
         }
+
     } catch (error) {
-        console.error("Error handling popstate:", error);
-        // Fallback to home page if something goes wrong
+        console.error('[Error] popstate handler failed:', error);
         showPageContent(document.getElementById("page1"));
     }
 });
-
-
 
 
 
