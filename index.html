@@ -5955,21 +5955,22 @@ function setupAnnouncementEventListeners() {
     document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
     document.getElementById('backToFeedbackPage')?.addEventListener('click', backToFeedbackPage);
     
+    // Add this to your initialization code
+document.addEventListener('DOMContentLoaded', () => {
     // Handle clicks on announcement items
-    document.addEventListener('click', async (e) => {
-        const announcementItem = e.target.closest('.pinned-item, .announcement-item');
+    document.addEventListener('click', (e) => {
+        const announcementItem = e.target.closest('.announcement-item, .pinned-item');
         if (announcementItem) {
-            e.preventDefault();
             const id = announcementItem.getAttribute('data-id');
             if (id) {
-                await showAnnouncementDetailById(id);
-                history.pushState(
-                    { page: "detail-pengumuman", id: id }, 
-                    "Detail Pengumuman", 
-                    `/halaman-masukan-${id}`
-                );
+                showAnnouncementDetailById(id);
+                history.pushState({ page: "detail-pengumuman", id }, "", `/halaman-masukan-${id}`);
             }
         }
+    });
+    
+    // Handle back button
+    document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
     });
 }
 
@@ -6091,109 +6092,56 @@ async function renderMasukanDetailById(id) {
 
 
 
-
-
-
 async function showAnnouncementDetailById(id) {
-    console.log('[Debug] showAnnouncementDetailById called with ID:', id);
-    
     try {
-        // Tampilkan halaman 9
+        // Show the page9 container
         showPageContent(document.getElementById("page9"));
         
-        const container = document.getElementById('announcementDetailContainer');
-        if (!container) {
-            console.error('Detail container not found');
-            return;
-        }
-
         // Show loading state
-        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
-
-        // Get announcement data from Firestore
+        const container = document.getElementById('announcementDetailContainer');
+        container.innerHTML = '<div>Loading announcement...</div>';
+        
+        // Get data from Firestore
         const docRef = doc(db, "announcements", id);
         const docSnap = await getDoc(docRef);
-
+        
         if (!docSnap.exists()) {
-            throw new Error("Pengumuman tidak ditemukan");
+            throw new Error('Announcement not found');
         }
         
-        const announcement = docSnap.data();
-        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
-        
         // Render the announcement
+        const data = docSnap.data();
+        const waktu = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+        
         container.innerHTML = `
             <div style="margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${announcement.title}</h2>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <h2 style="color: #ff6b6b; font-size: 28px; margin: 0;">${data.title}</h2>
                     <div style="color: #aaa; font-size: 14px;">${formatTimeAgo(waktu)}</div>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                    <div class="feedback-avatar" style="width: 40px; height: 40px; font-size: 18px;">
-                        ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
-                    </div>
-                    <div>
-                        <div style="color: white; font-weight: 500;">${announcement.userName || 'Admin'}</div>
-                        <div style="color: #aaa; font-size: 12px;">${announcement.userEmail || ''}</div>
-                    </div>
-                </div>
-                
-                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
-                    ${announcement.content}
-                </div>
-                
-                <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                        </svg>
-                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
-                    </button>
-                    
-                    <div style="display: flex; align-items: center; color: #ccc;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
-                    </div>
+                <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line;">
+                    ${data.content}
                 </div>
             </div>
         `;
         
-        // Load replies
+        // Load replies and setup admin UI if needed
         await loadAnnouncementReplies(id);
-        
-        // Setup admin controls if user is admin
         if (isUserAdmin(auth.currentUser)) {
-            setupAdminAnnouncementUI(auth.currentUser, id, announcement);
+            setupAdminAnnouncementUI(auth.currentUser, id, data);
         }
         
-        // Setup reply form based on login status
-        setupReplyForm(id);
-        
-        // Load related announcements
-        await loadRelatedAnnouncements(id);
-        
     } catch (error) {
-        console.error("Error loading announcement:", error);
+        console.error('Error loading announcement:', error);
         const container = document.getElementById('announcementDetailContainer');
         container.innerHTML = `
             <div style="color:#ff6b6b; text-align:center; padding:30px;">
                 Gagal memuat pengumuman: ${error.message}
-                <button onclick="backToFeedbackPage()" style="margin-top: 15px; padding: 8px 16px; background: none; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer;">
-                    Kembali ke Halaman Masukan
-                </button>
             </div>
         `;
     }
 }
-
-
-
-
-
 
 
 
@@ -6275,25 +6223,24 @@ function formatTimeAgo(timestamp) {
 
 
 
-
-
-
-// Add event listener for back button
+// Tombol kembali
 document.getElementById('backToAnnouncements')?.addEventListener('click', backToFeedbackPage);
 document.getElementById('backToFeedbackPage')?.addEventListener('click', backToFeedbackPage);
 
-
+// Klik item pengumuman
 document.addEventListener('click', async (e) => {
     const announcementItem = e.target.closest('.pinned-item, .announcement-item');
     if (announcementItem) {
         e.preventDefault();
-        const announcementId = announcementItem.getAttribute('data-id'); // Ambil ID dari data-id
-        if (announcementId) {
-            await showAnnouncementDetailById(announcementId); // Ganti dengan fungsi yang menggunakan ID
+        const id = announcementItem.getAttribute('data-id');
+        if (id) {
+            showAnnouncementDetailById(id);
+            history.pushState({ page: "detail-pengumuman", id }, "", `/halaman-masukan-${id}`);
         }
+        return; // Hindari double trigger
     }
 
-    // Handle back to feedback button
+    // Tombol kembali
     if (e.target.matches('#backToFeedbackPage, #backToAnnouncements')) {
         e.preventDefault();
         backToFeedbackPage();
