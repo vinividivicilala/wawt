@@ -2230,33 +2230,36 @@
       <!-- Konten akan dimuat oleh JavaScript -->
     </div>
 
-    <!-- Form Edit Pengumuman (Hanya untuk Admin) -->
-    <div id="adminAnnouncementForm" style="display: none; width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-top: 20px;">
-      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-        Edit Pengumuman
-      </h2>
-      <form id="editAnnouncementForm">
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; color: white; margin-bottom: 8px; font-size: 16px;">Judul</label>
-          <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
-        </div>
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; color: white; margin-bottom: 8px; font-size: 16px;">Isi</label>
-          <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" id="cancelEditAnnouncement" style="padding: 12px 25px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: white; cursor: pointer;">
-            Batal
-          </button>
-          <button type="button" id="deleteAnnouncement" style="padding: 12px 25px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-            Hapus
-          </button>
-          <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-            Simpan Perubahan
-          </button>
-        </div>
-      </form>
+
+<!-- Di dalam div#page9, pastikan form edit memiliki ID yang benar -->
+<div id="adminAnnouncementForm" style="display: none; width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-top: 20px;">
+  <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+    Edit Pengumuman
+  </h2>
+  <form id="editAnnouncementForm">
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; color: white; margin-bottom: 8px; font-size: 16px;">Judul</label>
+      <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
     </div>
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; color: white; margin-bottom: 8px; font-size: 16px;">Isi</label>
+      <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" id="cancelEditAnnouncement" style="padding: 12px 25px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: white; cursor: pointer;">
+        Batal
+      </button>
+      <button type="button" id="deleteAnnouncement" style="padding: 12px 25px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
+        Hapus
+      </button>
+      <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
+        Simpan Perubahan
+      </button>
+    </div>
+  </form>
+</div>
+
+
 
     <!-- Balasan Pengumuman -->
     <div id="announcementRepliesContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
@@ -4606,18 +4609,12 @@ function renderDetailPengumuman(data) {
 
 
 
-
 // Fungsi untuk mengecek status admin
 function isUserAdmin(user) {
-  if (!user || !user.email) return false;
-  const adminEmails = ['faridardiansyah061@gmail.com']; // Ganti dengan email admin yang valid
-  return adminEmails.includes(user.email.toLowerCase());
+    if (!user || !user.email) return false;
+    const adminEmails = ['faridardiansyah061@gmail.com']; // Sesuaikan dengan email admin
+    return adminEmails.includes(user.email.toLowerCase());
 }
-
-
-
-
-
 
 
 
@@ -6005,42 +6002,24 @@ async function renderMasukanDetailById(id) {
 
 
 
-// Fungsi untuk setup form edit pengumuman
-function setupEditAnnouncementForm(announcementId, announcementData) {
-    const adminForm = document.getElementById('adminAnnouncementForm');
-    if (!adminForm) return;
 
-    // Isi form dengan data pengumuman
-    document.getElementById('editAnnouncementTitle').value = announcementData.title || '';
-    document.getElementById('editAnnouncementContent').value = announcementData.content || '';
 
-    // Handle form submission
-    const editForm = document.getElementById('editAnnouncementForm');
-    if (editForm) {
-        editForm.onsubmit = async (e) => {
-            e.preventDefault();
-            await updateAnnouncement(announcementId);
-        };
-    }
 
-    // Handle cancel button
-    const cancelBtn = document.getElementById('cancelEditAnnouncement');
-    if (cancelBtn) {
-        cancelBtn.onclick = () => {
-            adminForm.style.display = 'none';
-        };
-    }
 
-    // Handle delete button
-    const deleteBtn = document.getElementById('deleteAnnouncement');
-    if (deleteBtn) {
-        deleteBtn.onclick = async () => {
-            if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
-                await deleteAnnouncement(announcementId);
-            }
-        };
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Fungsi untuk update pengumuman
 async function updateAnnouncement(announcementId) {
@@ -6091,22 +6070,63 @@ async function deleteAnnouncement(announcementId) {
 
 
 
+// Fungsi yang diperbaiki untuk setup form edit
+function setupEditAnnouncementForm(announcementId, announcementData) {
+    const adminForm = document.getElementById('adminAnnouncementForm');
+    const titleInput = document.getElementById('editAnnouncementTitle');
+    const contentInput = document.getElementById('editAnnouncementContent');
+    
+    // Periksa apakah elemen ada sebelum memanipulasi
+    if (!adminForm || !titleInput || !contentInput) {
+        console.error('Elemen form edit tidak ditemukan');
+        return;
+    }
+    
+    // Isi form dengan data
+    titleInput.value = announcementData.title || '';
+    contentInput.value = announcementData.content || '';
+    
+    // Tampilkan form hanya untuk admin
+    adminForm.style.display = isUserAdmin(auth.currentUser) ? 'block' : 'none';
+    
+    // Setup form submission
+    const editForm = document.getElementById('editAnnouncementForm');
+    if (editForm) {
+        editForm.onsubmit = async (e) => {
+            e.preventDefault();
+            await updateAnnouncement(announcementId);
+        };
+    }
+    
+    // Setup tombol batal
+    const cancelBtn = document.getElementById('cancelEditAnnouncement');
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            adminForm.style.display = 'none';
+        };
+    }
+    
+    // Setup tombol hapus
+    const deleteBtn = document.getElementById('deleteAnnouncement');
+    if (deleteBtn) {
+        deleteBtn.onclick = async () => {
+            if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
+                await deleteAnnouncement(announcementId);
+            }
+        };
+    }
+}
 
-
-
-
-
-// Fungsi untuk menampilkan detail pengumuman (diperbarui)
+// Fungsi showAnnouncementDetailById yang diperbaiki
 async function showAnnouncementDetailById(announcementId) {
     try {
         // Pastikan halaman 9 ditampilkan
-        showPageContent(document.getElementById("page9"));
+        const page9 = document.getElementById('page9');
+        if (!page9) {
+            throw new Error('Halaman detail tidak ditemukan');
+        }
         
-        // Update URL tanpa reload
-        history.pushState({ 
-            page: "detail-pengumuman", 
-            id: announcementId 
-        }, "Detail Pengumuman", `/halaman-masukan-${announcementId}`);
+        showPageContent(page9);
         
         // Load data pengumuman
         const docRef = doc(db, "announcements", announcementId);
@@ -6121,10 +6141,8 @@ async function showAnnouncementDetailById(announcementId) {
         // Render konten pengumuman
         renderAnnouncementDetail(announcement);
         
-        // Setup form edit jika admin
-        if (isUserAdmin(auth.currentUser)) {
-            setupEditAnnouncementForm(announcementId, announcement);
-        }
+        // Setup form edit
+        setupEditAnnouncementForm(announcementId, announcement);
         
         // Muat balasan dan terkait
         await loadAnnouncementReplies(announcementId);
@@ -6203,31 +6221,11 @@ async function loadAnnouncementDetailById(id) {
 
 
 
-
-
 // Fungsi untuk kembali ke halaman masukan
 function backToFeedbackPage() {
-  const page7 = document.getElementById("page7");
-  if (page7) {
-    // Sembunyikan semua halaman lain
-    const pages = ["page1", "page2", "page3", "page4", "page5", "page6", "page8", "page9"];
-    pages.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "none";
-    });
-    
-    // Tampilkan halaman 7
-    page7.style.display = "block";
-    
-    // Muat ulang data jika diperlukan
-    loadPinnedAnnouncements();
-    loadFeedback().catch(console.error);
-  }
-  
-  history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
-  document.title = "Masukan - Life Is What It Is Learn";
+    showPageContent(document.getElementById("page7"));
+    history.pushState({ page: "masukan" }, "Halaman Masukan", "/halaman-masukan");
 }
-
 
 
 
