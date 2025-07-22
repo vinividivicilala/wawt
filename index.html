@@ -3621,19 +3621,24 @@ function toggleAdminForms() {
 
 
 
+
+// Fungsi untuk mengecek status admin dan menampilkan form edit jika admin
 function setupAdminFormForAnnouncement(announcementId, announcement) {
   const user = auth.currentUser;
   const isAdmin = isUserAdmin(user);
   const adminForm = document.getElementById('adminAnnouncementForm');
-
+  
   if (isAdmin && adminForm) {
     adminForm.style.display = 'block';
+
+    // Isi form edit dengan data pengumuman
     document.getElementById('editAnnouncementTitle').value = announcement.title;
     document.getElementById('editAnnouncementContent').value = announcement.content;
 
+    // Setup event listeners untuk form edit
     document.getElementById('editAnnouncementForm').onsubmit = (e) => {
       e.preventDefault();
-      updateAnnouncement(announcementId); // pastikan ini ID yang benar
+      updateAnnouncement(announcementId);
     };
 
     document.getElementById('cancelEditAnnouncement').onclick = () => {
@@ -3645,14 +3650,16 @@ function setupAdminFormForAnnouncement(announcementId, announcement) {
         deleteAnnouncement(announcementId);
       }
     };
+  } else if (adminForm) {
+    adminForm.style.display = 'none';
   }
 }
 
-
-
-
-
-
+// Panggil toggleAdminForms saat auth state berubah
+auth.onAuthStateChanged((user) => {
+  toggleAdminForms();
+  checkAndLoadFeedback();
+});
 
 
 
@@ -4740,14 +4747,24 @@ function setupReplyForm(announcementId) {
 
 
 
+
+
+
+
+// Fungsi untuk update pengumuman
 async function updateAnnouncement(announcementId) {
   const title = document.getElementById('editAnnouncementTitle').value.trim();
   const content = document.getElementById('editAnnouncementContent').value.trim();
-
+  
   if (!title || !content) {
-    alert('Judul dan isi pengumuman tidak boleh kosong');
+    showNotification('Judul dan isi pengumuman tidak boleh kosong!', 'error');
     return;
   }
+
+  const submitBtn = document.querySelector('#editAnnouncementForm button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Menyimpan...';
 
   try {
     await updateDoc(doc(db, "announcements", announcementId), {
@@ -4756,34 +4773,39 @@ async function updateAnnouncement(announcementId) {
       lastUpdated: serverTimestamp()
     });
 
-    alert('Pengumuman berhasil diperbarui');
-    loadAnnouncementDetail(announcementId);
+    showNotification('Pengumuman berhasil diperbarui!', 'success');
+    
+    // Refresh data pengumuman
+    await showAnnouncementDetailById(announcementId);
+    
   } catch (error) {
     console.error("Error updating announcement:", error);
-    alert('Gagal memperbarui pengumuman');
+    showNotification('Gagal memperbarui pengumuman: ' + error.message, 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
   }
 }
 
-
-
-
-
-
-
-
-
-
-// Fungsi untuk menghapus pengumuman (admin only)
+// Fungsi untuk menghapus pengumuman
 async function deleteAnnouncement(announcementId) {
   try {
     await deleteDoc(doc(db, "announcements", announcementId));
-    alert('Pengumuman berhasil dihapus');
-    showPageContent(document.getElementById("page7")); // Kembali ke halaman masukan
+    showNotification('Pengumuman berhasil dihapus!', 'success');
+    backToFeedbackPage();
   } catch (error) {
     console.error("Error deleting announcement:", error);
-    alert('Gagal menghapus pengumuman');
+    showNotification('Gagal menghapus pengumuman: ' + error.message, 'error');
   }
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -5978,7 +6000,67 @@ async function renderMasukanDetailById(id) {
 
 
 
-let currentAnnouncementId = null;
+
+
+
+
+// Fungsi untuk setup form edit pengumuman (admin only)
+function setupAdminAnnouncementForm(announcementId, announcementData) {
+  const adminForm = document.getElementById('adminAnnouncementForm');
+  const user = auth.currentUser;
+  
+  if (!isUserAdmin(user)) {
+    adminForm.style.display = 'none';
+    return;
+  }
+
+  adminForm.style.display = 'block';
+  
+  // Isi form dengan data pengumuman
+  document.getElementById('editAnnouncementTitle').value = announcementData.title || '';
+  document.getElementById('editAnnouncementContent').value = announcementData.content || '';
+
+  // Setup event listeners
+  document.getElementById('editAnnouncementForm').onsubmit = async (e) => {
+    e.preventDefault();
+    await updateAnnouncement(announcementId);
+  };
+
+  document.getElementById('cancelEditAnnouncement').onclick = () => {
+    adminForm.style.display = 'none';
+  };
+
+  document.getElementById('deleteAnnouncement').onclick = async () => {
+    if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
+      await deleteAnnouncement(announcementId);
+    }
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5986,8 +6068,6 @@ let currentAnnouncementId = null;
 
 async function showAnnouncementDetailById(announcementId) {
   try {
-   currentAnnouncementId = announcementId; // simpan ID global
-    setupAdminFormForAnnouncement(announcementId, announcement);
     // Pastikan halaman 9 ada sebelum melanjutkan
     const page9 = document.getElementById("page9");
     if (!page9) {
@@ -6012,13 +6092,14 @@ async function showAnnouncementDetailById(announcementId) {
     // Tampilkan loading state
     container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
 
-    // Dapatkan data dari Firestore
+   // Setup form edit setelah data dimuat
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) {
-      throw new Error("Pengumuman tidak ditemukan");
+    
+    if (docSnap.exists()) {
+      setupAdminAnnouncementForm(announcementId, docSnap.data());
     }
+    
 
     const announcement = docSnap.data();
     const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
