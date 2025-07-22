@@ -4142,6 +4142,70 @@ async function getAnnouncementLikesCount(announcementId) {
 
 
 
+
+
+
+
+
+
+// Fungsi untuk render balasan terpisah
+function renderAnnouncementReplies(replies) {
+  const repliesList = document.getElementById('announcementRepliesList');
+  if (!repliesList) return;
+
+  repliesList.innerHTML = '';
+
+  if (replies.length === 0) {
+    repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
+    return;
+  }
+
+  replies.forEach(reply => {
+    const replyElement = document.createElement('div');
+    replyElement.style.cssText = 'padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px;';
+    
+    replyElement.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <div style="width: 30px; height: 30px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; color: white;">
+          ${reply.userName?.charAt(0).toUpperCase() || 'U'}
+        </div>
+        <div>
+          <div style="color: white; font-size: 14px; font-weight: 500;">${reply.userName || 'User'}</div>
+          <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(reply.timestamp)}</div>
+        </div>
+      </div>
+      <div style="margin-top: 10px; font-size: 15px; line-height: 1.5; color: #ddd;">
+        ${reply.content}
+      </div>
+    `;
+    
+    repliesList.appendChild(replyElement);
+  });
+
+  // Update jumlah balasan
+  document.getElementById('repliesCount').textContent = replies.length;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function loadAnnouncementDetail(announcementId) {
     try {
         const container = document.getElementById('announcementDetailContainer');
@@ -6048,23 +6112,8 @@ function setupAdminAnnouncementForm(announcementId, announcementData) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Variabel untuk menyimpan data balasan sementara
+let currentAnnouncementReplies = [];
 
 async function showAnnouncementDetailById(announcementId) {
   try {
@@ -6092,17 +6141,25 @@ async function showAnnouncementDetailById(announcementId) {
     // Tampilkan loading state
     container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
 
-   // Setup form edit setelah data dimuat
-    const docRef = doc(db, "announcements", announcementId);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      setupAdminAnnouncementForm(announcementId, docSnap.data());
-    }
-    
+    // Muat data pengumuman dan balasan secara paralel
+    const [announcementSnap, repliesSnap] = await Promise.all([
+      getDoc(doc(db, "announcements", announcementId)),
+      getDocs(collection(db, "announcements", announcementId, "replies"))
+    ]);
 
-    const announcement = docSnap.data();
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
+    if (!announcementSnap.exists()) {
+      throw new Error("Pengumuman tidak ditemukan");
+    }
+
+    const announcement = announcementSnap.data();
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
+
+    // Simpan balasan ke variabel sementara
+    currentAnnouncementReplies = repliesSnap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate() : new Date()
+    }));
 
     // Render konten pengumuman
     container.innerHTML = `
@@ -6145,23 +6202,11 @@ async function showAnnouncementDetailById(announcementId) {
       </div>
     `;
 
-    // Setup admin controls jika user adalah admin
-    const adminForm = document.getElementById('adminAnnouncementForm');
-    if (adminForm && isUserAdmin(auth.currentUser)) {
-      adminForm.style.display = 'block';
-      const editTitle = document.getElementById('editAnnouncementTitle');
-      const editContent = document.getElementById('editAnnouncementContent');
-      
-      if (editTitle && editContent) {
-        editTitle.value = announcement.title;
-        editContent.value = announcement.content;
-      }
-    } else if (adminForm) {
-      adminForm.style.display = 'none';
-    }
+    // Setup admin controls
+    setupAdminAnnouncementForm(announcementSnap.id, announcement);
 
-    // Muat balasan
-    await loadAnnouncementReplies(announcementId);
+    // Render balasan yang sudah disimpan
+    renderAnnouncementReplies(currentAnnouncementReplies);
 
     // Muat pengumuman terkait
     await loadRelatedAnnouncements(announcementId);
@@ -6185,6 +6230,22 @@ async function showAnnouncementDetailById(announcementId) {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
