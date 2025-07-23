@@ -2342,6 +2342,156 @@
 
 
 
+<!-- Halaman 9 - Detail Pengumuman -->
+<div id="page9" style="display: none;">
+  <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
+  
+  <h1 style="color: white; font-size: 28px; margin: 30px 0 20px 180px;">Detail Pengumuman</h1>
+  
+  <div class="line-box" style="flex-direction: column; align-items: flex-start; gap: 30px; padding: 40px; border-radius: 20px; background: rgba(0, 0, 0, 0.3); margin: 0 100px;">
+    <!-- Konten Pengumuman -->
+    <div id="announcementDetailContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px;">
+      <!-- Konten akan dimuat oleh JavaScript -->
+    </div>
+
+    <!-- Form Edit Pengumuman (Hanya untuk Admin) -->
+    <div id="adminAnnouncementForm" style="display: none; width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-top: 20px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Edit Pengumuman
+      </h2>
+      <form id="editAnnouncementForm">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; color: white; margin-bottom: 8px; font-size: 16px;">Judul</label>
+          <input type="text" id="editAnnouncementTitle" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; color: white; margin-bottom: 8px; font-size: 16px;">Isi</label>
+          <textarea id="editAnnouncementContent" rows="5" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;"></textarea>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; color: white; margin-bottom: 8px; font-size: 16px;">Kategori</label>
+          <select id="editAnnouncementCategory" style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;">
+            <option value="umum">Umum</option>
+            <option value="penting">Penting</option>
+            <option value="update">Update</option>
+            <option value="acara">Acara</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="cancelEditAnnouncement" style="padding: 12px 25px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: white; cursor: pointer;">
+            Batal
+          </button>
+          <button type="button" id="deleteAnnouncement" style="padding: 12px 25px; background: linear-gradient(135deg, #ff6b6b, #ff0000); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
+            Hapus
+          </button>
+          <button type="submit" style="padding: 12px 25px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
+            Simpan Perubahan
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Balasan Pengumuman -->
+    <div id="announcementRepliesContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <h2 style="color: white; font-size: 22px; margin: 0;">
+          Balasan (<span id="repliesCount">0</span>)
+        </h2>
+        <div style="color: #4ea1ff; font-size: 14px;">
+          <span id="activeUsersCount">0</span> pengguna aktif
+        </div>
+      </div>
+      <div id="announcementRepliesList" style="display: flex; flex-direction: column; gap: 15px;"></div>
+      
+      <!-- Form Balasan -->
+      <div id="loginToReply" style="display: none; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
+        <p style="color: #aaa; margin-bottom: 10px;">Silakan login untuk membalas</p>
+        <a href="#" id="loginLink" style="color: #4ea1ff; text-decoration: none;">Login</a>
+      </div>
+      
+      <form id="announcementReplyForm" style="display: none; margin-top: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+          <div id="replyUserAvatar" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;"></div>
+          <div id="replyUserName" style="color: white; font-weight: 500;"></div>
+        </div>
+        <textarea id="announcementReplyContent" rows="3" placeholder="Tulis balasan Anda..." style="width: 100%; padding: 12px 15px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; margin-bottom: 15px;"></textarea>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="cancelReply" style="padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer;">
+            Batal
+          </button>
+          <button type="submit" style="padding: 10px 20px; background: linear-gradient(135deg, #4ea1ff, #0066ff); border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
+            Kirim Balasan
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Pengumuman Terkait -->
+    <div id="relatedAnnouncementsContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+      <h2 style="color: white; font-size: 22px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Pengumuman Terkait
+      </h2>
+      <div id="relatedAnnouncementsList" style="display: flex; flex-direction: column; gap: 15px;"></div>
+    </div>
+  </div>
+
+  <div class="bottom-line"></div>
+
+  <div class="bottom-text">
+    <div>
+      <a href="#" class="tentangLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Tentang Kami
+      </a>
+    </div>
+    <div>
+      <a href="#" class="masukanLink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Masukan
+      </a>
+    </div>
+    <div>
+      <a href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+        Saran
+      </a>
+    </div>
+  </div>
+
+  <div class="nav-link">
+    <a href="#" id="backToAnnouncements">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 5 5 12 12 19"></polyline>
+      </svg>
+      Kembali
+    </a>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, getDoc, writeBatch, setDoc, doc, updateDoc, where, getDocs, documentId, limit, increment, getCountFromServer, arrayUnion, 
@@ -3907,119 +4057,124 @@ window.addEventListener('online', sendPendingFeedback);
 
 
 
-
+// Fungsi untuk render pengumuman di halaman 7 dengan foto profil
 function renderAnnouncements(announcements) {
-    const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
-    if (!pinnedContainer) return;
+  const pinnedContainer = document.getElementById('pinnedAnnouncementsList');
+  if (!pinnedContainer) return;
 
-    pinnedContainer.innerHTML = '';
+  pinnedContainer.innerHTML = '';
 
-    announcements.forEach(announcement => {
-        const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
-        
-        const announcementItem = document.createElement('div');
-        announcementItem.className = 'pinned-item';
-        announcementItem.setAttribute('data-id', announcement.id);
+  announcements.forEach(announcement => {
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp);
+    
+    const announcementItem = document.createElement('div');
+    announcementItem.className = 'pinned-item';
+    announcementItem.setAttribute('data-id', announcement.id);
 
-        announcementItem.style.cssText = `
-            margin-bottom: 15px;
-            padding: 15px;
-            border-radius: 10px;
-            background: rgba(255, 107, 107, 0.1);
-            border-left: 4px solid #ff6b6b;
-            cursor: pointer;
-        `;
-        
-        announcementItem.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                <h3 style="color: #ff6b6b; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff6b6b">
-                        <path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>
-                    </svg>
-                    ${announcement.title}
-                </h3>
-                <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+    announcementItem.style.cssText = `
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 10px;
+      background: rgba(255, 107, 107, 0.1);
+      border-left: 4px solid #ff6b6b;
+      cursor: pointer;
+    `;
+    
+    // Tanda admin jika pengumuman dari admin
+    const adminBadge = announcement.userEmail && isUserAdmin({ email: announcement.userEmail }) 
+      ? '<span style="background: #ff6b6b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">ADMIN</span>' 
+      : '';
+    
+    announcementItem.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+        <div>
+          <h3 style="color: #ff6b6b; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff6b6b">
+              <path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v8l-2 2v1h15v-1l-2-2z"/>
+            </svg>
+            ${announcement.title}
+            ${adminBadge}
+          </h3>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+            <div style="width: 24px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white;">
+              ${announcement.userName?.charAt(0).toUpperCase() || 'A'}
             </div>
-            <div style="color: #ddd; margin-top: 8px; line-height: 1.5;">
-                ${announcement.content.substring(0, 150)}${announcement.content.length > 150 ? '...' : ''}
-            </div>
-          
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="color: #aaa; font-size: 12px; font-style: italic;">
-                    Diposting oleh: ${announcement.userName || 'Admin'}
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <span style="color: #ccc; font-size: 12px; display: flex; align-items: center;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
-                    </span>
-                    <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                        </svg>
-                        <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
-                    </button>
-                    <button class="reply-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        <span class="reply-count" style="margin-left: 5px;">${announcement.repliesCount || 0}</span>
-                    </button>
-                </div>
-            </div>
-            <button class="view-announcement-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
-                Baca Selengkapnya
-            </button>
-        `;
+            <div style="color: #aaa; font-size: 12px;">${announcement.userName || 'Admin'}</div>
+          </div>
+        </div>
+        <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+      </div>
+      <div style="color: #ddd; margin-top: 8px; line-height: 1.5;">
+        ${announcement.content.substring(0, 150)}${announcement.content.length > 150 ? '...' : ''}
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+        <div style="display: flex; gap: 10px;">
+          <span style="color: #ccc; font-size: 12px; display: flex; align-items: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
+          </span>
+          <button class="like-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+            </svg>
+            <span class="like-count" style="margin-left: 5px;">${announcement.likesCount || 0}</span>
+          </button>
+          <button class="reply-btn" style="display: flex; align-items: center; background: none; border: none; color: #ccc; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="reply-count" style="margin-left: 5px;">${announcement.repliesCount || 0}</span>
+          </button>
+        </div>
+        <button class="view-announcement-btn" style="background: none; border: none; color: #4ea1ff; cursor: pointer; font-size: 14px;">
+          Baca Selengkapnya
+        </button>
+      </div>
+    `;
 
-        // Event listener untuk klik item pengumuman
-        announcementItem.addEventListener('click', async (e) => {
-            if (!e.target.closest('.like-btn, .reply-btn, .view-announcement-btn')) {
-                e.preventDefault();
-                const id = announcementItem.getAttribute('data-id');
-                if (id) {
-                    history.pushState({ page: "detail-pengumuman" }, "", `/halaman-masukan-${id}`);
-                    await showAnnouncementDetailById(id);
-                }
-            }
-        });
-
-        pinnedContainer.appendChild(announcementItem);
-        
-        // Event listener untuk tombol like
-        const likeBtn = announcementItem.querySelector('.like-btn');
-        if (likeBtn) {
-            likeBtn.addEventListener('click', async (event) => {
-                event.stopPropagation();
-                await toggleAnnouncementLike(announcement.id);
-                const updatedLikes = await getAnnouncementLikesCount(announcement.id);
-                announcementItem.querySelector('.like-count').textContent = updatedLikes;
-            });
+    pinnedContainer.appendChild(announcementItem);
+    
+    // Event listener untuk klik item pengumuman
+    announcementItem.addEventListener('click', async (e) => {
+      if (!e.target.closest('.like-btn, .reply-btn, .view-announcement-btn')) {
+        e.preventDefault();
+        const id = announcementItem.getAttribute('data-id');
+        if (id) {
+          history.pushState({ page: "detail-pengumuman" }, "", `/halaman-masukan-${id}`);
+          await showAnnouncementDetailById(id);
         }
-
-        // Event listener untuk tombol reply
-        const replyBtn = announcementItem.querySelector('.reply-btn');
-        if (replyBtn) {
-            replyBtn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                viewAnnouncementDetails(announcement.id);
-            });
-        }
-
-        // Event listener untuk tombol "Baca Selengkapnya"
-        const viewBtn = announcementItem.querySelector('.view-announcement-btn');
-        if (viewBtn) {
-            viewBtn.addEventListener('click', async (event) => {
-                event.stopPropagation();
-                await viewAnnouncementDetails(announcement.id);
-            });
-        }
+      }
     });
-}
 
+    // Event listener untuk tombol like
+    const likeBtn = announcementItem.querySelector('.like-btn');
+    if (likeBtn) {
+      likeBtn.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        await toggleAnnouncementLike(announcement.id);
+        const updatedLikes = await getAnnouncementLikesCount(announcement.id);
+        announcementItem.querySelector('.like-count').textContent = updatedLikes;
+      });
+    }
+
+    // Event listener untuk tombol "Baca Selengkapnya"
+    const viewBtn = announcementItem.querySelector('.view-announcement-btn');
+    if (viewBtn) {
+      viewBtn.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        const id = announcementItem.getAttribute('data-id');
+        if (id) {
+          history.pushState({ page: "detail-pengumuman" }, "", `/halaman-masukan-${id}`);
+          await showAnnouncementDetailById(id);
+        }
+      });
+    }
+  });
+}
 
 
 
@@ -4290,7 +4445,10 @@ async function loadAnnouncementDetail(announcementId) {
 
 
 
-// Fungsi untuk memuat balasan
+
+
+
+// Fungsi untuk memuat balasan dengan foto profil dan like
 async function loadAnnouncementReplies(announcementId) {
   const repliesList = document.getElementById('announcementRepliesList');
   if (!repliesList) return;
@@ -4309,42 +4467,171 @@ async function loadAnnouncementReplies(announcementId) {
     
     if (querySnapshot.empty) {
       repliesList.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">Belum ada balasan</div>';
+      document.getElementById('repliesCount').textContent = '0';
       return;
     }
+
+    // Update jumlah balasan
+    document.getElementById('repliesCount').textContent = querySnapshot.size;
     
-    querySnapshot.forEach(doc => {
+    // Dapatkan data like untuk setiap balasan
+    const repliesWithLikes = await Promise.all(querySnapshot.docs.map(async (doc) => {
       const reply = doc.data();
+      const likesCount = await getReplyLikesCount(announcementId, doc.id);
+      const userLiked = await checkUserLikedReply(announcementId, doc.id);
+      return { id: doc.id, ...reply, likesCount, userLiked };
+    }));
+
+    // Render setiap balasan
+    repliesWithLikes.forEach(reply => {
       const waktu = reply.timestamp?.toDate ? reply.timestamp.toDate() : new Date();
       
       const replyElement = document.createElement('div');
-      replyElement.style.cssText = 'padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;';
+      replyElement.style.cssText = 'padding: 20px; background: rgba(255,255,255,0.03); border-radius: 10px; position: relative;';
+      
+      // Tanda admin jika balasan dari admin
+      const adminBadge = reply.userEmail && isUserAdmin({ email: reply.userEmail }) 
+        ? '<span style="background: #ff6b6b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">ADMIN</span>' 
+        : '';
       
       replyElement.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-          <div style="width: 30px; height: 30px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; color: white;">
+        <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+          <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; flex-shrink: 0;">
             ${reply.userName?.charAt(0).toUpperCase() || 'U'}
           </div>
-          <div>
-            <div style="color: white; font-size: 14px; font-weight: 500;">${reply.userName || 'User'}</div>
-            <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+          <div style="flex-grow: 1;">
+            <div style="display: flex; align-items: center; margin-bottom: 5px;">
+              <div style="color: white; font-size: 15px; font-weight: 500;">${reply.userName || 'User'}</div>
+              ${adminBadge}
+            </div>
+            <div style="color: #aaa; font-size: 12px; margin-bottom: 10px;">${formatTimeAgo(waktu)}</div>
+            <div style="color: #ddd; font-size: 15px; line-height: 1.5; white-space: pre-line;">
+              ${reply.content}
+            </div>
           </div>
         </div>
-        <div style="margin-top: 10px; font-size: 15px; line-height: 1.5; color: #ddd;">
-          ${reply.content}
+        
+        <!-- Action buttons -->
+        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px;">
+          <button class="like-reply-btn" data-reply-id="${reply.id}" style="display: flex; align-items: center; background: none; border: none; color: ${reply.userLiked ? '#4ea1ff' : '#ccc'}; cursor: pointer;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="${reply.userLiked ? '#4ea1ff' : 'none'}" stroke="${reply.userLiked ? '#4ea1ff' : '#ccc'}" stroke-width="2">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+            </svg>
+            <span class="like-count" style="margin-left: 5px;">${reply.likesCount || 0}</span>
+          </button>
         </div>
+        
+        <div style="position: absolute; bottom: 0; left: 20px; right: 20px; height: 1px; background: rgba(255,255,255,0.05);"></div>
       `;
       
       repliesList.appendChild(replyElement);
+      
+      // Tambahkan event listener untuk like button
+      const likeBtn = replyElement.querySelector('.like-reply-btn');
+      if (likeBtn) {
+        likeBtn.addEventListener('click', async () => {
+          await toggleReplyLike(announcementId, reply.id);
+        });
+      }
     });
-    
-    // Update jumlah balasan
-    document.getElementById('repliesCount').textContent = querySnapshot.size;
 
   } catch (error) {
     console.error("Error loading replies:", error);
     repliesList.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:20px;">Gagal memuat balasan</div>';
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+// Fungsi untuk mendapatkan jumlah like balasan
+async function getReplyLikesCount(announcementId, replyId) {
+  try {
+    const likesRef = collection(db, "announcements", announcementId, "replies", replyId, "likes");
+    const snapshot = await getCountFromServer(likesRef);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error("Error getting reply likes count:", error);
+    return 0;
+  }
+}
+
+// Fungsi untuk mengecek apakah user sudah like balasan
+async function checkUserLikedReply(announcementId, replyId) {
+  const user = auth.currentUser;
+  if (!user) return false;
+  
+  try {
+    const likeDoc = doc(db, "announcements", announcementId, "replies", replyId, "likes", user.uid);
+    const docSnap = await getDoc(likeDoc);
+    return docSnap.exists();
+  } catch (error) {
+    console.error("Error checking user like for reply:", error);
+    return false;
+  }
+}
+
+// Fungsi untuk toggle like balasan
+async function toggleReplyLike(announcementId, replyId) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Silakan login untuk memberikan like');
+    return;
+  }
+  
+  try {
+    const likeRef = doc(db, "announcements", announcementId, "replies", replyId, "likes", user.uid);
+    const likeDoc = await getDoc(likeRef);
+    
+    if (likeDoc.exists()) {
+      // Unlike
+      await deleteDoc(likeRef);
+    } else {
+      // Like
+      await setDoc(likeRef, {
+        userId: user.uid,
+        timestamp: serverTimestamp()
+      });
+    }
+    
+    // Update UI
+    const likeBtn = document.querySelector(`.like-reply-btn[data-reply-id="${replyId}"]`);
+    if (likeBtn) {
+      const likesCount = await getReplyLikesCount(announcementId, replyId);
+      const userLiked = await checkUserLikedReply(announcementId, replyId);
+      
+      likeBtn.querySelector('svg').setAttribute('fill', userLiked ? '#4ea1ff' : 'none');
+      likeBtn.querySelector('svg').setAttribute('stroke', userLiked ? '#4ea1ff' : '#ccc');
+      likeBtn.style.color = userLiked ? '#4ea1ff' : '#ccc';
+      likeBtn.querySelector('.like-count').textContent = likesCount;
+    }
+    
+  } catch (error) {
+    console.error("Error toggling reply like:", error);
+    alert('Gagal mengupdate like. Silakan coba lagi.');
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4746,7 +5033,8 @@ const isAdmin = checkAdminStatus(user); // Use the existing function
 
 
 
-// Fungsi untuk setup form balasan
+
+// Fungsi untuk setup form balasan dengan foto profil user
 function setupReplyForm(announcementId) {
   const user = auth.currentUser;
   const replyForm = document.getElementById('announcementReplyForm');
@@ -4755,6 +5043,18 @@ function setupReplyForm(announcementId) {
   if (user) {
     replyForm.style.display = 'block';
     loginToReply.style.display = 'none';
+    
+    // Tampilkan foto profil dan nama user
+    const avatar = document.getElementById('replyUserAvatar');
+    const name = document.getElementById('replyUserName');
+    
+    if (avatar) {
+      avatar.textContent = user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U';
+    }
+    
+    if (name) {
+      name.textContent = user.displayName || user.email?.split('@')[0] || 'User';
+    }
     
     replyForm.onsubmit = async (e) => {
       e.preventDefault();
@@ -4798,6 +5098,12 @@ function setupReplyForm(announcementId) {
         submitBtn.innerHTML = originalText;
       }
     };
+    
+    // Event listener untuk tombol batal
+    document.getElementById('cancelReply')?.addEventListener('click', () => {
+      document.getElementById('announcementReplyContent').value = '';
+    });
+    
   } else {
     replyForm.style.display = 'none';
     loginToReply.style.display = 'block';
@@ -4809,6 +5115,43 @@ function setupReplyForm(announcementId) {
     };
   }
 }
+
+
+
+
+
+
+// Fungsi untuk update jumlah user aktif
+function updateActiveUsersCount() {
+  // Ini adalah contoh sederhana, dalam aplikasi nyata Anda perlu:
+  // 1. Menyimpan data user aktif di database
+  // 2. Mendapatkan jumlah user aktif dari database
+  
+  // Untuk demo, kita gunakan angka acak antara 5-15
+  const activeUsers = Math.floor(Math.random() * 10) + 5;
+  document.getElementById('activeUsersCount').textContent = activeUsers;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6116,6 +6459,18 @@ function setupAdminAnnouncementForm(announcementId, announcementData) {
 // Variabel untuk menyimpan data balasan sementara
 let currentAnnouncementReplies = [];
 
+
+
+
+
+
+
+
+
+
+
+
+// Fungsi untuk menampilkan detail pengumuman dengan fitur tambahan
 async function showAnnouncementDetailById(announcementId) {
   try {
     // Pastikan halaman 9 ada sebelum melanjutkan
@@ -6142,31 +6497,39 @@ async function showAnnouncementDetailById(announcementId) {
     // Tampilkan loading state
     container.innerHTML = '<div style="color:#ccc; text-align:center; padding:30px;">Memuat pengumuman...</div>';
 
-    // Muat data pengumuman dan balasan secara paralel
-    const [announcementSnap, repliesSnap] = await Promise.all([
-      getDoc(doc(db, "announcements", announcementId)),
-      getDocs(collection(db, "announcements", announcementId, "replies"))
-    ]);
+    // Dapatkan data dari Firestore
+    const docRef = doc(db, "announcements", announcementId);
+    const docSnap = await getDoc(docRef);
 
-    if (!announcementSnap.exists()) {
+    if (!docSnap.exists()) {
       throw new Error("Pengumuman tidak ditemukan");
     }
 
-    const announcement = announcementSnap.data();
-    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date();
-
-    // Simpan balasan ke variabel sementara
-    currentAnnouncementReplies = repliesSnap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      timestamp: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate() : new Date()
-    }));
+    const announcement = docSnap.data();
+    const waktu = announcement.timestamp?.toDate ? announcement.timestamp.toDate() : new Date(announcement.timestamp || Date.now());
+    
+    // Format konten dengan nomor paragraf dan garis bawah
+    const formattedContent = formatContentWithNumbersAndLines(announcement.content);
+    
+    // Kategori dengan badge berwarna
+    const categoryBadge = getCategoryBadge(announcement.category || 'umum');
+    
+    // Tanda admin jika pengumuman dibuat oleh admin
+    const adminBadge = announcement.userEmail && isUserAdmin({ email: announcement.userEmail }) 
+      ? '<span style="background: #ff6b6b; color: white; padding: 3px 8px; border-radius: 10px; font-size: 12px; margin-left: 10px;">ADMIN</span>' 
+      : '';
 
     // Render konten pengumuman
     container.innerHTML = `
       <div style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-          <h2 style="color: #ff6b6b; font-size: 28px; margin: 0; line-height: 1.3;">${announcement.title || 'Tanpa Judul'}</h2>
+          <div>
+            <h2 style="color: #ff6b6b; font-size: 28px; margin: 0; line-height: 1.3; display: flex; align-items: center;">
+              ${announcement.title || 'Tanpa Judul'}
+              ${adminBadge}
+            </h2>
+            <div style="margin-top: 5px;">${categoryBadge}</div>
+          </div>
           <div style="color: #aaa; font-size: 14px; white-space: nowrap;">${formatTimeAgo(waktu)}</div>
         </div>
         
@@ -6180,8 +6543,9 @@ async function showAnnouncementDetailById(announcementId) {
           </div>
         </div>
         
-        <div style="color: #ddd; font-size: 16px; line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
-          ${announcement.content || 'Tidak ada konten'}
+        <div style="color: #ddd; font-size: 16px; line-height: 1.6; margin-bottom: 20px; position: relative;">
+          ${formattedContent}
+          <div style="position: absolute; bottom: -10px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);"></div>
         </div>
         
         <div style="display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -6199,21 +6563,47 @@ async function showAnnouncementDetailById(announcementId) {
             </svg>
             <span class="view-count" style="margin-left: 5px;">${announcement.views || 0}</span>
           </div>
+          
+          <!-- Tautan dengan nomor referensi -->
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span>Referensi: <span id="referenceNumber">1</span></span>
+          </div>
         </div>
       </div>
     `;
 
-    // Setup admin controls
-    setupAdminAnnouncementForm(announcementSnap.id, announcement);
+    // Setup admin controls jika user adalah admin
+    const adminForm = document.getElementById('adminAnnouncementForm');
+    if (adminForm && isUserAdmin(auth.currentUser)) {
+      adminForm.style.display = 'block';
+      const editTitle = document.getElementById('editAnnouncementTitle');
+      const editContent = document.getElementById('editAnnouncementContent');
+      const editCategory = document.getElementById('editAnnouncementCategory');
+      
+      if (editTitle && editContent && editCategory) {
+        editTitle.value = announcement.title;
+        editContent.value = announcement.content;
+        editCategory.value = announcement.category || 'umum';
+      }
+    } else if (adminForm) {
+      adminForm.style.display = 'none';
+    }
 
-    // Render balasan yang sudah disimpan
-    renderAnnouncementReplies(currentAnnouncementReplies);
+    // Muat balasan dengan foto profil dan like
+    await loadAnnouncementReplies(announcementId);
 
     // Muat pengumuman terkait
     await loadRelatedAnnouncements(announcementId);
 
-    // Setup form balasan
+    // Setup form balasan dengan foto profil user
     setupReplyForm(announcementId);
+    
+    // Update jumlah user aktif
+    updateActiveUsersCount();
 
   } catch (error) {
     console.error("Error loading announcement:", error);
@@ -6241,10 +6631,36 @@ async function showAnnouncementDetailById(announcementId) {
 
 
 
+// Fungsi untuk memformat konten dengan nomor paragraf dan garis bawah
+function formatContentWithNumbersAndLines(content) {
+  if (!content) return '<p>Tidak ada konten</p>';
+  
+  // Pisahkan paragraf
+  const paragraphs = content.split('\n').filter(p => p.trim() !== '');
+  
+  // Tambahkan nomor paragraf dan garis bawah
+  return paragraphs.map((para, index) => `
+    <div style="margin-bottom: 15px; position: relative; padding-left: 30px;">
+      <span style="position: absolute; left: 0; color: #4ea1ff; font-weight: bold;">${index + 1}.</span>
+      <p style="margin: 0; white-space: pre-line;">${para}</p>
+      <div style="height: 1px; background: rgba(255,255,255,0.1); margin-top: 10px;"></div>
+    </div>
+  `).join('');
+}
 
-
-
-
+// Fungsi untuk membuat badge kategori
+function getCategoryBadge(category) {
+  const categories = {
+    umum: { color: '#4ea1ff', text: 'Umum' },
+    penting: { color: '#ff6b6b', text: 'Penting' },
+    update: { color: '#6bff6b', text: 'Update' },
+    acara: { color: '#ffb84e', text: 'Acara' },
+    lainnya: { color: '#b84eff', text: 'Lainnya' }
+  };
+  
+  const selected = categories[category] || categories['umum'];
+  return `<span style="background: ${selected.color}; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; display: inline-block;">${selected.text}</span>`;
+}
 
 
 
