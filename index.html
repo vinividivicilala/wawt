@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.0.0/diff.min.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Life Is What It Is Learn</title>
@@ -730,6 +731,89 @@
     cursor: default;
     pointer-events: auto;
 }
+
+
+
+
+/* Style untuk history changes */
+.edit-highlight {
+  background-color: rgba(255, 255, 0, 0.1);
+  border-left: 3px solid #ff6b6b;
+  padding-left: 10px;
+  transition: all 0.3s ease;
+}
+
+.history-item {
+  border-left: 3px solid #4ea1ff;
+  margin-bottom: 10px;
+  padding-left: 10px;
+}
+
+#editHistoryList::-webkit-scrollbar {
+  width: 6px;
+}
+
+#editHistoryList::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+}
+
+#editHistoryList::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+
+
+
+/* Style untuk modal perbandingan */
+#editComparisonModal h3 {
+  margin-top: 0;
+}
+
+#editComparisonModal div[style*="padding: 10px"] {
+  margin-bottom: 15px;
+}
+
+#beforeEditContent, #afterEditContent {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+#beforeEditContent::-webkit-scrollbar, 
+#afterEditContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+#beforeEditContent::-webkit-scrollbar-track,
+#afterEditContent::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+}
+
+#beforeEditContent::-webkit-scrollbar-thumb,
+#afterEditContent::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+/* Highlight untuk perubahan */
+.highlight-added {
+  background-color: rgba(78,161,255,0.3);
+  border-left: 2px solid #4ea1ff;
+  padding-left: 4px;
+}
+
+.highlight-removed {
+  background-color: rgba(255,107,107,0.3);
+  border-left: 2px solid #ff6b6b;
+  padding-left: 4px;
+  text-decoration: line-through;
+}
+
+
+
+
+
 
 
 
@@ -2258,6 +2342,52 @@
         </div>
       </form>
     </div>
+	
+	
+	<!-- Tambahkan di bagian bawah div id="page9" -->
+<div id="editComparisonModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #1e1e1e; border-radius: 15px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+      <h2 style="color: white; margin: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 10px;">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        Perbandingan Perubahan
+      </h2>
+      <button id="closeEditComparison" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <div>
+        <h3 style="color: #ff6b6b; border-bottom: 1px solid rgba(255,107,107,0.3); padding-bottom: 5px;">Sebelum Edit</h3>
+        <div id="beforeEditContent" style="color: #ddd;"></div>
+      </div>
+      <div>
+        <h3 style="color: #4ea1ff; border-bottom: 1px solid rgba(78,161,255,0.3); padding-bottom: 5px;">Sesudah Edit</h3>
+        <div id="afterEditContent" style="color: #ddd;"></div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 20px; color: #aaa; font-size: 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12" y2="8"></line>
+      </svg>
+      Bagian yang diubah ditandai dengan blok warna
+    </div>
+  </div>
+</div>
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
     <!-- Balasan Pengumuman -->
     <div id="announcementRepliesContainer" style="width: 100%; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
@@ -4437,6 +4567,114 @@ async function toggleAnnouncementLike(announcementId) {
 
 
 
+// Fungsi untuk menambahkan history edit
+async function addEditHistory(announcementId, editedBy, changes) {
+  try {
+    const historyRef = collection(db, "announcements", announcementId, "editHistory");
+    await addDoc(historyRef, {
+      editedBy: editedBy,
+      changes: changes,
+      timestamp: serverTimestamp(),
+      userEmail: auth.currentUser.email,
+      userName: auth.currentUser.displayName || 'Admin'
+    });
+  } catch (error) {
+    console.error("Error adding edit history:", error);
+  }
+}
+
+// Fungsi untuk memuat history edit
+async function loadEditHistory(announcementId) {
+  const historyContainer = document.getElementById('editHistoryContainer');
+  const historyList = document.getElementById('editHistoryList');
+  
+  if (!historyContainer || !historyList) return;
+
+  try {
+    const q = query(
+      collection(db, "announcements", announcementId, "editHistory"),
+      orderBy("timestamp", "desc"),
+      limit(5)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    historyList.innerHTML = '';
+    
+    if (querySnapshot.empty) {
+      historyList.innerHTML = '<div style="color:#ccc; text-align:center; padding:10px;">Belum ada riwayat perubahan</div>';
+      return;
+    }
+
+    querySnapshot.forEach(doc => {
+      const history = doc.data();
+      const waktu = history.timestamp?.toDate ? history.timestamp.toDate() : new Date();
+      
+      const historyItem = document.createElement('div');
+      historyItem.style.cssText = 'padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;';
+      
+      historyItem.innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <div style="color: #4ea1ff; font-weight: 500;">${history.userName || 'Admin'}</div>
+          <div style="color: #aaa; font-size: 12px;">${formatTimeAgo(waktu)}</div>
+        </div>
+        <div style="color: #ddd; font-size: 14px;">
+          ${renderChanges(history.changes)}
+        </div>
+      `;
+      
+      historyList.appendChild(historyItem);
+    });
+    
+    historyContainer.style.display = 'block';
+    
+  } catch (error) {
+    console.error("Error loading edit history:", error);
+    historyList.innerHTML = '<div style="color:#ff6b6b; text-align:center; padding:10px;">Gagal memuat riwayat</div>';
+  }
+}
+
+// Fungsi untuk merender perubahan
+function renderChanges(changes) {
+  let html = '';
+  for (const [field, value] of Object.entries(changes)) {
+    html += `
+      <div style="margin-bottom: 5px;">
+        <span style="color: #ff6b6b;">${fieldToLabel(field)}:</span>
+        <div style="background: rgba(255,107,107,0.1); padding: 5px 8px; border-radius: 4px; margin-top: 3px;">
+          ${value}
+        </div>
+      </div>
+    `;
+  }
+  return html || '<span style="color:#aaa;">Tidak ada detail perubahan</span>';
+}
+
+// Fungsi untuk mengubah nama field menjadi label
+function fieldToLabel(field) {
+  const labels = {
+    'title': 'Judul',
+    'content': 'Isi',
+    'pinned': 'Status Pin'
+  };
+  return labels[field] || field;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4852,7 +5090,7 @@ function setupReplyForm(announcementId) {
 
 
 
-// Fungsi untuk update pengumuman
+// Modifikasi fungsi updateAnnouncement untuk menyimpan history
 async function updateAnnouncement(announcementId) {
   const title = document.getElementById('editAnnouncementTitle').value.trim();
   const content = document.getElementById('editAnnouncementContent').value.trim();
@@ -4868,7 +5106,34 @@ async function updateAnnouncement(announcementId) {
   submitBtn.innerHTML = 'Menyimpan...';
 
   try {
-    await updateDoc(doc(db, "announcements", announcementId), {
+    // Dapatkan data sebelum diubah untuk membandingkan perubahan
+    const docRef = doc(db, "announcements", announcementId);
+    const docSnap = await getDoc(docRef);
+    const oldData = docSnap.data();
+    
+    const changes = {};
+    
+    // Catat perubahan judul
+    if (oldData.title !== title) {
+      changes.title = title;
+    }
+    
+    // Catat perubahan isi
+    if (oldData.content !== content) {
+      changes.content = content;
+    }
+    
+    // Jika ada perubahan, simpan ke history
+    if (Object.keys(changes).length > 0) {
+      await addEditHistory(
+        announcementId, 
+        auth.currentUser.displayName || 'Admin',
+        changes
+      );
+    }
+    
+    // Update dokumen utama
+    await updateDoc(docRef, {
       title,
       content,
       lastUpdated: serverTimestamp()
@@ -4876,8 +5141,9 @@ async function updateAnnouncement(announcementId) {
 
     showNotification('Pengumuman berhasil diperbarui!', 'success');
     
-    // Refresh data pengumuman
+    // Refresh data pengumuman dan history
     await showAnnouncementDetailById(announcementId);
+    await loadEditHistory(announcementId);
     
   } catch (error) {
     console.error("Error updating announcement:", error);
@@ -4887,21 +5153,6 @@ async function updateAnnouncement(announcementId) {
     submitBtn.innerHTML = originalText;
   }
 }
-
-// Fungsi untuk menghapus pengumuman
-async function deleteAnnouncement(announcementId) {
-  try {
-    await deleteDoc(doc(db, "announcements", announcementId));
-    showNotification('Pengumuman berhasil dihapus!', 'success');
-    backToFeedbackPage();
-  } catch (error) {
-    console.error("Error deleting announcement:", error);
-    showNotification('Gagal menghapus pengumuman: ' + error.message, 'error');
-  }
-}
-
-
-
 
 
 
@@ -5070,7 +5321,103 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
+// Fungsi untuk menampilkan popup perbandingan
+async function showEditComparison(announcementId) {
+  try {
+    // Dapatkan data saat ini dari form edit
+    const newTitle = document.getElementById('editAnnouncementTitle').value.trim();
+    const newContent = document.getElementById('editAnnouncementContent').value.trim();
+    
+    // Dapatkan data asli dari Firestore
+    const docRef = doc(db, "announcements", announcementId);
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error("Pengumuman tidak ditemukan");
+    }
+    
+    const originalData = docSnap.data();
+    
+    // Tampilkan perbandingan
+    const beforeEdit = document.getElementById('beforeEditContent');
+    const afterEdit = document.getElementById('afterEditContent');
+    
+    // Fungsi untuk highlight perubahan teks
+    function highlightChanges(oldText, newText) {
+      if (oldText === newText) {
+        return `<div>${newText}</div>`;
+      }
+      
+      const diff = Diff.diffWords(oldText || '', newText || '');
+      let html = '';
+      
+      diff.forEach(part => {
+        if (part.added) {
+          html += `<span style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding-left: 4px;">${part.value}</span>`;
+        } else if (part.removed) {
+          html += `<span style="background-color: rgba(255,107,107,0.3); border-left: 2px solid #ff6b6b; padding-left: 4px; text-decoration: line-through;">${part.value}</span>`;
+        } else {
+          html += `<span>${part.value}</span>`;
+        }
+      });
+      
+      return html;
+    }
+    
+    // Tampilkan judul sebelum dan sesudah
+    beforeEdit.innerHTML = `
+      <div style="margin-bottom: 20px;">
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+          ${originalData.title}
+        </div>
+      </div>
+      <div>
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
+          ${originalData.content}
+        </div>
+      </div>
+    `;
+    
+    afterEdit.innerHTML = `
+      <div style="margin-bottom: 20px;">
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+          ${highlightChanges(originalData.title, newTitle)}
+        </div>
+      </div>
+      <div>
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
+          ${highlightChanges(originalData.content, newContent)}
+        </div>
+      </div>
+    `;
+    
+    // Tampilkan modal
+    document.getElementById('editComparisonModal').style.display = 'flex';
+    
+  } catch (error) {
+    console.error("Error showing edit comparison:", error);
+    alert('Gagal memuat perbandingan: ' + error.message);
+  }
+}
 
+// Fungsi untuk menutup popup perbandingan
+function closeEditComparison() {
+  document.getElementById('editComparisonModal').style.display = 'none';
+}
+
+// Event listener untuk tombol close
+document.getElementById('closeEditComparison')?.addEventListener('click', closeEditComparison);
+
+// Event listener untuk klik di luar modal
+document.getElementById('editComparisonModal')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeEditComparison();
+  }
+});
 
 
 
@@ -6120,6 +6467,24 @@ function setupAdminAnnouncementForm(announcementId, announcementData) {
   // Isi form dengan data pengumuman
   document.getElementById('editAnnouncementTitle').value = announcementData.title || '';
   document.getElementById('editAnnouncementContent').value = announcementData.content || '';
+  
+  
+  // Tambahkan event listener untuk icon edit
+  const editIcon = document.createElement('span');
+  editIcon.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 10px; cursor: pointer;" title="Lihat perbandingan">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+  `;
+  editIcon.style.cursor = 'pointer';
+  editIcon.addEventListener('click', () => showEditComparison(announcementId));
+  
+  // Temukan judul pengumuman dan sisipkan icon edit
+  const announcementTitle = document.querySelector('#announcementDetailContainer h2');
+  if (announcementTitle) {
+    announcementTitle.appendChild(editIcon);
+  }
 
   // Setup event listeners
   document.getElementById('editAnnouncementForm').onsubmit = async (e) => {
@@ -6209,9 +6574,12 @@ async function showAnnouncementDetailById(announcementId) {
 
     // Render konten pengumuman
     container.innerHTML = `
-      <div style="margin-bottom: 20px;">
+     <div style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-          <h2 style="color: #ff6b6b; font-size: 28px; margin: 0; line-height: 1.3;">${announcement.title || 'Tanpa Judul'}</h2>
+          <h2 style="color: #ff6b6b; font-size: 28px; margin: 0; line-height: 1.3;">
+            ${announcement.title || 'Tanpa Judul'}
+            ${announcement.lastUpdated ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#4ea1ff" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 8px;" title="Telah diedit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' : ''}
+          </h2>
           <div style="color: #aaa; font-size: 14px; white-space: nowrap;">${formatTimeAgo(waktu)}</div>
         </div>
         
@@ -6250,6 +6618,10 @@ async function showAnnouncementDetailById(announcementId) {
 
     // Setup admin controls
     setupAdminAnnouncementForm(announcementSnap.id, announcement);
+	
+	  // Muat history edit
+    await loadEditHistory(announcementId);
+    
 
     // Render balasan yang sudah disimpan
     renderAnnouncementReplies(currentAnnouncementReplies);
