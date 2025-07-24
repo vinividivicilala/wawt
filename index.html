@@ -4784,51 +4784,34 @@ function fieldToLabel(field) {
 }
 
 
-function highlightChanges(oldText = '', newText = '') {
+
+
+
+
+function highlightChanges(oldText, newText) {
   if (oldText === newText) {
-    return `<div class="diff-container">${escapeHtml(newText)}</div>`;
+    return `<div class="diff-container">${newText}</div>`;
   }
 
   const dmp = new diff_match_patch();
-  const diff = dmp.diff_main(oldText, newText);
-  dmp.diff_cleanupSemantic(diff);
-  
-  let html = '<div class="diff-container">';
-  
-  diff.forEach(([type, text]) => {
-    if (type === 0) { // Unchanged
-      html += `<span>${escapeHtml(text)}</span>`;
-    } else if (type === 1) { // Added
-      if (text.trim() === '') {
-        // Handle whitespace changes differently
-        html += `<span class="text-diff-added" style="border-left-style: dotted;">${escapeHtml(text)}</span>`;
-      } else {
-        html += `<span class="text-diff-added">${escapeHtml(text)}</span>`;
-      }
-    } else if (type === -1) { // Removed
-      if (text.trim() === '') {
-        html += `<span class="text-diff-removed" style="border-left-style: dotted;">${escapeHtml(text)}</span>`;
-      } else {
-        html += `<span class="text-diff-removed">${escapeHtml(text)}</span>`;
-      }
+  const diffs = dmp.diff_main(oldText || '', newText || '');
+  dmp.diff_cleanupSemantic(diffs); // Optional: bisa hapus ini kalau mau lebih detail per karakter
+
+  let html = '';
+  diffs.forEach(([op, data]) => {
+    const safeText = data.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    if (op === 0) {
+      html += `<span>${safeText}</span>`;
+    } else if (op === -1) {
+      html += `<span class="highlight-removed">${safeText}</span>`;
+    } else if (op === 1) {
+      html += `<span class="highlight-added">${safeText}</span>`;
     }
   });
-  
-  html += '</div>';
-  return html;
+
+  return `<div class="diff-container">${html}</div>`;
 }
-
-
-
-// Fungsi helper untuk escape HTML
-function escapeHtml(text) {
-  return text.replace(/[&<>]/g, function(c) {
-    return {'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c];
-  });
-}
-
-
-
 
 
 
@@ -5577,6 +5560,8 @@ document.getElementById('editComparisonModal')?.addEventListener('click', functi
 
 
 
+document.getElementById('beforeEditContent').innerHTML = highlightChanges(oldText, newText);
+document.getElementById('afterEditContent').innerHTML = highlightChanges(newText, oldText);
 
 
 
