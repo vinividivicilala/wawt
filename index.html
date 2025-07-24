@@ -4,8 +4,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.0.0/diff.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/diff-match-patch/20121119/diff_match_patch.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Life Is What It Is Learn</title>
@@ -875,21 +874,21 @@
 }
 
   .text-diff-added {
-    background-color: rgba(78,161,255,0.3);
-    border: 1px solid #4ea1ff;
-    padding: 2px 4px;
-    border-radius: 3px;
-    margin: 0 2px;
-  }
+  background-color: rgba(78,161,255,0.3);
+  border: 1px solid #4ea1ff;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin: 0 2px;
+}
 
-  .text-diff-removed {
-    background-color: rgba(255,107,107,0.3);
-    border: 1px dashed #ff6b6b;
-    padding: 2px 4px;
-    border-radius: 3px;
-    margin: 0 2px;
-    text-decoration: line-through;
-  }
+.text-diff-removed {
+  background-color: rgba(255,107,107,0.3);
+  border: 1px dashed #ff6b6b;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin: 0 2px;
+  text-decoration: line-through;
+}
 
   .edit-comparison-user {
     display: flex;
@@ -4808,47 +4807,33 @@ function fieldToLabel(field) {
 
 
 
-
-window.addEventListener('DOMContentLoaded', () => {
-  function highlightChanges(oldText, newText) {
-    if (oldText === newText) {
-      return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
-    }
-
-    const diff = Diff.diffWords(oldText || '', newText || '');
-    let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">';
-
-    diff.forEach(part => {
-      if (part.added) {
-        html += `<span class="text-diff-added">${part.value}</span>`;
-      } else if (part.removed) {
-        html += `<span class="text-diff-removed">${part.value}</span>`;
-      } else {
-        html += `<span>${part.value}</span>`;
-      }
-    });
-
-    html += '</div>';
-    return html;
+function highlightChanges(oldText, newText) {
+  if (oldText === newText || !oldText) {
+    return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
   }
-
-  // Contoh penggunaan (gunakan variabel asli kamu di sini)
-  const originalData = { title: "Judul Lama", content: "Isi lama" };
-  const newTitle = "Judul Baru";
-  const newContent = "Isi baru dengan tambahan";
-
-  document.getElementById('beforeEdit').innerHTML = `
-    <div>Judul: ${originalData.title}</div>
-    <div>Isi: ${originalData.content}</div>
-  `;
-
-  document.getElementById('afterEdit').innerHTML = `
-    <div>Judul: ${highlightChanges(originalData.title, newTitle)}</div>
-    <div>Isi: ${highlightChanges(originalData.content, newContent)}</div>
-  `;
-
-  document.getElementById('editComparisonModal').style.display = 'flex';
-});
+  
+  const dmp = new diff_match_patch();
+  const diffs = dmp.diff_main(oldText, newText);
+  dmp.diff_cleanupSemantic(diffs);
+  
+  let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">';
+  
+  diffs.forEach(([type, text]) => {
+    switch(type) {
+      case 1: // Ditambahkan
+        html += `<span class="text-diff-added">${text}</span>`;
+        break;
+      case -1: // Dihapus
+        html += `<span class="text-diff-removed">${text}</span>`;
+        break;
+      default: // Tidak berubah
+        html += `<span>${text}</span>`;
+    }
+  });
+  
+  html += '</div>';
+  return html;
+}
 
 
 
@@ -5504,19 +5489,11 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
-
-
-
-
-// Fungsi untuk menampilkan popup perbandingan
 async function showEditComparison(announcementId) {
   try {
-    // Dapatkan data saat ini dari form edit
     const newTitle = document.getElementById('editAnnouncementTitle').value.trim();
     const newContent = document.getElementById('editAnnouncementContent').value.trim();
     
-    // Dapatkan data asli dari Firestore
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
     
@@ -5526,39 +5503,48 @@ async function showEditComparison(announcementId) {
     
     const originalData = docSnap.data();
     
-    // Tampilkan perbandingan
     const beforeEdit = document.getElementById('beforeEditContent');
     const afterEdit = document.getElementById('afterEditContent');
     
-    // Fungsi untuk highlight perubahan teks
-    function highlightChanges(oldText, newText) {
-      if (oldText === newText) {
-        return `<div style="padding: 8px;">${newText}</div>`;
-      }
-      
-      // Gunakan library diff atau implementasi sederhana
-      const diff = Diff.diffWords(oldText || '', newText || '');
-      let html = '<div style="padding: 8px;">';
-      
-      diff.forEach(part => {
-        if (part.added) {
-          // Teks yang ditambahkan (tidak ada di versi lama)
-          html += `<span class="text-diff-added">${part.value}</span>`;
-        } else if (part.removed) {
-          // Teks yang dihapus (tidak ada di versi baru)
-          html += `<span class="text-diff-removed">${part.value}</span>`;
-        } else {
-          // Teks yang tidak berubah
-          html += `<span>${part.value}</span>`;
-        }
-      });
-      
-      html += '</div>';
-      return html;
-    }
-	
-	
-	
+    // Tampilkan versi sebelum edit
+    beforeEdit.innerHTML = `
+      <div style="margin-bottom: 20px;">
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+          ${originalData.title || '(Tidak ada judul)'}
+        </div>
+      </div>
+      <div>
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
+          ${originalData.content || '(Tidak ada konten)'}
+        </div>
+      </div>
+    `;
+    
+    // Tampilkan versi setelah edit dengan highlight perubahan
+    afterEdit.innerHTML = `
+      <div style="margin-bottom: 20px;">
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+          ${highlightChanges(originalData.title || '', newTitle)}
+        </div>
+      </div>
+      <div>
+        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
+          ${highlightChanges(originalData.content || '', newContent)}
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('editComparisonModal').style.display = 'flex';
+    
+  } catch (error) {
+    console.error("Error showing edit comparison:", error);
+    alert('Gagal memuat perbandingan: ' + error.message);
+  }
+}
 	
 	
 	
