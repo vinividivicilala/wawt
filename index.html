@@ -5,6 +5,7 @@
 <html lang="id">
 <head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/diff-match-patch/20121119/diff_match_patch.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Life Is What It Is Learn</title>
@@ -738,125 +739,86 @@
 
 
 
-
-/* Style untuk history changes */
-.edit-highlight {
-  background-color: rgba(255, 255, 0, 0.1);
-  border-left: 3px solid #ff6b6b;
-  padding-left: 10px;
-  transition: all 0.3s ease;
-}
-
-.history-item {
-  border-left: 3px solid #4ea1ff;
-  margin-bottom: 10px;
-  padding-left: 10px;
-}
-
-#editHistoryList::-webkit-scrollbar {
-  width: 6px;
-}
-
-#editHistoryList::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.05);
-}
-
-#editHistoryList::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
-  border-radius: 3px;
-}
-
-/* Style untuk modal perbandingan */
-#editComparisonModal h3 {
-  margin-top: 0;
-}
-
-#editComparisonModal div[style*="padding: 10px"] {
-  margin-bottom: 15px;
-}
-
-#beforeEditContent, #afterEditContent {
-  max-height: 60vh;
-  overflow-y: auto;
-  padding-right: 10px;
-}
-
-#beforeEditContent::-webkit-scrollbar, 
-#afterEditContent::-webkit-scrollbar {
-  width: 6px;
-}
-
-#beforeEditContent::-webkit-scrollbar-track,
-#afterEditContent::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.05);
-}
-
-#beforeEditContent::-webkit-scrollbar-thumb,
-#afterEditContent::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
-  border-radius: 3px;
-}
-
-/* Highlight untuk perubahan */
+/* Style untuk highlight perubahan */
 .highlight-added {
   background-color: rgba(78,161,255,0.3);
   border-left: 2px solid #4ea1ff;
-  padding-left: 4px;
+  padding: 0 2px;
+  border-radius: 3px;
+  margin: 0 1px;
+  position: relative;
+}
+
+.highlight-added::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #2a2a2a;
+  color: #ddd;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  display: none;
+}
+
+.highlight-added:hover::after {
+  display: block;
 }
 
 .highlight-removed {
   background-color: rgba(255,107,107,0.3);
-  border-left: 2px solid #ff6b6b;
-  padding-left: 4px;
+  border-left: 2px dashed #ff6b6b;
+  padding: 0 2px;
+  border-radius: 3px;
+  margin: 0 1px;
   text-decoration: line-through;
+  position: relative;
 }
 
-/* Style untuk modal perbandingan yang baru */
-#editComparisonModal {
-  backdrop-filter: blur(5px);
+.highlight-removed::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #2a2a2a;
+  color: #ddd;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  display: none;
 }
 
-#editComparisonModal > div {
-  animation: modalFadeIn 0.3s ease;
+.highlight-removed:hover::after {
+  display: block;
 }
 
-@keyframes modalFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-#beforeEditContent, #afterEditContent {
-  max-height: 50vh;
-  overflow-y: auto;
-  padding-right: 10px;
-}
-
-
-
-
-
-
-
-.text-diff-added {
-  border-left: 3px solid #4ea1ff;
-  padding-left: 5px;
-  margin-left: 2px;
-}
-
-.text-diff-removed {
-  border-left: 3px solid #ff6b6b;
-  padding-left: 5px;
-  margin-left: 2px;
-  text-decoration: line-through;
-}
-
-/* Untuk kontainer utama */
-.diff-container {
-  padding: 8px;
-  background: rgba(255,255,255,0.05);
+/* Style untuk emoticon */
+.emoticon-highlight {
+  background: rgba(255,255,255,0.1);
+  padding: 2px;
   border-radius: 4px;
-  white-space: pre-wrap;
-  line-height: 1.6;
+  position: relative;
+}
+
+.emoticon-highlight::after {
+  content: "Emoticon";
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #2a2a2a;
+  color: #ddd;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  display: none;
+}
+
+.emoticon-highlight:hover::after {
+  display: block;
 }
 
 
@@ -865,38 +827,14 @@
 
 
 
-/* Efek hover untuk header */
-#announcementHeader:hover {
-  background: rgba(255,255,255,0.03);
-  border-radius: 8px;
-  padding: 5px 10px;
-  margin: -5px -10px;
-  transition: all 0.2s ease;
-}
 
-  .edit-comparison-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-  }
 
-  .edit-comparison-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-  }
 
-  .edit-comparison-date {
-    color: #aaa;
-    font-size: 12px;
-    margin-top: 5px;
-  }
+
+
+
+
+
 
 
 
@@ -4788,36 +4726,49 @@ function fieldToLabel(field) {
 
 
 
+
 function highlightChanges(oldText, newText) {
   if (oldText === newText) {
-    return `<div class="diff-container">${newText}</div>`;
+    return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
   }
-
-  const dmp = new diff_match_patch();
-  const diffs = dmp.diff_main(oldText || '', newText || '');
-  dmp.diff_cleanupSemantic(diffs); // Optional: bisa hapus ini kalau mau lebih detail per karakter
-
-  let html = '';
-  diffs.forEach(([op, data]) => {
-    const safeText = data.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-    if (op === 0) {
-      html += `<span>${safeText}</span>`;
-    } else if (op === -1) {
-      html += `<span class="highlight-removed">${safeText}</span>`;
-    } else if (op === 1) {
-      html += `<span class="highlight-added">${safeText}</span>`;
+  
+  // Gunakan diffChars untuk deteksi perubahan karakter-per-karakter
+  const diff = Diff.diffChars(oldText || '', newText || '');
+  let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;">';
+  
+  diff.forEach(part => {
+    // Deteksi emoticon (karakter Unicode tertentu)
+    const isEmoticon = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/gu.test(part.value);
+    
+    // Deteksi URL
+    const isUrl = /(https?:\/\/[^\s]+)/g.test(part.value);
+    
+    if (part.added) {
+      let value = part.value;
+      if (isEmoticon) {
+        html += `<span class="highlight-added" style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding: 0 2px; border-radius: 3px; margin: 0 1px; position: relative;" title="Emoticon ditambahkan">${value}</span>`;
+      } else if (isUrl) {
+        html += `<span class="highlight-added" style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding: 0 2px; border-radius: 3px; margin: 0 1px; position: relative;" title="Link ditambahkan"><a href="${value}" target="_blank" style="color: #4ea1ff;">${value}</a></span>`;
+      } else {
+        html += `<span class="highlight-added" style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding: 0 2px; border-radius: 3px; margin: 0 1px;">${value}</span>`;
+      }
+    } else if (part.removed) {
+      let value = part.value;
+      if (isEmoticon) {
+        html += `<span class="highlight-removed" style="background-color: rgba(255,107,107,0.3); border-left: 2px dashed #ff6b6b; padding: 0 2px; border-radius: 3px; margin: 0 1px; text-decoration: line-through; position: relative;" title="Emoticon dihapus">${value}</span>`;
+      } else if (isUrl) {
+        html += `<span class="highlight-removed" style="background-color: rgba(255,107,107,0.3); border-left: 2px dashed #ff6b6b; padding: 0 2px; border-radius: 3px; margin: 0 1px; text-decoration: line-through; position: relative;" title="Link dihapus"><a href="${value}" target="_blank" style="color: #ff6b6b; text-decoration: line-through;">${value}</a></span>`;
+      } else {
+        html += `<span class="highlight-removed" style="background-color: rgba(255,107,107,0.3); border-left: 2px dashed #ff6b6b; padding: 0 2px; border-radius: 3px; margin: 0 1px; text-decoration: line-through;">${value}</span>`;
+      }
+    } else {
+      html += `<span>${part.value}</span>`;
     }
   });
-
-  return `<div class="diff-container">${html}</div>`;
+  
+  html += '</div>';
+  return html;
 }
-
-
-
-
-
-
 
 
 
@@ -5470,11 +5421,21 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
+
+
+
+
+
+
+
+
 async function showEditComparison(announcementId) {
   try {
+    // Dapatkan data saat ini dari form edit
     const newTitle = document.getElementById('editAnnouncementTitle').value.trim();
     const newContent = document.getElementById('editAnnouncementContent').value.trim();
     
+    // Dapatkan data asli dari Firestore
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
     
@@ -5484,52 +5445,72 @@ async function showEditComparison(announcementId) {
     
     const originalData = docSnap.data();
     
+    // Tampilkan perbandingan
     const beforeEdit = document.getElementById('beforeEditContent');
     const afterEdit = document.getElementById('afterEditContent');
-	
-	
     
-    // Tampilkan versi sebelum edit dengan highlight penghapusan
+    // Fungsi untuk render konten dengan deteksi khusus
+    function renderContent(content) {
+      // Deteksi dan format URL
+      const withUrls = content.replace(/(https?:\/\/[^\s]+)/g, url => 
+        `<a href="${url}" target="_blank" style="color: #4ea1ff;">${url}</a>`
+      );
+      
+      // Deteksi dan format emoticon
+      const withEmoticons = withUrls.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/gu, emoticon => 
+        `<span style="background: rgba(255,255,255,0.1); padding: 2px; border-radius: 4px;" title="Emoticon">${emoticon}</span>`
+      );
+      
+      return withEmoticons;
+    }
+    
+    // Tampilkan judul sebelum dan sesudah
     beforeEdit.innerHTML = `
       <div style="margin-bottom: 20px;">
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        ${highlightChanges(newTitle, originalData.title || '')}
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+          ${renderContent(originalData.title)}
+        </div>
       </div>
       <div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        ${highlightChanges(newContent, originalData.content || '')}
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
+          ${renderContent(originalData.content)}
+        </div>
       </div>
     `;
     
-    // Tampilkan versi setelah edit dengan highlight penambahan
     afterEdit.innerHTML = `
       <div style="margin-bottom: 20px;">
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        ${highlightChanges(originalData.title || '', newTitle)}
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+          ${highlightChanges(originalData.title, newTitle)}
+        </div>
       </div>
       <div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        ${highlightChanges(originalData.content || '', newContent)}
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
+          ${highlightChanges(originalData.content, newContent)}
+        </div>
       </div>
     `;
-	
-	
-	// Di dalam fungsi showEditComparison, tambahkan:
-const legendHTML = `
-<div style="margin-top: 20px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px;">
-  <div style="display: flex; align-items: center; margin-bottom: 5px;">
-    <div style="width: 20px; height: 20px; border-left: 3px solid #4ea1ff; margin-right: 10px;"></div>
-    <span>Teks yang ditambahkan</span>
-  </div>
-  <div style="display: flex; align-items: center;">
-    <div style="width: 20px; height: 20px; border-left: 3px solid #ff6b6b; margin-right: 10px;"></div>
-    <span>Teks yang dihapus</span>
-  </div>
-</div>`;
-
-// Tambahkan ini sebelum menutup modal
-afterEdit.insertAdjacentHTML('afterend', legendHTML);
     
+    // Tambahkan petunjuk yang lebih jelas
+    const guide = document.createElement('div');
+    guide.style.cssText = 'margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;';
+    guide.innerHTML = `
+      <h4 style="margin-top: 0; color: #ddd;">Petunjuk Perbandingan:</h4>
+      <ul style="padding-left: 20px; margin-bottom: 0;">
+        <li><span style="background-color: rgba(78,161,255,0.3); padding: 2px 4px; border-radius: 3px;">Teks biru</span>: Ditambahkan</li>
+        <li><span style="background-color: rgba(255,107,107,0.3); padding: 2px 4px; border-radius: 3px; text-decoration: line-through;">Teks merah</span>: Dihapus</li>
+        <li><span style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">Emoticon</span>: Ditandai khusus</li>
+        <li><a href="#" style="color: #4ea1ff;">Link</a>: Ditandai dengan warna biru</li>
+      </ul>
+    `;
+    
+    afterEdit.parentNode.appendChild(guide);
+    
+    // Tampilkan modal
     document.getElementById('editComparisonModal').style.display = 'flex';
     
   } catch (error) {
@@ -5537,7 +5518,8 @@ afterEdit.insertAdjacentHTML('afterend', legendHTML);
     alert('Gagal memuat perbandingan: ' + error.message);
   }
 }
-	
+
+
 	
 	
 	
@@ -5557,15 +5539,6 @@ document.getElementById('editComparisonModal')?.addEventListener('click', functi
     closeEditComparison();
   }
 });
-
-
-
-document.getElementById('beforeEditContent').innerHTML = highlightChanges(oldText, newText);
-document.getElementById('afterEditContent').innerHTML = highlightChanges(newText, oldText);
-
-
-
-
 
 
 
