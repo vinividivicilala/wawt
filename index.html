@@ -902,6 +902,61 @@
 
 
 
+/* Style untuk perbedaan teks */
+.text-diff-added {
+  background-color: rgba(78,161,255,0.3);
+  border: 1px solid #4ea1ff;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin: 0 2px;
+  display: inline-block;
+}
+
+.text-diff-removed {
+  background-color: rgba(255,107,107,0.3);
+  border: 1px dashed #ff6b6b;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin: 0 2px;
+  text-decoration: line-through;
+  display: inline-block;
+}
+
+/* Style untuk modal perbandingan */
+#editComparisonModal {
+  backdrop-filter: blur(5px);
+}
+
+#editComparisonModal > div {
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#beforeEditContent, #afterEditContent {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5473,7 +5528,17 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-// Fungsi untuk menampilkan popup perbandingan
+
+
+
+
+
+
+
+
+
+
+// Fungsi untuk menampilkan popup perbandingan dengan diff detail
 async function showEditComparison(announcementId) {
   try {
     // Dapatkan data saat ini dari form edit
@@ -5489,31 +5554,19 @@ async function showEditComparison(announcementId) {
     }
     
     const originalData = docSnap.data();
-    const user = auth.currentUser;
-    
-    // Tampilkan info pengguna yang melakukan edit
-    document.getElementById('comparisonUserAvatar').textContent = user?.displayName?.charAt(0) || 'U';
-    document.getElementById('comparisonUserName').textContent = user?.displayName || 'Pengguna';
-    document.getElementById('comparisonEditDate').textContent = `Diedit pada: ${new Date().toLocaleDateString('id-ID', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })}`;
     
     // Tampilkan perbandingan
     const beforeEdit = document.getElementById('beforeEditContent');
     const afterEdit = document.getElementById('afterEditContent');
     
-    // Fungsi untuk highlight perubahan teks
+    // Fungsi untuk highlight perubahan teks dengan diff detail
     function highlightChanges(oldText, newText) {
       if (oldText === newText) {
-        return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
+        return `<div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">${newText}</div>`;
       }
       
       const diff = Diff.diffWords(oldText || '', newText || '');
-      let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">';
+      let html = '<div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; line-height: 1.6;">';
       
       diff.forEach(part => {
         if (part.added) {
@@ -5521,7 +5574,15 @@ async function showEditComparison(announcementId) {
         } else if (part.removed) {
           html += `<span class="text-diff-removed">${part.value}</span>`;
         } else {
-          html += `<span>${part.value}</span>`;
+          // Untuk teks yang tidak berubah, kita bagi per kata untuk memudahkan pembacaan
+          const words = part.value.split(/(\s+)/);
+          words.forEach(word => {
+            if (word.trim().length > 0) {
+              html += `<span style="display: inline-block; margin: 0 2px;">${word}</span>`;
+            } else {
+              html += word; // Preserve whitespace
+            }
+          });
         }
       });
       
@@ -5533,13 +5594,13 @@ async function showEditComparison(announcementId) {
     beforeEdit.innerHTML = `
       <div style="margin-bottom: 20px;">
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; border-left: 2px solid #ff6b6b;">
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
           ${originalData.title}
         </div>
       </div>
       <div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line; border-left: 2px solid #ff6b6b;">
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
           ${originalData.content}
         </div>
       </div>
@@ -5564,6 +5625,11 @@ async function showEditComparison(announcementId) {
     alert('Gagal memuat perbandingan: ' + error.message);
   }
 }
+
+
+
+
+
 
 
 
