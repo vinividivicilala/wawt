@@ -834,29 +834,30 @@
 
 
 
-/* Style untuk highlight perubahan */
+
+
+
 .text-diff-added {
-  background-color: rgba(78,161,255,0.3);
-  border-left: 2px solid #4ea1ff;
-  padding-left: 4px;
-  border-radius: 3px;
-  display: inline;
+  border-left: 3px solid #4ea1ff;
+  padding-left: 5px;
+  margin-left: 2px;
 }
 
 .text-diff-removed {
-  background-color: rgba(255,107,107,0.3);
-  border-left: 2px solid #ff6b6b;
-  padding-left: 4px;
+  border-left: 3px solid #ff6b6b;
+  padding-left: 5px;
+  margin-left: 2px;
   text-decoration: line-through;
-  border-radius: 3px;
-  display: inline;
 }
 
-
-
-
-
-
+/* Untuk kontainer utama */
+.diff-container {
+  padding: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
 
 
 
@@ -871,23 +872,6 @@
   padding: 5px 10px;
   margin: -5px -10px;
   transition: all 0.2s ease;
-}
-
-  .text-diff-added {
-  background-color: rgba(78,161,255,0.3);
-  border: 1px solid #4ea1ff;
-  padding: 2px 4px;
-  border-radius: 3px;
-  margin: 0 2px;
-}
-
-.text-diff-removed {
-  background-color: rgba(255,107,107,0.3);
-  border: 1px dashed #ff6b6b;
-  padding: 2px 4px;
-  border-radius: 3px;
-  margin: 0 2px;
-  text-decoration: line-through;
 }
 
   .edit-comparison-user {
@@ -914,25 +898,6 @@
     margin-top: 5px;
   }
 
-
-
-
-.text-diff-added {
-  background-color: rgba(78, 161, 255, 0.5);
-  border-radius: 3px;
-  padding: 1px 2px;
-  margin: 0 1px;
-  box-shadow: 0 0 0 1px rgba(78, 161, 255, 0.3);
-}
-
-.text-diff-removed {
-  background-color: rgba(255, 107, 107, 0.5);
-  border-radius: 3px;
-  padding: 1px 2px;
-  margin: 0 1px;
-  text-decoration: line-through;
-  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.3);
-}
 
 
 
@@ -4819,37 +4784,41 @@ function fieldToLabel(field) {
 }
 
 
-
-
-
-
-
 function highlightChanges(oldText = '', newText = '') {
   if (oldText === newText) {
-    return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
+    return `<div class="diff-container">${escapeHtml(newText)}</div>`;
   }
 
   const dmp = new diff_match_patch();
-  
-  // Gunakan diff karakter-per-karakter
   const diff = dmp.diff_main(oldText, newText);
-  dmp.diff_cleanupSemantic(diff); // Tetap gunakan cleanup untuk grup perubahan yang berdekatan
+  dmp.diff_cleanupSemantic(diff);
   
-  let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; white-space: pre-wrap;">';
+  let html = '<div class="diff-container">';
   
   diff.forEach(([type, text]) => {
-    if (type === 0) { // Tidak berubah
+    if (type === 0) { // Unchanged
       html += `<span>${escapeHtml(text)}</span>`;
-    } else if (type === 1) { // Ditambahkan
-      html += `<span class="text-diff-added">${escapeHtml(text)}</span>`;
-    } else if (type === -1) { // Dihapus
-      html += `<span class="text-diff-removed">${escapeHtml(text)}</span>`;
+    } else if (type === 1) { // Added
+      if (text.trim() === '') {
+        // Handle whitespace changes differently
+        html += `<span class="text-diff-added" style="border-left-style: dotted;">${escapeHtml(text)}</span>`;
+      } else {
+        html += `<span class="text-diff-added">${escapeHtml(text)}</span>`;
+      }
+    } else if (type === -1) { // Removed
+      if (text.trim() === '') {
+        html += `<span class="text-diff-removed" style="border-left-style: dotted;">${escapeHtml(text)}</span>`;
+      } else {
+        html += `<span class="text-diff-removed">${escapeHtml(text)}</span>`;
+      }
     }
   });
   
   html += '</div>';
   return html;
 }
+
+
 
 // Fungsi helper untuk escape HTML
 function escapeHtml(text) {
@@ -5534,6 +5503,8 @@ async function showEditComparison(announcementId) {
     
     const beforeEdit = document.getElementById('beforeEditContent');
     const afterEdit = document.getElementById('afterEditContent');
+	
+	
     
     // Tampilkan versi sebelum edit dengan highlight penghapusan
     beforeEdit.innerHTML = `
@@ -5558,6 +5529,23 @@ async function showEditComparison(announcementId) {
         ${highlightChanges(originalData.content || '', newContent)}
       </div>
     `;
+	
+	
+	// Di dalam fungsi showEditComparison, tambahkan:
+const legendHTML = `
+<div style="margin-top: 20px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px;">
+  <div style="display: flex; align-items: center; margin-bottom: 5px;">
+    <div style="width: 20px; height: 20px; border-left: 3px solid #4ea1ff; margin-right: 10px;"></div>
+    <span>Teks yang ditambahkan</span>
+  </div>
+  <div style="display: flex; align-items: center;">
+    <div style="width: 20px; height: 20px; border-left: 3px solid #ff6b6b; margin-right: 10px;"></div>
+    <span>Teks yang dihapus</span>
+  </div>
+</div>`;
+
+// Tambahkan ini sebelum menutup modal
+afterEdit.insertAdjacentHTML('afterend', legendHTML);
     
     document.getElementById('editComparisonModal').style.display = 'flex';
     
