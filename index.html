@@ -904,35 +904,7 @@
 
 
 
-/* Highlight untuk perubahan */
-.highlight-added {
-  background-color: rgba(78,161,255,0.3);
-  border-left: 2px solid #4ea1ff;
-  padding-left: 4px;
-}
 
-.highlight-removed {
-  background-color: rgba(255,107,107,0.3);
-  border-left: 2px solid #ff6b6b;
-  padding-left: 4px;
-  text-decoration: line-through;
-}
-
-/* Style untuk konten yang berbeda */
-.text-diff-added {
-  background-color: rgba(78,161,255,0.3);
-  border: 1px solid #4ea1ff;
-  padding: 0 2px;
-  border-radius: 3px;
-}
-
-.text-diff-removed {
-  background-color: rgba(255,107,107,0.3);
-  border: 1px dashed #ff6b6b;
-  padding: 0 2px;
-  border-radius: 3px;
-  text-decoration: line-through;
-}
 
 
 
@@ -5435,10 +5407,6 @@ function showErrorPage(message) {
   }
 }
 
-
-
-
-
 // Fungsi untuk mengirim balasan pengumuman
 async function submitAnnouncementReply(announcementId) {
   const user = auth.currentUser;
@@ -5496,7 +5464,6 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
 // Fungsi untuk menampilkan popup perbandingan
 async function showEditComparison(announcementId) {
   try {
@@ -5513,8 +5480,6 @@ async function showEditComparison(announcementId) {
     }
     
     const originalData = docSnap.data();
-    const originalDate = originalData.timestamp?.toDate ? originalData.timestamp.toDate() : new Date();
-    const editedDate = originalData.lastUpdated?.toDate ? originalData.lastUpdated.toDate() : new Date();
     
     // Tampilkan perbandingan
     const beforeEdit = document.getElementById('beforeEditContent');
@@ -5523,35 +5488,30 @@ async function showEditComparison(announcementId) {
     // Fungsi untuk highlight perubahan teks
     function highlightChanges(oldText, newText) {
       if (oldText === newText) {
-        return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 5px;">${newText}</div>`;
+        return `<div>${newText}</div>`;
       }
       
       const diff = Diff.diffWords(oldText || '', newText || '');
-      let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 5px;">';
+      let html = '';
       
       diff.forEach(part => {
         if (part.added) {
-          html += `<span class="text-diff-added">${part.value}</span>`;
+          html += `<span style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding-left: 4px;">${part.value}</span>`;
         } else if (part.removed) {
-          html += `<span class="text-diff-removed">${part.value}</span>`;
+          html += `<span style="background-color: rgba(255,107,107,0.3); border-left: 2px solid #ff6b6b; padding-left: 4px; text-decoration: line-through;">${part.value}</span>`;
         } else {
           html += `<span>${part.value}</span>`;
         }
       });
       
-      html += '</div>';
       return html;
     }
     
-    // Tampilkan judul sebelum dan sesudah dengan info admin dan tanggal
+    // Tampilkan judul sebelum dan sesudah
     beforeEdit.innerHTML = `
       <div style="margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <div style="color: #aaa; font-size: 14px;">Dibuat oleh: <strong style="color: #4ea1ff;">${originalData.userName || 'Admin'}</strong></div>
-          <div style="color: #aaa; font-size: 14px;">${originalDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; font-weight: bold;">
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
           ${originalData.title}
         </div>
       </div>
@@ -5565,16 +5525,16 @@ async function showEditComparison(announcementId) {
     
     afterEdit.innerHTML = `
       <div style="margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <div style="color: #aaa; font-size: 14px;">Diedit oleh: <strong style="color: #4ea1ff;">${auth.currentUser?.displayName || 'Admin'}</strong></div>
-          <div style="color: #aaa; font-size: 14px;">${editedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        ${highlightChanges(originalData.title, newTitle)}
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+          ${highlightChanges(originalData.title, newTitle)}
+        </div>
       </div>
       <div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        ${highlightChanges(originalData.content, newContent)}
+        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
+          ${highlightChanges(originalData.content, newContent)}
+        </div>
       </div>
     `;
     
@@ -5586,6 +5546,30 @@ async function showEditComparison(announcementId) {
     alert('Gagal memuat perbandingan: ' + error.message);
   }
 }
+
+// Fungsi untuk menutup popup perbandingan
+function closeEditComparison() {
+  document.getElementById('editComparisonModal').style.display = 'none';
+}
+
+// Event listener untuk tombol close
+document.getElementById('closeEditComparison')?.addEventListener('click', closeEditComparison);
+
+// Event listener untuk klik di luar modal
+document.getElementById('editComparisonModal')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeEditComparison();
+  }
+});
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6609,29 +6593,13 @@ async function renderMasukanDetailById(id) {
 
 
 
+
+
 // Fungsi untuk setup form edit pengumuman (admin only)
 function setupAdminAnnouncementForm(announcementId, announcementData) {
   const adminForm = document.getElementById('adminAnnouncementForm');
   const user = auth.currentUser;
   
-  // Always show edit icon for all users
-  const editIcon = document.createElement('span');
-  editIcon.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 10px; cursor: pointer;" title="Lihat riwayat perubahan">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-    </svg>
-  `;
-  editIcon.style.cursor = 'pointer';
-  editIcon.addEventListener('click', () => showEditComparison(announcementId));
-  
-  // Temukan judul pengumuman dan sisipkan icon edit
-  const announcementTitle = document.querySelector('#announcementDetailContainer h2');
-  if (announcementTitle && !announcementTitle.querySelector('svg')) {
-    announcementTitle.appendChild(editIcon);
-  }
-
-  // Only show admin form if user is admin
   if (!isUserAdmin(user)) {
     adminForm.style.display = 'none';
     return;
@@ -6643,6 +6611,24 @@ function setupAdminAnnouncementForm(announcementId, announcementData) {
   document.getElementById('editAnnouncementTitle').value = announcementData.title || '';
   document.getElementById('editAnnouncementContent').value = announcementData.content || '';
   
+  
+  // Tambahkan event listener untuk icon edit
+  const editIcon = document.createElement('span');
+  editIcon.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ea1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 10px; cursor: pointer;" title="Lihat perbandingan">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+  `;
+  editIcon.style.cursor = 'pointer';
+  editIcon.addEventListener('click', () => showEditComparison(announcementId));
+  
+  // Temukan judul pengumuman dan sisipkan icon edit
+  const announcementTitle = document.querySelector('#announcementDetailContainer h2');
+  if (announcementTitle) {
+    announcementTitle.appendChild(editIcon);
+  }
+
   // Setup event listeners
   document.getElementById('editAnnouncementForm').onsubmit = async (e) => {
     e.preventDefault();
@@ -6659,6 +6645,10 @@ function setupAdminAnnouncementForm(announcementId, announcementData) {
     }
   };
 }
+
+
+
+
 
 
 
