@@ -989,6 +989,164 @@
 
 
 
+
+
+/* Gaya dasar untuk perbandingan */
+.diff-container {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Teks yang ditambahkan */
+.diff-added {
+  background-color: rgba(78, 161, 255, 0.3);
+  border-left: 2px solid #4ea1ff;
+  padding: 0 2px;
+  margin: 0 1px;
+  border-radius: 2px;
+}
+
+/* Teks yang dihapus */
+.diff-removed {
+  background-color: rgba(255, 107, 107, 0.3);
+  border-left: 2px dashed #ff6b6b;
+  padding: 0 2px;
+  margin: 0 1px;
+  border-radius: 2px;
+  text-decoration: line-through;
+}
+
+/* Khusus emoticon */
+.diff-emoticon {
+  padding: 2px 4px !important;
+  border-radius: 4px !important;
+  background: rgba(255, 215, 0, 0.2) !important;
+  border: 1px dotted rgba(255, 215, 0, 0.5) !important;
+}
+
+/* Khusus link */
+.diff-link {
+  color: #4ea1ff;
+  text-decoration: underline;
+}
+
+.diff-removed.diff-link {
+  color: #ff6b6b;
+}
+
+/* Container tanpa perubahan */
+.no-changes {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+/* Error state */
+.diff-error {
+  color: #ff6b6b;
+  padding: 10px;
+  border: 1px dashed #ff6b6b;
+}
+
+
+
+/* Style untuk modal perbandingan */
+#editComparisonModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  display: none;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+#editComparisonModal > div {
+  background: #2a2a2a;
+  border-radius: 10px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 25px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.comparison-section {
+  margin-bottom: 20px;
+}
+
+.comparison-section h4 {
+  color: #aaa;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.original-text {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  white-space: pre-wrap;
+}
+
+.comparison-guide {
+  margin-top: 30px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.comparison-guide h4 {
+  margin-top: 0;
+  color: #ddd;
+}
+
+.color-sample {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.diff-added-sample {
+  background-color: rgba(78, 161, 255, 0.3);
+  border: 1px solid #4ea1ff;
+}
+
+.diff-removed-sample {
+  background-color: rgba(255, 107, 107, 0.3);
+  border: 1px dashed #ff6b6b;
+}
+
+.diff-emoticon-sample {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px dotted rgba(255, 215, 0, 0.5);
+}
+
+.diff-link-sample {
+  background: rgba(78, 161, 255, 0.2);
+  border: 1px solid #4ea1ff;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	
 	
   </style>
@@ -4874,49 +5032,57 @@ function fieldToLabel(field) {
 
 
 
-
-
 function highlightChanges(oldText, newText) {
+  // Fallback jika parameter tidak ada
+  oldText = oldText || '';
+  newText = newText || '';
+  
+  // Jika tidak ada perubahan
   if (oldText === newText) {
-    return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
+    return `<div class="no-changes">${escapeHtml(newText)}</div>`;
   }
-  
-  // Gunakan diffChars untuk deteksi perubahan karakter-per-karakter
-  const diff = Diff.diffChars(oldText || '', newText || '');
-  let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;">';
-  
-  diff.forEach(part => {
-    // Deteksi emoticon (karakter Unicode tertentu)
-    const isEmoticon = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/gu.test(part.value);
+
+  try {
+    const diff = Diff.diffWords(oldText, newText);
+    let html = '<div class="diff-container">';
     
-    // Deteksi URL
-    const isUrl = /(https?:\/\/[^\s]+)/g.test(part.value);
+    diff.forEach(part => {
+      const escapedValue = escapeHtml(part.value);
+      const isEmoticon = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu.test(part.value);
+      const isUrl = /https?:\/\/[^\s]+/g.test(part.value);
+
+      if (part.added) {
+        if (isEmoticon) {
+          html += `<span class="diff-added diff-emoticon" title="Emoticon ditambahkan">${escapedValue}</span>`;
+        } else if (isUrl) {
+          html += `<a href="${escapedValue}" target="_blank" class="diff-added diff-link" title="Link ditambahkan">${escapedValue}</a>`;
+        } else {
+          html += `<span class="diff-added">${escapedValue}</span>`;
+        }
+      } else if (part.removed) {
+        if (isEmoticon) {
+          html += `<span class="diff-removed diff-emoticon" title="Emoticon dihapus">${escapedValue}</span>`;
+        } else if (isUrl) {
+          html += `<span class="diff-removed diff-link" title="Link dihapus">${escapedValue}</span>`;
+        } else {
+          html += `<span class="diff-removed">${escapedValue}</span>`;
+        }
+      } else {
+        html += `<span>${escapedValue}</span>`;
+      }
+    });
     
-    if (part.added) {
-      let value = part.value;
-      if (isEmoticon) {
-        html += `<span class="highlight-added" style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding: 0 2px; border-radius: 3px; margin: 0 1px; position: relative;" title="Emoticon ditambahkan">${value}</span>`;
-      } else if (isUrl) {
-        html += `<span class="highlight-added" style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding: 0 2px; border-radius: 3px; margin: 0 1px; position: relative;" title="Link ditambahkan"><a href="${value}" target="_blank" style="color: #4ea1ff;">${value}</a></span>`;
-      } else {
-        html += `<span class="highlight-added" style="background-color: rgba(78,161,255,0.3); border-left: 2px solid #4ea1ff; padding: 0 2px; border-radius: 3px; margin: 0 1px;">${value}</span>`;
-      }
-    } else if (part.removed) {
-      let value = part.value;
-      if (isEmoticon) {
-        html += `<span class="highlight-removed" style="background-color: rgba(255,107,107,0.3); border-left: 2px dashed #ff6b6b; padding: 0 2px; border-radius: 3px; margin: 0 1px; text-decoration: line-through; position: relative;" title="Emoticon dihapus">${value}</span>`;
-      } else if (isUrl) {
-        html += `<span class="highlight-removed" style="background-color: rgba(255,107,107,0.3); border-left: 2px dashed #ff6b6b; padding: 0 2px; border-radius: 3px; margin: 0 1px; text-decoration: line-through; position: relative;" title="Link dihapus"><a href="${value}" target="_blank" style="color: #ff6b6b; text-decoration: line-through;">${value}</a></span>`;
-      } else {
-        html += `<span class="highlight-removed" style="background-color: rgba(255,107,107,0.3); border-left: 2px dashed #ff6b6b; padding: 0 2px; border-radius: 3px; margin: 0 1px; text-decoration: line-through;">${value}</span>`;
-      }
-    } else {
-      html += `<span>${part.value}</span>`;
-    }
-  });
-  
-  html += '</div>';
-  return html;
+    return html + '</div>';
+  } catch (error) {
+    console.error('Error:', error);
+    return `<div class="diff-error">Error dalam memproses perbandingan</div>`;
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 
@@ -5576,15 +5742,17 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
-
 async function showEditComparison(announcementId) {
   try {
-    // Dapatkan data saat ini dari form edit
-    const newTitle = document.getElementById('editAnnouncementTitle').value.trim();
-    const newContent = document.getElementById('editAnnouncementContent').value.trim();
+    // Dapatkan elemen modal dan konten
+    const modal = document.getElementById('editComparisonModal');
+    const beforeEdit = document.getElementById('beforeEditContent');
+    const afterEdit = document.getElementById('afterEditContent');
     
-    // Dapatkan data asli dari Firestore
+    // Dapatkan data dari form dan database
+    const newTitle = document.getElementById('editAnnouncementTitle')?.value || '';
+    const newContent = document.getElementById('editAnnouncementContent')?.value || '';
+    
     const docRef = doc(db, "announcements", announcementId);
     const docSnap = await getDoc(docRef);
     
@@ -5594,77 +5762,51 @@ async function showEditComparison(announcementId) {
     
     const originalData = docSnap.data();
     
-    // Tampilkan perbandingan
-    const beforeEdit = document.getElementById('beforeEditContent');
-    const afterEdit = document.getElementById('afterEditContent');
-    
-    // Fungsi untuk render konten dengan deteksi khusus
-    function renderContent(content) {
-      // Deteksi dan format URL
-      const withUrls = content.replace(/(https?:\/\/[^\s]+)/g, url => 
-        `<a href="${url}" target="_blank" style="color: #4ea1ff;">${url}</a>`
-      );
-      
-      // Deteksi dan format emoticon
-      const withEmoticons = withUrls.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/gu, emoticon => 
-        `<span style="background: rgba(255,255,255,0.1); padding: 2px; border-radius: 4px;" title="Emoticon">${emoticon}</span>`
-      );
-      
-      return withEmoticons;
-    }
-    
-    // Tampilkan judul sebelum dan sesudah
+    // Render konten sebelum edit
     beforeEdit.innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-          ${renderContent(originalData.title)}
-        </div>
+      <div class="comparison-section">
+        <h4>Judul:</h4>
+        <div class="original-text">${escapeHtml(originalData.title)}</div>
       </div>
-      <div>
-        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
-          ${renderContent(originalData.content)}
-        </div>
+      <div class="comparison-section">
+        <h4>Isi:</h4>
+        <div class="original-text">${escapeHtml(originalData.content)}</div>
       </div>
     `;
     
+    // Render konten setelah edit dengan highlight perubahan
     afterEdit.innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-          ${highlightChanges(originalData.title, newTitle)}
-        </div>
+      <div class="comparison-section">
+        <h4>Judul:</h4>
+        ${highlightChanges(originalData.title, newTitle)}
       </div>
-      <div>
-        <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
-          ${highlightChanges(originalData.content, newContent)}
-        </div>
+      <div class="comparison-section">
+        <h4>Isi:</h4>
+        ${highlightChanges(originalData.content, newContent)}
       </div>
     `;
     
-    // Tambahkan petunjuk yang lebih jelas
+    // Tambahkan petunjuk
     const guide = document.createElement('div');
-    guide.style.cssText = 'margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;';
+    guide.className = 'comparison-guide';
     guide.innerHTML = `
-      <h4 style="margin-top: 0; color: #ddd;">Petunjuk Perbandingan:</h4>
-      <ul style="padding-left: 20px; margin-bottom: 0;">
-        <li><span style="background-color: rgba(78,161,255,0.3); padding: 2px 4px; border-radius: 3px;">Teks biru</span>: Ditambahkan</li>
-        <li><span style="background-color: rgba(255,107,107,0.3); padding: 2px 4px; border-radius: 3px; text-decoration: line-through;">Teks merah</span>: Dihapus</li>
-        <li><span style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">Emoticon</span>: Ditandai khusus</li>
-        <li><a href="#" style="color: #4ea1ff;">Link</a>: Ditandai dengan warna biru</li>
+      <h4>Petunjuk Warna:</h4>
+      <ul>
+        <li><span class="color-sample diff-added-sample"></span> Teks biru: Ditambahkan</li>
+        <li><span class="color-sample diff-removed-sample"></span> Teks merah: Dihapus</li>
+        <li><span class="color-sample diff-emoticon-sample"></span> Emoticon: Ditandai khusus</li>
+        <li><span class="color-sample diff-link-sample"></span> Link: Ditandai biru</li>
       </ul>
     `;
     
-    afterEdit.parentNode.appendChild(guide);
+    afterEdit.appendChild(guide);
     
     // Tampilkan modal
-    document.getElementById('editComparisonModal').style.display = 'flex';
+    modal.style.display = 'flex';
     
   } catch (error) {
-    console.error("Error showing edit comparison:", error);
-    alert('Gagal memuat perbandingan: ' + error.message);
+    console.error("Error:", error);
+    alert("Gagal memuat perbandingan: " + error.message);
   }
 }
 
