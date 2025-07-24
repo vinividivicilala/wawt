@@ -4780,30 +4780,46 @@ function fieldToLabel(field) {
 
 
 
-
-function highlightChanges(oldText, newText) {
-  if (oldText === newText) {
-    return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
-  }
-  
-  const diff = Diff.diffWords(oldText || '', newText || '');
-  let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">';
-  
-  diff.forEach(part => {
-    if (part.added) {
-      html += `<span style="background-color: rgba(78,161,255,0.3); display: inline-block; padding: 2px 4px; border-radius: 3px; margin: 1px; border: 1px solid #4ea1ff;">${part.value}</span>`;
-    } else if (part.removed) {
-      html += `<span style="background-color: rgba(255,107,107,0.3); display: inline-block; padding: 2px 4px; border-radius: 3px; margin: 1px; border: 1px solid #ff6b6b; text-decoration: line-through;">${part.value}</span>`;
-    } else {
-      html += `<span>${part.value}</span>`;
+window.addEventListener('DOMContentLoaded', () => {
+  function highlightChanges(oldText, newText) {
+    if (oldText === newText) {
+      return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
     }
-  });
-  
-  html += '</div>';
-  return html;
-}
 
+    const diff = Diff.diffWords(oldText || '', newText || '');
+    let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">';
 
+    diff.forEach(part => {
+      if (part.added) {
+        html += `<span class="text-diff-added">${part.value}</span>`;
+      } else if (part.removed) {
+        html += `<span class="text-diff-removed">${part.value}</span>`;
+      } else {
+        html += `<span>${part.value}</span>`;
+      }
+    });
+
+    html += '</div>';
+    return html;
+  }
+
+  // Contoh penggunaan (gunakan variabel asli kamu di sini)
+  const originalData = { title: "Judul Lama", content: "Isi lama" };
+  const newTitle = "Judul Baru";
+  const newContent = "Isi baru dengan tambahan";
+
+  document.getElementById('beforeEdit').innerHTML = `
+    <div>Judul: ${originalData.title}</div>
+    <div>Isi: ${originalData.content}</div>
+  `;
+
+  document.getElementById('afterEdit').innerHTML = `
+    <div>Judul: ${highlightChanges(originalData.title, newTitle)}</div>
+    <div>Isi: ${highlightChanges(originalData.content, newContent)}</div>
+  `;
+
+  document.getElementById('editComparisonModal').style.display = 'flex';
+});
 
 
 
