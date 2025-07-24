@@ -917,7 +917,22 @@
 
 
 
+.text-diff-added {
+  background-color: rgba(78, 161, 255, 0.5);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: 0 1px;
+  box-shadow: 0 0 0 1px rgba(78, 161, 255, 0.3);
+}
 
+.text-diff-removed {
+  background-color: rgba(255, 107, 107, 0.5);
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: 0 1px;
+  text-decoration: line-through;
+  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.3);
+}
 
 
 
@@ -4807,33 +4822,50 @@ function fieldToLabel(field) {
 
 
 
-function highlightChanges(oldText, newText) {
-  if (oldText === newText || !oldText) {
+
+
+function highlightChanges(oldText = '', newText = '') {
+  if (oldText === newText) {
     return `<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">${newText}</div>`;
   }
-  
+
   const dmp = new diff_match_patch();
-  const diffs = dmp.diff_main(oldText, newText);
-  dmp.diff_cleanupSemantic(diffs);
   
-  let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">';
+  // Gunakan diff karakter-per-karakter
+  const diff = dmp.diff_main(oldText, newText);
+  dmp.diff_cleanupSemantic(diff); // Tetap gunakan cleanup untuk grup perubahan yang berdekatan
   
-  diffs.forEach(([type, text]) => {
-    switch(type) {
-      case 1: // Ditambahkan
-        html += `<span class="text-diff-added">${text}</span>`;
-        break;
-      case -1: // Dihapus
-        html += `<span class="text-diff-removed">${text}</span>`;
-        break;
-      default: // Tidak berubah
-        html += `<span>${text}</span>`;
+  let html = '<div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; white-space: pre-wrap;">';
+  
+  diff.forEach(([type, text]) => {
+    if (type === 0) { // Tidak berubah
+      html += `<span>${escapeHtml(text)}</span>`;
+    } else if (type === 1) { // Ditambahkan
+      html += `<span class="text-diff-added">${escapeHtml(text)}</span>`;
+    } else if (type === -1) { // Dihapus
+      html += `<span class="text-diff-removed">${escapeHtml(text)}</span>`;
     }
   });
   
   html += '</div>';
   return html;
 }
+
+// Fungsi helper untuk escape HTML
+function escapeHtml(text) {
+  return text.replace(/[&<>]/g, function(c) {
+    return {'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c];
+  });
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5486,9 +5518,6 @@ async function submitAnnouncementReply(announcementId) {
 
 
 
-
-
-
 async function showEditComparison(announcementId) {
   try {
     const newTitle = document.getElementById('editAnnouncementTitle').value.trim();
@@ -5506,35 +5535,27 @@ async function showEditComparison(announcementId) {
     const beforeEdit = document.getElementById('beforeEditContent');
     const afterEdit = document.getElementById('afterEditContent');
     
-    // Tampilkan versi sebelum edit
+    // Tampilkan versi sebelum edit dengan highlight penghapusan
     beforeEdit.innerHTML = `
       <div style="margin-bottom: 20px;">
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-          ${originalData.title || '(Tidak ada judul)'}
-        </div>
+        ${highlightChanges(newTitle, originalData.title || '')}
       </div>
       <div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
-          ${originalData.content || '(Tidak ada konten)'}
-        </div>
+        ${highlightChanges(newContent, originalData.content || '')}
       </div>
     `;
     
-    // Tampilkan versi setelah edit dengan highlight perubahan
+    // Tampilkan versi setelah edit dengan highlight penambahan
     afterEdit.innerHTML = `
       <div style="margin-bottom: 20px;">
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Judul:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
-          ${highlightChanges(originalData.title || '', newTitle)}
-        </div>
+        ${highlightChanges(originalData.title || '', newTitle)}
       </div>
       <div>
         <div style="color: #aaa; font-size: 14px; margin-bottom: 5px;">Isi:</div>
-        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; white-space: pre-line;">
-          ${highlightChanges(originalData.content || '', newContent)}
-        </div>
+        ${highlightChanges(originalData.content || '', newContent)}
       </div>
     `;
     
@@ -5545,8 +5566,6 @@ async function showEditComparison(announcementId) {
     alert('Gagal memuat perbandingan: ' + error.message);
   }
 }
-	
-	
 	
 	
 	
