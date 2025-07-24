@@ -5565,13 +5565,22 @@ async function showEditComparison(announcementId) {
   }
 }
 
+
+
 // Fungsi untuk menutup popup perbandingan
 function closeEditComparison() {
   document.getElementById('editComparisonModal').style.display = 'none';
 }
 
+// Event listener untuk tombol close
+document.getElementById('closeEditComparison')?.addEventListener('click', closeEditComparison);
 
-
+// Event listener untuk klik di luar modal
+document.getElementById('editComparisonModal')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeEditComparison();
+  }
+});
 
 
 
