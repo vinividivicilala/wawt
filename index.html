@@ -1162,7 +1162,7 @@
 /* Linebox Style */
 .linebox {
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
+  border-radius: 29px;
   padding: 25px;
   background: rgba(0, 0, 0, 0.2);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -1416,7 +1416,30 @@
 
 
 
+/* Tambahkan di bagian CSS */
+.video-container {
+  padding: 25px;
+}
 
+.video-wrapper {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  height: 0;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.video-description {
+  padding: 0 10px;
+}
 
 
 
@@ -3286,6 +3309,31 @@
               <p>Komunitas global Arduino terus tumbuh dengan ribuan proyek open-source yang dibagikan setiap tahun.</p>
             </div>
           </div>
+	<div class="video-container linebox" style="margin-bottom: 30px; ">">
+  <h2 class="title-box-white">Video Sejarah Arduino</h2>
+
+  
+  <div class="video-wrapper">
+    <iframe 
+      width="100%" 
+      height="450" 
+           src="https://www.youtube.com/embed/cTPYUox41bU?autoplay=0" 
+      frameborder="0" 
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+      allowfullscreen
+      style="border-radius: 15px;"
+    ></iframe>
+  </div>
+  
+  <div class="video-description">
+    <p style="color: rgba(255,255,255,0.8); line-height: 1.6; font-size: 25px;">
+      Video ini menampilkan sejarah lengkap perkembangan Arduino dari awal hingga sekarang. 
+      Anda akan melihat bagaimana platform ini berkembang dari proyek kecil di Italia menjadi 
+      fenomena global yang mengubah cara orang belajar elektronik dan pemrograman.
+    </p>
+  </div>
+</div>
+
         </div>
       </div>
     </div>
