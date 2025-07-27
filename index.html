@@ -1486,7 +1486,46 @@ a.footnote-link:hover {
 
 
 
+/* Emoji Reaction Styles */
+.emoji-reactions {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px 0;
+}
 
+.emoji-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.emoji-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.emoji {
+  font-size: 32px;
+  margin-bottom: 5px;
+}
+
+.emoji-count {
+  color: white;
+  font-size: 14px;
+}
+
+.emoji-option.selected {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.emoji-option.selected .emoji {
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
 
 
 
@@ -3390,10 +3429,48 @@ a.footnote-link:hover {
   </div>
 </div>
 
+
         </div>
       </div>
     </div>
   </div>
+  
+  <div class="reaction-container linebox">
+  <h3 class="title-box-white">Bagaimana perasaan Anda tentang konten ini?</h3>
+  <div class="sidebar-line-white"></div>
+  
+  <div class="emoji-reactions">
+    <div class="emoji-option" data-emoji="happy">
+      <span class="emoji">😊</span>
+      <span class="emoji-count" id="happy-count">0</span>
+    </div>
+    
+    <div class="emoji-option" data-emoji="sad">
+      <span class="emoji">😢</span>
+      <span class="emoji-count" id="sad-count">0</span>
+    </div>
+    
+    <div class="emoji-option" data-emoji="disappointed">
+      <span class="emoji">😞</span>
+      <span class="emoji-count" id="disappointed-count">0</span>
+    </div>
+    
+    <div class="emoji-option" data-emoji="angry">
+      <span class="emoji">😠</span>
+      <span class="emoji-count" id="angry-count">0</span>
+    </div>
+    
+    <div class="emoji-option" data-emoji="neutral">
+      <span class="emoji">😐</span>
+      <span class="emoji-count" id="neutral-count">0</span>
+    </div>
+  </div>
+  
+  <div class="sidebar-line-white" style="margin-top: 20px;"></div>
+  <p class="reaction-message" style="color: rgba(255,255,255,0.7); font-size: 14px; text-align: center;">
+    Terima kasih atas feedback Anda!
+  </p>
+</div>
 
 
 
@@ -3726,6 +3803,93 @@ document.querySelectorAll('.footnote-link').forEach(link => {
     }
   });
 });
+
+
+
+
+
+
+
+// Fungsi untuk emoji reaksi
+function setupEmojiReactions() {
+  const emojiOptions = document.querySelectorAll('.emoji-option');
+  const storageKey = 'arduino-history-emoji-reaction';
+  
+  // Load saved reaction from localStorage
+  const savedReaction = localStorage.getItem(storageKey);
+  const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
+    happy: 0,
+    sad: 0,
+    disappointed: 0,
+    angry: 0,
+    neutral: 0
+  };
+  
+  // Update counts display
+  Object.keys(reactionCounts).forEach(emoji => {
+    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+  });
+  
+  // Highlight saved reaction if exists
+  if (savedReaction) {
+    document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
+  }
+  
+  // Add click handlers
+  emojiOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      const emojiType = this.dataset.emoji;
+      
+      // If already selected, do nothing
+      if (savedReaction === emojiType) return;
+      
+      // Remove previous selection
+      emojiOptions.forEach(opt => opt.classList.remove('selected'));
+      
+      // Add new selection
+      this.classList.add('selected');
+      
+      // Update counts
+      if (savedReaction) {
+        reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+      }
+      reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
+      
+      // Update display
+      Object.keys(reactionCounts).forEach(emoji => {
+        document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+      });
+      
+      // Save to localStorage
+      localStorage.setItem(storageKey, emojiType);
+      localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
+      
+      // Show thank you message
+      document.querySelector('.reaction-message').style.opacity = 1;
+      setTimeout(() => {
+        document.querySelector('.reaction-message').style.opacity = 0.7;
+      }, 2000);
+    });
+  });
+}
+
+// Panggil fungsi saat halaman dimuat
+window.addEventListener('DOMContentLoaded', setupEmojiReactions);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
