@@ -3808,111 +3808,134 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
-// Fungsi untuk emoji reaksi yang terintegrasi dengan auth
-function setupEmojiReactions() {
+
+
+// Fungsi untuk setup emoji reactions dengan Firebase
+async function setupEmojiReactions() {
   const emojiOptions = document.querySelectorAll('.emoji-option');
-  const storageKey = 'arduino-history-emoji-reaction';
   
-  // Hanya setup emoji reactions jika user sudah login
-  onAuthStateChanged(auth, (user) => {
+  // Reference ke Firestore collection
+  const db = firebase.firestore();
+  const reactionsRef = db.collection('reactions');
+  const docRef = reactionsRef.doc('arduino-history');
+  
+  // Cek status login user
+  firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
-      // Gunakan user.uid untuk menyimpan reaksi per user
-      const userStorageKey = `${storageKey}-${user.uid}`;
-      const countsStorageKey = `${storageKey}-counts`;
-      
-      // Load saved reaction dari Firebase atau localStorage
-      const savedReaction = localStorage.getItem(userStorageKey);
-      const reactionCounts = JSON.parse(localStorage.getItem(countsStorageKey)) || {
-        happy: 0,
-        sad: 0,
-        disappointed: 0,
-        angry: 0,
-        neutral: 0
-      };
-      
-      // Update tampilan count
-      Object.keys(reactionCounts).forEach(emoji => {
-        const countElement = document.getElementById(`${emoji}-count`);
-        if (countElement) {
-          countElement.textContent = reactionCounts[emoji];
-        }
+      // User sudah login
+      emojiOptions.forEach(option => {
+        option.style.cursor = 'pointer';
+        option.style.opacity = '1';
       });
       
-      // Highlight reaksi yang sudah dipilih user jika ada
-      if (savedReaction) {
-        const selectedOption = document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`);
-        if (selectedOption) {
-          selectedOption.classList.add('selected');
-        }
+      // Load data dari Firestore
+      const doc = await docRef.get();
+      let reactionData = doc.exists ? doc.data() : {
+        happy: { count: 0, users: [] },
+        sad: { count: 0, users: [] },
+        disappointed: { count: 0, users: [] },
+        angry: { count: 0, users: [] },
+        neutral: { count: 0, users: [] }
+      };
+      
+      // Update tampilan
+      updateReactionCounts(reactionData);
+      
+      // Cek apakah user sudah pernah bereaksi
+      const userReaction = Object.keys(reactionData).find(emoji => 
+        reactionData[emoji].users.includes(user.uid)
+      );
+      
+      if (userReaction) {
+        document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`)
+          .classList.add('selected');
       }
       
-      // Tambahkan event handler untuk emoji
+      // Tambahkan event listeners
       emojiOptions.forEach(option => {
-        option.addEventListener('click', function() {
-          const emojiType = this.dataset.emoji;
+        option.addEventListener('click', async () => {
+          if (!user) return;
           
-          // Jika sudah dipilih, tidak perlu melakukan apa-apa
-          if (savedReaction === emojiType) return;
+          const emojiType = option.dataset.emoji;
           
-          // Hapus selection sebelumnya
-          emojiOptions.forEach(opt => opt.classList.remove('selected'));
+          // Jika sudah memilih reaksi ini sebelumnya, tidak perlu update
+          if (userReaction === emojiType) return;
           
-          // Tambahkan selection baru
-          this.classList.add('selected');
-          
-          // Update counts
-          if (savedReaction) {
-            reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
-          }
-          reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
-          
-          // Update tampilan
-          Object.keys(reactionCounts).forEach(emoji => {
-            const countElement = document.getElementById(`${emoji}-count`);
-            if (countElement) {
-              countElement.textContent = reactionCounts[emoji];
+          try {
+            // Update data di Firestore menggunakan transaction
+            await db.runTransaction(async (transaction) => {
+              const doc = await transaction.get(docRef);
+              const data = doc.exists ? doc.data() : {};
+              
+              // Hapus reaksi sebelumnya jika ada
+              if (userReaction) {
+                const prevEmoji = data[userReaction];
+                prevEmoji.count = Math.max(0, prevEmoji.count - 1);
+                prevEmoji.users = prevEmoji.users.filter(uid => uid !== user.uid);
+              }
+              
+              // Tambahkan reaksi baru
+              if (!data[emojiType]) {
+                data[emojiType] = { count: 0, users: [] };
+              }
+              data[emojiType].count += 1;
+              data[emojiType].users.push(user.uid);
+              
+              transaction.set(docRef, data);
+              return data;
+            });
+            
+            // Update UI
+            option.classList.add('selected');
+            if (userReaction) {
+              document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`)
+                .classList.remove('selected');
             }
-          });
-          
-          // Simpan ke localStorage
-          localStorage.setItem(userStorageKey, emojiType);
-          localStorage.setItem(countsStorageKey, JSON.stringify(reactionCounts));
-          
-          // Tampilkan pesan terima kasih
-          const messageElement = document.querySelector('.reaction-message');
-          if (messageElement) {
-            messageElement.style.opacity = 1;
-            setTimeout(() => {
-              messageElement.style.opacity = 0.7;
-            }, 2000);
+            
+            // Reload data terbaru
+            const updatedDoc = await docRef.get();
+            updateReactionCounts(updatedDoc.data());
+            
+            showThankYouMessage();
+            
+          } catch (error) {
+            console.error("Error updating reaction:", error);
           }
         });
       });
+      
     } else {
-      // Jika user belum login, disable emoji options
+      // User belum login
       emojiOptions.forEach(option => {
-        option.style.opacity = 0.5;
         option.style.cursor = 'not-allowed';
+        option.style.opacity = '0.5';
         option.title = 'Silakan login untuk memberikan reaksi';
       });
     }
   });
+  
+  function updateReactionCounts(data) {
+    Object.keys(data).forEach(emoji => {
+      const countElement = document.getElementById(`${emoji}-count`);
+      if (countElement) {
+        countElement.textContent = data[emoji].count || 0;
+      }
+    });
+  }
+  
+  function showThankYouMessage() {
+    const messageElement = document.querySelector('.reaction-message');
+    if (messageElement) {
+      messageElement.style.opacity = '1';
+      setTimeout(() => {
+        messageElement.style.opacity = '0.7';
+      }, 2000);
+    }
+  }
 }
 
-// Panggil fungsi saat halaman dimuat
+// Panggil saat halaman dimuat
 window.addEventListener('DOMContentLoaded', setupEmojiReactions);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
