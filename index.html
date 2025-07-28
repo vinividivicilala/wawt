@@ -3569,8 +3569,6 @@ a.footnote-link:hover {
             document.getElementById("page1").style.display = "block";
             document.getElementById("page2").style.display = "none";
             document.getElementById("page3").style.display = "none";
-			    setupEmojiReactions();
-
 			
 
             const hours = new Date().getHours();
@@ -3812,96 +3810,71 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
-
-
-
-
-async function setupEmojiReactions() {
+// Fungsi untuk emoji reaksi
+function setupEmojiReactions() {
   const emojiOptions = document.querySelectorAll('.emoji-option');
-  const emojiRef = doc(db, "emojiReactions", "halaman10");
-  let user = auth.currentUser;
-
-  if (!user) return;
-
-  const userEmojiRef = doc(db, "emojiReactions", `user-${user.uid}`);
-  const [emojiSnap, userSnap] = await Promise.all([getDoc(emojiRef), getDoc(userEmojiRef)]);
-
-  let counts = {
+  const storageKey = 'arduino-history-emoji-reaction';
+  
+  // Load saved reaction from localStorage
+  const savedReaction = localStorage.getItem(storageKey);
+  const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
     happy: 0,
     sad: 0,
     disappointed: 0,
     angry: 0,
     neutral: 0
   };
-
-  if (emojiSnap.exists()) {
-    counts = { ...counts, ...emojiSnap.data().counts };
+  
+  // Update counts display
+  Object.keys(reactionCounts).forEach(emoji => {
+    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+  });
+  
+  // Highlight saved reaction if exists
+  if (savedReaction) {
+    document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
   }
-
-  // Tampilkan count di UI
-  for (const [emoji, count] of Object.entries(counts)) {
-    const el = document.getElementById(`${emoji}-count`);
-    if (el) el.textContent = count;
-  }
-
-  let userReaction = null;
-  if (userSnap.exists()) {
-    userReaction = userSnap.data().emoji;
-    const selected = document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`);
-    if (selected) selected.classList.add('selected');
-  }
-
+  
+  // Add click handlers
   emojiOptions.forEach(option => {
-    option.addEventListener('click', async function () {
-      const selectedEmoji = this.dataset.emoji;
-      if (!user) return alert("Silakan login untuk memilih emoji.");
-      if (selectedEmoji === userReaction) return;
-
-      // Kurangi count emoji sebelumnya
-      if (userReaction) {
-        const prev = counts[userReaction] || 0;
-        counts[userReaction] = Math.max(prev - 1, 0);
-      }
-
-      // Tambahkan emoji baru
-      counts[selectedEmoji] = (counts[selectedEmoji] || 0) + 1;
-      userReaction = selectedEmoji;
-
-      // Simpan ke Firestore
-      await setDoc(emojiRef, { counts }, { merge: true });
-      await setDoc(userEmojiRef, {
-        emoji: selectedEmoji,
-        name: user.displayName,
-        email: user.email
-      });
-
-      // Update UI
+    option.addEventListener('click', function() {
+      const emojiType = this.dataset.emoji;
+      
+      // If already selected, do nothing
+      if (savedReaction === emojiType) return;
+      
+      // Remove previous selection
       emojiOptions.forEach(opt => opt.classList.remove('selected'));
+      
+      // Add new selection
       this.classList.add('selected');
-      for (const [emoji, count] of Object.entries(counts)) {
-        const el = document.getElementById(`${emoji}-count`);
-        if (el) el.textContent = count;
+      
+      // Update counts
+      if (savedReaction) {
+        reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
       }
-
-      // Thank you msg
-      const msg = document.querySelector('.reaction-message');
-      if (msg) {
-        msg.style.opacity = 1;
-        setTimeout(() => {
-          msg.style.opacity = 0.7;
-        }, 2000);
-      }
+      reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
+      
+      // Update display
+      Object.keys(reactionCounts).forEach(emoji => {
+        document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+      });
+      
+      // Save to localStorage
+      localStorage.setItem(storageKey, emojiType);
+      localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
+      
+      // Show thank you message
+      document.querySelector('.reaction-message').style.opacity = 1;
+      setTimeout(() => {
+        document.querySelector('.reaction-message').style.opacity = 0.7;
+      }, 2000);
     });
   });
 }
 
-
-
-
-
-
-
-
+// Panggil fungsi saat halaman dimuat
+window.addEventListener('DOMContentLoaded', setupEmojiReactions);
 
 
 
