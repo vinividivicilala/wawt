@@ -3808,74 +3808,99 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
-
-
-// Fungsi untuk emoji reaksi
+// Fungsi untuk emoji reaksi yang terintegrasi dengan auth
 function setupEmojiReactions() {
   const emojiOptions = document.querySelectorAll('.emoji-option');
   const storageKey = 'arduino-history-emoji-reaction';
   
-  // Load saved reaction from localStorage
-  const savedReaction = localStorage.getItem(storageKey);
-  const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
-    happy: 0,
-    sad: 0,
-    disappointed: 0,
-    angry: 0,
-    neutral: 0
-  };
-  
-  // Update counts display
-  Object.keys(reactionCounts).forEach(emoji => {
-    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
-  });
-  
-  // Highlight saved reaction if exists
-  if (savedReaction) {
-    document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
-  }
-  
-  // Add click handlers
-  emojiOptions.forEach(option => {
-    option.addEventListener('click', function() {
-      const emojiType = this.dataset.emoji;
+  // Hanya setup emoji reactions jika user sudah login
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // Gunakan user.uid untuk menyimpan reaksi per user
+      const userStorageKey = `${storageKey}-${user.uid}`;
+      const countsStorageKey = `${storageKey}-counts`;
       
-      // If already selected, do nothing
-      if (savedReaction === emojiType) return;
+      // Load saved reaction dari Firebase atau localStorage
+      const savedReaction = localStorage.getItem(userStorageKey);
+      const reactionCounts = JSON.parse(localStorage.getItem(countsStorageKey)) || {
+        happy: 0,
+        sad: 0,
+        disappointed: 0,
+        angry: 0,
+        neutral: 0
+      };
       
-      // Remove previous selection
-      emojiOptions.forEach(opt => opt.classList.remove('selected'));
-      
-      // Add new selection
-      this.classList.add('selected');
-      
-      // Update counts
-      if (savedReaction) {
-        reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
-      }
-      reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
-      
-      // Update display
+      // Update tampilan count
       Object.keys(reactionCounts).forEach(emoji => {
-        document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+        const countElement = document.getElementById(`${emoji}-count`);
+        if (countElement) {
+          countElement.textContent = reactionCounts[emoji];
+        }
       });
       
-      // Save to localStorage
-      localStorage.setItem(storageKey, emojiType);
-      localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
+      // Highlight reaksi yang sudah dipilih user jika ada
+      if (savedReaction) {
+        const selectedOption = document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`);
+        if (selectedOption) {
+          selectedOption.classList.add('selected');
+        }
+      }
       
-      // Show thank you message
-      document.querySelector('.reaction-message').style.opacity = 1;
-      setTimeout(() => {
-        document.querySelector('.reaction-message').style.opacity = 0.7;
-      }, 2000);
-    });
+      // Tambahkan event handler untuk emoji
+      emojiOptions.forEach(option => {
+        option.addEventListener('click', function() {
+          const emojiType = this.dataset.emoji;
+          
+          // Jika sudah dipilih, tidak perlu melakukan apa-apa
+          if (savedReaction === emojiType) return;
+          
+          // Hapus selection sebelumnya
+          emojiOptions.forEach(opt => opt.classList.remove('selected'));
+          
+          // Tambahkan selection baru
+          this.classList.add('selected');
+          
+          // Update counts
+          if (savedReaction) {
+            reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+          }
+          reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
+          
+          // Update tampilan
+          Object.keys(reactionCounts).forEach(emoji => {
+            const countElement = document.getElementById(`${emoji}-count`);
+            if (countElement) {
+              countElement.textContent = reactionCounts[emoji];
+            }
+          });
+          
+          // Simpan ke localStorage
+          localStorage.setItem(userStorageKey, emojiType);
+          localStorage.setItem(countsStorageKey, JSON.stringify(reactionCounts));
+          
+          // Tampilkan pesan terima kasih
+          const messageElement = document.querySelector('.reaction-message');
+          if (messageElement) {
+            messageElement.style.opacity = 1;
+            setTimeout(() => {
+              messageElement.style.opacity = 0.7;
+            }, 2000);
+          }
+        });
+      });
+    } else {
+      // Jika user belum login, disable emoji options
+      emojiOptions.forEach(option => {
+        option.style.opacity = 0.5;
+        option.style.cursor = 'not-allowed';
+        option.title = 'Silakan login untuk memberikan reaksi';
+      });
+    }
   });
 }
 
 // Panggil fungsi saat halaman dimuat
 window.addEventListener('DOMContentLoaded', setupEmojiReactions);
-
 
 
 
