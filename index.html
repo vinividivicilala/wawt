@@ -3434,8 +3434,10 @@ a.footnote-link:hover {
       </div>
     </div>
   </div>
-  
-  <div class="reaction-container linebox">
+
+
+
+<div class="reaction-container linebox">
   <h3 class="title-box-white">Bagaimana perasaan Anda tentang konten ini?</h3>
   <div class="sidebar-line-white"></div>
   
@@ -3470,7 +3472,21 @@ a.footnote-link:hover {
   <p class="reaction-message" style="color: rgba(255,255,255,0.7); font-size: 14px; text-align: center;">
     Terima kasih atas feedback Anda!
   </p>
+  <p class="login-message" style="color: rgba(255,255,255,0.7); font-size: 14px; text-align: center; display: none;">
+    Silakan login untuk memberikan reaksi
+  </p>
 </div>
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3601,6 +3617,9 @@ a.footnote-link:hover {
             if (logoutBtn) logoutBtn.style.display = "inline-block";
             if (likeBtn) likeBtn.disabled = false;
             if (followBtn) followBtn.disabled = false;
+			
+			    setupEmojiReactions(user);
+
 
         } else {
             if (greeting) greeting.textContent = "";
@@ -3611,6 +3630,8 @@ a.footnote-link:hover {
 
             const dynamicText = document.getElementById("dynamicText");
             if (dynamicText) dynamicText.textContent = "";
+			    setupEmojiReactions(null);
+
         }
     });
 
@@ -3810,13 +3831,19 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
-// Fungsi untuk emoji reaksi
-function setupEmojiReactions() {
+
+// Fungsi untuk emoji reaksi dengan autentikasi
+function setupEmojiReactions(user) {
   const emojiOptions = document.querySelectorAll('.emoji-option');
   const storageKey = 'arduino-history-emoji-reaction';
+  const reactionMessage = document.querySelector('.reaction-message');
+  const loginMessage = document.querySelector('.login-message');
   
-  // Load saved reaction from localStorage
-  const savedReaction = localStorage.getItem(storageKey);
+  // Sembunyikan pesan default
+  reactionMessage.style.display = 'none';
+  loginMessage.style.display = 'none';
+  
+  // Load saved reaction counts
   const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
     happy: 0,
     sad: 0,
@@ -3830,57 +3857,72 @@ function setupEmojiReactions() {
     document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
   });
   
-  // Highlight saved reaction if exists
-  if (savedReaction) {
-    document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
-  }
-  
-  // Add click handlers
-  emojiOptions.forEach(option => {
-    option.addEventListener('click', function() {
-      const emojiType = this.dataset.emoji;
-      
-      // If already selected, do nothing
-      if (savedReaction === emojiType) return;
-      
-      // Remove previous selection
-      emojiOptions.forEach(opt => opt.classList.remove('selected'));
-      
-      // Add new selection
-      this.classList.add('selected');
-      
-      // Update counts
-      if (savedReaction) {
-        reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
-      }
-      reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
-      
-      // Update display
-      Object.keys(reactionCounts).forEach(emoji => {
-        document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+  // Jika pengguna sudah login
+  if (user) {
+    // Load saved reaction for this user
+    const userReactionKey = `${storageKey}-${user.uid}`;
+    const savedReaction = localStorage.getItem(userReactionKey);
+    
+    // Highlight saved reaction if exists
+    if (savedReaction) {
+      document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
+    }
+    
+    // Add click handlers
+    emojiOptions.forEach(option => {
+      option.addEventListener('click', function() {
+        const emojiType = this.dataset.emoji;
+        
+        // If already selected, do nothing
+        if (savedReaction === emojiType) return;
+        
+        // Remove previous selection
+        emojiOptions.forEach(opt => opt.classList.remove('selected'));
+        
+        // Add new selection
+        this.classList.add('selected');
+        
+        // Update counts
+        if (savedReaction) {
+          reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+        }
+        reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
+        
+        // Update display
+        Object.keys(reactionCounts).forEach(emoji => {
+          document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+        });
+        
+        // Save to localStorage
+        localStorage.setItem(userReactionKey, emojiType);
+        localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
+        
+        // Show thank you message
+        reactionMessage.style.display = 'block';
+        reactionMessage.style.opacity = 1;
+        setTimeout(() => {
+          reactionMessage.style.opacity = 0.7;
+        }, 2000);
       });
-      
-      // Save to localStorage
-      localStorage.setItem(storageKey, emojiType);
-      localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
-      
-      // Show thank you message
-      document.querySelector('.reaction-message').style.opacity = 1;
-      setTimeout(() => {
-        document.querySelector('.reaction-message').style.opacity = 0.7;
-      }, 2000);
     });
-  });
+  } else {
+    // Jika pengguna belum login
+    loginMessage.style.display = 'block';
+    
+    // Nonaktifkan emoji options
+    emojiOptions.forEach(option => {
+      option.style.opacity = '0.5';
+      option.style.cursor = 'not-allowed';
+      option.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginMessage.style.opacity = 1;
+        setTimeout(() => {
+          loginMessage.style.opacity = 0.7;
+        }, 2000);
+      });
+    });
+  }
 }
-
-// Panggil fungsi saat halaman dimuat
-window.addEventListener('DOMContentLoaded', setupEmojiReactions);
-
-
-
-
-
-
 
 
 
