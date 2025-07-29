@@ -1529,65 +1529,21 @@ a.footnote-link:hover {
 
 
 
+
+
+/* Styles untuk sistem komentar */
 .comments-container {
-  margin: 30px auto;
-  padding: 20px;
-  max-width: 800px;
+  margin-top: 40px;
+  padding: 25px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
 }
 
-.comment-filter {
-  margin-bottom: 20px;
-  display: flex;
-  gap: 10px;
+.comment-form-container {
+  margin-bottom: 30px;
 }
 
-.filter-btn {
-  padding: 8px 15px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.filter-btn.active {
-  background: #0095ff;
-  border-color: #0095ff;
-}
-
-.comment-form textarea {
-  width: 100%;
-  padding: 15px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
-  margin-bottom: 10px;
-  resize: vertical;
-  min-height: 100px;
-}
-
-.comments-list {
-  margin-top: 30px;
-}
-
-.comment-count {
-  font-size: 18px;
-  margin-bottom: 20px;
-  color: white;
-  font-weight: bold;
-}
-
-.comment-item {
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-left: 3px solid #0095ff;
-}
-
-.comment-header {
+.comment-user-info {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
@@ -1597,40 +1553,152 @@ a.footnote-link:hover {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
   margin-right: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  object-fit: cover;
+}
+
+.comment-username {
+  color: white;
   font-weight: bold;
 }
 
-.comment-author {
+.comment-textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  font-size: 16px;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: #0095ff;
+}
+
+.comment-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.comment-button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
   font-weight: bold;
+}
+
+.submit-button {
+  background-color: #0095ff;
   color: white;
 }
 
-.comment-date {
+.cancel-button {
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.login-prompt {
+  text-align: center;
+  margin: 20px 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.login-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.google-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.comment-filter {
+  margin: 20px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.filter-button {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.filter-button.active {
+  background: #0095ff;
+}
+
+.comments-list {
+  margin-top: 20px;
+}
+
+.comment-item {
+  padding: 15px;
+  margin-bottom: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  position: relative;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.comment-author-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.comment-author-name {
+  font-weight: bold;
+  color: white;
+  margin-right: 10px;
+}
+
+.comment-time {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
-  color: rgba(255,255,255,0.6);
-  margin-left: 10px;
 }
 
 .comment-content {
-  color: rgba(255,255,255,0.8);
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 10px;
+  line-height: 1.5;
 }
 
 .comment-actions {
   display: flex;
   gap: 15px;
-  margin-top: 10px;
 }
 
 .comment-action {
-  color: rgba(255,255,255,0.6);
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1640,39 +1708,44 @@ a.footnote-link:hover {
   color: #0095ff;
 }
 
-.comment-action svg {
-  margin-right: 5px;
-}
-
-.reply-form {
+.reply-form-container {
   margin-top: 15px;
+  margin-left: 30px;
   display: none;
 }
 
-.reply-form textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 5px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: white;
-  margin-bottom: 10px;
-  resize: vertical;
-  min-height: 60px;
-}
-
 .replies-list {
+  margin-left: 30px;
   margin-top: 15px;
-  padding-left: 20px;
-  border-left: 2px solid rgba(255,255,255,0.1);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  padding-left: 15px;
 }
 
-.reply-item {
-  margin-top: 10px;
-  padding: 10px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 5px;
+.new-comment {
+  border-left: 3px solid #0095ff;
 }
+
+.old-comment {
+  opacity: 0.8;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3622,38 +3695,45 @@ a.footnote-link:hover {
 
 
 
-
+<!-- Tambahkan ini sebelum div.bottom-line -->
 <div class="comments-container linebox">
-  <h3 class="title-box-white">Komentar</h3>
+  <h2 class="title-box-white">Diskusi (<span id="commentCount">0</span>)</h2>
   <div class="sidebar-line-white"></div>
+  
+  <!-- Form Komentar -->
+  <div id="commentFormContainer" class="comment-form-container" style="display: none;">
+    <div class="comment-user-info">
+      <img id="commentUserAvatar" src="" alt="User Avatar" class="comment-avatar">
+      <span id="commentUserName" class="comment-username"></span>
+    </div>
+    <textarea id="commentText" class="comment-textarea" placeholder="Tulis komentar Anda..." rows="3"></textarea>
+    <div class="comment-buttons">
+      <button id="cancelComment" class="comment-button cancel-button">Batal</button>
+      <button id="submitComment" class="comment-button submit-button">Kirim</button>
+    </div>
+  </div>
+  
+  <!-- Login Prompt -->
+  <div id="loginPrompt" class="login-prompt">
+    <p>Silakan login dengan Google untuk meninggalkan komentar.</p>
+    <button id="loginToComment" class="login-button">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" class="google-logo">
+      Login dengan Google
+    </button>
+  </div>
   
   <!-- Filter Komentar -->
   <div class="comment-filter">
-    <button class="filter-btn active" data-filter="all">Semua</button>
-    <button class="filter-btn" data-filter="new">Baru</button>
-    <button class="filter-btn" data-filter="old">Lama</button>
-  </div>
-  
-  <!-- Form Komentar -->
-  <div class="comment-form" id="commentForm">
-    <textarea id="commentInput" placeholder="Tulis komentar Anda..." required></textarea>
-    <button id="submitComment" class="btn-primary">Kirim Komentar</button>
-    <p class="login-prompt" style="color: rgba(255,255,255,0.7); display: none;">
-      Silakan <a href="#" id="loginToComment">login</a> untuk mengirim komentar.
-    </p>
+    <button class="filter-button active" data-filter="all">Semua</button>
+    <button class="filter-button" data-filter="new">Baru</button>
+    <button class="filter-button" data-filter="old">Lama</button>
   </div>
   
   <!-- Daftar Komentar -->
-  <div class="comments-list" id="commentsList">
-    <div class="comment-count">
-      <span id="totalComments">0</span> Komentar
-    </div>
+  <div id="commentsList" class="comments-list">
     <!-- Komentar akan dimuat di sini -->
   </div>
 </div>
-
-
-
 
 
 
@@ -4102,321 +4182,311 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
-// Inisialisasi Firebase untuk komentar
-const db = getFirestore();
-const commentsRef = collection(db, "arduinoHistoryComments");
 
-// Fungsi untuk memuat komentar
-function loadComments(filter = 'all') {
-  let q = query(commentsRef, orderBy('timestamp', filter === 'new' ? 'desc' : 'asc'));
+
+// Fungsi untuk mengatur sistem komentar
+function setupCommentSystem() {
+  const commentFormContainer = document.getElementById('commentFormContainer');
+  const loginPrompt = document.getElementById('loginPrompt');
+  const commentText = document.getElementById('commentText');
+  const submitComment = document.getElementById('submitComment');
+  const cancelComment = document.getElementById('cancelComment');
+  const loginToComment = document.getElementById('loginToComment');
+  const commentsList = document.getElementById('commentsList');
+  const commentCount = document.getElementById('commentCount');
+  const filterButtons = document.querySelectorAll('.filter-button');
   
-  if (filter === 'new') {
-    // Filter komentar baru (7 hari terakhir)
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    q = query(commentsRef, 
-              where('timestamp', '>=', oneWeekAgo),
-              orderBy('timestamp', 'desc'));
-  } else if (filter === 'old') {
-    // Filter komentar lama (lebih dari 7 hari)
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    q = query(commentsRef, 
-              where('timestamp', '<', oneWeekAgo),
-              orderBy('timestamp', 'asc'));
-  }
-
-  onSnapshot(q, (snapshot) => {
-    const commentsList = document.getElementById('commentsList');
-    // Hapus komentar yang ada kecuali count
-    while (commentsList.children.length > 1) {
-      commentsList.removeChild(commentsList.lastChild);
+  let replyingTo = null;
+  
+  // Tampilkan form komentar berdasarkan status login
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      commentFormContainer.style.display = 'block';
+      loginPrompt.style.display = 'none';
+      
+      // Set user info
+      document.getElementById('commentUserAvatar').src = user.photoURL || 'https://via.placeholder.com/40';
+      document.getElementById('commentUserName').textContent = user.displayName || 'Anonymous';
+    } else {
+      commentFormContainer.style.display = 'none';
+      loginPrompt.style.display = 'block';
     }
+  });
+  
+  // Login dengan Google untuk komentar
+  loginToComment.addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+      .catch((error) => {
+        console.error('Login error:', error);
+        alert('Gagal login: ' + error.message);
+      });
+  });
+  
+  // Submit komentar
+  submitComment.addEventListener('click', () => {
+    const user = auth.currentUser;
+    const text = commentText.value.trim();
     
-    const commentCount = snapshot.size;
-    document.getElementById('totalComments').textContent = commentCount;
-    
-    if (commentCount === 0) {
-      const noComments = document.createElement('p');
-      noComments.textContent = 'Belum ada komentar. Jadilah yang pertama berkomentar!';
-      noComments.style.color = 'rgba(255,255,255,0.6)';
-      noComments.style.textAlign = 'center';
-      noComments.style.margin = '20px 0';
-      commentsList.appendChild(noComments);
+    if (!user) {
+      alert('Silakan login terlebih dahulu');
       return;
     }
     
-    snapshot.forEach((doc) => {
-      const comment = doc.data();
-      displayComment(doc.id, comment, false);
-      
-      // Load replies if any
-      if (comment.replyCount > 0) {
-        loadReplies(doc.id);
-      }
-    });
-  });
-}
-
-// Fungsi untuk menampilkan komentar
-function displayComment(commentId, comment, isReply, parentId = null) {
-  const commentsList = document.getElementById('commentsList');
-  const commentElement = document.createElement('div');
-  commentElement.className = isReply ? 'reply-item' : 'comment-item';
-  commentElement.id = `comment-${commentId}`;
-  
-  // Format tanggal
-  const commentDate = comment.timestamp.toDate();
-  const formattedDate = commentDate.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  
-  // Avatar dari inisial user
-  const initials = comment.authorName.split(' ').map(name => name[0]).join('').toUpperCase();
-  
-  commentElement.innerHTML = `
-    <div class="comment-header">
-      <div class="comment-avatar">${initials}</div>
-      <div class="comment-author">${comment.authorName}</div>
-      <div class="comment-date">${formattedDate}</div>
-    </div>
-    <div class="comment-content">${comment.content}</div>
-    ${!isReply ? `
-    <div class="comment-actions">
-      <div class="comment-action like-comment" data-comment-id="${commentId}">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-        </svg>
-        <span class="like-count">${comment.likes || 0}</span>
-      </div>
-      <div class="comment-action reply-comment" data-comment-id="${commentId}">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 17 20 12 15 7"></polyline>
-          <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
-        </svg>
-        Balas
-      </div>
-    </div>
-    <div class="reply-form" id="replyForm-${commentId}">
-      <textarea placeholder="Tulis balasan Anda..." required></textarea>
-      <button class="btn-primary submit-reply" data-comment-id="${commentId}">Kirim Balasan</button>
-    </div>
-    <div class="replies-list" id="replies-${commentId}"></div>
-    ` : ''}
-  `;
-  
-  if (isReply) {
-    document.getElementById(`replies-${parentId}`).appendChild(commentElement);
-  } else {
-    // Insert after comment count
-    commentsList.insertBefore(commentElement, commentsList.children[1].nextSibling);
-  }
-  
-  // Add event listeners for new elements
-  if (!isReply) {
-    document.querySelector(`.reply-comment[data-comment-id="${commentId}"]`).addEventListener('click', () => {
-      const replyForm = document.getElementById(`replyForm-${commentId}`);
-      replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
-    });
-    
-    document.querySelector(`.submit-reply[data-comment-id="${commentId}"]`).addEventListener('click', () => {
-      submitReply(commentId);
-    });
-    
-    document.querySelector(`.like-comment[data-comment-id="${commentId}"]`).addEventListener('click', () => {
-      likeComment(commentId);
-    });
-  }
-}
-
-// Fungsi untuk memuat balasan
-function loadReplies(commentId) {
-  const repliesRef = collection(db, "arduinoHistoryComments", commentId, "replies");
-  const q = query(repliesRef, orderBy('timestamp', 'asc'));
-  
-  onSnapshot(q, (snapshot) => {
-    const repliesContainer = document.getElementById(`replies-${commentId}`);
-    repliesContainer.innerHTML = '';
-    
-    snapshot.forEach((doc) => {
-      const reply = doc.data();
-      displayComment(doc.id, reply, true, commentId);
-    });
-    
-    // Update reply count in parent comment
-    const replyCount = snapshot.size;
-    updateReplyCount(commentId, replyCount);
-  });
-}
-
-// Fungsi untuk mengupdate jumlah balasan
-function updateReplyCount(commentId, count) {
-  const docRef = doc(db, "arduinoHistoryComments", commentId);
-  updateDoc(docRef, {
-    replyCount: count
-  });
-}
-
-// Fungsi untuk mengirim komentar
-async function submitComment() {
-  const commentInput = document.getElementById('commentInput');
-  const content = commentInput.value.trim();
-  
-  if (!content) {
-    alert('Komentar tidak boleh kosong');
-    return;
-  }
-  
-  const user = auth.currentUser;
-  if (!user) {
-    alert('Anda harus login untuk mengirim komentar');
-    return;
-  }
-  
-  try {
-    await addDoc(commentsRef, {
-      authorId: user.uid,
-      authorName: user.displayName || 'Anonymous',
-      content: content,
-      timestamp: serverTimestamp(),
-      likes: 0,
-      replyCount: 0
-    });
-    
-    commentInput.value = '';
-    // Scroll ke komentar terbaru
-    setTimeout(() => {
-      const commentsList = document.getElementById('commentsList');
-      commentsList.scrollTop = commentsList.scrollHeight;
-    }, 300);
-  } catch (error) {
-    console.error('Error adding comment: ', error);
-    alert('Gagal mengirim komentar');
-  }
-}
-
-// Fungsi untuk mengirim balasan
-async function submitReply(commentId) {
-  const replyForm = document.getElementById(`replyForm-${commentId}`);
-  const replyInput = replyForm.querySelector('textarea');
-  const content = replyInput.value.trim();
-  
-  if (!content) {
-    alert('Balasan tidak boleh kosong');
-    return;
-  }
-  
-  const user = auth.currentUser;
-  if (!user) {
-    alert('Anda harus login untuk membalas komentar');
-    return;
-  }
-  
-  try {
-    const repliesRef = collection(db, "arduinoHistoryComments", commentId, "replies");
-    await addDoc(repliesRef, {
-      authorId: user.uid,
-      authorName: user.displayName || 'Anonymous',
-      content: content,
-      timestamp: serverTimestamp()
-    });
-    
-    replyInput.value = '';
-    replyForm.style.display = 'none';
-  } catch (error) {
-    console.error('Error adding reply: ', error);
-    alert('Gagal mengirim balasan');
-  }
-}
-
-// Fungsi untuk like komentar
-async function likeComment(commentId) {
-  const user = auth.currentUser;
-  if (!user) {
-    alert('Anda harus login untuk menyukai komentar');
-    return;
-  }
-  
-  const commentRef = doc(db, "arduinoHistoryComments", commentId);
-  const likeRef = doc(db, "arduinoHistoryComments", commentId, "likes", user.uid);
-  
-  try {
-    // Check if user already liked
-    const likeSnap = await getDoc(likeRef);
-    
-    if (likeSnap.exists()) {
-      // Unlike
-      await deleteDoc(likeRef);
-      await updateDoc(commentRef, {
-        likes: increment(-1)
-      });
-    } else {
-      // Like
-      await setDoc(likeRef, {
-        timestamp: serverTimestamp()
-      });
-      await updateDoc(commentRef, {
-        likes: increment(1)
-      });
+    if (!text) {
+      alert('Komentar tidak boleh kosong');
+      return;
     }
-  } catch (error) {
-    console.error('Error liking comment: ', error);
-    alert('Gagal menyukai komentar');
-  }
-}
-
-// Setup filter buttons
-function setupCommentFilters() {
-  const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    const commentData = {
+      authorId: user.uid,
+      authorName: user.displayName || 'Anonymous',
+      authorAvatar: user.photoURL || 'https://via.placeholder.com/40',
+      text: text,
+      timestamp: firebase.database.ServerValue.TIMESTAMP,
+      replies: {}
+    };
+    
+    if (replyingTo) {
+      // Ini adalah reply
+      commentsDb.child(replyingTo).child('replies').push(commentData)
+        .then(() => {
+          commentText.value = '';
+          replyingTo = null;
+          document.querySelectorAll('.reply-form-container').forEach(el => {
+            el.style.display = 'none';
+          });
+        })
+        .catch(error => {
+          console.error('Error submitting reply:', error);
+          alert('Gagal mengirim balasan: ' + error.message);
+        });
+    } else {
+      // Ini adalah komentar baru
+      commentsDb.push(commentData)
+        .then(() => {
+          commentText.value = '';
+        })
+        .catch(error => {
+          console.error('Error submitting comment:', error);
+          alert('Gagal mengirim komentar: ' + error.message);
+        });
+    }
+  });
   
+  // Batal komentar
+  cancelComment.addEventListener('click', () => {
+    commentText.value = '';
+    replyingTo = null;
+    document.querySelectorAll('.reply-form-container').forEach(el => {
+      el.style.display = 'none';
+    });
+  });
+  
+  // Filter komentar
   filterButtons.forEach(button => {
     button.addEventListener('click', () => {
       filterButtons.forEach(btn => btn.classList.remove('active'));
       button.classList.add('active');
-      loadComments(button.dataset.filter);
+      
+      const filter = button.dataset.filter;
+      const now = Date.now();
+      const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+      
+      document.querySelectorAll('.comment-item').forEach(comment => {
+        const timestamp = parseInt(comment.dataset.timestamp);
+        
+        if (filter === 'all') {
+          comment.style.display = 'block';
+        } else if (filter === 'new') {
+          comment.style.display = timestamp > sevenDaysAgo ? 'block' : 'none';
+        } else if (filter === 'old') {
+          comment.style.display = timestamp <= sevenDaysAgo ? 'block' : 'none';
+        }
+      });
     });
   });
-}
-
-// Update comment form based on auth state
-function updateCommentForm() {
-  const commentForm = document.getElementById('commentForm');
-  const commentInput = document.getElementById('commentInput');
-  const submitBtn = document.getElementById('submitComment');
-  const loginPrompt = document.querySelector('.login-prompt');
   
-  if (auth.currentUser) {
-    commentInput.disabled = false;
-    submitBtn.style.display = 'block';
-    loginPrompt.style.display = 'none';
+  // Load komentar dari Firebase
+  commentsDb.on('value', (snapshot) => {
+    commentsList.innerHTML = '';
+    const comments = [];
+    let totalComments = 0;
     
-    // Add submit event
-    submitBtn.onclick = submitComment;
-  } else {
-    commentInput.disabled = true;
-    submitBtn.style.display = 'none';
-    loginPrompt.style.display = 'block';
+    snapshot.forEach((commentSnapshot) => {
+      const comment = commentSnapshot.val();
+      comment.id = commentSnapshot.key;
+      comments.push(comment);
+      totalComments++;
+      
+      // Hitung reply juga
+      if (comment.replies) {
+        totalComments += Object.keys(comment.replies).length;
+      }
+    });
     
-    // Add login link event
-    document.getElementById('loginToComment').addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('loginBtn').click();
+    // Update jumlah komentar
+    commentCount.textContent = totalComments;
+    
+    // Urutkan berdasarkan timestamp (terbaru pertama)
+    comments.sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Render komentar
+    comments.forEach(comment => {
+      renderComment(comment, commentsList, false);
+      
+      // Render replies jika ada
+      if (comment.replies) {
+        const replies = Object.values(comment.replies);
+        replies.sort((a, b) => a.timestamp - b.timestamp); // Urutkan reply dari yang terlama
+        
+        const repliesContainer = document.createElement('div');
+        repliesContainer.className = 'replies-list';
+        
+        replies.forEach(reply => {
+          renderComment(reply, repliesContainer, true);
+        });
+        
+        const commentElement = document.getElementById(`comment-${comment.id}`);
+        if (commentElement) {
+          commentElement.appendChild(repliesContainer);
+        }
+      }
+    });
+  });
+  
+  // Fungsi untuk render komentar
+  function renderComment(commentData, container, isReply) {
+    const now = Date.now();
+    const commentDate = new Date(commentData.timestamp);
+    const timeDiff = now - commentData.timestamp;
+    const isNew = timeDiff < (7 * 24 * 60 * 60 * 1000); // Baru jika kurang dari 7 hari
+    
+    const commentElement = document.createElement('div');
+    commentElement.className = `comment-item ${isNew ? 'new-comment' : 'old-comment'}`;
+    commentElement.id = `comment-${commentData.id}`;
+    commentElement.dataset.timestamp = commentData.timestamp;
+    
+    commentElement.innerHTML = `
+      <div class="comment-header">
+        <img src="${commentData.authorAvatar}" alt="${commentData.authorName}" class="comment-author-avatar">
+        <span class="comment-author-name">${commentData.authorName}</span>
+        <span class="comment-time">${formatDate(commentData.timestamp)}</span>
+      </div>
+      <div class="comment-content">${commentData.text}</div>
+      <div class="comment-actions">
+        ${!isReply ? `<span class="comment-action reply-action" data-commentid="${commentData.id}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
+            <polyline points="15 17 20 12 15 7"></polyline>
+            <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
+          </svg>
+          Balas
+        </span>` : ''}
+      </div>
+      ${!isReply ? `<div class="reply-form-container" id="reply-form-${commentData.id}">
+        <textarea class="comment-textarea reply-textarea" placeholder="Tulis balasan Anda..." rows="2"></textarea>
+        <div class="comment-buttons">
+          <button class="comment-button cancel-reply cancel-button" data-commentid="${commentData.id}">Batal</button>
+          <button class="comment-button submit-reply submit-button" data-commentid="${commentData.id}">Kirim</button>
+        </div>
+      </div>` : ''}
+    `;
+    
+    container.appendChild(commentElement);
+    
+    // Tambahkan event listener untuk tombol reply
+    if (!isReply) {
+      const replyAction = commentElement.querySelector('.reply-action');
+      if (replyAction) {
+        replyAction.addEventListener('click', () => {
+          replyingTo = commentData.id;
+          document.querySelectorAll('.reply-form-container').forEach(el => {
+            el.style.display = 'none';
+          });
+          document.getElementById(`reply-form-${commentData.id}`).style.display = 'block';
+        });
+      }
+      
+      // Tambahkan event listener untuk submit reply
+      const submitReply = commentElement.querySelector('.submit-reply');
+      if (submitReply) {
+        submitReply.addEventListener('click', (e) => {
+          const replyText = commentElement.querySelector('.reply-textarea').value.trim();
+          if (!replyText) {
+            alert('Balasan tidak boleh kosong');
+            return;
+          }
+          
+          const user = auth.currentUser;
+          if (!user) {
+            alert('Silakan login terlebih dahulu');
+            return;
+          }
+          
+          const replyData = {
+            authorId: user.uid,
+            authorName: user.displayName || 'Anonymous',
+            authorAvatar: user.photoURL || 'https://via.placeholder.com/40',
+            text: replyText,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+          };
+          
+          commentsDb.child(commentData.id).child('replies').push(replyData)
+            .then(() => {
+              commentElement.querySelector('.reply-textarea').value = '';
+              document.getElementById(`reply-form-${commentData.id}`).style.display = 'none';
+              replyingTo = null;
+            })
+            .catch(error => {
+              console.error('Error submitting reply:', error);
+              alert('Gagal mengirim balasan: ' + error.message);
+            });
+        });
+      }
+      
+      // Tambahkan event listener untuk cancel reply
+      const cancelReply = commentElement.querySelector('.cancel-reply');
+      if (cancelReply) {
+        cancelReply.addEventListener('click', () => {
+          commentElement.querySelector('.reply-textarea').value = '';
+          document.getElementById(`reply-form-${commentData.id}`).style.display = 'none';
+          replyingTo = null;
+        });
+      }
+    }
+  }
+  
+  // Fungsi untuk memformat tanggal
+  function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'baru saja';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
+    
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
     });
   }
 }
 
-// Initialize comments system
-function initComments() {
-  setupCommentFilters();
-  loadComments();
-  updateCommentForm();
-}
-  
-  initComments();
+// Panggil fungsi setup komentar saat halaman dimuat
+window.addEventListener('DOMContentLoaded', setupCommentSystem);
+
+
+
+
+
+
+
+
+
+
 
 
 
