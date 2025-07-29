@@ -4105,235 +4105,259 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
-// Firebase Firestore implementation
-function setupFirestoreComments() {
-  const db = firebase.firestore();
-  const commentsRef = db.collection('discussions').doc('arduinoHistory').collection('comments');
-  const commentsList = document.getElementById('commentsList');
-  const commentInput = document.getElementById('commentInput');
-  const submitComment = document.getElementById('submitComment');
-  const filterButtons = document.querySelectorAll('.filter-btn');
-  const totalComments = document.getElementById('totalComments');
 
-  // Format tanggal
-  function formatDate(timestamp) {
-    const date = timestamp.toDate();
-    const now = new Date();
-    const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    
-    if (diffInDays === 0) return 'Hari ini';
-    if (diffInDays === 1) return 'Kemarin';
-    if (diffInDays < 7) return `${diffInDays} hari yang lalu`;
-    
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-  }
 
-  // Render komentar
-  function renderComments(comments, filter = 'all') {
-    commentsList.innerHTML = '';
-    
-    const filteredComments = comments.filter(comment => {
+
+
+  // Comment System Functions
+  function setupComments(user) {
+    const commentsRef = collection(db, "discussions", "arduinoHistory", "comments");
+    const commentsList = document.getElementById('commentsList');
+    const commentInput = document.getElementById('commentInput');
+    const submitComment = document.getElementById('submitComment');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const totalComments = document.getElementById('totalComments');
+
+    // Format tanggal
+    function formatDate(timestamp) {
+      const date = timestamp.toDate();
       const now = new Date();
-      const commentDate = comment.timestamp.toDate();
-      const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
+      const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
       
-      if (filter === 'new') return diffInDays <= 7;
-      if (filter === 'old') return diffInDays > 7;
-      return true;
-    });
-    
-    totalComments.textContent = `${comments.length} Komentar`;
-    
-    if (filteredComments.length === 0) {
-      commentsList.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center;">Belum ada komentar</p>';
-      return;
+      if (diffInDays === 0) return 'Hari ini';
+      if (diffInDays === 1) return 'Kemarin';
+      if (diffInDays < 7) return `${diffInDays} hari yang lalu`;
+      
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
     }
-    
-    filteredComments.forEach((comment) => {
-      const commentDate = comment.timestamp.toDate();
-      const now = new Date();
-      const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
-      const isNew = diffInDays <= 7;
+
+    // Render komentar
+    function renderComments(comments, filter = 'all') {
+      commentsList.innerHTML = '';
       
-      const commentElement = document.createElement('div');
-      commentElement.className = 'comment-item';
-      commentElement.dataset.id = comment.id;
+      const filteredComments = comments.filter(comment => {
+        const now = new Date();
+        const commentDate = comment.timestamp.toDate();
+        const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
+        
+        if (filter === 'new') return diffInDays <= 7;
+        if (filter === 'old') return diffInDays > 7;
+        return true;
+      });
       
-      let repliesHTML = '';
-      if (comment.replies && comment.replies.length > 0) {
-        repliesHTML = `
-          <div class="replies-list">
-            ${comment.replies.map(reply => `
-              <div class="comment-item reply-item">
-                <div class="comment-header">
-                  <div class="comment-avatar">${reply.author.charAt(0).toUpperCase()}</div>
-                  <div class="comment-author">${reply.author}</div>
-                  <div class="comment-date">${formatDate(reply.timestamp)}</div>
-                  ${Math.floor((new Date() - reply.timestamp.toDate()) / (1000 * 60 * 60 * 24)) <= 7 ? '<span class="new-badge">BARU</span>' : ''}
-                </div>
-                <div class="comment-content">${reply.content}</div>
-              </div>
-            `).join('')}
-          </div>
-        `;
+      totalComments.textContent = `${comments.length} Komentar`;
+      
+      if (filteredComments.length === 0) {
+        commentsList.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center;">Belum ada komentar</p>';
+        return;
       }
       
-      commentElement.innerHTML = `
-        <div class="comment-header">
-          <div class="comment-avatar">${comment.author.charAt(0).toUpperCase()}</div>
-          <div class="comment-author">${comment.author}</div>
-          <div class="comment-date">${formatDate(comment.timestamp)}</div>
-          ${isNew ? '<span class="new-badge">BARU</span>' : ''}
-        </div>
-        <div class="comment-content">${comment.content}</div>
-        <div class="comment-actions">
-          <div class="comment-action like-comment" data-id="${comment.id}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-            </svg>
-            <span class="like-count">${comment.likes || 0}</span>
+      filteredComments.forEach((comment) => {
+        const commentDate = comment.timestamp.toDate();
+        const now = new Date();
+        const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
+        const isNew = diffInDays <= 7;
+        
+        const commentElement = document.createElement('div');
+        commentElement.className = 'comment-item';
+        commentElement.dataset.id = comment.id;
+        
+        let repliesHTML = '';
+        if (comment.replies && comment.replies.length > 0) {
+          repliesHTML = `
+            <div class="replies-list">
+              ${comment.replies.map(reply => `
+                <div class="comment-item reply-item">
+                  <div class="comment-header">
+                    <div class="comment-avatar">${reply.author.charAt(0).toUpperCase()}</div>
+                    <div class="comment-author">${reply.author}</div>
+                    <div class="comment-date">${formatDate(reply.timestamp)}</div>
+                    ${Math.floor((new Date() - reply.timestamp.toDate()) / (1000 * 60 * 60 * 24)) <= 7 ? '<span class="new-badge">BARU</span>' : ''}
+                  </div>
+                  <div class="comment-content">${reply.content}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+        
+        commentElement.innerHTML = `
+          <div class="comment-header">
+            <div class="comment-avatar">${comment.author.charAt(0).toUpperCase()}</div>
+            <div class="comment-author">${comment.author}</div>
+            <div class="comment-date">${formatDate(comment.timestamp)}</div>
+            ${isNew ? '<span class="new-badge">BARU</span>' : ''}
           </div>
-          <div class="comment-action reply-btn" data-id="${comment.id}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 17 4 12 9 7"></polyline>
-              <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
-            </svg>
-            Balas
+          <div class="comment-content">${comment.content}</div>
+          <div class="comment-actions">
+            <div class="comment-action like-comment" data-id="${comment.id}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+              </svg>
+              <span class="like-count">${comment.likes || 0}</span>
+            </div>
+            <div class="comment-action reply-btn" data-id="${comment.id}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 17 4 12 9 7"></polyline>
+                <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+              </svg>
+              Balas
+            </div>
           </div>
-        </div>
-        <div class="reply-form" id="replyForm-${comment.id}">
-          <textarea placeholder="Tulis balasan..." rows="2"></textarea>
-          <button class="comment-submit-btn submit-reply" data-commentid="${comment.id}">Kirim Balasan</button>
-        </div>
-        ${repliesHTML}
-      `;
+          <div class="reply-form" id="replyForm-${comment.id}">
+            <textarea placeholder="Tulis balasan..." rows="2"></textarea>
+            <button class="comment-submit-btn submit-reply" data-commentid="${comment.id}">Kirim Balasan</button>
+          </div>
+          ${repliesHTML}
+        `;
+        
+        commentsList.appendChild(commentElement);
+      });
       
-      commentsList.appendChild(commentElement);
-    });
-    
-    // Event listeners for like and reply buttons
-    document.querySelectorAll('.like-comment').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const commentId = this.dataset.id;
-        commentsRef.doc(commentId).update({
-          likes: firebase.firestore.FieldValue.increment(1)
+      // Add event listeners
+      document.querySelectorAll('.like-comment').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (!user) {
+            alert('Silakan login untuk memberikan like');
+            return;
+          }
+          const commentId = this.dataset.id;
+          const commentRef = doc(db, "discussions", "arduinoHistory", "comments", commentId);
+          updateDoc(commentRef, {
+            likes: increment(1)
+          });
         });
       });
-    });
-    
-    document.querySelectorAll('.reply-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const commentId = this.dataset.id;
-        const replyForm = document.getElementById(`replyForm-${commentId}`);
-        replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
+      
+      document.querySelectorAll('.reply-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (!user) {
+            alert('Silakan login untuk membalas komentar');
+            return;
+          }
+          const commentId = this.dataset.id;
+          const replyForm = document.getElementById(`replyForm-${commentId}`);
+          replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
+        });
       });
-    });
-    
-    document.querySelectorAll('.submit-reply').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const commentId = this.dataset.commentid;
-        const replyTextarea = this.parentElement.querySelector('textarea');
-        const replyContent = replyTextarea.value.trim();
-        
-        if (replyContent) {
-          const user = firebase.auth().currentUser;
-          const author = user ? user.displayName || 'Pengguna' : 'Pengguna';
+      
+      document.querySelectorAll('.submit-reply').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const commentId = this.dataset.commentid;
+          const replyTextarea = this.parentElement.querySelector('textarea');
+          const replyContent = replyTextarea.value.trim();
           
-          commentsRef.doc(commentId).update({
-            replies: firebase.firestore.FieldValue.arrayUnion({
-              author: author,
-              content: replyContent,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            })
-          });
+          if (!replyContent) return;
           
-          replyTextarea.value = '';
-        }
+          if (!user) {
+            alert('Silakan login untuk membalas komentar');
+            return;
+          }
+          
+          try {
+            const commentRef = doc(db, "discussions", "arduinoHistory", "comments", commentId);
+            await updateDoc(commentRef, {
+              replies: arrayUnion({
+                author: user.displayName || "Pengguna",
+                content: replyContent,
+                timestamp: serverTimestamp(),
+                userId: user.uid
+              })
+            });
+            replyTextarea.value = '';
+          } catch (error) {
+            console.error("Error adding reply: ", error);
+            alert("Gagal mengirim balasan");
+          }
+        });
       });
-    });
-  }
-  
-  // Submit new comment
-  submitComment.addEventListener('click', () => {
-    const content = commentInput.value.trim();
-    if (content) {
-      const user = firebase.auth().currentUser;
+    }
+    
+    // Submit new comment
+    submitComment.addEventListener('click', async () => {
+      const content = commentInput.value.trim();
+      if (!content) return;
+      
       if (!user) {
         alert('Silakan login untuk mengirim komentar');
         return;
       }
       
-      const author = user.displayName || 'Pengguna';
-      
-      commentsRef.add({
-        author: author,
-        content: content,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        likes: 0,
-        replies: []
-      }).then(() => {
+      try {
+        await addDoc(commentsRef, {
+          author: user.displayName || "Pengguna",
+          content: content,
+          timestamp: serverTimestamp(),
+          likes: 0,
+          replies: [],
+          userId: user.uid
+        });
         commentInput.value = '';
-      }).catch(error => {
-        console.error('Error adding comment: ', error);
-        alert('Gagal mengirim komentar: ' + error.message);
+      } catch (error) {
+        console.error("Error adding comment: ", error);
+        alert("Gagal mengirim komentar");
+      }
+    });
+    
+    // Filter comments
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadComments(btn.dataset.filter);
+      });
+    });
+    
+    // Load comments with filter
+    function loadComments(filter = 'all') {
+      const q = query(commentsRef, orderBy('timestamp', 'desc'));
+      onSnapshot(q, (querySnapshot) => {
+        const comments = [];
+        querySnapshot.forEach((doc) => {
+          comments.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        renderComments(comments, filter);
       });
     }
-  });
-  
-  // Filter comments
-  filterButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadComments(btn.dataset.filter);
-    });
-  });
-  
-  // Load comments with filter
-  function loadComments(filter = 'all') {
-    commentsRef.orderBy('timestamp', 'desc').get().then((querySnapshot) => {
-      const comments = [];
-      querySnapshot.forEach((doc) => {
-        comments.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      renderComments(comments, filter);
-    });
+    
+    // Initial load
+    loadComments();
   }
-  
-  // Real-time listener for comments
-  commentsRef.orderBy('timestamp', 'desc').onSnapshot((querySnapshot) => {
-    const comments = [];
-    querySnapshot.forEach((doc) => {
-      comments.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
-    renderComments(comments, activeFilter);
-  });
-}
 
-// Initialize when auth state changes
-firebase.auth().onAuthStateChanged((user) => {
-  setupEmojiReactions();
-  if (user) {
-    setupFirestoreComments();
-  } else {
-    document.getElementById('commentsList').innerHTML = `
-      <p style="color: rgba(255,255,255,0.5); text-align: center;">
-        Silakan login untuk melihat dan menambahkan komentar
-      </p>
-    `;
-  }
-});
+  // Update your auth state listener
+  onAuthStateChanged(auth, (user) => {
+    // ... (your existing auth state code)
+    
+    if (user) {
+      // ... (your existing logged in code)
+      setupEmojiReactions(user);
+      setupComments(user);
+    } else {
+      // ... (your existing logged out code)
+      setupEmojiReactions(null);
+      document.getElementById('commentsList').innerHTML = `
+        <p style="color: rgba(255,255,255,0.5); text-align: center;">
+          Silakan login untuk melihat dan menambahkan komentar
+        </p>
+      `;
+    }
+  });
+
+
+
+
+
+
+
+
+
 
 
 
