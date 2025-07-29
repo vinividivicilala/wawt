@@ -4150,6 +4150,8 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
+
+
 // Fungsi untuk mengelola komentar
 function setupComments() {
   const commentsCollection = collection(db, "arduinoHistoryComments");
@@ -4307,14 +4309,15 @@ function setupComments() {
         
         try {
           const replyData = {
+            id: new Date().getTime().toString(), // ID unik untuk reply
             content,
-            userName: user.displayName || "Anonymous",
+            userName: user.displayName || user.email.split('@')[0], // Gunakan displayName atau bagian sebelum @ dari email
             userId: user.uid,
             timestamp: serverTimestamp(),
             likes: 0
           };
           
-          // Tambahkan balasan ke subcollection
+          // Tambahkan balasan ke array replies
           await updateDoc(doc(commentsCollection, commentId), {
             replies: arrayUnion(replyData)
           });
@@ -4397,7 +4400,7 @@ function setupComments() {
     try {
       await addDoc(commentsCollection, {
         content,
-        userName: user.displayName || "Anonymous",
+        userName: user.displayName || user.email.split('@')[0], // Gunakan displayName atau bagian sebelum @ dari email
         userId: user.uid,
         timestamp: serverTimestamp(),
         likes: 0,
@@ -4426,46 +4429,30 @@ function setupComments() {
   });
 }
 
-
-document.getElementById("submitComment").addEventListener("click", async () => {
-  const comment = document.getElementById("commentInput").value.trim();
-  if (!comment) return alert("Komentar tidak boleh kosong.");
-
-  try {
-    await addDoc(collection(db, "feedback"), {
-      text: comment,
-      timestamp: serverTimestamp(),
-    });
-    document.getElementById("commentInput").value = "";
-    loadComments(); // reload komentar
-  } catch (error) {
-    console.error("Gagal mengirim komentar: ", error);
+// Panggil setupComments saat halaman dimuat dan user login
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    setupComments();
+  } else {
+    // Tampilkan pesan login jika belum login
+    document.getElementById("commentsList").innerHTML = `
+      <div class="login-message">
+        Silakan login untuk melihat dan menambahkan komentar
+      </div>
+    `;
   }
 });
 
-async function loadComments() {
-  const q = await getDocs(query(collection(db, "feedback"), orderBy("timestamp", "desc")));
-  const commentsList = document.getElementById("commentsList");
-  commentsList.innerHTML = "";
 
-  q.forEach((doc) => {
-    const data = doc.data();
-    const item = document.createElement("div");
-    item.className = "comment-item";
-    item.innerHTML = `
-      <div class="comment-header">
-        <div class="comment-avatar">👤</div>
-        <div class="comment-user">Anonim</div>
-        <div class="comment-time">${data.timestamp?.toDate().toLocaleString() || ""}</div>
-      </div>
-      <div class="comment-content">${data.text}</div>
-    `;
-    commentsList.appendChild(item);
-  });
-}
 
-// Panggil saat halaman dimuat
-window.addEventListener("load", loadComments);
+
+
+
+
+
+
+
+
 
 
 
