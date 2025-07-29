@@ -4104,26 +4104,27 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
-// Fungsi untuk fitur komentar dengan Firebase
-function setupFirebaseComments() {
-  const db = getDatabase();
-  const commentsRef = ref(db, 'arduinoHistory/comments');
+
+// Firebase Firestore implementation
+function setupFirestoreComments() {
+  const db = firebase.firestore();
+  const commentsRef = db.collection('discussions').doc('arduinoHistory').collection('comments');
   const commentsList = document.getElementById('commentsList');
   const commentInput = document.getElementById('commentInput');
   const submitComment = document.getElementById('submitComment');
   const filterButtons = document.querySelectorAll('.filter-btn');
   const totalComments = document.getElementById('totalComments');
 
-  // Format tanggal ke bentuk lokal
+  // Format tanggal
   function formatDate(timestamp) {
-    const date = new Date(timestamp);
+    const date = timestamp.toDate();
     const now = new Date();
     const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-
+    
     if (diffInDays === 0) return 'Hari ini';
     if (diffInDays === 1) return 'Kemarin';
     if (diffInDays < 7) return `${diffInDays} hari yang lalu`;
-
+    
     return date.toLocaleDateString('id-ID', {
       day: 'numeric',
       month: 'long',
@@ -4131,54 +4132,48 @@ function setupFirebaseComments() {
     });
   }
 
-  // Render komentar dan balasan
+  // Render komentar
   function renderComments(comments, filter = 'all') {
     commentsList.innerHTML = '';
-
-    const commentsArray = Object.entries(comments || {}).map(([id, comment]) => ({
-      id,
-      ...comment
-    })).sort((a, b) => b.timestamp - a.timestamp);
-
-    const filteredComments = commentsArray.filter(comment => {
+    
+    const filteredComments = comments.filter(comment => {
       const now = new Date();
-      const commentDate = new Date(comment.timestamp);
+      const commentDate = comment.timestamp.toDate();
       const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
-
+      
       if (filter === 'new') return diffInDays <= 7;
       if (filter === 'old') return diffInDays > 7;
       return true;
     });
-
-    totalComments.textContent = `${commentsArray.length} Komentar`;
-
+    
+    totalComments.textContent = `${comments.length} Komentar`;
+    
     if (filteredComments.length === 0) {
       commentsList.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center;">Belum ada komentar</p>';
       return;
     }
-
-    filteredComments.forEach(comment => {
-      const isNew = (Date.now() - comment.timestamp) <= (7 * 24 * 60 * 60 * 1000);
+    
+    filteredComments.forEach((comment) => {
+      const commentDate = comment.timestamp.toDate();
+      const now = new Date();
+      const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
+      const isNew = diffInDays <= 7;
+      
       const commentElement = document.createElement('div');
       commentElement.className = 'comment-item';
       commentElement.dataset.id = comment.id;
-
+      
       let repliesHTML = '';
-      if (comment.replies && Object.keys(comment.replies).length > 0) {
-        const repliesArray = Object.entries(comment.replies).map(([id, reply]) => ({
-          id,
-          ...reply
-        })).sort((a, b) => a.timestamp - b.timestamp);
-
+      if (comment.replies && comment.replies.length > 0) {
         repliesHTML = `
           <div class="replies-list">
-            ${repliesArray.map(reply => `
+            ${comment.replies.map(reply => `
               <div class="comment-item reply-item">
                 <div class="comment-header">
                   <div class="comment-avatar">${reply.author.charAt(0).toUpperCase()}</div>
                   <div class="comment-author">${reply.author}</div>
                   <div class="comment-date">${formatDate(reply.timestamp)}</div>
-                  ${(Date.now() - reply.timestamp) <= (7 * 24 * 60 * 60 * 1000) ? '<span class="new-badge">BARU</span>' : ''}
+                  ${Math.floor((new Date() - reply.timestamp.toDate()) / (1000 * 60 * 60 * 24)) <= 7 ? '<span class="new-badge">BARU</span>' : ''}
                 </div>
                 <div class="comment-content">${reply.content}</div>
               </div>
@@ -4186,7 +4181,7 @@ function setupFirebaseComments() {
           </div>
         `;
       }
-
+      
       commentElement.innerHTML = `
         <div class="comment-header">
           <div class="comment-avatar">${comment.author.charAt(0).toUpperCase()}</div>
@@ -4197,126 +4192,148 @@ function setupFirebaseComments() {
         <div class="comment-content">${comment.content}</div>
         <div class="comment-actions">
           <div class="comment-action like-comment" data-id="${comment.id}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
             </svg>
             <span class="like-count">${comment.likes || 0}</span>
           </div>
           <div class="comment-action reply-btn" data-id="${comment.id}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 17 4 12 9 7"></polyline>
               <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
             </svg>
             Balas
           </div>
         </div>
-        <div class="reply-form" id="replyForm-${comment.id}" style="display: none;">
+        <div class="reply-form" id="replyForm-${comment.id}">
           <textarea placeholder="Tulis balasan..." rows="2"></textarea>
           <button class="comment-submit-btn submit-reply" data-commentid="${comment.id}">Kirim Balasan</button>
         </div>
         ${repliesHTML}
       `;
-
+      
       commentsList.appendChild(commentElement);
     });
-
-    // Event: tombol like
+    
+    // Event listeners for like and reply buttons
     document.querySelectorAll('.like-comment').forEach(btn => {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function() {
         const commentId = this.dataset.id;
-        const commentRef = ref(db, `arduinoHistory/comments/${commentId}`);
-        get(commentRef).then(snapshot => {
-          if (snapshot.exists()) {
-            const currentLikes = snapshot.val().likes || 0;
-            update(commentRef, { likes: currentLikes + 1 });
-          }
+        commentsRef.doc(commentId).update({
+          likes: firebase.firestore.FieldValue.increment(1)
         });
       });
     });
-
-    // Event: tombol balas
+    
     document.querySelectorAll('.reply-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function() {
         const commentId = this.dataset.id;
         const replyForm = document.getElementById(`replyForm-${commentId}`);
         replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
       });
     });
-
-    // Event: submit balasan
+    
     document.querySelectorAll('.submit-reply').forEach(btn => {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function() {
         const commentId = this.dataset.commentid;
         const replyTextarea = this.parentElement.querySelector('textarea');
         const replyContent = replyTextarea.value.trim();
-
+        
         if (replyContent) {
-          const user = auth.currentUser;
+          const user = firebase.auth().currentUser;
           const author = user ? user.displayName || 'Pengguna' : 'Pengguna';
-          const newReplyRef = push(ref(db, `arduinoHistory/comments/${commentId}/replies`));
-          set(newReplyRef, {
-            author: author,
-            content: replyContent,
-            timestamp: Date.now()
+          
+          commentsRef.doc(commentId).update({
+            replies: firebase.firestore.FieldValue.arrayUnion({
+              author: author,
+              content: replyContent,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
           });
+          
           replyTextarea.value = '';
         }
       });
     });
   }
-
-  // Event: submit komentar utama
+  
+  // Submit new comment
   submitComment.addEventListener('click', () => {
     const content = commentInput.value.trim();
     if (content) {
-      const user = auth.currentUser;
+      const user = firebase.auth().currentUser;
       if (!user) {
         alert('Silakan login untuk mengirim komentar');
         return;
       }
+      
       const author = user.displayName || 'Pengguna';
-      const newCommentRef = push(commentsRef);
-      set(newCommentRef, {
+      
+      commentsRef.add({
         author: author,
         content: content,
-        timestamp: Date.now(),
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         likes: 0,
-        replies: {}
+        replies: []
+      }).then(() => {
+        commentInput.value = '';
+      }).catch(error => {
+        console.error('Error adding comment: ', error);
+        alert('Gagal mengirim komentar: ' + error.message);
       });
-      commentInput.value = '';
     }
   });
-
-  // Event: filter komentar
+  
+  // Filter comments
   filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       filterButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      get(commentsRef).then(snapshot => {
-        renderComments(snapshot.val(), btn.dataset.filter);
-      });
+      loadComments(btn.dataset.filter);
     });
   });
-
-  // Real-time update komentar
-  onValue(commentsRef, (snapshot) => {
-    const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
-    renderComments(snapshot.val(), activeFilter);
+  
+  // Load comments with filter
+  function loadComments(filter = 'all') {
+    commentsRef.orderBy('timestamp', 'desc').get().then((querySnapshot) => {
+      const comments = [];
+      querySnapshot.forEach((doc) => {
+        comments.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      renderComments(comments, filter);
+    });
+  }
+  
+  // Real-time listener for comments
+  commentsRef.orderBy('timestamp', 'desc').onSnapshot((querySnapshot) => {
+    const comments = [];
+    querySnapshot.forEach((doc) => {
+      comments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+    renderComments(comments, activeFilter);
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+// Initialize when auth state changes
+firebase.auth().onAuthStateChanged((user) => {
+  setupEmojiReactions();
+  if (user) {
+    setupFirestoreComments();
+  } else {
+    document.getElementById('commentsList').innerHTML = `
+      <p style="color: rgba(255,255,255,0.5); text-align: center;">
+        Silakan login untuk melihat dan menambahkan komentar
+      </p>
+    `;
+  }
+});
 
 
 
