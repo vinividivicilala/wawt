@@ -1529,7 +1529,159 @@ a.footnote-link:hover {
 
 
 
-
+ .comments-container {
+    margin-top: 40px;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+  }
+  
+  .comment-form {
+    margin-bottom: 25px;
+  }
+  
+  .comment-form textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 16px;
+    margin-bottom: 10px;
+    resize: vertical;
+  }
+  
+  .comment-submit-btn {
+    background: #0095ff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+  }
+  
+  .comment-submit-btn:hover {
+    background: #007acc;
+  }
+  
+  .comment-filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .filter-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+  }
+  
+  .filter-btn.active {
+    background: #0095ff;
+  }
+  
+  .comment-count {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+  }
+  
+  .comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .comment-item {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 10px;
+    position: relative;
+  }
+  
+  .comment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #555;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .comment-author {
+    font-weight: bold;
+    color: white;
+  }
+  
+  .comment-date {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    margin-left: 10px;
+  }
+  
+  .comment-content {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  
+  .comment-actions {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .comment-action {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .comment-action:hover {
+    color: #0095ff;
+  }
+  
+  .reply-form {
+    margin-top: 15px;
+    display: none;
+  }
+  
+  .replies-list {
+    margin-top: 15px;
+    padding-left: 20px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .new-badge {
+    background: #ff4757;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 10px;
+  }
 
 
 
@@ -3480,6 +3632,29 @@ a.footnote-link:hover {
 
 
 
+<!-- Tambahkan ini sebelum div.bottom-line -->
+<div class="comments-container linebox">
+  <h2 class="title-box-white">Diskusi</h2>
+  
+  <!-- Form Komentar -->
+  <div class="comment-form">
+    <textarea id="commentInput" placeholder="Tulis komentar Anda..." rows="3"></textarea>
+    <button id="submitComment" class="comment-submit-btn">Kirim Komentar</button>
+  </div>
+  
+  <!-- Filter Kategori -->
+  <div class="comment-filters">
+    <button class="filter-btn active" data-filter="all">Semua</button>
+    <button class="filter-btn" data-filter="new">Baru (≤7 hari)</button>
+    <button class="filter-btn" data-filter="old">Lama (>7 hari)</button>
+    <span class="comment-count" id="totalComments">0 Komentar</span>
+  </div>
+  
+  <!-- Daftar Komentar -->
+  <div class="comments-list" id="commentsList">
+    <!-- Komentar akan dimuat di sini -->
+  </div>
+</div>
 
 
 
@@ -3924,6 +4099,217 @@ document.querySelectorAll('.footnote-link').forEach(link => {
     }
   });
 });
+
+
+
+
+function setupComments() {
+  const storageKey = 'arduino-history-comments';
+  const comments = JSON.parse(localStorage.getItem(storageKey)) || [];
+  const commentsList = document.getElementById('commentsList');
+  const commentInput = document.getElementById('commentInput');
+  const submitComment = document.getElementById('submitComment');
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  const totalComments = document.getElementById('totalComments');
+  
+  // Simpan komentar ke localStorage
+  function saveComments() {
+    localStorage.setItem(storageKey, JSON.stringify(comments));
+    updateCommentCount();
+  }
+  
+  // Update jumlah komentar
+  function updateCommentCount() {
+    totalComments.textContent = `${comments.length} Komentar`;
+  }
+  
+  // Format tanggal
+  function formatDate(date) {
+    const now = new Date();
+    const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) return 'Hari ini';
+    if (diffInDays === 1) return 'Kemarin';
+    if (diffInDays < 7) return `${diffInDays} hari yang lalu`;
+    
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }
+  
+  // Render komentar
+  function renderComments(filter = 'all') {
+    commentsList.innerHTML = '';
+    
+    const filteredComments = comments.filter(comment => {
+      const now = new Date();
+      const commentDate = new Date(comment.date);
+      const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
+      
+      if (filter === 'new') return diffInDays <= 7;
+      if (filter === 'old') return diffInDays > 7;
+      return true;
+    });
+    
+    if (filteredComments.length === 0) {
+      commentsList.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center;">Belum ada komentar</p>';
+      return;
+    }
+    
+    filteredComments.forEach((comment, index) => {
+      const commentDate = new Date(comment.date);
+      const now = new Date();
+      const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
+      const isNew = diffInDays <= 7;
+      
+      const commentElement = document.createElement('div');
+      commentElement.className = 'comment-item';
+      commentElement.dataset.id = comment.id;
+      
+      let repliesHTML = '';
+      if (comment.replies && comment.replies.length > 0) {
+        repliesHTML = `
+          <div class="replies-list">
+            ${comment.replies.map(reply => `
+              <div class="comment-item reply-item">
+                <div class="comment-header">
+                  <div class="comment-avatar">${reply.author.charAt(0).toUpperCase()}</div>
+                  <div class="comment-author">${reply.author}</div>
+                  <div class="comment-date">${formatDate(new Date(reply.date))}</div>
+                  ${diffInDays <= 7 ? '<span class="new-badge">BARU</span>' : ''}
+                </div>
+                <div class="comment-content">${reply.content}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      
+      commentElement.innerHTML = `
+        <div class="comment-header">
+          <div class="comment-avatar">${comment.author.charAt(0).toUpperCase()}</div>
+          <div class="comment-author">${comment.author}</div>
+          <div class="comment-date">${formatDate(commentDate)}</div>
+          ${isNew ? '<span class="new-badge">BARU</span>' : ''}
+        </div>
+        <div class="comment-content">${comment.content}</div>
+        <div class="comment-actions">
+          <div class="comment-action like-comment" data-id="${comment.id}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+            </svg>
+            <span class="like-count">${comment.likes || 0}</span>
+          </div>
+          <div class="comment-action reply-btn" data-id="${comment.id}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 17 4 12 9 7"></polyline>
+              <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+            </svg>
+            Balas
+          </div>
+        </div>
+        <div class="reply-form" id="replyForm-${comment.id}">
+          <textarea placeholder="Tulis balasan..." rows="2"></textarea>
+          <button class="comment-submit-btn submit-reply" data-commentid="${comment.id}">Kirim Balasan</button>
+        </div>
+        ${repliesHTML}
+      `;
+      
+      commentsList.appendChild(commentElement);
+    });
+    
+    // Tambahkan event listeners untuk like dan reply
+    document.querySelectorAll('.like-comment').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const commentId = this.dataset.id;
+        const comment = comments.find(c => c.id === commentId);
+        if (comment) {
+          comment.likes = (comment.likes || 0) + 1;
+          saveComments();
+          renderComments(filter);
+        }
+      });
+    });
+    
+    document.querySelectorAll('.reply-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const commentId = this.dataset.id;
+        const replyForm = document.getElementById(`replyForm-${commentId}`);
+        replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
+      });
+    });
+    
+    document.querySelectorAll('.submit-reply').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const commentId = this.dataset.commentid;
+        const comment = comments.find(c => c.id === commentId);
+        const replyTextarea = this.parentElement.querySelector('textarea');
+        const replyContent = replyTextarea.value.trim();
+        
+        if (replyContent && comment) {
+          const reply = {
+            id: Date.now().toString(),
+            author: 'Pengguna', // Ganti dengan nama user jika ada auth
+            content: replyContent,
+            date: new Date().toISOString()
+          };
+          
+          if (!comment.replies) comment.replies = [];
+          comment.replies.push(reply);
+          saveComments();
+          renderComments(filter);
+          replyTextarea.value = '';
+        }
+      });
+    });
+  }
+  
+  // Submit komentar baru
+  submitComment.addEventListener('click', () => {
+    const content = commentInput.value.trim();
+    if (content) {
+      const comment = {
+        id: Date.now().toString(),
+        author: 'Pengguna', // Ganti dengan nama user jika ada auth
+        content: content,
+        date: new Date().toISOString(),
+        likes: 0,
+        replies: []
+      };
+      
+      comments.unshift(comment); // Tambahkan di awal array
+      saveComments();
+      renderComments(document.querySelector('.filter-btn.active').dataset.filter);
+      commentInput.value = '';
+    }
+  });
+  
+  // Filter komentar
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderComments(btn.dataset.filter);
+    });
+  });
+  
+  // Inisialisasi
+  updateCommentCount();
+  renderComments();
+}
+
+// Panggil fungsi saat halaman dimuat
+window.addEventListener('DOMContentLoaded', () => {
+  setupEmojiReactions();
+  setupComments();
+});
+
+
+
+
+
 
 
 
