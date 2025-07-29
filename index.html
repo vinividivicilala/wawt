@@ -4427,6 +4427,45 @@ function setupComments() {
 }
 
 
+document.getElementById("submitComment").addEventListener("click", async () => {
+  const comment = document.getElementById("commentInput").value.trim();
+  if (!comment) return alert("Komentar tidak boleh kosong.");
+
+  try {
+    await addDoc(collection(db, "feedback"), {
+      text: comment,
+      timestamp: serverTimestamp(),
+    });
+    document.getElementById("commentInput").value = "";
+    loadComments(); // reload komentar
+  } catch (error) {
+    console.error("Gagal mengirim komentar: ", error);
+  }
+});
+
+async function loadComments() {
+  const q = await getDocs(query(collection(db, "feedback"), orderBy("timestamp", "desc")));
+  const commentsList = document.getElementById("commentsList");
+  commentsList.innerHTML = "";
+
+  q.forEach((doc) => {
+    const data = doc.data();
+    const item = document.createElement("div");
+    item.className = "comment-item";
+    item.innerHTML = `
+      <div class="comment-header">
+        <div class="comment-avatar">👤</div>
+        <div class="comment-user">Anonim</div>
+        <div class="comment-time">${data.timestamp?.toDate().toLocaleString() || ""}</div>
+      </div>
+      <div class="comment-content">${data.text}</div>
+    `;
+    commentsList.appendChild(item);
+  });
+}
+
+// Panggil saat halaman dimuat
+window.addEventListener("load", loadComments);
 
 
 
