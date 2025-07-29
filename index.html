@@ -4291,45 +4291,53 @@ function setupComments() {
       });
     });
     
-    // Setup event listeners untuk tombol kirim balasan
-    document.querySelectorAll(".reply-submit-btn").forEach(btn => {
-      btn.addEventListener("click", async function() {
-        const commentId = this.dataset.id;
-        const replyForm = document.getElementById(`replyForm-${commentId}`);
-        const textarea = replyForm.querySelector("textarea");
-        const content = textarea.value.trim();
-        
-        if (!content) return;
-        
-        const user = auth.currentUser;
-        if (!user) {
-          alert("Anda harus login untuk membalas komentar");
-          return;
-        }
-        
-        try {
-          const replyData = {
-            id: new Date().getTime().toString(), // ID unik untuk reply
-            content,
-            userName: user.displayName || user.email.split('@')[0], // Gunakan displayName atau bagian sebelum @ dari email
-            userId: user.uid,
-            timestamp: serverTimestamp(),
-            likes: 0
-          };
-          
-          // Tambahkan balasan ke array replies
-          await updateDoc(doc(commentsCollection, commentId), {
-            replies: arrayUnion(replyData)
-          });
-          
-          textarea.value = "";
-          replyForm.classList.remove("active");
-        } catch (error) {
-          console.error("Error adding reply:", error);
-          alert("Gagal mengirim balasan");
-        }
+// Setup event listeners untuk tombol kirim balasan
+document.querySelectorAll(".reply-submit-btn").forEach(btn => {
+  btn.addEventListener("click", async function() {
+    const commentId = this.dataset.id;
+    const replyForm = document.getElementById(`replyForm-${commentId}`);
+    const textarea = replyForm.querySelector("textarea");
+    const content = textarea.value.trim();
+    
+    if (!content) return;
+    
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Anda harus login untuk membalas komentar");
+      return;
+    }
+    
+    try {
+	// Gunakan timestamp client-side sebagai gantinya
+const replyData = {
+  id: new Date().getTime().toString(),
+  content,
+  userName: user.displayName || user.email.split('@')[0],
+  userId: user.uid,
+  likes: 0,
+  timestamp: new Date() // Gunakan tanggal client-side
+};
+
+await updateDoc(doc(commentsCollection, commentId), {
+  replies: arrayUnion(replyData)
+});
+
+      
+      // Tambahkan balasan ke array replies
+      const commentRef = doc(commentsCollection, commentId);
+      await updateDoc(commentRef, {
+        replies: arrayUnion(replyData),
+        lastUpdated: serverTimestamp() // Tambahkan timestamp terpisah di dokumen utama
       });
-    });
+      
+      textarea.value = "";
+      replyForm.classList.remove("active");
+    } catch (error) {
+      console.error("Error adding reply:", error);
+      alert("Gagal mengirim balasan");
+    }
+  });
+});
     
     // Setup event listeners untuk tombol like
     document.querySelectorAll(".like-btn").forEach(btn => {
