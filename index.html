@@ -4666,23 +4666,33 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
-// Load content from Firestore dengan error handling
 function loadPageContent() {
+  // Pastikan db sudah terdefinisi
+  if (!db) {
+    console.error("Firestore not initialized");
+    return;
+  }
+
   db.collection("pageContent").doc("page10").get()
     .then(doc => {
       if (doc.exists) {
         document.getElementById('adminContentEditor').value = doc.data().content;
+      } else {
+        console.log("No such document!");
       }
     })
     .catch(error => {
       console.error("Error loading content:", error);
-      if (error.code === 'permission-denied') {
-        document.getElementById('adminStatus').textContent = 'Error: You dont have permission to access this content';
-        document.getElementById('adminStatus').style.color = 'red';
-      }
+      document.getElementById('adminStatus').textContent = 'Error loading content: ' + error.message;
+      document.getElementById('adminStatus').style.color = 'red';
     });
 }
+
+
+
+
+
+
 
 // Save handler dengan error handling
 document.getElementById('adminSaveBtn').addEventListener('click', () => {
