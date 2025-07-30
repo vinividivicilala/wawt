@@ -1969,6 +1969,16 @@ a.footnote-link:hover {
       </a>
     </div>
   </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   <!-- Halaman 3 - IoT -->
   <div id="page3">
@@ -3610,12 +3620,12 @@ a.footnote-link:hover {
   <div class="footnotes-list">
     <div id="footnote1" class="footnote-item">
       <span class="footnote-number">[1]</span>
-      <span class="footnote-text">Banzi, M. (2011). <em>Getting Started with Arduino</em>. Maker Media. <a href="https://example.com/source1" target="_blank" class="footnote-link">https://example.com/source1</a></span>
+      <span class="footnote-text">Banzi, M. (2011). <em>Getting Started with Arduino</em>. Maker Media. <a href="" target="_blank" class="footnote-link"></a></span>
     </div>
     
     <div id="footnote2" class="footnote-item">
       <span class="footnote-number">[2]</span>
-      <span class="footnote-text">Arduino LLC. (2008). <em>Arduino History Documentation</em>. <a href="https://example.com/source2" target="_blank" class="footnote-link">https://example.com/source2</a></span>
+      <span class="footnote-text">Arduino LLC. (2008). <em>Arduino History Documentation</em>. <a href="" target="_blank" class="footnote-link"></a></span>
     </div>
     
     <!-- Tambahkan lebih banyak catatan kaki sesuai kebutuhan -->
@@ -3704,19 +3714,87 @@ a.footnote-link:hover {
 </div>
 
 
-<!-- Tambahkan ini di bagian bawah sebelum div.bottom-line -->
-<div class="metadata-container linebox" style="margin-top: 20px; padding: 15px; background-color: rgba(255,255,255,0.1); border-radius: 10px;">
+<!-- Tambahkan sebelum div.bottom-line -->
+<div class="metadata-container linebox">
   <div style="display: flex; justify-content: space-between; color: rgba(255,255,255,0.8); font-size: 14px;">
     <div>
       <span style="font-weight: bold;">Penulis Data:</span> 
-      <span id="dataAuthor">Tim Konten Arduino</span>
+      <span id="dataAuthor">Loading...</span>
     </div>
     <div>
       <span style="font-weight: bold;">Terakhir Diupdate:</span> 
-      <span id="lastUpdated"></span>
+      <span id="lastUpdated">Loading...</span>
     </div>
   </div>
+  
+  <!-- Form Admin (hanya muncul untuk admin) -->
+  <div id="adminForm" style="display: none; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+    <h3 style="color: white; margin-top: 0;">Admin Panel</h3>
+    <div class="form-group">
+      <label style="color: white; display: block; margin-bottom: 5px;">Ubah Penulis:</label>
+      <input type="text" id="authorInput" style="width: 100%; padding: 8px; border-radius: 4px; border: none;">
+    </div>
+    <button id="updateMetadataBtn" style="margin-top: 10px; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Perbarui Data</button>
+    <button id="logoutBtn" style="margin-top: 10px; margin-left: 10px; padding: 8px 15px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Logout</button>
+  </div>
+  
+  <!-- Login Form (hanya muncul jika belum login) -->
+  <div id="loginForm" style="display: none; margin-top: 20px;">
+    <h3 style="color: white; margin-top: 0;">Admin Login</h3>
+    <div class="form-group">
+      <label style="color: white; display: block; margin-bottom: 5px;">Email:</label>
+      <input type="email" id="emailInput" style="width: 100%; padding: 8px; border-radius: 4px; border: none;">
+    </div>
+    <div class="form-group">
+      <label style="color: white; display: block; margin-bottom: 5px;">Password:</label>
+      <input type="password" id="passwordInput" style="width: 100%; padding: 8px; border-radius: 4px; border: none;">
+    </div>
+    <button id="loginBtn" style="margin-top: 10px; padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Login</button>
+  </div>
 </div>
+
+
+
+          <div class="bab-card">
+            <div class="bab-title-box">Project Arduino</div>
+            <div class="bab-desc-box">Dengan Arduino, banyak project dibuat seperti robotika, IoT, otomasi rumah, hingga alat bantu belajar interaktif.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Jenis Arduino</div>
+            <div class="bab-desc-box">Terdapat banyak jenis board Arduino seperti Uno, Mega, Nano, yang memiliki spesifikasi berbeda sesuai kebutuhan.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Bahasa Pemrograman</div>
+            <div class="bab-desc-box">Arduino menggunakan bahasa pemrograman C/C++ dengan IDE Arduino yang mudah dipelajari pemula.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+          <div class="bab-card">
+            <div class="bab-title-box">Sensor & Modul</div>
+            <div class="bab-desc-box">Arduino mendukung berbagai sensor & modul seperti sensor suhu, cahaya, motor driver, WiFi, dan lainnya.</div>
+             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </div>
+      
+
+
+
+
+
+
+
 
 
 
@@ -4472,25 +4550,130 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
-  // Menambahkan script untuk menampilkan tanggal update otomatis
-  document.addEventListener('DOMContentLoaded', function() {
-    // Format tanggal
+  // Fungsi untuk memformat tanggal
+  function formatDate(timestamp) {
+    if (!timestamp) return 'Belum pernah diupdate';
+    
+    const date = timestamp.toDate();
     const options = { 
       year: 'numeric', 
       month: 'long', 
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta'
     };
+    return date.toLocaleDateString('id-ID', options);
+  }
+
+  // Fungsi untuk memeriksa status login
+  function checkAuthState() {
+    auth.onAuthStateChanged(user => {
+      if (user && user.email === "faridardiansyah061@gmail.com") {
+        // Admin terautentikasi
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('adminForm').style.display = 'block';
+        loadMetadata();
+      } else {
+        // Bukan admin atau belum login
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('adminForm').style.display = 'none';
+        loadMetadata(); // Tetap load metadata meski bukan admin
+      }
+    });
+  }
+
+  // Fungsi untuk memuat metadata
+  function loadMetadata() {
+    db.collection("pageMetadata").doc("page10")
+      .onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          document.getElementById('dataAuthor').textContent = data.author || 'Tim Konten Arduino';
+          document.getElementById('lastUpdated').textContent = formatDate(data.lastUpdated);
+          
+          // Set nilai input untuk admin
+          if (document.getElementById('authorInput')) {
+            document.getElementById('authorInput').value = data.author || '';
+          }
+        } else {
+          // Jika dokumen tidak ada, buat yang baru
+          setInitialMetadata();
+        }
+      });
+  }
+
+  // Fungsi untuk menyimpan metadata awal
+  function setInitialMetadata() {
+    db.collection("pageMetadata").doc("page10")
+      .set({
+        author: 'Tim Konten Arduino',
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .catch((error) => {
+        console.error("Error menyimpan metadata: ", error);
+      });
+  }
+
+  // Fungsi untuk update metadata
+  function updateMetadata() {
+    const newAuthor = document.getElementById('authorInput').value;
     
-    // Set tanggal update ke waktu sekarang
-    const now = new Date();
-    document.getElementById('lastUpdated').textContent = now.toLocaleDateString('id-ID', options);
+    db.collection("pageMetadata").doc("page10")
+      .update({
+        author: newAuthor,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(() => {
+        alert("Metadata berhasil diperbarui!");
+      })
+      .catch((error) => {
+        console.error("Error updating metadata: ", error);
+        alert("Gagal memperbarui metadata: " + error.message);
+      });
+  }
+
+  // Fungsi login
+  function login() {
+    const email = document.getElementById('emailInput').value;
+    const password = document.getElementById('passwordInput').value;
     
-    // Anda juga bisa mengubah penulis secara dinamis jika perlu
-    // document.getElementById('dataAuthor').textContent = 'Nama Penulis Baru';
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        // Login berhasil, checkAuthState akan menangani UI
+      })
+      .catch(error => {
+        alert("Login gagal: " + error.message);
+      });
+  }
+
+  // Fungsi logout
+  function logout() {
+    auth.signOut()
+      .then(() => {
+        // Logout berhasil, checkAuthState akan menangani UI
+      })
+      .catch(error => {
+        alert("Logout gagal: " + error.message);
+      });
+  }
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', function() {
+    checkAuthState();
+    
+    document.getElementById('loginBtn')?.addEventListener('click', login);
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+    document.getElementById('updateMetadataBtn')?.addEventListener('click', updateMetadata);
+    
+    // Enter key untuk login
+    document.getElementById('passwordInput')?.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        login();
+      }
+    });
   });
+
 
 
 
