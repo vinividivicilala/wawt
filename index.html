@@ -4728,44 +4728,45 @@ function loadMetadata() {
 }
 
 
-
-
 // Save handler
-document.getElementById('adminSaveBtn').addEventListener('click', () => {
+document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const content = adminContentEditor.value;
   const user = auth.currentUser;
-  
+
   if (!user || user.email !== ADMIN_EMAIL) {
     adminStatus.textContent = 'Error: Unauthorized access';
     adminStatus.style.color = 'red';
     return;
   }
-  
+
   adminStatus.textContent = 'Saving...';
   adminStatus.style.color = 'white';
-  
-  db.collection("pageContent").doc("page10").set({
-    content: content,
-    author: user.email,
-    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-  })
-  .then(() => {
+
+  try {
+    const docRef = doc(db, "pageContent", "page10");
+    await setDoc(docRef, {
+      content: content,
+      author: user.email,
+      lastUpdated: serverTimestamp()
+    });
+
     adminStatus.textContent = 'Changes saved successfully!';
     adminStatus.style.color = 'lightgreen';
     loadMetadata(); // Refresh metadata after save
-    
+
     setTimeout(() => {
       adminStatus.textContent = '';
       adminFormContainer.style.display = 'none';
       adminOverlay.style.display = 'none';
     }, 2000);
-  })
-  .catch(error => {
+  } catch (error) {
     console.error("Error saving:", error);
     adminStatus.textContent = 'Error saving: ' + error.message;
     adminStatus.style.color = 'red';
-  });
+  }
 });
+
+
 
 // Cancel handler
 document.getElementById('adminCancelBtn').addEventListener('click', () => {
