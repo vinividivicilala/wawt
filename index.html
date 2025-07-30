@@ -1,7 +1,4 @@
 
-
-
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -4788,6 +4785,9 @@ contentSectionSelect.addEventListener('change', function() {
 });
 
 
+
+
+
 function loadSectionContent(section) {
   const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
 
@@ -4796,17 +4796,27 @@ function loadSectionContent(section) {
       if (docSnap.exists() && docSnap.data()[section]) {
         // Gunakan data dari Firebase
         adminContentEditor.value = docSnap.data()[section];
+        updatePageContent(section, docSnap.data()[section]);
       } else {
         // Fallback ke konten default dari HTML
-        const element = document.querySelector(`.title-section h1`);
-        adminContentEditor.value = element ? element.textContent : '';
+        const element = document.querySelector(getSelectorForSection(section));
+        if (element) {
+          const content = getTextContentForSection(element, section);
+          adminContentEditor.value = content;
+          updatePageContent(section, content);
+        }
       }
     })
     .catch(error => {
       console.error("Gagal memuat konten:", error);
-      adminContentEditor.value = '';
     });
 }
+
+
+
+
+
+
 
 
 
@@ -4894,8 +4904,6 @@ function loadMetadata() {
 
 
 
-
-
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user || user.email !== ADMIN_EMAIL) {
@@ -4908,19 +4916,22 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   try {
     const section = contentSectionSelect.value;
     const content = adminContentEditor.value;
-    const author = authorInput.value;
+    const author = authorInput.value || user.email;
 
-    // 1. Update ke Firebase dengan modular SDK
-    const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-    await setDoc(docRef, {
+    // Update di Firestore
+    await setDoc(doc(db, 'pageContent', CONTENT_DOC_ID), {
       [section]: content,
       author: author,
       lastUpdated: serverTimestamp()
     }, { merge: true });
 
-    // 2. Update langsung di halaman
-    updatePageContent(section, content, author);
-
+    // Update UI langsung
+    updatePageContent(section, content);
+    
+    // Update metadata
+    document.getElementById('dataAuthor').textContent = author;
+    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    
     showStatus('Perubahan berhasil disimpan!', 'success');
   } catch (error) {
     console.error("Error:", error);
@@ -4930,25 +4941,28 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
 
 
 
+function updatePageContent(section, content) {
+  const selectors = {
+    'title': '.title-section h1',
+    'timeline': '.history-timeline',
+    'video': '.video-container .video-description p',
+    'footnotes': '.footnotes-container',
+    'reactions': '.reaction-container h3',
+    'comments': '.comments-container h2',
+    'cards': '.bab-card .bab-desc-box'
+  };
 
-
-
-
-function updatePageContent(section, content, author) {
-  // Update bagian yang sesuai
-  switch(section) {
-    case 'title':
-      document.querySelector('.title-section h1').textContent = content;
-      break;
-    case 'timeline':
-      document.querySelector('.history-timeline').innerHTML = content;
-      break;
-    // Tambahkan case lainnya sesuai kebutuhan
+  const elements = document.querySelectorAll(selectors[section]);
+  
+  if (elements.length > 0) {
+    elements.forEach(element => {
+      if (section === 'timeline') {
+        element.innerHTML = content;
+      } else {
+        element.textContent = content;
+      }
+    });
   }
-
-  // Update metadata
-  document.getElementById('dataAuthor').textContent = author;
-  document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
 }
 
 
@@ -4956,9 +4970,41 @@ function updatePageContent(section, content, author) {
 
 
 
+// Tambahkan di bagian inisialisasi
+function setupRealTimeListener() {
+  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
+  
+  onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // Update metadata
+      if (data.author) {
+        document.getElementById('dataAuthor').textContent = data.author;
+        authorInput.value = data.author;
+      }
+      if (data.lastUpdated) {
+        document.getElementById('lastUpdated').textContent = new Date(data.lastUpdated.toDate()).toLocaleString();
+      }
+      
+      // Update konten yang sedang aktif di editor
+      const currentSection = contentSectionSelect.value;
+      if (data[currentSection]) {
+        adminContentEditor.value = data[currentSection];
+        updatePageContent(currentSection, data[currentSection]);
+      }
+    }
+  });
+}
 
-
-
+// Panggil saat auth state berubah
+auth.onAuthStateChanged(user => {
+  const isAdmin = user && user.email === ADMIN_EMAIL;
+  if (isAdmin) {
+    setupRealTimeListener();
+    loadSectionContent(contentSectionSelect.value);
+  }
+});
 
 
 
