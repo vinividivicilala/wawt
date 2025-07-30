@@ -3767,7 +3767,47 @@ a.footnote-link:hover {
 
 
 
+<!-- Admin Edit Form (initially hidden) -->
+<div id="adminFormContainer" style="display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; margin-top: 30px;">
+  <h2 style="color: white; text-align: center;">Admin Content Editor</h2>
+  <div id="adminAuth" style="margin-bottom: 20px;">
+    <p style="color: white;">You must be logged in as admin to edit content</p>
+    <button id="adminLoginBtn" style="padding: 8px 16px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      Login with Google
+    </button>
+  </div>
+  
+  <div id="adminControls" style="display: none;">
+    <div style="color: white; margin-bottom: 15px;">
+      Logged in as: <span id="adminEmail"></span>
+      <button id="adminLogoutBtn" style="margin-left: 10px; padding: 4px 8px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Logout
+      </button>
+    </div>
+    
+    <h3 style="color: white;">Edit Page Content</h3>
+    <textarea id="adminContentEditor" style="width: 100%; height: 300px; padding: 10px; border-radius: 5px; margin-bottom: 10px;"></textarea>
+    
+    <div>
+      <button id="adminSaveBtn" style="padding: 8px 16px; background: #00C851; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+        Save Changes
+      </button>
+      <button id="adminCancelBtn" style="padding: 8px 16px; background: #ffbb33; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Cancel
+      </button>
+    </div>
+    
+    <div id="adminStatus" style="margin-top: 10px; color: white;"></div>
+  </div>
+</div>
 
+<!-- Button to toggle admin form (visible to everyone) -->
+<button id="toggleAdminBtn" style="position: fixed; bottom: 20px; right: 20px; padding: 10px; background: #333; color: white; border: none; border-radius: 50%; cursor: pointer; z-index: 1000;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 20h9"></path>
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+  </svg>
+</button>
 
 
 
@@ -4582,6 +4622,182 @@ onAuthStateChanged(auth, (user) => {
         console.error("Error updating timestamp: ", error);
       });
   }
+
+
+
+
+
+
+
+// Admin Content Editor Functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const ADMIN_EMAIL = 'faridardiansyah061@gmail.com';
+  const adminFormContainer = document.getElementById('adminFormContainer');
+  const adminAuth = document.getElementById('adminAuth');
+  const adminControls = document.getElementById('adminControls');
+  const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+  const adminSaveBtn = document.getElementById('adminSaveBtn');
+  const adminCancelBtn = document.getElementById('adminCancelBtn');
+  const adminContentEditor = document.getElementById('adminContentEditor');
+  const adminStatus = document.getElementById('adminStatus');
+  const adminEmailDisplay = document.getElementById('adminEmail');
+  
+  let isAdmin = false;
+  
+  // Toggle admin form visibility
+  toggleAdminBtn.addEventListener('click', function() {
+    adminFormContainer.style.display = adminFormContainer.style.display === 'none' ? 'block' : 'none';
+  });
+  
+  // Initialize Firebase Auth
+  function initAuth() {
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        // User is signed in
+        if (user.email === ADMIN_EMAIL) {
+          isAdmin = true;
+          adminAuth.style.display = 'none';
+          adminControls.style.display = 'block';
+          adminEmailDisplay.textContent = user.email;
+          loadContentForEditing();
+        } else {
+          // Not the admin user
+          isAdmin = false;
+          adminAuth.style.display = 'block';
+          adminControls.style.display = 'none';
+          adminStatus.textContent = 'Error: Only faridardiansyah061@gmail.com can edit content';
+          adminStatus.style.color = '#ff4444';
+          firebase.auth().signOut();
+        }
+      } else {
+        // User is signed out
+        isAdmin = false;
+        adminAuth.style.display = 'block';
+        adminControls.style.display = 'none';
+        adminStatus.textContent = '';
+      }
+    });
+  }
+  
+  // Google Sign-In
+  adminLoginBtn.addEventListener('click', function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+      .catch(function(error) {
+        console.error('Sign in error:', error);
+        adminStatus.textContent = 'Error signing in: ' + error.message;
+        adminStatus.style.color = '#ff4444';
+      });
+  });
+  
+  // Logout
+  adminLogoutBtn.addEventListener('click', function() {
+    firebase.auth().signOut();
+  });
+  
+  // Cancel editing
+  adminCancelBtn.addEventListener('click', function() {
+    adminFormContainer.style.display = 'none';
+    adminStatus.textContent = '';
+  });
+  
+  // Save changes
+  adminSaveBtn.addEventListener('click', function() {
+    if (!isAdmin) return;
+    
+    const newContent = adminContentEditor.value;
+    
+    // Save to Firebase
+    db.collection("pageContent").doc("page10")
+      .set({
+        content: newContent,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: firebase.auth().currentUser.email
+      })
+      .then(function() {
+        adminStatus.textContent = 'Content saved successfully! Page will refresh...';
+        adminStatus.style.color = '#00C851';
+        
+        // Update metadata
+        updateTimestamp();
+        
+        // Refresh after 2 seconds
+        setTimeout(function() {
+          location.reload();
+        }, 2000);
+      })
+      .catch(function(error) {
+        console.error('Error saving content:', error);
+        adminStatus.textContent = 'Error saving content: ' + error.message;
+        adminStatus.style.color = '#ff4444';
+      });
+  });
+  
+  // Load content for editing
+  function loadContentForEditing() {
+    db.collection("pageContent").doc("page10")
+      .get()
+      .then(function(doc) {
+        if (doc.exists) {
+          adminContentEditor.value = doc.data().content;
+        } else {
+          // If no content exists yet, use the current HTML
+          adminContentEditor.value = document.getElementById('page10').innerHTML;
+        }
+      })
+      .catch(function(error) {
+        console.error('Error loading content:', error);
+        adminStatus.textContent = 'Error loading content: ' + error.message;
+        adminStatus.style.color = '#ff4444';
+      });
+  }
+  
+  // Initialize
+  initAuth();
+});
+
+
+function loadPageContent() {
+  const docRef = doc(db, "pageContent", "page10");
+
+  onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      document.getElementById('page10').innerHTML = data.content;
+
+      // Update metadata display
+      if (data.lastUpdated) {
+        document.getElementById('lastUpdated').textContent = formatDate(data.lastUpdated);
+      }
+      if (data.updatedBy) {
+        document.getElementById('dataAuthor').textContent = data.updatedBy;
+      }
+    }
+  });
+}
+
+
+// Call this when the page loads
+loadPageContent();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
