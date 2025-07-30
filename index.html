@@ -3821,6 +3821,9 @@ a.footnote-link:hover {
 
 
 
+
+
+
 <!-- Improved Admin Edit Form -->
 <div id="adminFormContainer" style="display: none; background: rgba(0,0,0,0.95); padding: 25px; border-radius: 15px; margin-top: 30px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 1px solid #444;">
   <h2 style="color: white; text-align: center; margin-bottom: 20px; font-size: 24px; border-bottom: 1px solid #444; padding-bottom: 10px;">Editor Konten Halaman 10</h2>
@@ -3872,7 +3875,7 @@ a.footnote-link:hover {
       <!-- Content Editor -->
       <div id="editorContainer" style="margin-bottom: 20px;">
         <label style="color: white; display: block; margin-bottom: 8px;">Editor Konten:</label>
-        <textarea id="adminContentEditor" style="width: 100%; height: 300px; padding: 12px; border-radius: 5px; margin-bottom: 15px; background: #222; color: white; border: 1px solid #444; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5;"></textarea>
+        <textarea id="adminContentEditor" style="width: 100%; height: 300px; padding: 12px; border-radius: 5px; margin-bottom: 15px; background: #222; color: white; border: 1px solid #444; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre; overflow-x: auto;"></textarea>
       </div>
     </div>
     
@@ -3918,12 +3921,6 @@ a.footnote-link:hover {
     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
   </svg>
 </button>
-
-
-
-
-
-
 
 
 
@@ -4682,6 +4679,8 @@ onAuthStateChanged(auth, (user) => {
 
 
 
+
+
 // Allowed admin email
 const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
 
@@ -4699,23 +4698,6 @@ const lastUpdatedElement = document.getElementById('lastUpdated');
 const contentSectionSelect = document.getElementById('contentSection');
 const authorInput = document.getElementById('authorInput');
 const changeDescription = document.getElementById('changeDescription');
-
-// Initialize TinyMCE
-function initEditor() {
-  tinymce.init({
-    selector: '#adminContentEditor',
-    plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
-    toolbar_mode: 'floating',
-    skin: 'oxide-dark',
-    content_css: 'dark',
-    height: 400,
-    setup: function(editor) {
-      editor.on('change', function() {
-        editor.save();
-      });
-    }
-  });
-}
 
 // Toggle admin form
 toggleAdminBtn.addEventListener('click', function() {
@@ -4761,7 +4743,6 @@ auth.onAuthStateChanged(user => {
     authorInput.value = user.email;
     loadPageContent();
     loadMetadata();
-    initEditor();
   } else {
     // Not admin or not logged in
     adminAuth.style.display = 'block';
@@ -4837,7 +4818,7 @@ function loadSectionContent(section) {
             break;
         }
         
-        tinymce.get('adminContentEditor').setContent(sectionContent);
+        adminContentEditor.value = sectionContent;
       }
     })
     .catch((error) => {
@@ -4892,7 +4873,7 @@ function loadMetadata() {
 // Save handler
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const section = contentSectionSelect.value;
-  const content = tinymce.get('adminContentEditor').getContent();
+  const content = adminContentEditor.value;
   const author = authorInput.value;
   const changeDesc = changeDescription.value;
   const user = auth.currentUser;
@@ -4991,11 +4972,6 @@ document.getElementById('adminCancelBtn').addEventListener('click', () => {
 
 // Initial load of metadata
 loadMetadata();
-
-
-
-
-
 
 
 
