@@ -4888,19 +4888,27 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
   });
 });
 
-// Auth state handler
+
+
+// Ganti auth check menjadi hanya memeriksa apakah user login, bukan email tertentu
 auth.onAuthStateChanged(user => {
-  const isAdmin = user && user.email === ADMIN_EMAIL;
+  const isAdmin = user; // Sekarang siapa saja yang login bisa edit
   adminAuth.style.display = isAdmin ? 'none' : 'block';
   adminControls.style.display = isAdmin ? 'block' : 'none';
   adminEmail.textContent = isAdmin ? user.email : '';
   if (isAdmin) {
     authorInput.value = user.email;
-	  loadSectionContent(contentSectionSelect.value);
-    loadPageContent();
+    loadSectionContent(contentSectionSelect.value);
   }
   loadMetadata();
 });
+
+
+
+
+
+
+
 
 
 
@@ -5215,6 +5223,8 @@ auth.onAuthStateChanged(user => {
   if (isAdmin) {
     loadInitialData();
     loadSectionContent(contentSectionSelect.value);
+	 loadContentForAll(); 
+	  loadMetadata();
   }
 });
 
@@ -5249,7 +5259,39 @@ document.getElementById('adminCancelBtn').addEventListener('click', closeAdminFo
 loadMetadata();
 
 
+// Load data untuk semua pengguna (tanpa perlu login)
+function loadContentForAll() {
+  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
+  
+  onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // Update konten di halaman
+      updateAllPageContent(data);
+      
+      // Update metadata
+      if (data.author) {
+        document.getElementById('dataAuthor').textContent = data.author;
+      }
+      if (data.lastUpdated) {
+        document.getElementById('lastUpdated').textContent = 
+          new Date(data.lastUpdated.toDate()).toLocaleString();
+      }
+    }
+  });
+}
 
+function updateAllPageContent(data) {
+  // Update semua bagian konten
+  if (data.title) {
+    document.querySelector('.title-section h1').textContent = data.title;
+  }
+  if (data.timeline) {
+    document.querySelector('.history-timeline').innerHTML = data.timeline;
+  }
+  // Tambahkan bagian lainnya sesuai kebutuhan
+}
 
 
 
