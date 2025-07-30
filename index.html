@@ -4548,9 +4548,7 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
-
-  // Fungsi untuk memformat tanggal
+ // Fungsi untuk memformat tanggal
   function formatDate(timestamp) {
     if (!timestamp) return 'Belum pernah diupdate';
     
@@ -4566,36 +4564,14 @@ onAuthStateChanged(auth, (user) => {
     return date.toLocaleDateString('id-ID', options);
   }
 
-  // Fungsi untuk memeriksa status login
-  function checkAuthState() {
-    auth.onAuthStateChanged(user => {
-      if (user && user.email === "faridardiansyah061@gmail.com") {
-        // Admin terautentikasi
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('adminForm').style.display = 'block';
-        loadMetadata();
-      } else {
-        // Bukan admin atau belum login
-        document.getElementById('loginForm').style.display = 'block';
-        document.getElementById('adminForm').style.display = 'none';
-        loadMetadata(); // Tetap load metadata meski bukan admin
-      }
-    });
-  }
-
-  // Fungsi untuk memuat metadata
-  function loadMetadata() {
+  // Fungsi untuk mendapatkan data metadata
+  function getMetadata() {
     db.collection("pageMetadata").doc("page10")
       .onSnapshot((doc) => {
         if (doc.exists) {
           const data = doc.data();
           document.getElementById('dataAuthor').textContent = data.author || 'Tim Konten Arduino';
           document.getElementById('lastUpdated').textContent = formatDate(data.lastUpdated);
-          
-          // Set nilai input untuk admin
-          if (document.getElementById('authorInput')) {
-            document.getElementById('authorInput').value = data.author || '';
-          }
         } else {
           // Jika dokumen tidak ada, buat yang baru
           setInitialMetadata();
@@ -4610,74 +4586,27 @@ onAuthStateChanged(auth, (user) => {
         author: 'Tim Konten Arduino',
         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
       })
+      .then(() => {
+        console.log("Metadata awal berhasil disimpan");
+      })
       .catch((error) => {
         console.error("Error menyimpan metadata: ", error);
       });
   }
 
-  // Fungsi untuk update metadata
-  function updateMetadata() {
-    const newAuthor = document.getElementById('authorInput').value;
-    
+  // Fungsi untuk update timestamp saat data diubah
+  function updateTimestamp() {
     db.collection("pageMetadata").doc("page10")
       .update({
-        author: newAuthor,
         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
       })
       .then(() => {
-        alert("Metadata berhasil diperbarui!");
+        console.log("Timestamp berhasil diupdate");
       })
       .catch((error) => {
-        console.error("Error updating metadata: ", error);
-        alert("Gagal memperbarui metadata: " + error.message);
+        console.error("Error updating timestamp: ", error);
       });
   }
-
-  // Fungsi login
-  function login() {
-    const email = document.getElementById('emailInput').value;
-    const password = document.getElementById('passwordInput').value;
-    
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        // Login berhasil, checkAuthState akan menangani UI
-      })
-      .catch(error => {
-        alert("Login gagal: " + error.message);
-      });
-  }
-
-  // Fungsi logout
-  function logout() {
-    auth.signOut()
-      .then(() => {
-        // Logout berhasil, checkAuthState akan menangani UI
-      })
-      .catch(error => {
-        alert("Logout gagal: " + error.message);
-      });
-  }
-
-  // Event listeners
-  document.addEventListener('DOMContentLoaded', function() {
-    checkAuthState();
-    
-    document.getElementById('loginBtn')?.addEventListener('click', login);
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
-    document.getElementById('updateMetadataBtn')?.addEventListener('click', updateMetadata);
-    
-    // Enter key untuk login
-    document.getElementById('passwordInput')?.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        login();
-      }
-    });
-  });
-
-
-
-
-
 
 
 
