@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -3756,19 +3757,31 @@ a.footnote-link:hover {
 </div>
 
 
-<!-- Tambahkan sebelum div.bottom-line -->
+
+
+<!-- Modified Metadata Container -->
 <div class="metadata-container linebox">
   <div style="display: flex; justify-content: space-between; color: rgba(255,255,255,0.8); font-size: 14px;">
     <div>
       <span style="font-weight: bold;">Penulis Data:</span> 
-      <span id="dataAuthor">Loading...</span>
+      <span id="dataAuthor">-</span>
     </div>
     <div>
       <span style="font-weight: bold;">Terakhir Diupdate:</span> 
-      <span id="lastUpdated">Loading...</span>
+      <span id="lastUpdated">-</span>
     </div>
   </div>
 </div>
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3807,49 +3820,51 @@ a.footnote-link:hover {
       
 
 
-
-<!-- Admin Edit Form (initially hidden) -->
-<div id="adminFormContainer" style="display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; margin-top: 30px;">
-  <h2 style="color: white; text-align: center;">Admin Content Editor</h2>
-  <div id="adminAuth" style="margin-bottom: 20px;">
-    <p style="color: white;">You must be logged in as admin to edit content</p>
-    <button id="adminLoginBtn" style="padding: 8px 16px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+<!-- Improved Admin Edit Form -->
+<div id="adminFormContainer" style="display: none; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; margin-top: 30px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 80%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+  <h2 style="color: white; text-align: center; margin-bottom: 20px;">Admin Content Editor</h2>
+  
+  <div id="adminAuth" style="margin-bottom: 20px; text-align: center;">
+    <p style="color: white; margin-bottom: 15px;">You must be logged in as admin to edit content</p>
+    <button id="adminLoginBtn" style="padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
       Login with Google
     </button>
   </div>
   
   <div id="adminControls" style="display: none;">
-    <div style="color: white; margin-bottom: 15px;">
-      Logged in as: <span id="adminEmail"></span>
-      <button id="adminLogoutBtn" style="margin-left: 10px; padding: 4px 8px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+    <div style="color: white; margin-bottom: 15px; text-align: center;">
+      Logged in as: <span id="adminEmail" style="font-weight: bold;"></span>
+      <button id="adminLogoutBtn" style="margin-left: 10px; padding: 5px 10px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
         Logout
       </button>
     </div>
     
-    <h3 style="color: white;">Edit Page Content</h3>
-    <textarea id="adminContentEditor" style="width: 100%; height: 300px; padding: 10px; border-radius: 5px; margin-bottom: 10px;"></textarea>
+    <h3 style="color: white; border-bottom: 1px solid #444; padding-bottom: 10px;">Edit Page Content</h3>
+    <textarea id="adminContentEditor" style="width: 100%; height: 300px; padding: 10px; border-radius: 5px; margin-bottom: 15px; background: #222; color: white; border: 1px solid #444;"></textarea>
     
-    <div>
-      <button id="adminSaveBtn" style="padding: 8px 16px; background: #00C851; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+    <div style="display: flex; justify-content: center; gap: 10px;">
+      <button id="adminSaveBtn" style="padding: 10px 20px; background: #00C851; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
         Save Changes
       </button>
-      <button id="adminCancelBtn" style="padding: 8px 16px; background: #ffbb33; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      <button id="adminCancelBtn" style="padding: 10px 20px; background: #ffbb33; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
         Cancel
       </button>
     </div>
     
-    <div id="adminStatus" style="margin-top: 10px; color: white;"></div>
+    <div id="adminStatus" style="margin-top: 15px; color: white; text-align: center; min-height: 20px;"></div>
   </div>
 </div>
 
-<!-- Button to toggle admin form (visible to everyone) -->
-<button id="toggleAdminBtn" style="position: fixed; bottom: 20px; right: 20px; padding: 10px; background: #333; color: white; border: none; border-radius: 50%; cursor: pointer; z-index: 1000;">
+<!-- Overlay for admin form -->
+<div id="adminOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000;"></div>
+
+<!-- Button to toggle admin form -->
+<button id="toggleAdminBtn" style="position: fixed; bottom: 30px; right: 30px; padding: 12px; background: #333; color: white; border: none; border-radius: 50%; cursor: pointer; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 20h9"></path>
     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
   </svg>
 </button>
-
 
 
 
@@ -4603,248 +4618,164 @@ onAuthStateChanged(auth, (user) => {
 
 
 
- // Fungsi untuk memformat tanggal
-  function formatDate(timestamp) {
-    if (!timestamp) return 'Belum pernah diupdate';
+
+
+// Allowed admin email
+const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
+
+// DOM elements
+const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+const adminFormContainer = document.getElementById('adminFormContainer');
+const adminOverlay = document.getElementById('adminOverlay');
+const adminAuth = document.getElementById('adminAuth');
+const adminControls = document.getElementById('adminControls');
+const adminEmail = document.getElementById('adminEmail');
+const adminContentEditor = document.getElementById('adminContentEditor');
+const adminStatus = document.getElementById('adminStatus');
+const dataAuthorElement = document.getElementById('dataAuthor');
+const lastUpdatedElement = document.getElementById('lastUpdated');
+
+// Toggle admin form
+toggleAdminBtn.addEventListener('click', function() {
+  if (adminFormContainer.style.display === 'none') {
+    adminFormContainer.style.display = 'block';
+    adminOverlay.style.display = 'block';
+  } else {
+    adminFormContainer.style.display = 'none';
+    adminOverlay.style.display = 'none';
+  }
+});
+
+// Close form when clicking overlay
+adminOverlay.addEventListener('click', function() {
+  adminFormContainer.style.display = 'none';
+  adminOverlay.style.display = 'none';
+});
+
+// Check auth state
+auth.onAuthStateChanged(user => {
+  if (user && user.email === ADMIN_EMAIL) {
+    // Admin logged in
+    adminAuth.style.display = 'none';
+    adminControls.style.display = 'block';
+    adminEmail.textContent = user.email;
+    loadPageContent();
+    loadMetadata();
+  } else {
+    // Not admin or not logged in
+    adminAuth.style.display = 'block';
+    adminControls.style.display = 'none';
+    adminEmail.textContent = '';
     
-    const date = timestamp.toDate();
-    const options = { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'Asia/Jakarta'
-    };
-    return date.toLocaleDateString('id-ID', options);
+    // Still load metadata for viewers
+    loadMetadata();
   }
+});
 
-  // Fungsi untuk mendapatkan data metadata
-  function getMetadata() {
-    db.collection("pageMetadata").doc("page10")
-      .onSnapshot((doc) => {
-        if (doc.exists) {
-          const data = doc.data();
-          document.getElementById('dataAuthor').textContent = data.author || 'Tim Konten Arduino';
-          document.getElementById('lastUpdated').textContent = formatDate(data.lastUpdated);
-        } else {
-          // Jika dokumen tidak ada, buat yang baru
-          setInitialMetadata();
-        }
-      });
-  }
+// Login handler
+document.getElementById('adminLoginBtn').addEventListener('click', () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .catch(error => {
+      console.error("Login error:", error);
+      adminStatus.textContent = 'Login failed: ' + error.message;
+      adminStatus.style.color = 'red';
+      setTimeout(() => { adminStatus.textContent = ''; }, 3000);
+    });
+});
 
-  // Fungsi untuk menyimpan metadata awal
-  function setInitialMetadata() {
-    db.collection("pageMetadata").doc("page10")
-      .set({
-        author: 'Tim Konten Arduino',
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        console.log("Metadata awal berhasil disimpan");
-      })
-      .catch((error) => {
-        console.error("Error menyimpan metadata: ", error);
-      });
-  }
+// Logout handler
+document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+  auth.signOut();
+  adminFormContainer.style.display = 'none';
+  adminOverlay.style.display = 'none';
+});
 
-  // Fungsi untuk update timestamp saat data diubah
-  function updateTimestamp() {
-    db.collection("pageMetadata").doc("page10")
-      .update({
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        console.log("Timestamp berhasil diupdate");
-      })
-      .catch((error) => {
-        console.error("Error updating timestamp: ", error);
-      });
-  }
-
-
-
-
+// Load page content from Firestore
 function loadPageContent() {
-  // Pastikan db sudah terdefinisi
-  if (!db) {
-    console.error("Firestore not initialized");
-    return;
-  }
-
   db.collection("pageContent").doc("page10").get()
     .then(doc => {
       if (doc.exists) {
-        document.getElementById('adminContentEditor').value = doc.data().content;
-      } else {
-        console.log("No such document!");
+        adminContentEditor.value = doc.data().content;
       }
     })
     .catch(error => {
       console.error("Error loading content:", error);
-      document.getElementById('adminStatus').textContent = 'Error loading content: ' + error.message;
-      document.getElementById('adminStatus').style.color = 'red';
+    });
+}
+
+
+function loadMetadata() {
+  const docRef = doc(db, "pageContent", "page10");
+
+  getDoc(docRef)
+    .then((docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        dataAuthorElement.textContent = data.author || '-';
+
+        if (data.lastUpdated && data.lastUpdated.toDate) {
+          const date = data.lastUpdated.toDate();
+          lastUpdatedElement.textContent = date.toLocaleString();
+        } else {
+          lastUpdatedElement.textContent = '-';
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("Error loading metadata:", error);
     });
 }
 
 
 
 
-
-
-
-// Save handler dengan error handling
+// Save handler
 document.getElementById('adminSaveBtn').addEventListener('click', () => {
-  const content = document.getElementById('adminContentEditor').value;
-  const statusElement = document.getElementById('adminStatus');
+  const content = adminContentEditor.value;
+  const user = auth.currentUser;
+  
+  if (!user || user.email !== ADMIN_EMAIL) {
+    adminStatus.textContent = 'Error: Unauthorized access';
+    adminStatus.style.color = 'red';
+    return;
+  }
+  
+  adminStatus.textContent = 'Saving...';
+  adminStatus.style.color = 'white';
   
   db.collection("pageContent").doc("page10").set({
     content: content,
+    author: user.email,
     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
   })
   .then(() => {
-    statusElement.textContent = 'Changes saved successfully!';
-    statusElement.style.color = 'lightgreen';
+    adminStatus.textContent = 'Changes saved successfully!';
+    adminStatus.style.color = 'lightgreen';
+    loadMetadata(); // Refresh metadata after save
+    
     setTimeout(() => {
-      statusElement.textContent = '';
+      adminStatus.textContent = '';
       adminFormContainer.style.display = 'none';
+      adminOverlay.style.display = 'none';
     }, 2000);
   })
   .catch(error => {
     console.error("Error saving:", error);
-    if (error.code === 'permission-denied') {
-      statusElement.textContent = 'Error: You dont have permission to save changes';
-    } else {
-      statusElement.textContent = 'Error saving: ' + error.message;
-    }
-    statusElement.style.color = 'red';
+    adminStatus.textContent = 'Error saving: ' + error.message;
+    adminStatus.style.color = 'red';
   });
 });
 
-
-
-auth.onAuthStateChanged(user => {
-  const adminAuth = document.getElementById('adminAuth');
-  const adminControls = document.getElementById('adminControls');
-  const adminEmail = document.getElementById('adminEmail');
-  
-  try {
-    if (user && user.email === "faridardiansyah061@gmail.com") {
-      adminAuth.style.display = 'none';
-      adminControls.style.display = 'block';
-      adminEmail.textContent = user.email;
-      loadPageContent();
-    } else {
-      adminAuth.style.display = 'block';
-      adminControls.style.display = 'none';
-      adminEmail.textContent = '';
-    }
-  } catch (error) {
-    console.error("Auth state error:", error);
-  }
+// Cancel handler
+document.getElementById('adminCancelBtn').addEventListener('click', () => {
+  adminFormContainer.style.display = 'none';
+  adminOverlay.style.display = 'none';
+  adminStatus.textContent = '';
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
- document.addEventListener('DOMContentLoaded', function() {
-    // Toggle Admin Form
-    const toggleAdminBtn = document.getElementById('toggleAdminBtn');
-    const adminFormContainer = document.getElementById('adminFormContainer');
-    
-    toggleAdminBtn.addEventListener('click', function() {
-      adminFormContainer.style.display = adminFormContainer.style.display === 'none' ? 'block' : 'none';
-    });
-
-    // Authentication
-    const adminLoginBtn = document.getElementById('adminLoginBtn');
-    const adminLogoutBtn = document.getElementById('adminLogoutBtn');
-    const adminAuth = document.getElementById('adminAuth');
-    const adminControls = document.getElementById('adminControls');
-    const adminEmail = document.getElementById('adminEmail');
-
-    // Check auth state
-    auth.onAuthStateChanged(user => {
-      if (user && user.email === "faridardiansyah061@gmail.com") {
-        // Admin logged in
-        adminAuth.style.display = 'none';
-        adminControls.style.display = 'block';
-        adminEmail.textContent = user.email;
-        
-        // Load content from Firestore
-        db.collection("pageContent").doc("page10").get()
-          .then(doc => {
-            if (doc.exists) {
-              document.getElementById('adminContentEditor').value = doc.data().content;
-            }
-          });
-      } else {
-        // Not admin or not logged in
-        adminAuth.style.display = 'block';
-        adminControls.style.display = 'none';
-        adminEmail.textContent = '';
-      }
-    });
-
-    // Login handler
-    adminLoginBtn.addEventListener('click', () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider)
-        .catch(error => {
-          console.error("Login error:", error);
-          document.getElementById('adminStatus').textContent = 'Login failed: ' + error.message;
-          document.getElementById('adminStatus').style.color = 'red';
-        });
-    });
-
-    // Logout handler
-    adminLogoutBtn.addEventListener('click', () => {
-      auth.signOut();
-    });
-
-    // Save handler
-    document.getElementById('adminSaveBtn').addEventListener('click', () => {
-      const content = document.getElementById('adminContentEditor').value;
-      
-      db.collection("pageContent").doc("page10").set({
-        content: content,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        document.getElementById('adminStatus').textContent = 'Changes saved successfully!';
-        document.getElementById('adminStatus').style.color = 'lightgreen';
-        setTimeout(() => {
-          document.getElementById('adminStatus').textContent = '';
-          adminFormContainer.style.display = 'none';
-        }, 2000);
-      })
-      .catch(error => {
-        console.error("Error saving:", error);
-        document.getElementById('adminStatus').textContent = 'Error saving: ' + error.message;
-        document.getElementById('adminStatus').style.color = 'red';
-      });
-    });
-
-    // Cancel handler
-    document.getElementById('adminCancelBtn').addEventListener('click', () => {
-      adminFormContainer.style.display = 'none';
-      document.getElementById('adminStatus').textContent = '';
-    });
-  });
-
-
-
+// Initial load of metadata
+loadMetadata();
 
 
 
