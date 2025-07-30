@@ -4895,6 +4895,7 @@ function loadMetadata() {
 
 
 
+
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user || user.email !== ADMIN_EMAIL) {
@@ -4909,11 +4910,12 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
     const content = adminContentEditor.value;
     const author = authorInput.value;
 
-    // 1. Update di Firebase
-    await db.collection('pageContent').doc(CONTENT_DOC_ID).set({
+    // 1. Update ke Firebase dengan modular SDK
+    const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
+    await setDoc(docRef, {
       [section]: content,
       author: author,
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      lastUpdated: serverTimestamp()
     }, { merge: true });
 
     // 2. Update langsung di halaman
@@ -4925,6 +4927,12 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
     showStatus('Error: ' + error.message, 'error');
   }
 });
+
+
+
+
+
+
 
 function updatePageContent(section, content, author) {
   // Update bagian yang sesuai
