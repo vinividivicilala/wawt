@@ -4002,7 +4002,8 @@ a.footnote-link:hover {
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     const db = getFirestore(app);
-	const CONTENT_DOC_ID = 'page10_content'; // ID untuk dokumen konten
+	const CONTENT_DOC_ID = 'page10_content';
+
 
     
     // DOM Elements
@@ -4735,20 +4736,26 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
   });
 });
 
-// Auth state handler
-auth.onAuthStateChanged(user => {
-  const isAdmin = user && user.email === ADMIN_EMAIL;
-  adminAuth.style.display = isAdmin ? 'none' : 'block';
-  adminControls.style.display = isAdmin ? 'block' : 'none';
-  adminEmail.textContent = isAdmin ? user.email : '';
-  if (isAdmin) {
-    authorInput.value = user.email;
-	  loadSectionContent(contentSectionSelect.value);
-    loadPageContent();
-  }
-  loadMetadata();
+
+// Saat halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+  // Load data pertama kali
+  loadInitialData();
+  
+  // Setup event listener untuk dropdown
+  contentSectionSelect.addEventListener('change', function() {
+    loadSectionContent(this.value);
+  });
 });
 
+// Saat auth state berubah
+auth.onAuthStateChanged(user => {
+  const isAdmin = user && user.email === ADMIN_EMAIL;
+  if (isAdmin) {
+    loadInitialData();
+    loadSectionContent(contentSectionSelect.value);
+  }
+});
 
 
 
@@ -4787,30 +4794,25 @@ contentSectionSelect.addEventListener('change', function() {
 });
 
 
-
 function loadSectionContent(section) {
   const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
 
   getDoc(docRef)
     .then((docSnap) => {
       if (docSnap.exists() && docSnap.data()[section]) {
+        // Gunakan data dari Firebase
         adminContentEditor.value = docSnap.data()[section];
       } else {
-        const element = document.querySelector(getSelectorForSection(section));
-        if (element) {
-          adminContentEditor.value = getTextContentForSection(element, section);
-        } else {
-          adminContentEditor.value = '';
-        }
+        // Fallback ke konten default dari HTML
+        const element = document.querySelector(`.title-section h1`);
+        adminContentEditor.value = element ? element.textContent : '';
       }
     })
     .catch(error => {
-      console.error("Error loading content:", error);
+      console.error("Gagal memuat konten:", error);
       adminContentEditor.value = '';
     });
 }
-
-
 
 
 
@@ -4895,6 +4897,10 @@ function loadMetadata() {
   }
 }
 
+
+
+
+
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user || user.email !== ADMIN_EMAIL) {
@@ -4908,26 +4914,54 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
     const section = contentSectionSelect.value;
     const content = adminContentEditor.value;
     const author = authorInput.value;
-    const changeDesc = changeDescription.value;
 
-    // 🔧 Firebase modular: setDoc
-    const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-    await setDoc(docRef, {
+    // 1. Update di Firebase
+    await db.collection('pageContent').doc(CONTENT_DOC_ID).set({
       [section]: content,
-      lastUpdated: new Date(),
       author: author,
-      changeDescription: changeDesc
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    updateUIAfterSave(section, content);
-    
+    // 2. Update langsung di halaman
+    updatePageContent(section, content, author);
+
     showStatus('Perubahan berhasil disimpan!', 'success');
-    changeDescription.value = '';
   } catch (error) {
     console.error("Error:", error);
     showStatus('Error: ' + error.message, 'error');
   }
 });
+
+function updatePageContent(section, content, author) {
+  // Update bagian yang sesuai
+  switch(section) {
+    case 'title':
+      document.querySelector('.title-section h1').textContent = content;
+      break;
+    case 'timeline':
+      document.querySelector('.history-timeline').innerHTML = content;
+      break;
+    // Tambahkan case lainnya sesuai kebutuhan
+  }
+
+  // Update metadata
+  document.getElementById('dataAuthor').textContent = author;
+  document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function updateUIAfterSave(section, content) {
   const selector = getSelectorForSection(section);
