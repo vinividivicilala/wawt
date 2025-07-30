@@ -1722,6 +1722,48 @@ a.footnote-link:hover {
 
 
 
+  #toggleAdminBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+  }
+  
+  #toggleAdminBtn:hover {
+    background: #555;
+    transform: scale(1.1);
+  }
+  
+  #adminFormContainer {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 400px;
+    max-width: 90%;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  }
+  
+  @media (max-width: 768px) {
+    #adminFormContainer {
+      width: 90%;
+      left: 5%;
+      right: auto;
+    }
+  }
+
+
+
+
+
+
 
 
 
@@ -3766,7 +3808,6 @@ a.footnote-link:hover {
 
 
 
-
 <!-- Admin Edit Form (initially hidden) -->
 <div id="adminFormContainer" style="display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; margin-top: 30px;">
   <h2 style="color: white; text-align: center;">Admin Content Editor</h2>
@@ -3808,7 +3849,6 @@ a.footnote-link:hover {
     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
   </svg>
 </button>
-
 
 
 
@@ -4787,7 +4827,29 @@ loadPageContent();
 
 
 
-
+  // Fungsi untuk toggle admin form
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+    const adminFormContainer = document.getElementById('adminFormContainer');
+    
+    if (toggleAdminBtn && adminFormContainer) {
+      toggleAdminBtn.addEventListener('click', function() {
+        if (adminFormContainer.style.display === 'none' || adminFormContainer.style.display === '') {
+          adminFormContainer.style.display = 'block';
+        } else {
+          adminFormContainer.style.display = 'none';
+        }
+      });
+    }
+    
+    // Fungsi untuk tombol cancel
+    const adminCancelBtn = document.getElementById('adminCancelBtn');
+    if (adminCancelBtn) {
+      adminCancelBtn.addEventListener('click', function() {
+        adminFormContainer.style.display = 'none';
+      });
+    }
+  });
 
 
 
