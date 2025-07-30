@@ -4681,8 +4681,6 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
-
 // Allowed admin email
 const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
 
@@ -4703,15 +4701,9 @@ const changeDescription = document.getElementById('changeDescription');
 
 // Toggle admin form
 toggleAdminBtn.addEventListener('click', function() {
-  if (adminFormContainer.style.display === 'none') {
-    adminFormContainer.style.display = 'block';
-    adminOverlay.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-  } else {
-    adminFormContainer.style.display = 'none';
-    adminOverlay.style.display = 'none';
-    document.body.style.overflow = 'auto';
-  }
+  adminFormContainer.style.display = adminFormContainer.style.display === 'none' ? 'block' : 'none';
+  adminOverlay.style.display = adminOverlay.style.display === 'none' ? 'block' : 'none';
+  document.body.style.overflow = adminFormContainer.style.display === 'block' ? 'hidden' : 'auto';
 });
 
 // Close form when clicking overlay
@@ -4735,114 +4727,91 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
   });
 });
 
-// Check auth state
+// Auth state handler
 auth.onAuthStateChanged(user => {
-  if (user && user.email === ADMIN_EMAIL) {
-    // Admin logged in
-    adminAuth.style.display = 'none';
-    adminControls.style.display = 'block';
-    adminEmail.textContent = user.email;
+  const isAdmin = user && user.email === ADMIN_EMAIL;
+  adminAuth.style.display = isAdmin ? 'none' : 'block';
+  adminControls.style.display = isAdmin ? 'block' : 'none';
+  adminEmail.textContent = isAdmin ? user.email : '';
+  if (isAdmin) {
     authorInput.value = user.email;
     loadPageContent();
-    loadMetadata();
-  } else {
-    // Not admin or not logged in
-    adminAuth.style.display = 'block';
-    adminControls.style.display = 'none';
-    adminEmail.textContent = '';
-    
-    // Still load metadata for viewers
-    loadMetadata();
   }
+  loadMetadata();
 });
 
 // Login handler
 document.getElementById('adminLoginBtn').addEventListener('click', () => {
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider)
-    .catch(error => {
-      console.error("Login error:", error);
-      adminStatus.textContent = 'Login gagal: ' + error.message;
-      adminStatus.style.color = 'red';
-      adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
-      setTimeout(() => { adminStatus.textContent = ''; adminStatus.style.backgroundColor = 'transparent'; }, 3000);
-    });
+  auth.signInWithPopup(provider).catch(handleLoginError);
 });
+
+function handleLoginError(error) {
+  adminStatus.textContent = 'Login gagal: ' + error.message;
+  adminStatus.style.color = 'red';
+  adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
+  setTimeout(() => { 
+    adminStatus.textContent = ''; 
+    adminStatus.style.backgroundColor = 'transparent'; 
+  }, 3000);
+}
 
 // Logout handler
 document.getElementById('adminLogoutBtn').addEventListener('click', () => {
   auth.signOut();
+  closeAdminForm();
+});
+
+function closeAdminForm() {
   adminFormContainer.style.display = 'none';
   adminOverlay.style.display = 'none';
   document.body.style.overflow = 'auto';
-});
+}
 
-// Load specific section content
+// Content section handler
 contentSectionSelect.addEventListener('change', function() {
   loadSectionContent(this.value);
 });
 
 function loadSectionContent(section) {
-  // Get the current page content from the DOM instead of Firestore
   const pageContent = document.getElementById('page10').outerHTML;
-  
   const parser = new DOMParser();
   const htmlDoc = parser.parseFromString(pageContent, 'text/html');
 
   let sectionContent = '';
   
-  switch(section) {
-    case 'title': {
-      const el = htmlDoc.querySelector('.title-section h1');
-      sectionContent = el ? el.outerHTML : '<h1 style="color: white; font-size: 28px; margin-bottom: 20px; text-align: center;">Judul Default</h1>';
-      break;
-    }
-    case 'timeline': {
-      const el = htmlDoc.querySelector('.history-timeline');
-      sectionContent = el ? el.innerHTML : '<!-- Timeline content will go here -->';
-      break;
-    }
-    case 'video': {
-      const el = htmlDoc.querySelector('.video-container');
-      sectionContent = el ? el.outerHTML : '<!-- Video content will go here -->';
-      break;
-    }
-    case 'footnotes': {
-      const el = htmlDoc.querySelector('.footnotes-container');
-      sectionContent = el ? el.outerHTML : '<!-- Footnotes will go here -->';
-      break;
-    }
-    case 'reactions': {
-      const el = htmlDoc.querySelector('.reaction-container');
-      sectionContent = el ? el.outerHTML : '<!-- Reactions section will go here -->';
-      break;
-    }
-    case 'comments': {
-      const el = htmlDoc.querySelector('.comments-container');
-      sectionContent = el ? el.outerHTML : '<!-- Comments section will go here -->';
-      break;
-    }
-    case 'cards': {
-      const cards = htmlDoc.querySelectorAll('.bab-card');
-      sectionContent = cards.length > 0 ? 
-        Array.from(cards).map(card => card.outerHTML).join('\n') : 
-        '<!-- Cards will go here -->';
-      break;
-    }
+  const elements = {
+    'title': '.title-section h1',
+    'timeline': '.history-timeline',
+    'video': '.video-container',
+    'footnotes': '.footnotes-container',
+    'reactions': '.reaction-container',
+    'comments': '.comments-container',
+    'cards': '.bab-card'
+  };
+
+  const element = htmlDoc.querySelector(elements[section]);
+  
+  if (section === 'cards') {
+    const cards = htmlDoc.querySelectorAll(elements[section]);
+    sectionContent = cards.length > 0 ? 
+      Array.from(cards).map(card => card.outerHTML).join('\n') : 
+      '<!-- Cards will go here -->';
+  } else if (section === 'timeline') {
+    sectionContent = element ? element.innerHTML : '<!-- Timeline content will go here -->';
+  } else {
+    sectionContent = element ? element.outerHTML : `<!-- ${section} content will go here -->`;
   }
 
   adminContentEditor.value = sectionContent;
 }
 
 function loadPageContent() {
-  // Load first section by default
   contentSectionSelect.value = 'title';
   loadSectionContent('title');
 }
 
 function loadMetadata() {
-  // You can keep your Firestore metadata loading here if needed
-  // For now we'll just show the current author if available
   const author = document.getElementById('dataAuthor').textContent;
   if (author && author !== '-') {
     authorInput.value = author;
@@ -4851,12 +4820,7 @@ function loadMetadata() {
 
 // Save handler
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
-  const section = contentSectionSelect.value;
-  const content = adminContentEditor.value;
-  const author = authorInput.value;
-  const changeDesc = changeDescription.value;
   const user = auth.currentUser;
-
   if (!user || user.email !== ADMIN_EMAIL) {
     showStatus('Error: Akses tidak diizinkan', 'error');
     return;
@@ -4865,22 +4829,18 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   showStatus('Menyimpan perubahan...', 'loading');
 
   try {
-    // Get the current page content from DOM
+    const section = contentSectionSelect.value;
+    const content = adminContentEditor.value;
     const pageContent = document.getElementById('page10');
     const currentHtml = pageContent.outerHTML;
-    
-    // Parse the current HTML
     const parser = new DOMParser();
     const htmlDoc = parser.parseFromString(currentHtml, 'text/html');
-    
-    // Helper function to replace content
-    const replaceContent = (selector, newContent, isInner = false) => {
+
+    const updateContent = (selector, newContent, isInner = false) => {
       const element = htmlDoc.querySelector(selector);
       if (!element) {
-        // If element doesn't exist, we'll create it
         if (selector === '.title-section h1') {
-          const titleSection = htmlDoc.querySelector('.title-section') || 
-                              htmlDoc.createElement('div');
+          const titleSection = htmlDoc.querySelector('.title-section') || htmlDoc.createElement('div');
           titleSection.className = 'title-section';
           const h1 = htmlDoc.createElement('h1');
           h1.innerHTML = newContent;
@@ -4888,115 +4848,63 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
           htmlDoc.body.appendChild(titleSection);
           return;
         }
-        throw new Error(`Element ${selector} tidak ditemukan dalam dokumen`);
+        throw new Error(`Element ${selector} tidak ditemukan`);
       }
-      
-      if (isInner) {
-        element.innerHTML = newContent;
-      } else {
-        element.outerHTML = newContent;
-      }
+      isInner ? element.innerHTML = newContent : element.outerHTML = newContent;
     };
-    
-    try {
-      switch(section) {
-        case 'title':
-          replaceContent('.title-section h1', content);
-          break;
-        case 'timeline':
-          replaceContent('.history-timeline', content, true);
-          break;
-        case 'video':
-          replaceContent('.video-container', content);
-          break;
-        case 'footnotes':
-          replaceContent('.footnotes-container', content);
-          break;
-        case 'reactions':
-          replaceContent('.reaction-container', content);
-          break;
-        case 'comments':
-          replaceContent('.comments-container', content);
-          break;
-        case 'cards':
-          const cardsContainer = htmlDoc.querySelector('.page10-container');
-          if (!cardsContainer) {
-            throw new Error('Container kartu tidak ditemukan');
-          }
-          
-          // Clear existing cards
-          const existingCards = cardsContainer.querySelectorAll('.bab-card');
-          existingCards.forEach(card => card.remove());
-          
-          // Add new cards
-          const newCardsDoc = parser.parseFromString(content, 'text/html');
-          const newCards = newCardsDoc.body.children;
-          Array.from(newCards).forEach(card => {
-            if (card.classList.contains('bab-card')) {
-              cardsContainer.appendChild(card);
-            }
-          });
-          break;
-        default:
-          throw new Error('Bagian yang dipilih tidak valid');
-      }
-      
-      // Update the page content
-      pageContent.outerHTML = htmlDoc.documentElement.outerHTML;
-      
-      showStatus('Perubahan berhasil disimpan!', 'success');
-      loadMetadata();
-      
-    } catch (updateError) {
-      console.error("Error updating content:", updateError);
-      showStatus(`Error: ${updateError.message}`, 'error');
+
+    switch(section) {
+      case 'title': updateContent('.title-section h1', content); break;
+      case 'timeline': updateContent('.history-timeline', content, true); break;
+      case 'video': updateContent('.video-container', content); break;
+      case 'footnotes': updateContent('.footnotes-container', content); break;
+      case 'reactions': updateContent('.reaction-container', content); break;
+      case 'comments': updateContent('.comments-container', content); break;
+      case 'cards': 
+        const container = htmlDoc.querySelector('.page10-container');
+        if (!container) throw new Error('Container tidak ditemukan');
+        container.querySelectorAll('.bab-card').forEach(card => card.remove());
+        const newCardsDoc = parser.parseFromString(content, 'text/html');
+        Array.from(newCardsDoc.body.children)
+          .filter(card => card.classList.contains('bab-card'))
+          .forEach(card => container.appendChild(card));
+        break;
+      default: throw new Error('Bagian tidak valid');
     }
-    
+
+    pageContent.outerHTML = htmlDoc.documentElement.outerHTML;
+    showStatus('Perubahan berhasil disimpan!', 'success');
+    loadMetadata();
   } catch (error) {
-    console.error("Error saving:", error);
-    showStatus('Error menyimpan: ' + error.message, 'error');
+    console.error("Error:", error);
+    showStatus('Error: ' + error.message, 'error');
   }
 });
 
-// Helper function to show status
 function showStatus(message, type) {
   adminStatus.textContent = message;
+  const styles = {
+    error: { color: 'red', bg: 'rgba(255,0,0,0.1)' },
+    success: { color: 'lightgreen', bg: 'rgba(0,255,0,0.1)' },
+    loading: { color: 'white', bg: 'rgba(0,0,0,0.3)' }
+  };
   
-  switch(type) {
-    case 'error':
-      adminStatus.style.color = 'red';
-      adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
-      break;
-    case 'success':
-      adminStatus.style.color = 'lightgreen';
-      adminStatus.style.backgroundColor = 'rgba(0,255,0,0.1)';
-      setTimeout(() => { 
-        adminStatus.textContent = '';
-        adminStatus.style.backgroundColor = 'transparent';
-      }, 2000);
-      break;
-    case 'loading':
-      adminStatus.style.color = 'white';
-      adminStatus.style.backgroundColor = 'rgba(0,0,0,0.3)';
-      break;
-    default:
-      adminStatus.style.color = 'white';
+  adminStatus.style.color = styles[type]?.color || 'white';
+  adminStatus.style.backgroundColor = styles[type]?.bg || 'transparent';
+  
+  if (type === 'success') {
+    setTimeout(() => { 
+      adminStatus.textContent = '';
       adminStatus.style.backgroundColor = 'transparent';
+    }, 2000);
   }
 }
 
 // Cancel handler
-document.getElementById('adminCancelBtn').addEventListener('click', () => {
-  adminFormContainer.style.display = 'none';
-  adminOverlay.style.display = 'none';
-  document.body.style.overflow = 'auto';
-  adminStatus.textContent = '';
-  adminStatus.style.backgroundColor = 'transparent';
-});
+document.getElementById('adminCancelBtn').addEventListener('click', closeAdminForm);
 
 // Initial load
 loadMetadata();
-
 
 
 
