@@ -4780,6 +4780,8 @@ contentSectionSelect.addEventListener('change', function() {
   loadSectionContent(this.value);
 });
 
+
+
 function loadSectionContent(section) {
   const docRef = doc(db, "pageContent", "page10");
 
@@ -4789,35 +4791,47 @@ function loadSectionContent(section) {
         const content = docSnap.data().content;
         let sectionContent = '';
         
-        // Parse the HTML to get specific sections
         const parser = new DOMParser();
         const htmlDoc = parser.parseFromString(content, 'text/html');
-        
+
         switch(section) {
-          case 'title':
-            sectionContent = htmlDoc.querySelector('.title-section h1').outerHTML;
+          case 'title': {
+            const el = htmlDoc.querySelector('.title-section h1');
+            sectionContent = el ? el.outerHTML : '<!-- .title-section h1 not found -->';
             break;
-          case 'timeline':
-            sectionContent = htmlDoc.querySelector('.history-timeline').innerHTML;
+          }
+          case 'timeline': {
+            const el = htmlDoc.querySelector('.history-timeline');
+            sectionContent = el ? el.innerHTML : '<!-- .history-timeline not found -->';
             break;
-          case 'video':
-            sectionContent = htmlDoc.querySelector('.video-container').outerHTML;
+          }
+          case 'video': {
+            const el = htmlDoc.querySelector('.video-container');
+            sectionContent = el ? el.outerHTML : '<!-- .video-container not found -->';
             break;
-          case 'footnotes':
-            sectionContent = htmlDoc.querySelector('.footnotes-container').outerHTML;
+          }
+          case 'footnotes': {
+            const el = htmlDoc.querySelector('.footnotes-container');
+            sectionContent = el ? el.outerHTML : '<!-- .footnotes-container not found -->';
             break;
-          case 'reactions':
-            sectionContent = htmlDoc.querySelector('.reaction-container').outerHTML;
+          }
+          case 'reactions': {
+            const el = htmlDoc.querySelector('.reaction-container');
+            sectionContent = el ? el.outerHTML : '<!-- .reaction-container not found -->';
             break;
-          case 'comments':
-            sectionContent = htmlDoc.querySelector('.comments-container').outerHTML;
+          }
+          case 'comments': {
+            const el = htmlDoc.querySelector('.comments-container');
+            sectionContent = el ? el.outerHTML : '<!-- .comments-container not found -->';
             break;
-          case 'cards':
+          }
+          case 'cards': {
             const cards = htmlDoc.querySelectorAll('.bab-card');
-            sectionContent = Array.from(cards).map(card => card.outerHTML).join('\n');
+            sectionContent = cards.length > 0 ? Array.from(cards).map(card => card.outerHTML).join('\n') : '<!-- .bab-card not found -->';
             break;
+          }
         }
-        
+
         adminContentEditor.value = sectionContent;
       }
     })
@@ -4825,6 +4839,16 @@ function loadSectionContent(section) {
       console.error("Error loading section:", error);
     });
 }
+
+
+
+
+
+
+
+
+
+
 
 function loadPageContent() {
   const docRef = doc(db, "pageContent", "page10");
