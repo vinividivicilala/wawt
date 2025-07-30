@@ -4681,6 +4681,8 @@ onAuthStateChanged(auth, (user) => {
 
 
 
+
+
 // Allowed admin email
 const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
 
@@ -4780,124 +4782,74 @@ contentSectionSelect.addEventListener('change', function() {
   loadSectionContent(this.value);
 });
 
-
-
 function loadSectionContent(section) {
-  const docRef = doc(db, "pageContent", "page10");
+  // Get the current page content from the DOM instead of Firestore
+  const pageContent = document.getElementById('page10').outerHTML;
+  
+  const parser = new DOMParser();
+  const htmlDoc = parser.parseFromString(pageContent, 'text/html');
 
-  getDoc(docRef)
-    .then((docSnap) => {
-      if (docSnap.exists()) {
-        const content = docSnap.data().content;
-        let sectionContent = '';
-        
-        const parser = new DOMParser();
-        const htmlDoc = parser.parseFromString(content, 'text/html');
+  let sectionContent = '';
+  
+  switch(section) {
+    case 'title': {
+      const el = htmlDoc.querySelector('.title-section h1');
+      sectionContent = el ? el.outerHTML : '<h1 style="color: white; font-size: 28px; margin-bottom: 20px; text-align: center;">Judul Default</h1>';
+      break;
+    }
+    case 'timeline': {
+      const el = htmlDoc.querySelector('.history-timeline');
+      sectionContent = el ? el.innerHTML : '<!-- Timeline content will go here -->';
+      break;
+    }
+    case 'video': {
+      const el = htmlDoc.querySelector('.video-container');
+      sectionContent = el ? el.outerHTML : '<!-- Video content will go here -->';
+      break;
+    }
+    case 'footnotes': {
+      const el = htmlDoc.querySelector('.footnotes-container');
+      sectionContent = el ? el.outerHTML : '<!-- Footnotes will go here -->';
+      break;
+    }
+    case 'reactions': {
+      const el = htmlDoc.querySelector('.reaction-container');
+      sectionContent = el ? el.outerHTML : '<!-- Reactions section will go here -->';
+      break;
+    }
+    case 'comments': {
+      const el = htmlDoc.querySelector('.comments-container');
+      sectionContent = el ? el.outerHTML : '<!-- Comments section will go here -->';
+      break;
+    }
+    case 'cards': {
+      const cards = htmlDoc.querySelectorAll('.bab-card');
+      sectionContent = cards.length > 0 ? 
+        Array.from(cards).map(card => card.outerHTML).join('\n') : 
+        '<!-- Cards will go here -->';
+      break;
+    }
+  }
 
-        switch(section) {
-          case 'title': {
-            const el = htmlDoc.querySelector('.title-section h1');
-            sectionContent = el ? el.outerHTML : '<!-- .title-section h1 not found -->';
-            break;
-          }
-          case 'timeline': {
-            const el = htmlDoc.querySelector('.history-timeline');
-            sectionContent = el ? el.innerHTML : '<!-- .history-timeline not found -->';
-            break;
-          }
-          case 'video': {
-            const el = htmlDoc.querySelector('.video-container');
-            sectionContent = el ? el.outerHTML : '<!-- .video-container not found -->';
-            break;
-          }
-          case 'footnotes': {
-            const el = htmlDoc.querySelector('.footnotes-container');
-            sectionContent = el ? el.outerHTML : '<!-- .footnotes-container not found -->';
-            break;
-          }
-          case 'reactions': {
-            const el = htmlDoc.querySelector('.reaction-container');
-            sectionContent = el ? el.outerHTML : '<!-- .reaction-container not found -->';
-            break;
-          }
-          case 'comments': {
-            const el = htmlDoc.querySelector('.comments-container');
-            sectionContent = el ? el.outerHTML : '<!-- .comments-container not found -->';
-            break;
-          }
-          case 'cards': {
-            const cards = htmlDoc.querySelectorAll('.bab-card');
-            sectionContent = cards.length > 0 ? Array.from(cards).map(card => card.outerHTML).join('\n') : '<!-- .bab-card not found -->';
-            break;
-          }
-        }
-
-        adminContentEditor.value = sectionContent;
-      }
-    })
-    .catch((error) => {
-      console.error("Error loading section:", error);
-    });
+  adminContentEditor.value = sectionContent;
 }
 
-
-
-
-
-
-
-
-
-
-
 function loadPageContent() {
-  const docRef = doc(db, "pageContent", "page10");
-
-  getDoc(docRef)
-    .then((docSnap) => {
-      if (docSnap.exists()) {
-        // Load first section by default
-        contentSectionSelect.value = 'title';
-        loadSectionContent('title');
-      }
-    })
-    .catch((error) => {
-      console.error("Error loading content:", error);
-    });
+  // Load first section by default
+  contentSectionSelect.value = 'title';
+  loadSectionContent('title');
 }
 
 function loadMetadata() {
-  const docRef = doc(db, "pageContent", "page10");
-
-  getDoc(docRef)
-    .then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        dataAuthorElement.textContent = data.author || '-';
-
-        if (data.lastUpdated && data.lastUpdated.toDate) {
-          const date = data.lastUpdated.toDate();
-          lastUpdatedElement.textContent = date.toLocaleString('id-ID', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        } else {
-          lastUpdatedElement.textContent = '-';
-        }
-      }
-    })
-    .catch((error) => {
-      console.error("Error loading metadata:", error);
-    });
+  // You can keep your Firestore metadata loading here if needed
+  // For now we'll just show the current author if available
+  const author = document.getElementById('dataAuthor').textContent;
+  if (author && author !== '-') {
+    authorInput.value = author;
+  }
 }
 
-
-
-
-// Save handler dengan penanganan error yang lebih baik
+// Save handler
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const section = contentSectionSelect.value;
   const content = adminContentEditor.value;
@@ -4913,35 +4865,29 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   showStatus('Menyimpan perubahan...', 'loading');
 
   try {
-    // First get the current content
-    const docRef = doc(db, "pageContent", "page10");
-    const docSnap = await getDoc(docRef);
-    
-    let currentContent = '';
-    if (docSnap.exists()) {
-      currentContent = docSnap.data().content;
-    } else {
-      // Jika dokumen tidak ada, buat yang baru dengan template dasar
-      currentContent = `<div id="page10">
-        <div class="title-section"><h1>Judul Default</h1></div>
-        <div class="history-timeline"></div>
-        <div class="video-container"></div>
-        <div class="footnotes-container"></div>
-        <div class="reaction-container"></div>
-        <div class="comments-container"></div>
-        <div class="page10-container"></div>
-      </div>`;
-    }
+    // Get the current page content from DOM
+    const pageContent = document.getElementById('page10');
+    const currentHtml = pageContent.outerHTML;
     
     // Parse the current HTML
     const parser = new DOMParser();
-    const htmlDoc = parser.parseFromString(currentContent, 'text/html');
+    const htmlDoc = parser.parseFromString(currentHtml, 'text/html');
     
-    // Fungsi helper untuk menangani penggantian konten
+    // Helper function to replace content
     const replaceContent = (selector, newContent, isInner = false) => {
       const element = htmlDoc.querySelector(selector);
       if (!element) {
-        console.error(`Element not found: ${selector}`);
+        // If element doesn't exist, we'll create it
+        if (selector === '.title-section h1') {
+          const titleSection = htmlDoc.querySelector('.title-section') || 
+                              htmlDoc.createElement('div');
+          titleSection.className = 'title-section';
+          const h1 = htmlDoc.createElement('h1');
+          h1.innerHTML = newContent;
+          titleSection.appendChild(h1);
+          htmlDoc.body.appendChild(titleSection);
+          return;
+        }
         throw new Error(`Element ${selector} tidak ditemukan dalam dokumen`);
       }
       
@@ -4978,11 +4924,11 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
             throw new Error('Container kartu tidak ditemukan');
           }
           
-          // Hapus kartu yang ada
+          // Clear existing cards
           const existingCards = cardsContainer.querySelectorAll('.bab-card');
           existingCards.forEach(card => card.remove());
           
-          // Tambahkan kartu baru
+          // Add new cards
           const newCardsDoc = parser.parseFromString(content, 'text/html');
           const newCards = newCardsDoc.body.children;
           Array.from(newCards).forEach(card => {
@@ -4995,16 +4941,9 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
           throw new Error('Bagian yang dipilih tidak valid');
       }
       
-      const updatedContent = htmlDoc.documentElement.outerHTML;
+      // Update the page content
+      pageContent.outerHTML = htmlDoc.documentElement.outerHTML;
       
-      // Save to Firestore
-      await setDoc(docRef, {
-        content: updatedContent,
-        author: author,
-        changeDescription: changeDesc,
-        lastUpdated: serverTimestamp()
-      });
-
       showStatus('Perubahan berhasil disimpan!', 'success');
       loadMetadata();
       
@@ -5019,7 +4958,7 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   }
 });
 
-// Fungsi helper untuk menampilkan status
+// Helper function to show status
 function showStatus(message, type) {
   adminStatus.textContent = message;
   
@@ -5046,19 +4985,6 @@ function showStatus(message, type) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Cancel handler
 document.getElementById('adminCancelBtn').addEventListener('click', () => {
   adminFormContainer.style.display = 'none';
@@ -5068,8 +4994,24 @@ document.getElementById('adminCancelBtn').addEventListener('click', () => {
   adminStatus.style.backgroundColor = 'transparent';
 });
 
-// Initial load of metadata
+// Initial load
 loadMetadata();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
