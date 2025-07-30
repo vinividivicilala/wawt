@@ -1762,7 +1762,13 @@ a.footnote-link:hover {
 
 
 
-
+#adminContentEditor {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.6;
+}
 
 
 
@@ -3996,6 +4002,8 @@ a.footnote-link:hover {
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     const db = getFirestore(app);
+	const CONTENT_DOC_ID = 'page10_content'; // ID untuk dokumen konten
+
     
     // DOM Elements
     const loginBtn = document.getElementById("loginBtn");
@@ -4780,38 +4788,72 @@ contentSectionSelect.addEventListener('change', function() {
 
 
 
-function loadSectionContent(section) {
-  const pageContent = document.getElementById('page10').outerHTML;
-  const parser = new DOMParser();
-  const htmlDoc = parser.parseFromString(pageContent, 'text/html');
 
-  let sectionContent = '';
-  
-  const elements = {
+function loadSectionContent(section) {
+  // Ambil dari database terlebih dahulu
+  db.collection('pageContent').doc(CONTENT_DOC_ID).get()
+    .then(doc => {
+      if (doc.exists && doc.data()[section]) {
+        // Jika ada di database, gunakan yang dari database
+        adminContentEditor.value = doc.data()[section];
+      } else {
+        // Jika tidak ada, ambil dari HTML
+        const element = document.querySelector(getSelectorForSection(section));
+        if (element) {
+          adminContentEditor.value = getTextContentForSection(element, section);
+        } else {
+          adminContentEditor.value = '';
+        }
+      }
+    })
+    .catch(error => {
+      console.error("Error loading content:", error);
+      adminContentEditor.value = '';
+    });
+}
+
+function getSelectorForSection(section) {
+  const selectors = {
     'title': '.title-section h1',
     'timeline': '.history-timeline',
-    'video': '.video-container',
+    'video': '.video-container .video-description p',
     'footnotes': '.footnotes-container',
-    'reactions': '.reaction-container',
-    'comments': '.comments-container',
-    'cards': '.bab-card'
+    'reactions': '.reaction-container h3',
+    'comments': '.comments-container h2',
+    'cards': '.bab-card .bab-desc-box'
   };
-
-  const element = htmlDoc.querySelector(elements[section]);
-  
-  if (section === 'cards') {
-    const cards = htmlDoc.querySelectorAll(elements[section]);
-    sectionContent = cards.length > 0 ? 
-      Array.from(cards).map(card => card.outerHTML).join('\n') : 
-      '<!-- Cards will go here -->';
-  } else if (section === 'timeline') {
-    sectionContent = element ? element.innerHTML : '<!-- Timeline content will go here -->';
-  } else {
-    sectionContent = element ? element.outerHTML : `<!-- ${section} content will go here -->`;
-  }
-
-  adminContentEditor.value = sectionContent;
+  return selectors[section] || '';
 }
+
+function getTextContentForSection(element, section) {
+  switch(section) {
+    case 'title':
+    case 'timeline':
+    case 'footnotes':
+    case 'reactions':
+    case 'comments':
+      return element.textContent || element.innerText;
+    case 'video':
+    case 'cards':
+      return element.textContent || element.innerText;
+    default:
+      return element ? element.textContent : '';
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4851,7 +4893,6 @@ function loadMetadata() {
 
 
 
-
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user || user.email !== ADMIN_EMAIL) {
@@ -4864,63 +4905,81 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   try {
     const section = contentSectionSelect.value;
     const content = adminContentEditor.value;
-    const pageContent = document.getElementById('page10');
-    
-    // Update langsung ke DOM tanpa parsing ulang
-    switch(section) {
-      case 'title':
-        document.querySelector('.title-section h1').outerHTML = content;
-        break;
-      case 'timeline':
-        document.querySelector('.history-timeline').innerHTML = content;
-        break;
-      case 'video':
-        document.querySelector('.video-container').outerHTML = content;
-        break;
-      case 'footnotes':
-        document.querySelector('.footnotes-container').outerHTML = content;
-        break;
-      case 'reactions':
-        document.querySelector('.reaction-container').outerHTML = content;
-        break;
-      case 'comments':
-        document.querySelector('.comments-container').outerHTML = content;
-        break;
-      case 'cards':
-        const container = document.querySelector('.page10-container');
-        container.querySelectorAll('.bab-card').forEach(card => card.remove());
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = content;
-        Array.from(tempDiv.children).forEach(card => {
-          if (card.classList.contains('bab-card')) {
-            container.appendChild(card);
-          }
-        });
-        break;
-      default:
-        throw new Error('Bagian tidak valid');
-    }
-
-    // Update metadata
     const author = authorInput.value;
-    if (author) {
-      document.getElementById('dataAuthor').textContent = author;
-    }
-    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    const changeDesc = changeDescription.value;
 
+    // Update di Firebase
+    await db.collection('pageContent').doc(CONTENT_DOC_ID).set({
+      [section]: content,
+      lastUpdated: new Date(),
+      author: author,
+      changeDescription: changeDesc
+    }, { merge: true });
+
+    // Update UI langsung
+    updateUIAfterSave(section, content);
+    
     showStatus('Perubahan berhasil disimpan!', 'success');
+    changeDescription.value = ''; // Kosongkan deskripsi perubahan
   } catch (error) {
     console.error("Error:", error);
     showStatus('Error: ' + error.message, 'error');
   }
 });
 
+function updateUIAfterSave(section, content) {
+  const selector = getSelectorForSection(section);
+  const elements = document.querySelectorAll(selector);
+  
+  if (elements.length > 0) {
+    elements.forEach(element => {
+      if (section === 'timeline') {
+        element.innerHTML = content;
+      } else {
+        element.textContent = content;
+      }
+    });
+  }
+
+  // Update metadata
+  document.getElementById('dataAuthor').textContent = authorInput.value;
+  document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+}
 
 
 
 
+// Load initial data
+function loadInitialData() {
+  db.collection('pageContent').doc(CONTENT_DOC_ID).get()
+    .then(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        
+        // Update metadata
+        if (data.author) {
+          document.getElementById('dataAuthor').textContent = data.author;
+          authorInput.value = data.author;
+        }
+        if (data.lastUpdated) {
+          document.getElementById('lastUpdated').textContent = new Date(data.lastUpdated.toDate()).toLocaleString();
+        }
+      }
+    })
+    .catch(error => {
+      console.error("Error loading initial data:", error);
+    });
+}
 
-
+// Panggil saat halaman dimuat
+document.addEventListener('DOMContentLoaded', loadInitialData);
+auth.onAuthStateChanged(user => {
+  const isAdmin = user && user.email === ADMIN_EMAIL;
+  if (isAdmin) {
+    loadInitialData();
+    loadSectionContent(contentSectionSelect.value);
+  }
+});
 
 
 
