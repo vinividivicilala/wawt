@@ -4736,26 +4736,20 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
   });
 });
 
-
-// Saat halaman dimuat
-document.addEventListener('DOMContentLoaded', () => {
-  // Load data pertama kali
-  loadInitialData();
-  
-  // Setup event listener untuk dropdown
-  contentSectionSelect.addEventListener('change', function() {
-    loadSectionContent(this.value);
-  });
-});
-
-// Saat auth state berubah
+// Auth state handler
 auth.onAuthStateChanged(user => {
   const isAdmin = user && user.email === ADMIN_EMAIL;
+  adminAuth.style.display = isAdmin ? 'none' : 'block';
+  adminControls.style.display = isAdmin ? 'block' : 'none';
+  adminEmail.textContent = isAdmin ? user.email : '';
   if (isAdmin) {
-    loadInitialData();
-    loadSectionContent(contentSectionSelect.value);
+    authorInput.value = user.email;
+	  loadSectionContent(contentSectionSelect.value);
+    loadPageContent();
   }
+  loadMetadata();
 });
+
 
 
 
