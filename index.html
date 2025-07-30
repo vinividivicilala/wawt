@@ -4895,8 +4895,6 @@ function loadMetadata() {
   }
 }
 
-
-
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user || user.email !== ADMIN_EMAIL) {
@@ -4912,19 +4910,19 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
     const author = authorInput.value;
     const changeDesc = changeDescription.value;
 
-    // Update di Firebase
-    await db.collection('pageContent').doc(CONTENT_DOC_ID).set({
+    // 🔧 Firebase modular: setDoc
+    const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
+    await setDoc(docRef, {
       [section]: content,
       lastUpdated: new Date(),
       author: author,
       changeDescription: changeDesc
     }, { merge: true });
 
-    // Update UI langsung
     updateUIAfterSave(section, content);
     
     showStatus('Perubahan berhasil disimpan!', 'success');
-    changeDescription.value = ''; // Kosongkan deskripsi perubahan
+    changeDescription.value = '';
   } catch (error) {
     console.error("Error:", error);
     showStatus('Error: ' + error.message, 'error');
@@ -4952,15 +4950,13 @@ function updateUIAfterSave(section, content) {
 
 
 
-
-// Load initial data
 function loadInitialData() {
-  db.collection('pageContent').doc(CONTENT_DOC_ID).get()
-    .then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        
-        // Update metadata
+  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
+  getDoc(docRef)
+    .then((docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
         if (data.author) {
           document.getElementById('dataAuthor').textContent = data.author;
           authorInput.value = data.author;
