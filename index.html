@@ -3820,38 +3820,91 @@ a.footnote-link:hover {
       
 
 
+
 <!-- Improved Admin Edit Form -->
-<div id="adminFormContainer" style="display: none; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 10px; margin-top: 30px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 80%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
-  <h2 style="color: white; text-align: center; margin-bottom: 20px;">Admin Content Editor</h2>
+<div id="adminFormContainer" style="display: none; background: rgba(0,0,0,0.95); padding: 25px; border-radius: 15px; margin-top: 30px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 1px solid #444;">
+  <h2 style="color: white; text-align: center; margin-bottom: 20px; font-size: 24px; border-bottom: 1px solid #444; padding-bottom: 10px;">Editor Konten Halaman 10</h2>
   
-  <div id="adminAuth" style="margin-bottom: 20px; text-align: center;">
-    <p style="color: white; margin-bottom: 15px;">You must be logged in as admin to edit content</p>
-    <button id="adminLoginBtn" style="padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-      Login with Google
+  <div id="adminAuth" style="margin-bottom: 20px; text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+    <p style="color: white; margin-bottom: 15px; font-size: 16px;">Anda harus login sebagai admin untuk mengedit konten</p>
+    <button id="adminLoginBtn" style="padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; display: flex; align-items: center; margin: 0 auto;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+        <polyline points="10 17 15 12 10 7"></polyline>
+        <line x1="15" y1="12" x2="3" y2="12"></line>
+      </svg>
+      Login dengan Google
     </button>
   </div>
   
   <div id="adminControls" style="display: none;">
-    <div style="color: white; margin-bottom: 15px; text-align: center;">
-      Logged in as: <span id="adminEmail" style="font-weight: bold;"></span>
-      <button id="adminLogoutBtn" style="margin-left: 10px; padding: 5px 10px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+    <div style="color: white; margin-bottom: 20px; text-align: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px;">
+      Login sebagai: <span id="adminEmail" style="font-weight: bold; color: #4CAF50;"></span>
+      <button id="adminLogoutBtn" style="margin-left: 15px; padding: 5px 12px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
         Logout
       </button>
     </div>
     
-    <h3 style="color: white; border-bottom: 1px solid #444; padding-bottom: 10px;">Edit Page Content</h3>
-    <textarea id="adminContentEditor" style="width: 100%; height: 300px; padding: 10px; border-radius: 5px; margin-bottom: 15px; background: #222; color: white; border: 1px solid #444;"></textarea>
+    <!-- Tab Navigation -->
+    <div class="admin-tabs" style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #444;">
+      <button class="admin-tab active" data-tab="content">Konten Utama</button>
+      <button class="admin-tab" data-tab="metadata">Metadata</button>
+    </div>
     
-    <div style="display: flex; justify-content: center; gap: 10px;">
-      <button id="adminSaveBtn" style="padding: 10px 20px; background: #00C851; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-        Save Changes
+    <!-- Content Tab -->
+    <div id="contentTab" class="admin-tab-content" style="display: block;">
+      <h3 style="color: white; margin-bottom: 15px; font-size: 18px;">Edit Bagian Konten</h3>
+      
+      <!-- Section Selection -->
+      <div style="margin-bottom: 20px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Pilih Bagian:</label>
+        <select id="contentSection" style="width: 100%; padding: 8px; border-radius: 4px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px;">
+          <option value="title">Judul Halaman</option>
+          <option value="timeline">Timeline</option>
+          <option value="video">Bagian Video</option>
+          <option value="footnotes">Catatan Kaki</option>
+          <option value="reactions">Bagian Reaksi</option>
+          <option value="comments">Bagian Komentar</option>
+          <option value="cards">Kartu Informasi</option>
+        </select>
+      </div>
+      
+      <!-- Content Editor -->
+      <div id="editorContainer" style="margin-bottom: 20px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Editor Konten:</label>
+        <textarea id="adminContentEditor" style="width: 100%; height: 300px; padding: 12px; border-radius: 5px; margin-bottom: 15px; background: #222; color: white; border: 1px solid #444; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5;"></textarea>
+      </div>
+    </div>
+    
+    <!-- Metadata Tab -->
+    <div id="metadataTab" class="admin-tab-content" style="display: none;">
+      <h3 style="color: white; margin-bottom: 15px; font-size: 18px;">Edit Metadata</h3>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Penulis:</label>
+        <input type="text" id="authorInput" style="width: 100%; padding: 8px; border-radius: 4px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="color: white; display: block; margin-bottom: 8px;">Deskripsi Perubahan:</label>
+        <textarea id="changeDescription" style="width: 100%; height: 100px; padding: 8px; border-radius: 4px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px;"></textarea>
+      </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
+      <button id="adminPreviewBtn" style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+        Preview
       </button>
-      <button id="adminCancelBtn" style="padding: 10px 20px; background: #ffbb33; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-        Cancel
+      <button id="adminSaveBtn" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+        Simpan Perubahan
+      </button>
+      <button id="adminCancelBtn" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+        Batal
       </button>
     </div>
     
-    <div id="adminStatus" style="margin-top: 15px; color: white; text-align: center; min-height: 20px;"></div>
+    <div id="adminStatus" style="margin-top: 20px; color: white; text-align: center; min-height: 20px; padding: 10px; border-radius: 4px;"></div>
   </div>
 </div>
 
@@ -3859,12 +3912,22 @@ a.footnote-link:hover {
 <div id="adminOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000;"></div>
 
 <!-- Button to toggle admin form -->
-<button id="toggleAdminBtn" style="position: fixed; bottom: 30px; right: 30px; padding: 12px; background: #333; color: white; border: none; border-radius: 50%; cursor: pointer; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+<button id="toggleAdminBtn" style="position: fixed; bottom: 30px; right: 30px; padding: 15px; background: #4CAF50; color: white; border: none; border-radius: 50%; cursor: pointer; z-index: 999; box-shadow: 0 2px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 20h9"></path>
     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
   </svg>
 </button>
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4619,7 +4682,6 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
 // Allowed admin email
 const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
 
@@ -4634,15 +4696,37 @@ const adminContentEditor = document.getElementById('adminContentEditor');
 const adminStatus = document.getElementById('adminStatus');
 const dataAuthorElement = document.getElementById('dataAuthor');
 const lastUpdatedElement = document.getElementById('lastUpdated');
+const contentSectionSelect = document.getElementById('contentSection');
+const authorInput = document.getElementById('authorInput');
+const changeDescription = document.getElementById('changeDescription');
+
+// Initialize TinyMCE
+function initEditor() {
+  tinymce.init({
+    selector: '#adminContentEditor',
+    plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
+    toolbar_mode: 'floating',
+    skin: 'oxide-dark',
+    content_css: 'dark',
+    height: 400,
+    setup: function(editor) {
+      editor.on('change', function() {
+        editor.save();
+      });
+    }
+  });
+}
 
 // Toggle admin form
 toggleAdminBtn.addEventListener('click', function() {
   if (adminFormContainer.style.display === 'none') {
     adminFormContainer.style.display = 'block';
     adminOverlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
   } else {
     adminFormContainer.style.display = 'none';
     adminOverlay.style.display = 'none';
+    document.body.style.overflow = 'auto';
   }
 });
 
@@ -4650,6 +4734,21 @@ toggleAdminBtn.addEventListener('click', function() {
 adminOverlay.addEventListener('click', function() {
   adminFormContainer.style.display = 'none';
   adminOverlay.style.display = 'none';
+  document.body.style.overflow = 'auto';
+});
+
+// Tab switching
+document.querySelectorAll('.admin-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    
+    document.querySelectorAll('.admin-tab-content').forEach(content => {
+      content.style.display = 'none';
+    });
+    
+    document.getElementById(`${this.dataset.tab}Tab`).style.display = 'block';
+  });
 });
 
 // Check auth state
@@ -4659,8 +4758,10 @@ auth.onAuthStateChanged(user => {
     adminAuth.style.display = 'none';
     adminControls.style.display = 'block';
     adminEmail.textContent = user.email;
+    authorInput.value = user.email;
     loadPageContent();
     loadMetadata();
+    initEditor();
   } else {
     // Not admin or not logged in
     adminAuth.style.display = 'block';
@@ -4678,9 +4779,10 @@ document.getElementById('adminLoginBtn').addEventListener('click', () => {
   auth.signInWithPopup(provider)
     .catch(error => {
       console.error("Login error:", error);
-      adminStatus.textContent = 'Login failed: ' + error.message;
+      adminStatus.textContent = 'Login gagal: ' + error.message;
       adminStatus.style.color = 'red';
-      setTimeout(() => { adminStatus.textContent = ''; }, 3000);
+      adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
+      setTimeout(() => { adminStatus.textContent = ''; adminStatus.style.backgroundColor = 'transparent'; }, 3000);
     });
 });
 
@@ -4689,7 +4791,59 @@ document.getElementById('adminLogoutBtn').addEventListener('click', () => {
   auth.signOut();
   adminFormContainer.style.display = 'none';
   adminOverlay.style.display = 'none';
+  document.body.style.overflow = 'auto';
 });
+
+// Load specific section content
+contentSectionSelect.addEventListener('change', function() {
+  loadSectionContent(this.value);
+});
+
+function loadSectionContent(section) {
+  const docRef = doc(db, "pageContent", "page10");
+
+  getDoc(docRef)
+    .then((docSnap) => {
+      if (docSnap.exists()) {
+        const content = docSnap.data().content;
+        let sectionContent = '';
+        
+        // Parse the HTML to get specific sections
+        const parser = new DOMParser();
+        const htmlDoc = parser.parseFromString(content, 'text/html');
+        
+        switch(section) {
+          case 'title':
+            sectionContent = htmlDoc.querySelector('.title-section h1').outerHTML;
+            break;
+          case 'timeline':
+            sectionContent = htmlDoc.querySelector('.history-timeline').innerHTML;
+            break;
+          case 'video':
+            sectionContent = htmlDoc.querySelector('.video-container').outerHTML;
+            break;
+          case 'footnotes':
+            sectionContent = htmlDoc.querySelector('.footnotes-container').outerHTML;
+            break;
+          case 'reactions':
+            sectionContent = htmlDoc.querySelector('.reaction-container').outerHTML;
+            break;
+          case 'comments':
+            sectionContent = htmlDoc.querySelector('.comments-container').outerHTML;
+            break;
+          case 'cards':
+            const cards = htmlDoc.querySelectorAll('.bab-card');
+            sectionContent = Array.from(cards).map(card => card.outerHTML).join('\n');
+            break;
+        }
+        
+        tinymce.get('adminContentEditor').setContent(sectionContent);
+      }
+    })
+    .catch((error) => {
+      console.error("Error loading section:", error);
+    });
+}
 
 function loadPageContent() {
   const docRef = doc(db, "pageContent", "page10");
@@ -4697,7 +4851,9 @@ function loadPageContent() {
   getDoc(docRef)
     .then((docSnap) => {
       if (docSnap.exists()) {
-        adminContentEditor.value = docSnap.data().content;
+        // Load first section by default
+        contentSectionSelect.value = 'title';
+        loadSectionContent('title');
       }
     })
     .catch((error) => {
@@ -4716,7 +4872,13 @@ function loadMetadata() {
 
         if (data.lastUpdated && data.lastUpdated.toDate) {
           const date = data.lastUpdated.toDate();
-          lastUpdatedElement.textContent = date.toLocaleString();
+          lastUpdatedElement.textContent = date.toLocaleString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
         } else {
           lastUpdatedElement.textContent = '-';
         }
@@ -4727,63 +4889,108 @@ function loadMetadata() {
     });
 }
 
-
 // Save handler
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
-  const content = adminContentEditor.value;
+  const section = contentSectionSelect.value;
+  const content = tinymce.get('adminContentEditor').getContent();
+  const author = authorInput.value;
+  const changeDesc = changeDescription.value;
   const user = auth.currentUser;
 
   if (!user || user.email !== ADMIN_EMAIL) {
-    adminStatus.textContent = 'Error: Unauthorized access';
+    adminStatus.textContent = 'Error: Akses tidak diizinkan';
     adminStatus.style.color = 'red';
+    adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
     return;
   }
 
-  adminStatus.textContent = 'Saving...';
+  adminStatus.textContent = 'Menyimpan perubahan...';
   adminStatus.style.color = 'white';
+  adminStatus.style.backgroundColor = 'rgba(0,0,0,0.3)';
 
   try {
+    // First get the current content
     const docRef = doc(db, "pageContent", "page10");
+    const docSnap = await getDoc(docRef);
+    
+    let currentContent = '';
+    if (docSnap.exists()) {
+      currentContent = docSnap.data().content;
+    }
+    
+    // Parse the current HTML and update the specific section
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(currentContent, 'text/html');
+    
+    switch(section) {
+      case 'title':
+        htmlDoc.querySelector('.title-section h1').outerHTML = content;
+        break;
+      case 'timeline':
+        htmlDoc.querySelector('.history-timeline').innerHTML = content;
+        break;
+      case 'video':
+        htmlDoc.querySelector('.video-container').outerHTML = content;
+        break;
+      case 'footnotes':
+        htmlDoc.querySelector('.footnotes-container').outerHTML = content;
+        break;
+      case 'reactions':
+        htmlDoc.querySelector('.reaction-container').outerHTML = content;
+        break;
+      case 'comments':
+        htmlDoc.querySelector('.comments-container').outerHTML = content;
+        break;
+      case 'cards':
+        const cardsContainer = htmlDoc.querySelector('.page10-container');
+        const existingCards = cardsContainer.querySelectorAll('.bab-card');
+        existingCards.forEach(card => card.remove());
+        
+        const newCards = parser.parseFromString(content, 'text/html').body.children;
+        Array.from(newCards).forEach(card => {
+          cardsContainer.appendChild(card);
+        });
+        break;
+    }
+    
+    const updatedContent = htmlDoc.documentElement.outerHTML;
+    
+    // Save to Firestore
     await setDoc(docRef, {
-      content: content,
-      author: user.email,
+      content: updatedContent,
+      author: author,
+      changeDescription: changeDesc,
       lastUpdated: serverTimestamp()
     });
 
-    adminStatus.textContent = 'Changes saved successfully!';
+    adminStatus.textContent = 'Perubahan berhasil disimpan!';
     adminStatus.style.color = 'lightgreen';
+    adminStatus.style.backgroundColor = 'rgba(0,255,0,0.1)';
     loadMetadata(); // Refresh metadata after save
 
     setTimeout(() => {
       adminStatus.textContent = '';
-      adminFormContainer.style.display = 'none';
-      adminOverlay.style.display = 'none';
+      adminStatus.style.backgroundColor = 'transparent';
     }, 2000);
   } catch (error) {
     console.error("Error saving:", error);
-    adminStatus.textContent = 'Error saving: ' + error.message;
+    adminStatus.textContent = 'Error menyimpan: ' + error.message;
     adminStatus.style.color = 'red';
+    adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
   }
 });
-
-
 
 // Cancel handler
 document.getElementById('adminCancelBtn').addEventListener('click', () => {
   adminFormContainer.style.display = 'none';
   adminOverlay.style.display = 'none';
+  document.body.style.overflow = 'auto';
   adminStatus.textContent = '';
+  adminStatus.style.backgroundColor = 'transparent';
 });
 
 // Initial load of metadata
 loadMetadata();
-
-
-
-
-
-
-
 
 
 
