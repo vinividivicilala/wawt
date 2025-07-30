@@ -3649,10 +3649,7 @@ a.footnote-link:hover {
 
 
 
-
-
-
-<div id="page10" style="display: none;">
+<div id="page10">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
 
   <div class="title-section">
@@ -4839,427 +4836,7 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
-
-
-// Allowed admin email
-const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
-
-// DOM elements
-const toggleAdminBtn = document.getElementById('toggleAdminBtn');
-const adminFormContainer = document.getElementById('adminFormContainer');
-const adminOverlay = document.getElementById('adminOverlay');
-const adminAuth = document.getElementById('adminAuth');
-const adminControls = document.getElementById('adminControls');
-const adminEmail = document.getElementById('adminEmail');
-const adminContentEditor = document.getElementById('adminContentEditor');
-const adminStatus = document.getElementById('adminStatus');
-const dataAuthorElement = document.getElementById('dataAuthor');
-const lastUpdatedElement = document.getElementById('lastUpdated');
-const contentSectionSelect = document.getElementById('contentSection');
-const authorInput = document.getElementById('authorInput');
-const changeDescription = document.getElementById('changeDescription');
-
-// Toggle admin form
-toggleAdminBtn.addEventListener('click', function() {
-  adminFormContainer.style.display = adminFormContainer.style.display === 'none' ? 'block' : 'none';
-  adminOverlay.style.display = adminOverlay.style.display === 'none' ? 'block' : 'none';
-  document.body.style.overflow = adminFormContainer.style.display === 'block' ? 'hidden' : 'auto';
-});
-
-// Close form when clicking overlay
-adminOverlay.addEventListener('click', function() {
-  adminFormContainer.style.display = 'none';
-  adminOverlay.style.display = 'none';
-  document.body.style.overflow = 'auto';
-});
-
-// Tab switching
-document.querySelectorAll('.admin-tab').forEach(tab => {
-  tab.addEventListener('click', function() {
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    this.classList.add('active');
-    
-    document.querySelectorAll('.admin-tab-content').forEach(content => {
-      content.style.display = 'none';
-    });
-    
-    document.getElementById(`${this.dataset.tab}Tab`).style.display = 'block';
-  });
-});
-
-
-
-// Ganti auth check menjadi hanya memeriksa apakah user login, bukan email tertentu
-auth.onAuthStateChanged(user => {
-  const isAdmin = user; // Sekarang siapa saja yang login bisa edit
-  adminAuth.style.display = isAdmin ? 'none' : 'block';
-  adminControls.style.display = isAdmin ? 'block' : 'none';
-  adminEmail.textContent = isAdmin ? user.email : '';
-  if (isAdmin) {
-    authorInput.value = user.email;
-    loadSectionContent(contentSectionSelect.value);
-  }
-  loadMetadata();
-});
-
-
-
-
-
-
-
-
-
-
-
-
-// Login handler
-document.getElementById('adminLoginBtn').addEventListener('click', () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(handleLoginError);
-});
-
-function handleLoginError(error) {
-  adminStatus.textContent = 'Login gagal: ' + error.message;
-  adminStatus.style.color = 'red';
-  adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
-  setTimeout(() => { 
-    adminStatus.textContent = ''; 
-    adminStatus.style.backgroundColor = 'transparent'; 
-  }, 3000);
-}
-
-// Logout handler
-document.getElementById('adminLogoutBtn').addEventListener('click', () => {
-  auth.signOut();
-  closeAdminForm();
-});
-
-function closeAdminForm() {
-  adminFormContainer.style.display = 'none';
-  adminOverlay.style.display = 'none';
-  document.body.style.overflow = 'auto';
-}
-
-// Content section handler
-contentSectionSelect.addEventListener('change', function() {
-  loadSectionContent(this.value);
-});
-
-
-
-
-
-function loadSectionContent(section) {
-  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-
-  getDoc(docRef)
-    .then((docSnap) => {
-      if (docSnap.exists() && docSnap.data()[section]) {
-        // Gunakan data dari Firebase
-        adminContentEditor.value = docSnap.data()[section];
-        updatePageContent(section, docSnap.data()[section]);
-      } else {
-        // Fallback ke konten default dari HTML
-        const element = document.querySelector(getSelectorForSection(section));
-        if (element) {
-          const content = getTextContentForSection(element, section);
-          adminContentEditor.value = content;
-          updatePageContent(section, content);
-        }
-      }
-    })
-    .catch(error => {
-      console.error("Gagal memuat konten:", error);
-    });
-}
-
-
-
-
-
-
-
-
-
-
-
-function getSelectorForSection(section) {
-  const selectors = {
-    'title': '.title-section h1',
-    'timeline': '.history-timeline',
-    'video': '.video-container .video-description p',
-    'footnotes': '.footnotes-container',
-    'reactions': '.reaction-container h3',
-    'comments': '.comments-container h2',
-    'cards': '.bab-card .bab-desc-box'
-  };
-  return selectors[section] || '';
-}
-
-function getTextContentForSection(element, section) {
-  switch(section) {
-    case 'title':
-    case 'timeline':
-    case 'footnotes':
-    case 'reactions':
-    case 'comments':
-      return element.textContent || element.innerText;
-    case 'video':
-    case 'cards':
-      return element.textContent || element.innerText;
-    default:
-      return element ? element.textContent : '';
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Initial load
-document.addEventListener('DOMContentLoaded', function() {
-  // Set default section to title
-  contentSectionSelect.value = 'title';
-  loadSectionContent('title');
-  
-  // Load metadata
-  const author = document.getElementById('dataAuthor').textContent;
-  if (author && author !== '-') {
-    authorInput.value = author;
-  }
-});
-
-
-
-
-
-
-
-function loadPageContent() {
-  contentSectionSelect.value = 'title';
-  loadSectionContent('title');
-}
-
-function loadMetadata() {
-  const author = document.getElementById('dataAuthor').textContent;
-  if (author && author !== '-') {
-    authorInput.value = author;
-  }
-}
-
-
-
-
-document.getElementById('adminSaveBtn').addEventListener('click', async () => {
-  const user = auth.currentUser;
-  if (!user || user.email !== ADMIN_EMAIL) {
-    showStatus('Error: Akses tidak diizinkan', 'error');
-    return;
-  }
-
-  showStatus('Menyimpan perubahan...', 'loading');
-
-  try {
-    const section = contentSectionSelect.value;
-    const content = adminContentEditor.value;
-    const author = authorInput.value || user.email;
-
-    // Update di Firestore
-    await setDoc(doc(db, 'pageContent', CONTENT_DOC_ID), {
-      [section]: content,
-      author: author,
-      lastUpdated: serverTimestamp()
-    }, { merge: true });
-
-    // Update UI langsung
-    updatePageContent(section, content);
-    
-    // Update metadata
-    document.getElementById('dataAuthor').textContent = author;
-    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
-    
-    showStatus('Perubahan berhasil disimpan!', 'success');
-  } catch (error) {
-    console.error("Error:", error);
-    showStatus('Error: ' + error.message, 'error');
-  }
-});
-
-
-
-function updatePageContent(section, content) {
-  const selectors = {
-    'title': '.title-section h1',
-    'timeline': '.history-timeline',
-    'video': '.video-container .video-description p',
-    'footnotes': '.footnotes-container',
-    'reactions': '.reaction-container h3',
-    'comments': '.comments-container h2',
-    'cards': '.bab-card .bab-desc-box'
-  };
-
-  const elements = document.querySelectorAll(selectors[section]);
-  
-  if (elements.length > 0) {
-    elements.forEach(element => {
-      if (section === 'timeline') {
-        element.innerHTML = content;
-      } else {
-        element.textContent = content;
-      }
-    });
-  }
-}
-
-
-
-
-
-
-// Tambahkan di bagian inisialisasi
-function setupRealTimeListener() {
-  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-  
-  onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      
-      // Update metadata
-      if (data.author) {
-        document.getElementById('dataAuthor').textContent = data.author;
-        authorInput.value = data.author;
-      }
-      if (data.lastUpdated) {
-        document.getElementById('lastUpdated').textContent = new Date(data.lastUpdated.toDate()).toLocaleString();
-      }
-      
-      // Update konten yang sedang aktif di editor
-      const currentSection = contentSectionSelect.value;
-      if (data[currentSection]) {
-        adminContentEditor.value = data[currentSection];
-        updatePageContent(currentSection, data[currentSection]);
-      }
-    }
-  });
-}
-
-// Panggil saat auth state berubah
-auth.onAuthStateChanged(user => {
-  const isAdmin = user && user.email === ADMIN_EMAIL;
-  if (isAdmin) {
-    setupRealTimeListener();
-    loadSectionContent(contentSectionSelect.value);
-  }
-});
-
-
-
-
-
-
-function updateUIAfterSave(section, content) {
-  const selector = getSelectorForSection(section);
-  const elements = document.querySelectorAll(selector);
-  
-  if (elements.length > 0) {
-    elements.forEach(element => {
-      if (section === 'timeline') {
-        element.innerHTML = content;
-      } else {
-        element.textContent = content;
-      }
-    });
-  }
-
-  // Update metadata
-  document.getElementById('dataAuthor').textContent = authorInput.value;
-  document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
-}
-
-
-
-function loadInitialData() {
-  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-  getDoc(docRef)
-    .then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        if (data.author) {
-          document.getElementById('dataAuthor').textContent = data.author;
-          authorInput.value = data.author;
-        }
-        if (data.lastUpdated) {
-          document.getElementById('lastUpdated').textContent = new Date(data.lastUpdated.toDate()).toLocaleString();
-        }
-      }
-    })
-    .catch(error => {
-      console.error("Error loading initial data:", error);
-    });
-}
-
-// Panggil saat halaman dimuat
-document.addEventListener('DOMContentLoaded', loadInitialData);
-auth.onAuthStateChanged(user => {
-  const isAdmin = user && user.email === ADMIN_EMAIL;
-  if (isAdmin) {
-    loadInitialData();
-    loadSectionContent(contentSectionSelect.value);
-	 loadContentForAll(); 
-	  loadMetadata();
-  }
-});
-
-
-
-
-
-
-function showStatus(message, type) {
-  adminStatus.textContent = message;
-  const styles = {
-    error: { color: 'red', bg: 'rgba(255,0,0,0.1)' },
-    success: { color: 'lightgreen', bg: 'rgba(0,255,0,0.1)' },
-    loading: { color: 'white', bg: 'rgba(0,0,0,0.3)' }
-  };
-  
-  adminStatus.style.color = styles[type]?.color || 'white';
-  adminStatus.style.backgroundColor = styles[type]?.bg || 'transparent';
-  
-  if (type === 'success') {
-    setTimeout(() => { 
-      adminStatus.textContent = '';
-      adminStatus.style.backgroundColor = 'transparent';
-    }, 2000);
-  }
-}
-
-// Cancel handler
-document.getElementById('adminCancelBtn').addEventListener('click', closeAdminForm);
-
-// Initial load
-loadMetadata();
-
-
-// Load data untuk semua pengguna (tanpa perlu login)
+// Main function to load content for all users
 function loadContentForAll() {
   const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
   
@@ -5267,8 +4844,30 @@ function loadContentForAll() {
     if (docSnap.exists()) {
       const data = docSnap.data();
       
-      // Update konten di halaman
-      updateAllPageContent(data);
+      // Update all content sections
+      if (data.title) {
+        document.querySelector('.title-section h1').textContent = data.title;
+      }
+      if (data.timeline) {
+        document.querySelector('.history-timeline').innerHTML = data.timeline;
+      }
+      if (data.video) {
+        document.querySelector('.video-container .video-description p').textContent = data.video;
+      }
+      if (data.footnotes) {
+        document.querySelector('.footnotes-container').innerHTML = data.footnotes;
+      }
+      if (data.reactions) {
+        document.querySelector('.reaction-container h3').textContent = data.reactions;
+      }
+      if (data.comments) {
+        document.querySelector('.comments-container h2').textContent = data.comments;
+      }
+      if (data.cards) {
+        document.querySelectorAll('.bab-card .bab-desc-box').forEach((card, index) => {
+          card.textContent = data.cards[index] || '';
+        });
+      }
       
       // Update metadata
       if (data.author) {
@@ -5282,19 +4881,125 @@ function loadContentForAll() {
   });
 }
 
+// Admin functions
+function setupAdminFeatures() {
+  // Load section content into editor
+  function loadSectionContent(section) {
+    const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
+
+    getDoc(docRef).then((docSnap) => {
+      if (docSnap.exists() && docSnap.data()[section]) {
+        adminContentEditor.value = docSnap.data()[section];
+      } else {
+        // Fallback to default content
+        const element = document.querySelector(getSelectorForSection(section));
+        if (element) {
+          adminContentEditor.value = getTextContentForSection(element, section);
+        }
+      }
+    });
+  }
+
+  // Save handler
+  document.getElementById('adminSaveBtn').addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      showStatus('Error: Please login first', 'error');
+      return;
+    }
+
+    showStatus('Saving changes...', 'loading');
+
+    try {
+      const section = contentSectionSelect.value;
+      const content = adminContentEditor.value;
+      const author = authorInput.value || user.email;
+
+      await setDoc(doc(db, 'pageContent', CONTENT_DOC_ID), {
+        [section]: content,
+        author: author,
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+
+      showStatus('Changes saved successfully!', 'success');
+    } catch (error) {
+      console.error("Error:", error);
+      showStatus('Error: ' + error.message, 'error');
+    }
+  });
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  // Load content for all users
+  loadContentForAll();
+  
+  // Setup admin features if logged in
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      setupAdminFeatures();
+      loadSectionContent(contentSectionSelect.value);
+    }
+  });
+});
+
+
+
+// Update all page content when changes occur
 function updateAllPageContent(data) {
-  // Update semua bagian konten
   if (data.title) {
     document.querySelector('.title-section h1').textContent = data.title;
   }
   if (data.timeline) {
     document.querySelector('.history-timeline').innerHTML = data.timeline;
   }
-  // Tambahkan bagian lainnya sesuai kebutuhan
+  if (data.video) {
+    document.querySelector('.video-container .video-description p').textContent = data.video;
+  }
+  if (data.footnotes) {
+    document.querySelector('.footnotes-container').innerHTML = data.footnotes;
+  }
+  if (data.reactions) {
+    document.querySelector('.reaction-container h3').textContent = data.reactions;
+  }
+  if (data.comments) {
+    document.querySelector('.comments-container h2').textContent = data.comments;
+  }
+  if (data.cards) {
+    const cards = document.querySelectorAll('.bab-card .bab-desc-box');
+    data.cards.forEach((content, index) => {
+      if (cards[index]) {
+        cards[index].textContent = content;
+      }
+    });
+  }
 }
 
 
 
+// Call this when the page loads
+function initializePage() {
+  // Load content for all visitors
+  loadContentForAll();
+  
+  // Set up admin features if logged in
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      adminAuth.style.display = 'none';
+      adminControls.style.display = 'block';
+      adminEmail.textContent = user.email;
+      authorInput.value = user.email;
+      
+      setupAdminFeatures();
+      loadSectionContent(contentSectionSelect.value);
+    } else {
+      adminAuth.style.display = 'block';
+      adminControls.style.display = 'none';
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initializePage);
 
 
 
