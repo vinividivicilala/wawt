@@ -3704,6 +3704,22 @@ a.footnote-link:hover {
 </div>
 
 
+<!-- Tambahkan ini di bagian bawah sebelum div.bottom-line -->
+<div class="metadata-container linebox" style="margin-top: 20px; padding: 15px; background-color: rgba(255,255,255,0.1); border-radius: 10px;">
+  <div style="display: flex; justify-content: space-between; color: rgba(255,255,255,0.8); font-size: 14px;">
+    <div>
+      <span style="font-weight: bold;">Penulis Data:</span> 
+      <span id="dataAuthor">Tim Konten Arduino</span>
+    </div>
+    <div>
+      <span style="font-weight: bold;">Terakhir Diupdate:</span> 
+      <span id="lastUpdated"></span>
+    </div>
+  </div>
+</div>
+
+
+
 
 
 
@@ -4456,6 +4472,25 @@ onAuthStateChanged(auth, (user) => {
 
 
 
+
+  // Menambahkan script untuk menampilkan tanggal update otomatis
+  document.addEventListener('DOMContentLoaded', function() {
+    // Format tanggal
+    const options = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    // Set tanggal update ke waktu sekarang
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = now.toLocaleDateString('id-ID', options);
+    
+    // Anda juga bisa mengubah penulis secara dinamis jika perlu
+    // document.getElementById('dataAuthor').textContent = 'Nama Penulis Baru';
+  });
 
 
 
