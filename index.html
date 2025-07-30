@@ -4667,160 +4667,83 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
-
-// Admin Content Editor Functionality
-document.addEventListener('DOMContentLoaded', function() {
-  const ADMIN_EMAIL = 'faridardiansyah061@gmail.com';
-  const adminFormContainer = document.getElementById('adminFormContainer');
-  const adminAuth = document.getElementById('adminAuth');
-  const adminControls = document.getElementById('adminControls');
-  const toggleAdminBtn = document.getElementById('toggleAdminBtn');
-  const adminLoginBtn = document.getElementById('adminLoginBtn');
-  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
-  const adminSaveBtn = document.getElementById('adminSaveBtn');
-  const adminCancelBtn = document.getElementById('adminCancelBtn');
-  const adminContentEditor = document.getElementById('adminContentEditor');
-  const adminStatus = document.getElementById('adminStatus');
-  const adminEmailDisplay = document.getElementById('adminEmail');
-  
-  let isAdmin = false;
-  
-  // Toggle admin form visibility
-  toggleAdminBtn.addEventListener('click', function() {
-    adminFormContainer.style.display = adminFormContainer.style.display === 'none' ? 'block' : 'none';
-  });
-  
-  // Initialize Firebase Auth
-  function initAuth() {
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (user) {
-        // User is signed in
-        if (user.email === ADMIN_EMAIL) {
-          isAdmin = true;
-          adminAuth.style.display = 'none';
-          adminControls.style.display = 'block';
-          adminEmailDisplay.textContent = user.email;
-          loadContentForEditing();
-        } else {
-          // Not the admin user
-          isAdmin = false;
-          adminAuth.style.display = 'block';
-          adminControls.style.display = 'none';
-          adminStatus.textContent = 'Error: Only faridardiansyah061@gmail.com can edit content';
-          adminStatus.style.color = '#ff4444';
-          firebase.auth().signOut();
-        }
-      } else {
-        // User is signed out
-        isAdmin = false;
-        adminAuth.style.display = 'block';
-        adminControls.style.display = 'none';
-        adminStatus.textContent = '';
+// Load content from Firestore dengan error handling
+function loadPageContent() {
+  db.collection("pageContent").doc("page10").get()
+    .then(doc => {
+      if (doc.exists) {
+        document.getElementById('adminContentEditor').value = doc.data().content;
+      }
+    })
+    .catch(error => {
+      console.error("Error loading content:", error);
+      if (error.code === 'permission-denied') {
+        document.getElementById('adminStatus').textContent = 'Error: You dont have permission to access this content';
+        document.getElementById('adminStatus').style.color = 'red';
       }
     });
-  }
+}
+
+// Save handler dengan error handling
+document.getElementById('adminSaveBtn').addEventListener('click', () => {
+  const content = document.getElementById('adminContentEditor').value;
+  const statusElement = document.getElementById('adminStatus');
   
-  // Google Sign-In
-  adminLoginBtn.addEventListener('click', function() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider)
-      .catch(function(error) {
-        console.error('Sign in error:', error);
-        adminStatus.textContent = 'Error signing in: ' + error.message;
-        adminStatus.style.color = '#ff4444';
-      });
+  db.collection("pageContent").doc("page10").set({
+    content: content,
+    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(() => {
+    statusElement.textContent = 'Changes saved successfully!';
+    statusElement.style.color = 'lightgreen';
+    setTimeout(() => {
+      statusElement.textContent = '';
+      adminFormContainer.style.display = 'none';
+    }, 2000);
+  })
+  .catch(error => {
+    console.error("Error saving:", error);
+    if (error.code === 'permission-denied') {
+      statusElement.textContent = 'Error: You dont have permission to save changes';
+    } else {
+      statusElement.textContent = 'Error saving: ' + error.message;
+    }
+    statusElement.style.color = 'red';
   });
-  
-  // Logout
-  adminLogoutBtn.addEventListener('click', function() {
-    firebase.auth().signOut();
-  });
-  
-  // Cancel editing
-  adminCancelBtn.addEventListener('click', function() {
-    adminFormContainer.style.display = 'none';
-    adminStatus.textContent = '';
-  });
-  
-  // Save changes
-  adminSaveBtn.addEventListener('click', function() {
-    if (!isAdmin) return;
-    
-    const newContent = adminContentEditor.value;
-    
-    // Save to Firebase
-    db.collection("pageContent").doc("page10")
-      .set({
-        content: newContent,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: firebase.auth().currentUser.email
-      })
-      .then(function() {
-        adminStatus.textContent = 'Content saved successfully! Page will refresh...';
-        adminStatus.style.color = '#00C851';
-        
-        // Update metadata
-        updateTimestamp();
-        
-        // Refresh after 2 seconds
-        setTimeout(function() {
-          location.reload();
-        }, 2000);
-      })
-      .catch(function(error) {
-        console.error('Error saving content:', error);
-        adminStatus.textContent = 'Error saving content: ' + error.message;
-        adminStatus.style.color = '#ff4444';
-      });
-  });
-  
-  // Load content for editing
-  function loadContentForEditing() {
-    db.collection("pageContent").doc("page10")
-      .get()
-      .then(function(doc) {
-        if (doc.exists) {
-          adminContentEditor.value = doc.data().content;
-        } else {
-          // If no content exists yet, use the current HTML
-          adminContentEditor.value = document.getElementById('page10').innerHTML;
-        }
-      })
-      .catch(function(error) {
-        console.error('Error loading content:', error);
-        adminStatus.textContent = 'Error loading content: ' + error.message;
-        adminStatus.style.color = '#ff4444';
-      });
-  }
-  
-  // Initialize
-  initAuth();
 });
 
 
-function loadPageContent() {
-  const docRef = doc(db, "pageContent", "page10");
 
-  onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      document.getElementById('page10').innerHTML = data.content;
-
-      // Update metadata display
-      if (data.lastUpdated) {
-        document.getElementById('lastUpdated').textContent = formatDate(data.lastUpdated);
-      }
-      if (data.updatedBy) {
-        document.getElementById('dataAuthor').textContent = data.updatedBy;
-      }
+auth.onAuthStateChanged(user => {
+  const adminAuth = document.getElementById('adminAuth');
+  const adminControls = document.getElementById('adminControls');
+  const adminEmail = document.getElementById('adminEmail');
+  
+  try {
+    if (user && user.email === "faridardiansyah061@gmail.com") {
+      adminAuth.style.display = 'none';
+      adminControls.style.display = 'block';
+      adminEmail.textContent = user.email;
+      loadPageContent();
+    } else {
+      adminAuth.style.display = 'block';
+      adminControls.style.display = 'none';
+      adminEmail.textContent = '';
     }
-  });
-}
+  } catch (error) {
+    console.error("Auth state error:", error);
+  }
+});
 
 
-// Call this when the page loads
-loadPageContent();
+
+
+
+
+
+
+
+
 
 
 
