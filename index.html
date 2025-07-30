@@ -4691,19 +4691,19 @@ document.getElementById('adminLogoutBtn').addEventListener('click', () => {
   adminOverlay.style.display = 'none';
 });
 
-// Load page content from Firestore
 function loadPageContent() {
-  db.collection("pageContent").doc("page10").get()
-    .then(doc => {
-      if (doc.exists) {
-        adminContentEditor.value = doc.data().content;
+  const docRef = doc(db, "pageContent", "page10");
+
+  getDoc(docRef)
+    .then((docSnap) => {
+      if (docSnap.exists()) {
+        adminContentEditor.value = docSnap.data().content;
       }
     })
-    .catch(error => {
+    .catch((error) => {
       console.error("Error loading content:", error);
     });
 }
-
 
 function loadMetadata() {
   const docRef = doc(db, "pageContent", "page10");
