@@ -4788,16 +4788,14 @@ contentSectionSelect.addEventListener('change', function() {
 
 
 
-
 function loadSectionContent(section) {
-  // Ambil dari database terlebih dahulu
-  db.collection('pageContent').doc(CONTENT_DOC_ID).get()
-    .then(doc => {
-      if (doc.exists && doc.data()[section]) {
-        // Jika ada di database, gunakan yang dari database
-        adminContentEditor.value = doc.data()[section];
+  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
+
+  getDoc(docRef)
+    .then((docSnap) => {
+      if (docSnap.exists() && docSnap.data()[section]) {
+        adminContentEditor.value = docSnap.data()[section];
       } else {
-        // Jika tidak ada, ambil dari HTML
         const element = document.querySelector(getSelectorForSection(section));
         if (element) {
           adminContentEditor.value = getTextContentForSection(element, section);
@@ -4811,6 +4809,12 @@ function loadSectionContent(section) {
       adminContentEditor.value = '';
     });
 }
+
+
+
+
+
+
 
 function getSelectorForSection(section) {
   const selectors = {
