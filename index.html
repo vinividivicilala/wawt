@@ -4842,8 +4842,12 @@ onAuthStateChanged(auth, (user) => {
 
 
 
+
+
+
 // Allowed admin email
 const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
+
 
 // DOM elements
 const toggleAdminBtn = document.getElementById('toggleAdminBtn');
@@ -4896,15 +4900,10 @@ auth.onAuthStateChanged(user => {
   adminEmail.textContent = isAdmin ? user.email : '';
   if (isAdmin) {
     authorInput.value = user.email;
-	  loadSectionContent(contentSectionSelect.value);
     loadPageContent();
   }
   loadMetadata();
 });
-
-
-
-
 
 // Login handler
 document.getElementById('adminLoginBtn').addEventListener('click', () => {
@@ -4939,126 +4938,84 @@ contentSectionSelect.addEventListener('change', function() {
   loadSectionContent(this.value);
 });
 
+async function loadSectionContent(section) {
+  try {
+    // Try to load from Firebase first
+    const snapshot = await database.ref(`page10Content/${section}`).once('value');
+    const savedContent = snapshot.val();
+    
+    if (savedContent) {
+      adminContentEditor.value = savedContent;
+      return;
+    }
+    
+    // Fallback to default content if not in Firebase
+    const pageContent = document.getElementById('page10').outerHTML;
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(pageContent, 'text/html');
 
+    let sectionContent = '';
+    
+    const elements = {
+      'title': '.title-section h1',
+      'timeline': '.history-timeline',
+      'video': '.video-container',
+      'footnotes': '.footnotes-container',
+      'reactions': '.reaction-container',
+      'comments': '.comments-container',
+      'cards': '.bab-card'
+    };
 
+    const element = htmlDoc.querySelector(elements[section]);
+    
+    if (section === 'cards') {
+      const cards = htmlDoc.querySelectorAll(elements[section]);
+      sectionContent = cards.length > 0 ? 
+        Array.from(cards).map(card => card.outerHTML).join('\n') : 
+        '<!-- Cards will go here -->';
+    } else if (section === 'timeline') {
+      sectionContent = element ? element.innerHTML : '<!-- Timeline content will go here -->';
+    } else {
+      sectionContent = element ? element.outerHTML : `<!-- ${section} content will go here -->`;
+    }
 
-
-function loadSectionContent(section) {
-  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-
-  getDoc(docRef)
-    .then((docSnap) => {
-      if (docSnap.exists() && docSnap.data()[section]) {
-        // Gunakan data dari Firebase
-        adminContentEditor.value = docSnap.data()[section];
-        updatePageContent(section, docSnap.data()[section]);
-      } else {
-        // Fallback ke konten default dari HTML
-        const element = document.querySelector(getSelectorForSection(section));
-        if (element) {
-          const content = getTextContentForSection(element, section);
-          adminContentEditor.value = content;
-          updatePageContent(section, content);
-        }
-      }
-    })
-    .catch(error => {
-      console.error("Gagal memuat konten:", error);
-    });
-}
-
-
-
-
-
-
-
-
-
-
-
-function getSelectorForSection(section) {
-  const selectors = {
-    'title': '.title-section h1',
-    'timeline': '.history-timeline',
-    'video': '.video-container .video-description p',
-    'footnotes': '.footnotes-container',
-    'reactions': '.reaction-container h3',
-    'comments': '.comments-container h2',
-    'cards': '.bab-card .bab-desc-box'
-  };
-  return selectors[section] || '';
-}
-
-function getTextContentForSection(element, section) {
-  switch(section) {
-    case 'title':
-    case 'timeline':
-    case 'footnotes':
-    case 'reactions':
-    case 'comments':
-      return element.textContent || element.innerText;
-    case 'video':
-    case 'cards':
-      return element.textContent || element.innerText;
-    default:
-      return element ? element.textContent : '';
+    adminContentEditor.value = sectionContent;
+  } catch (error) {
+    console.error("Error loading section content:", error);
+    adminContentEditor.value = `Error loading content: ${error.message}`;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Initial load
-document.addEventListener('DOMContentLoaded', function() {
-  // Set default section to title
-  contentSectionSelect.value = 'title';
-  loadSectionContent('title');
-  
-  // Load metadata
-  const author = document.getElementById('dataAuthor').textContent;
-  if (author && author !== '-') {
-    authorInput.value = author;
-  }
-});
-
-
-
-
-
-
 
 function loadPageContent() {
   contentSectionSelect.value = 'title';
   loadSectionContent('title');
 }
 
-function loadMetadata() {
-  const author = document.getElementById('dataAuthor').textContent;
-  if (author && author !== '-') {
-    authorInput.value = author;
+async function loadMetadata() {
+  try {
+    const snapshot = await database.ref('page10Metadata').once('value');
+    const metadata = snapshot.val();
+    
+    if (metadata) {
+      const lastUpdated = new Date(metadata.lastUpdated);
+      const formattedDate = lastUpdated.toLocaleString('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      document.getElementById('dataAuthor').textContent = metadata.author;
+      document.getElementById('lastUpdated').textContent = formattedDate;
+      authorInput.value = metadata.author;
+    }
+  } catch (error) {
+    console.error("Error loading metadata:", error);
   }
 }
 
-
-
-
+// Save handler
 document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   const user = auth.currentUser;
   if (!user || user.email !== ADMIN_EMAIL) {
@@ -5071,157 +5028,86 @@ document.getElementById('adminSaveBtn').addEventListener('click', async () => {
   try {
     const section = contentSectionSelect.value;
     const content = adminContentEditor.value;
-    const author = authorInput.value || user.email;
-
-    // Update di Firestore
-    await setDoc(doc(db, 'pageContent', CONTENT_DOC_ID), {
-      [section]: content,
-      author: author,
-      lastUpdated: serverTimestamp()
-    }, { merge: true });
-
-    // Update UI langsung
-    updatePageContent(section, content);
+    const changeDesc = changeDescription.value;
+    
+    // Save content to Firebase
+    await database.ref(`page10Content/${section}`).set(content);
     
     // Update metadata
-    document.getElementById('dataAuthor').textContent = author;
-    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    const now = new Date();
+    await database.ref('page10Metadata').set({
+      author: user.email,
+      lastUpdated: now.toISOString(),
+      lastChangeDescription: changeDesc
+    });
+    
+    // Update local UI
+    updateLocalContent(section, content);
+    
+    // Update metadata display
+    const formattedDate = now.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    document.getElementById('dataAuthor').textContent = user.email;
+    document.getElementById('lastUpdated').textContent = formattedDate;
     
     showStatus('Perubahan berhasil disimpan!', 'success');
+    changeDescription.value = '';
   } catch (error) {
     console.error("Error:", error);
     showStatus('Error: ' + error.message, 'error');
   }
 });
 
+function updateLocalContent(section, content) {
+  const pageContent = document.getElementById('page10');
+  const currentHtml = pageContent.outerHTML;
+  const parser = new DOMParser();
+  const htmlDoc = parser.parseFromString(currentHtml, 'text/html');
 
-
-function updatePageContent(section, content) {
-  const selectors = {
-    'title': '.title-section h1',
-    'timeline': '.history-timeline',
-    'video': '.video-container .video-description p',
-    'footnotes': '.footnotes-container',
-    'reactions': '.reaction-container h3',
-    'comments': '.comments-container h2',
-    'cards': '.bab-card .bab-desc-box'
+  const updateContent = (selector, newContent, isInner = false) => {
+    const element = htmlDoc.querySelector(selector);
+    if (!element) {
+      if (selector === '.title-section h1') {
+        const titleSection = htmlDoc.querySelector('.title-section') || htmlDoc.createElement('div');
+        titleSection.className = 'title-section';
+        const h1 = htmlDoc.createElement('h1');
+        h1.innerHTML = newContent;
+        titleSection.appendChild(h1);
+        htmlDoc.body.appendChild(titleSection);
+        return;
+      }
+      throw new Error(`Element ${selector} tidak ditemukan`);
+    }
+    isInner ? element.innerHTML = newContent : element.outerHTML = newContent;
   };
 
-  const elements = document.querySelectorAll(selectors[section]);
-  
-  if (elements.length > 0) {
-    elements.forEach(element => {
-      if (section === 'timeline') {
-        element.innerHTML = content;
-      } else {
-        element.textContent = content;
-      }
-    });
-  }
-}
-
-
-
-
-
-
-// Tambahkan di bagian inisialisasi
-function setupRealTimeListener() {
-  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-  
-  onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      
-      // Update metadata
-      if (data.author) {
-        document.getElementById('dataAuthor').textContent = data.author;
-        authorInput.value = data.author;
-      }
-      if (data.lastUpdated) {
-        document.getElementById('lastUpdated').textContent = new Date(data.lastUpdated.toDate()).toLocaleString();
-      }
-      
-      // Update konten yang sedang aktif di editor
-      const currentSection = contentSectionSelect.value;
-      if (data[currentSection]) {
-        adminContentEditor.value = data[currentSection];
-        updatePageContent(currentSection, data[currentSection]);
-      }
-    }
-  });
-}
-
-// Panggil saat auth state berubah
-auth.onAuthStateChanged(user => {
-  const isAdmin = user && user.email === ADMIN_EMAIL;
-  if (isAdmin) {
-    setupRealTimeListener();
-    loadSectionContent(contentSectionSelect.value);
-  }
-});
-
-
-
-
-
-
-function updateUIAfterSave(section, content) {
-  const selector = getSelectorForSection(section);
-  const elements = document.querySelectorAll(selector);
-  
-  if (elements.length > 0) {
-    elements.forEach(element => {
-      if (section === 'timeline') {
-        element.innerHTML = content;
-      } else {
-        element.textContent = content;
-      }
-    });
+  switch(section) {
+    case 'title': updateContent('.title-section h1', content); break;
+    case 'timeline': updateContent('.history-timeline', content, true); break;
+    case 'video': updateContent('.video-container', content); break;
+    case 'footnotes': updateContent('.footnotes-container', content); break;
+    case 'reactions': updateContent('.reaction-container', content); break;
+    case 'comments': updateContent('.comments-container', content); break;
+    case 'cards': 
+      const container = htmlDoc.querySelector('.page10-container');
+      if (!container) throw new Error('Container tidak ditemukan');
+      container.querySelectorAll('.bab-card').forEach(card => card.remove());
+      const newCardsDoc = parser.parseFromString(content, 'text/html');
+      Array.from(newCardsDoc.body.children)
+        .filter(card => card.classList.contains('bab-card'))
+        .forEach(card => container.appendChild(card));
+      break;
+    default: throw new Error('Bagian tidak valid');
   }
 
-  // Update metadata
-  document.getElementById('dataAuthor').textContent = authorInput.value;
-  document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+  pageContent.outerHTML = htmlDoc.documentElement.outerHTML;
 }
-
-
-
-function loadInitialData() {
-  const docRef = doc(db, 'pageContent', CONTENT_DOC_ID);
-  getDoc(docRef)
-    .then((docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        if (data.author) {
-          document.getElementById('dataAuthor').textContent = data.author;
-          authorInput.value = data.author;
-        }
-        if (data.lastUpdated) {
-          document.getElementById('lastUpdated').textContent = new Date(data.lastUpdated.toDate()).toLocaleString();
-        }
-      }
-    })
-    .catch(error => {
-      console.error("Error loading initial data:", error);
-    });
-}
-
-// Panggil saat halaman dimuat
-document.addEventListener('DOMContentLoaded', loadInitialData);
-auth.onAuthStateChanged(user => {
-  const isAdmin = user && user.email === ADMIN_EMAIL;
-  if (isAdmin) {
-    loadInitialData();
-    loadSectionContent(contentSectionSelect.value);
-  }
-});
-
-
-
-
-
 
 function showStatus(message, type) {
   adminStatus.textContent = message;
@@ -5246,21 +5132,53 @@ function showStatus(message, type) {
 document.getElementById('adminCancelBtn').addEventListener('click', closeAdminForm);
 
 // Initial load
-loadMetadata();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load all content from Firebase
+  try {
+    const contentSnapshot = await database.ref('page10Content').once('value');
+    const contentData = contentSnapshot.val() || {};
+    
+    // Apply content to the page
+    if (contentData.title) {
+      document.querySelector('.title-section h1').innerHTML = contentData.title;
+    }
+    if (contentData.timeline) {
+      document.querySelector('.history-timeline').innerHTML = contentData.timeline;
+    }
+    if (contentData.video) {
+      const videoContainer = document.querySelector('.video-container');
+      if (videoContainer) videoContainer.outerHTML = contentData.video;
+    }
+    if (contentData.footnotes) {
+      const footnotesContainer = document.querySelector('.footnotes-container');
+      if (footnotesContainer) footnotesContainer.outerHTML = contentData.footnotes;
+    }
+    if (contentData.reactions) {
+      const reactionContainer = document.querySelector('.reaction-container');
+      if (reactionContainer) reactionContainer.outerHTML = contentData.reactions;
+    }
+    if (contentData.comments) {
+      const commentsContainer = document.querySelector('.comments-container');
+      if (commentsContainer) commentsContainer.outerHTML = contentData.comments;
+    }
+    if (contentData.cards) {
+      const container = document.querySelector('.page10-container');
+      if (container) {
+        container.querySelectorAll('.bab-card').forEach(card => card.remove());
+        const parser = new DOMParser();
+        const newCardsDoc = parser.parseFromString(contentData.cards, 'text/html');
+        Array.from(newCardsDoc.body.children)
+          .filter(card => card.classList.contains('bab-card'))
+          .forEach(card => container.appendChild(card));
+      }
+    }
+  } catch (error) {
+    console.error("Error loading initial content:", error);
+  }
+  
+  // Load metadata
+  loadMetadata();
+});
 
 
 
