@@ -4154,7 +4154,364 @@ a.footnote-link:hover {
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     const db = getFirestore(app);
-	const CONTENT_DOC_ID = 'page10_content';
+	  const CONTENT_DOC_ID = 'page10_content';
+    const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
+
+
+
+    // DOM Elements
+    const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+    const adminFormContainer = document.getElementById('adminFormContainer');
+    const adminOverlay = document.getElementById('adminOverlay');
+    const adminAuth = document.getElementById('adminAuth');
+    const adminControls = document.getElementById('adminControls');
+    const adminEmail = document.getElementById('adminEmail');
+    const adminContentEditor = document.getElementById('adminContentEditor');
+    const adminStatus = document.getElementById('adminStatus');
+    const dataAuthorElement = document.getElementById('dataAuthor');
+    const lastUpdatedElement = document.getElementById('lastUpdated');
+    const contentSectionSelect = document.getElementById('contentSection');
+    const authorInput = document.getElementById('authorInput');
+    const changeDescription = document.getElementById('changeDescription');
+
+    // Toggle admin form
+    toggleAdminBtn.addEventListener('click', function() {
+        adminFormContainer.style.display = adminFormContainer.style.display === 'none' ? 'block' : 'none';
+        adminOverlay.style.display = adminOverlay.style.display === 'none' ? 'block' : 'none';
+        document.body.style.overflow = adminFormContainer.style.display === 'block' ? 'hidden' : 'auto';
+    });
+
+    // Close form when clicking overlay
+    adminOverlay.addEventListener('click', function() {
+        adminFormContainer.style.display = 'none';
+        adminOverlay.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    // Auth state handler
+    onAuthStateChanged(auth, (user) => {
+        const isAdmin = user && user.email === ADMIN_EMAIL;
+        adminAuth.style.display = isAdmin ? 'none' : 'block';
+        adminControls.style.display = isAdmin ? 'block' : 'none';
+        adminEmail.textContent = isAdmin ? user.email : '';
+        if (isAdmin) {
+            authorInput.value = user.email;
+            loadPageContent();
+        }
+        loadMetadata();
+    });
+
+    // Login handler
+    document.getElementById('adminLoginBtn').addEventListener('click', () => {
+        signInWithPopup(auth, provider).catch(handleLoginError);
+    });
+
+    function handleLoginError(error) {
+        adminStatus.textContent = 'Login gagal: ' + error.message;
+        adminStatus.style.color = 'red';
+        adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
+        setTimeout(() => { 
+            adminStatus.textContent = ''; 
+            adminStatus.style.backgroundColor = 'transparent'; 
+        }, 3000);
+    }
+
+    // Logout handler
+    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+        signOut(auth);
+        closeAdminForm();
+    });
+
+    function closeAdminForm() {
+        adminFormContainer.style.display = 'none';
+        adminOverlay.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Content section handler
+    contentSectionSelect.addEventListener('change', function() {
+        loadSectionContent(this.value);
+    });
+
+    async function loadSectionContent(section) {
+        try {
+            const docRef = doc(db, "pageContent", CONTENT_DOC_ID);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists() && docSnap.data()[section]) {
+                adminContentEditor.value = docSnap.data()[section];
+                return;
+            }
+            
+            // Fallback to default content
+            const pageContent = document.getElementById('page10').outerHTML;
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(pageContent, 'text/html');
+
+            let sectionContent = '';
+            const elements = {
+                'title': '.title-section h1',
+                'timeline': '.history-timeline',
+                'video': '.video-container',
+                'footnotes': '.footnotes-container',
+                'reactions': '.reaction-container',
+                'comments': '.comments-container',
+                'cards': '.bab-card'
+            };
+
+            const element = htmlDoc.querySelector(elements[section]);
+            
+            if (section === 'cards') {
+                const cards = htmlDoc.querySelectorAll(elements[section]);
+                sectionContent = cards.length > 0 ? 
+                    Array.from(cards).map(card => card.outerHTML).join('\n') : 
+                    '<!-- Cards will go here -->';
+            } else if (section === 'timeline') {
+                sectionContent = element ? element.innerHTML : '<!-- Timeline content will go here -->';
+            } else {
+                sectionContent = element ? element.outerHTML : `<!-- ${section} content will go here -->`;
+            }
+
+            adminContentEditor.value = sectionContent;
+        } catch (error) {
+            console.error("Error loading section content:", error);
+            adminContentEditor.value = `Error loading content: ${error.message}`;
+        }
+    }
+
+    async function loadPageContent() {
+        contentSectionSelect.value = 'title';
+        await loadSectionContent('title');
+    }
+
+    async function loadMetadata() {
+        try {
+            const docRef = doc(db, "pageMetadata", CONTENT_DOC_ID);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const metadata = docSnap.data();
+                const lastUpdated = metadata.lastUpdated?.toDate();
+                const formattedDate = lastUpdated.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                document.getElementById('dataAuthor').textContent = metadata.author;
+                document.getElementById('lastUpdated').textContent = formattedDate;
+                authorInput.value = metadata.author;
+            }
+        } catch (error) {
+            console.error("Error loading metadata:", error);
+        }
+    }
+
+    // Save handler
+    document.getElementById('adminSaveBtn').addEventListener('click', async () => {
+        const user = auth.currentUser;
+        if (!user || user.email !== ADMIN_EMAIL) {
+            showStatus('Error: Akses tidak diizinkan', 'error');
+            return;
+        }
+
+        showStatus('Menyimpan perubahan...', 'loading');
+
+        try {
+            const section = contentSectionSelect.value;
+            const content = adminContentEditor.value;
+            const changeDesc = changeDescription.value;
+            
+            // Save content to Firestore
+            const contentRef = doc(db, "pageContent", CONTENT_DOC_ID);
+            await setDoc(contentRef, {
+                [section]: content
+            }, { merge: true });
+            
+            // Update metadata
+            const metadataRef = doc(db, "pageMetadata", CONTENT_DOC_ID);
+            await setDoc(metadataRef, {
+                author: user.email,
+                lastUpdated: new Date(),
+                lastChangeDescription: changeDesc
+            }, { merge: true });
+            
+            // Update local UI
+            updateLocalContent(section, content);
+            
+            // Update metadata display
+            const formattedDate = new Date().toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            document.getElementById('dataAuthor').textContent = user.email;
+            document.getElementById('lastUpdated').textContent = formattedDate;
+            
+            showStatus('Perubahan berhasil disimpan!', 'success');
+            changeDescription.value = '';
+        } catch (error) {
+            console.error("Error:", error);
+            showStatus('Error: ' + error.message, 'error');
+        }
+    });
+
+    function updateLocalContent(section, content) {
+        const pageContent = document.getElementById('page10');
+        const currentHtml = pageContent.outerHTML;
+        const parser = new DOMParser();
+        const htmlDoc = parser.parseFromString(currentHtml, 'text/html');
+
+        const updateContent = (selector, newContent, isInner = false) => {
+            const element = htmlDoc.querySelector(selector);
+            if (!element) {
+                if (selector === '.title-section h1') {
+                    const titleSection = htmlDoc.querySelector('.title-section') || htmlDoc.createElement('div');
+                    titleSection.className = 'title-section';
+                    const h1 = htmlDoc.createElement('h1');
+                    h1.innerHTML = newContent;
+                    titleSection.appendChild(h1);
+                    htmlDoc.body.appendChild(titleSection);
+                    return;
+                }
+                throw new Error(`Element ${selector} tidak ditemukan`);
+            }
+            isInner ? element.innerHTML = newContent : element.outerHTML = newContent;
+        };
+
+        switch(section) {
+            case 'title': updateContent('.title-section h1', content); break;
+            case 'timeline': updateContent('.history-timeline', content, true); break;
+            case 'video': updateContent('.video-container', content); break;
+            case 'footnotes': updateContent('.footnotes-container', content); break;
+            case 'reactions': updateContent('.reaction-container', content); break;
+            case 'comments': updateContent('.comments-container', content); break;
+            case 'cards': 
+                const container = htmlDoc.querySelector('.page10-container');
+                if (!container) throw new Error('Container tidak ditemukan');
+                container.querySelectorAll('.bab-card').forEach(card => card.remove());
+                const newCardsDoc = parser.parseFromString(content, 'text/html');
+                Array.from(newCardsDoc.body.children)
+                    .filter(card => card.classList.contains('bab-card'))
+                    .forEach(card => container.appendChild(card));
+                break;
+            default: throw new Error('Bagian tidak valid');
+        }
+
+        pageContent.outerHTML = htmlDoc.documentElement.outerHTML;
+    }
+
+    function showStatus(message, type) {
+        adminStatus.textContent = message;
+        const styles = {
+            error: { color: 'red', bg: 'rgba(255,0,0,0.1)' },
+            success: { color: 'lightgreen', bg: 'rgba(0,255,0,0.1)' },
+            loading: { color: 'white', bg: 'rgba(0,0,0,0.3)' }
+        };
+        
+        adminStatus.style.color = styles[type]?.color || 'white';
+        adminStatus.style.backgroundColor = styles[type]?.bg || 'transparent';
+        
+        if (type === 'success') {
+            setTimeout(() => { 
+                adminStatus.textContent = '';
+                adminStatus.style.backgroundColor = 'transparent';
+            }, 2000);
+        }
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load all content from Firestore
+        try {
+            const docRef = doc(db, "pageContent", CONTENT_DOC_ID);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const contentData = docSnap.data();
+                
+                // Apply content to the page
+                if (contentData.title) {
+                    document.querySelector('.title-section h1').innerHTML = contentData.title;
+                }
+                if (contentData.timeline) {
+                    document.querySelector('.history-timeline').innerHTML = contentData.timeline;
+                }
+                if (contentData.video) {
+                    const videoContainer = document.querySelector('.video-container');
+                    if (videoContainer) videoContainer.outerHTML = contentData.video;
+                }
+                if (contentData.footnotes) {
+                    const footnotesContainer = document.querySelector('.footnotes-container');
+                    if (footnotesContainer) footnotesContainer.outerHTML = contentData.footnotes;
+                }
+                if (contentData.reactions) {
+                    const reactionContainer = document.querySelector('.reaction-container');
+                    if (reactionContainer) reactionContainer.outerHTML = contentData.reactions;
+                }
+                if (contentData.comments) {
+                    const commentsContainer = document.querySelector('.comments-container');
+                    if (commentsContainer) commentsContainer.outerHTML = contentData.comments;
+                }
+                if (contentData.cards) {
+                    const container = document.querySelector('.page10-container');
+                    if (container) {
+                        container.querySelectorAll('.bab-card').forEach(card => card.remove());
+                        const parser = new DOMParser();
+                        const newCardsDoc = parser.parseFromString(contentData.cards, 'text/html');
+                        Array.from(newCardsDoc.body.children)
+                            .filter(card => card.classList.contains('bab-card'))
+                            .forEach(card => container.appendChild(card));
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error loading initial content:", error);
+        }
+        
+        // Load metadata
+        loadMetadata();
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     
@@ -4841,344 +5198,6 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
-
-
-
-// Allowed admin email
-const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
-
-
-// DOM elements
-const toggleAdminBtn = document.getElementById('toggleAdminBtn');
-const adminFormContainer = document.getElementById('adminFormContainer');
-const adminOverlay = document.getElementById('adminOverlay');
-const adminAuth = document.getElementById('adminAuth');
-const adminControls = document.getElementById('adminControls');
-const adminEmail = document.getElementById('adminEmail');
-const adminContentEditor = document.getElementById('adminContentEditor');
-const adminStatus = document.getElementById('adminStatus');
-const dataAuthorElement = document.getElementById('dataAuthor');
-const lastUpdatedElement = document.getElementById('lastUpdated');
-const contentSectionSelect = document.getElementById('contentSection');
-const authorInput = document.getElementById('authorInput');
-const changeDescription = document.getElementById('changeDescription');
-
-// Toggle admin form
-toggleAdminBtn.addEventListener('click', function() {
-  adminFormContainer.style.display = adminFormContainer.style.display === 'none' ? 'block' : 'none';
-  adminOverlay.style.display = adminOverlay.style.display === 'none' ? 'block' : 'none';
-  document.body.style.overflow = adminFormContainer.style.display === 'block' ? 'hidden' : 'auto';
-});
-
-// Close form when clicking overlay
-adminOverlay.addEventListener('click', function() {
-  adminFormContainer.style.display = 'none';
-  adminOverlay.style.display = 'none';
-  document.body.style.overflow = 'auto';
-});
-
-// Tab switching
-document.querySelectorAll('.admin-tab').forEach(tab => {
-  tab.addEventListener('click', function() {
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    this.classList.add('active');
-    
-    document.querySelectorAll('.admin-tab-content').forEach(content => {
-      content.style.display = 'none';
-    });
-    
-    document.getElementById(`${this.dataset.tab}Tab`).style.display = 'block';
-  });
-});
-
-// Auth state handler
-auth.onAuthStateChanged(user => {
-  const isAdmin = user && user.email === ADMIN_EMAIL;
-  adminAuth.style.display = isAdmin ? 'none' : 'block';
-  adminControls.style.display = isAdmin ? 'block' : 'none';
-  adminEmail.textContent = isAdmin ? user.email : '';
-  if (isAdmin) {
-    authorInput.value = user.email;
-    loadPageContent();
-  }
-  loadMetadata();
-});
-
-// Login handler
-document.getElementById('adminLoginBtn').addEventListener('click', () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(handleLoginError);
-});
-
-function handleLoginError(error) {
-  adminStatus.textContent = 'Login gagal: ' + error.message;
-  adminStatus.style.color = 'red';
-  adminStatus.style.backgroundColor = 'rgba(255,0,0,0.1)';
-  setTimeout(() => { 
-    adminStatus.textContent = ''; 
-    adminStatus.style.backgroundColor = 'transparent'; 
-  }, 3000);
-}
-
-// Logout handler
-document.getElementById('adminLogoutBtn').addEventListener('click', () => {
-  auth.signOut();
-  closeAdminForm();
-});
-
-function closeAdminForm() {
-  adminFormContainer.style.display = 'none';
-  adminOverlay.style.display = 'none';
-  document.body.style.overflow = 'auto';
-}
-
-// Content section handler
-contentSectionSelect.addEventListener('change', function() {
-  loadSectionContent(this.value);
-});
-
-async function loadSectionContent(section) {
-  try {
-    // Try to load from Firebase first
-    const snapshot = await database.ref(`page10Content/${section}`).once('value');
-    const savedContent = snapshot.val();
-    
-    if (savedContent) {
-      adminContentEditor.value = savedContent;
-      return;
-    }
-    
-    // Fallback to default content if not in Firebase
-    const pageContent = document.getElementById('page10').outerHTML;
-    const parser = new DOMParser();
-    const htmlDoc = parser.parseFromString(pageContent, 'text/html');
-
-    let sectionContent = '';
-    
-    const elements = {
-      'title': '.title-section h1',
-      'timeline': '.history-timeline',
-      'video': '.video-container',
-      'footnotes': '.footnotes-container',
-      'reactions': '.reaction-container',
-      'comments': '.comments-container',
-      'cards': '.bab-card'
-    };
-
-    const element = htmlDoc.querySelector(elements[section]);
-    
-    if (section === 'cards') {
-      const cards = htmlDoc.querySelectorAll(elements[section]);
-      sectionContent = cards.length > 0 ? 
-        Array.from(cards).map(card => card.outerHTML).join('\n') : 
-        '<!-- Cards will go here -->';
-    } else if (section === 'timeline') {
-      sectionContent = element ? element.innerHTML : '<!-- Timeline content will go here -->';
-    } else {
-      sectionContent = element ? element.outerHTML : `<!-- ${section} content will go here -->`;
-    }
-
-    adminContentEditor.value = sectionContent;
-  } catch (error) {
-    console.error("Error loading section content:", error);
-    adminContentEditor.value = `Error loading content: ${error.message}`;
-  }
-}
-
-function loadPageContent() {
-  contentSectionSelect.value = 'title';
-  loadSectionContent('title');
-}
-
-async function loadMetadata() {
-  try {
-    const snapshot = await database.ref('page10Metadata').once('value');
-    const metadata = snapshot.val();
-    
-    if (metadata) {
-      const lastUpdated = new Date(metadata.lastUpdated);
-      const formattedDate = lastUpdated.toLocaleString('id-ID', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      
-      document.getElementById('dataAuthor').textContent = metadata.author;
-      document.getElementById('lastUpdated').textContent = formattedDate;
-      authorInput.value = metadata.author;
-    }
-  } catch (error) {
-    console.error("Error loading metadata:", error);
-  }
-}
-
-// Save handler
-document.getElementById('adminSaveBtn').addEventListener('click', async () => {
-  const user = auth.currentUser;
-  if (!user || user.email !== ADMIN_EMAIL) {
-    showStatus('Error: Akses tidak diizinkan', 'error');
-    return;
-  }
-
-  showStatus('Menyimpan perubahan...', 'loading');
-
-  try {
-    const section = contentSectionSelect.value;
-    const content = adminContentEditor.value;
-    const changeDesc = changeDescription.value;
-    
-    // Save content to Firebase
-    await database.ref(`page10Content/${section}`).set(content);
-    
-    // Update metadata
-    const now = new Date();
-    await database.ref('page10Metadata').set({
-      author: user.email,
-      lastUpdated: now.toISOString(),
-      lastChangeDescription: changeDesc
-    });
-    
-    // Update local UI
-    updateLocalContent(section, content);
-    
-    // Update metadata display
-    const formattedDate = now.toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    
-    document.getElementById('dataAuthor').textContent = user.email;
-    document.getElementById('lastUpdated').textContent = formattedDate;
-    
-    showStatus('Perubahan berhasil disimpan!', 'success');
-    changeDescription.value = '';
-  } catch (error) {
-    console.error("Error:", error);
-    showStatus('Error: ' + error.message, 'error');
-  }
-});
-
-function updateLocalContent(section, content) {
-  const pageContent = document.getElementById('page10');
-  const currentHtml = pageContent.outerHTML;
-  const parser = new DOMParser();
-  const htmlDoc = parser.parseFromString(currentHtml, 'text/html');
-
-  const updateContent = (selector, newContent, isInner = false) => {
-    const element = htmlDoc.querySelector(selector);
-    if (!element) {
-      if (selector === '.title-section h1') {
-        const titleSection = htmlDoc.querySelector('.title-section') || htmlDoc.createElement('div');
-        titleSection.className = 'title-section';
-        const h1 = htmlDoc.createElement('h1');
-        h1.innerHTML = newContent;
-        titleSection.appendChild(h1);
-        htmlDoc.body.appendChild(titleSection);
-        return;
-      }
-      throw new Error(`Element ${selector} tidak ditemukan`);
-    }
-    isInner ? element.innerHTML = newContent : element.outerHTML = newContent;
-  };
-
-  switch(section) {
-    case 'title': updateContent('.title-section h1', content); break;
-    case 'timeline': updateContent('.history-timeline', content, true); break;
-    case 'video': updateContent('.video-container', content); break;
-    case 'footnotes': updateContent('.footnotes-container', content); break;
-    case 'reactions': updateContent('.reaction-container', content); break;
-    case 'comments': updateContent('.comments-container', content); break;
-    case 'cards': 
-      const container = htmlDoc.querySelector('.page10-container');
-      if (!container) throw new Error('Container tidak ditemukan');
-      container.querySelectorAll('.bab-card').forEach(card => card.remove());
-      const newCardsDoc = parser.parseFromString(content, 'text/html');
-      Array.from(newCardsDoc.body.children)
-        .filter(card => card.classList.contains('bab-card'))
-        .forEach(card => container.appendChild(card));
-      break;
-    default: throw new Error('Bagian tidak valid');
-  }
-
-  pageContent.outerHTML = htmlDoc.documentElement.outerHTML;
-}
-
-function showStatus(message, type) {
-  adminStatus.textContent = message;
-  const styles = {
-    error: { color: 'red', bg: 'rgba(255,0,0,0.1)' },
-    success: { color: 'lightgreen', bg: 'rgba(0,255,0,0.1)' },
-    loading: { color: 'white', bg: 'rgba(0,0,0,0.3)' }
-  };
-  
-  adminStatus.style.color = styles[type]?.color || 'white';
-  adminStatus.style.backgroundColor = styles[type]?.bg || 'transparent';
-  
-  if (type === 'success') {
-    setTimeout(() => { 
-      adminStatus.textContent = '';
-      adminStatus.style.backgroundColor = 'transparent';
-    }, 2000);
-  }
-}
-
-// Cancel handler
-document.getElementById('adminCancelBtn').addEventListener('click', closeAdminForm);
-
-// Initial load
-document.addEventListener('DOMContentLoaded', async () => {
-  // Load all content from Firebase
-  try {
-    const contentSnapshot = await database.ref('page10Content').once('value');
-    const contentData = contentSnapshot.val() || {};
-    
-    // Apply content to the page
-    if (contentData.title) {
-      document.querySelector('.title-section h1').innerHTML = contentData.title;
-    }
-    if (contentData.timeline) {
-      document.querySelector('.history-timeline').innerHTML = contentData.timeline;
-    }
-    if (contentData.video) {
-      const videoContainer = document.querySelector('.video-container');
-      if (videoContainer) videoContainer.outerHTML = contentData.video;
-    }
-    if (contentData.footnotes) {
-      const footnotesContainer = document.querySelector('.footnotes-container');
-      if (footnotesContainer) footnotesContainer.outerHTML = contentData.footnotes;
-    }
-    if (contentData.reactions) {
-      const reactionContainer = document.querySelector('.reaction-container');
-      if (reactionContainer) reactionContainer.outerHTML = contentData.reactions;
-    }
-    if (contentData.comments) {
-      const commentsContainer = document.querySelector('.comments-container');
-      if (commentsContainer) commentsContainer.outerHTML = contentData.comments;
-    }
-    if (contentData.cards) {
-      const container = document.querySelector('.page10-container');
-      if (container) {
-        container.querySelectorAll('.bab-card').forEach(card => card.remove());
-        const parser = new DOMParser();
-        const newCardsDoc = parser.parseFromString(contentData.cards, 'text/html');
-        Array.from(newCardsDoc.body.children)
-          .filter(card => card.classList.contains('bab-card'))
-          .forEach(card => container.appendChild(card));
-      }
-    }
-  } catch (error) {
-    console.error("Error loading initial content:", error);
-  }
-  
-  // Load metadata
-  loadMetadata();
-});
 
 
 
