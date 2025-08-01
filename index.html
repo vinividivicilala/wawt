@@ -5098,7 +5098,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
     const notificationSettingsModal = document.getElementById('notificationSettingsModal');
     const closeModal = document.querySelector('.close-modal');
-    const saveNotificationSettings = document.getElementById('saveNotificationSettings');
+    saveNotificationSettingsBtn?.addEventListener('click', saveNotificationSettings);
     const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
     
     // Event Listeners
