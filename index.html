@@ -5077,18 +5077,11 @@ a.footnote-link:hover {
 
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Referensi Firestore
-    const user = auth.currentUser;
-    if (!user) return;
-    
-    const userRef = doc(db, "users", user.uid);
     const notificationsRef = collection(db, "notifications");
-    const activitiesRef = collection(db, "activities");
     
     // Variabel state
     let userProfile = {};
     let notifications = [];
-    let activities = [];
     
     // DOM Elements
     const backFromDashboard = document.getElementById('backFromDashboard');
@@ -5105,7 +5098,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const closeModal = document.querySelector('.close-modal');
    saveNotificationSettingsBtn?.addEventListener('click', saveNotificationSettings);
     const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
-    const activityTabs = document.querySelectorAll('.activity-tab');
     
     // Event Listeners
     backFromDashboard?.addEventListener('click', function() {
@@ -5117,7 +5109,7 @@ document.addEventListener("DOMContentLoaded", function () {
       editProfileForm.style.display = 'block';
       profileInfo.style.display = 'none';
       // Isi form dengan data profil saat ini
-      document.getElementById('displayNameInput').value = userProfile.displayName || user.displayName || '';
+      document.getElementById('displayNameInput').value = userProfile.displayName || '';
       document.getElementById('twitterInput').value = userProfile.socialLinks?.twitter || '';
       document.getElementById('instagramInput').value = userProfile.socialLinks?.instagram || '';
       document.getElementById('githubInput').value = userProfile.socialLinks?.github || '';
@@ -5131,8 +5123,7 @@ document.addEventListener("DOMContentLoaded", function () {
     saveProfileBtn?.addEventListener('click', saveProfile);
     
     notificationBell?.addEventListener('click', function() {
-      // Fokus ke bagian notifikasi
-      document.querySelector('.dashboard-notifications').scrollIntoView({ behavior: 'smooth' });
+      // Tampilkan daftar notifikasi
     });
     
     markAllReadBtn?.addEventListener('click', markAllNotificationsAsRead);
@@ -5152,19 +5143,11 @@ document.addEventListener("DOMContentLoaded", function () {
     
     saveNotificationSettings?.addEventListener('click', saveNotificationSettings);
     
-    activityTabs.forEach(tab => {
-      tab.addEventListener('click', function() {
-        const tabId = this.getAttribute('data-tab');
-        loadActivities(tabId);
-        
-        // Update active tab
-        activityTabs.forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-      });
-    });
-    
     // Fungsi untuk memuat profil pengguna
     function loadUserProfile() {
+      const user = auth.currentUser;
+      if (!user) return;
+      
       // Gunakan data dari Firebase Auth
       document.getElementById('userProfilePicture').src = user.photoURL || 'https://via.placeholder.com/80';
       document.getElementById('userDisplayName').textContent = user.displayName || 'Pengguna';
@@ -5185,7 +5168,31 @@ document.addEventListener("DOMContentLoaded", function () {
           document.getElementById('joinDate').textContent = formattedDate;
           
           // Tampilkan link media sosial
-          updateSocialLinksUI();
+          const socialLinksContainer = document.getElementById('socialLinks');
+          socialLinksContainer.innerHTML = '';
+          
+          if (userProfile.socialLinks) {
+            const { twitter, instagram, github } = userProfile.socialLinks;
+            
+            if (twitter) {
+              const twitterLink = createSocialLink('Twitter', twitter, 'https://twitter.com');
+              socialLinksContainer.appendChild(twitterLink);
+            }
+            
+            if (instagram) {
+              const instagramLink = createSocialLink('Instagram', instagram, 'https://instagram.com');
+              socialLinksContainer.appendChild(instagramLink);
+            }
+            
+            if (github) {
+              const githubLink = createSocialLink('GitHub', github, 'https://github.com');
+              socialLinksContainer.appendChild(githubLink);
+            }
+            
+            if (!twitter && !instagram && !github) {
+              socialLinksContainer.innerHTML = '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
+            }
+          }
         } else {
           // Buat dokumen pengguna baru jika belum ada
           setDoc(userRef, {
@@ -5193,11 +5200,6 @@ document.addEventListener("DOMContentLoaded", function () {
             email: user.email,
             photoURL: user.photoURL || '',
             joinDate: new Date(),
-            socialLinks: {
-              twitter: '',
-              instagram: '',
-              github: ''
-            },
             notificationSettings: {
               email: true,
               push: true,
@@ -5205,108 +5207,83 @@ document.addEventListener("DOMContentLoaded", function () {
               announcements: true,
               messages: true
             }
-          }).then(() => {
-            loadUserProfile(); // Muat ulang setelah membuat profil
           });
         }
-      }).catch(error => {
-        console.error("Error loading user profile:", error);
       });
-    }
-    
-    // Fungsi untuk memperbarui tampilan link media sosial
-    function updateSocialLinksUI() {
-      const socialLinksContainer = document.getElementById('socialLinks');
-      socialLinksContainer.innerHTML = '';
-      
-      if (userProfile.socialLinks) {
-        const { twitter, instagram, github } = userProfile.socialLinks;
-        
-        if (twitter) {
-          const twitterLink = createSocialLink('Twitter', twitter, 'https://twitter.com');
-          socialLinksContainer.appendChild(twitterLink);
-        }
-        
-        if (instagram) {
-          const instagramLink = createSocialLink('Instagram', instagram, 'https://instagram.com');
-          socialLinksContainer.appendChild(instagramLink);
-        }
-        
-        if (github) {
-          const githubLink = createSocialLink('GitHub', github, 'https://github.com');
-          socialLinksContainer.appendChild(githubLink);
-        }
-        
-        if (!twitter && !instagram && !github) {
-          socialLinksContainer.innerHTML = '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
-        }
-      }
     }
     
     // Fungsi pembantu untuk membuat elemen link media sosial
     function createSocialLink(platform, url, baseUrl) {
-      const linkContainer = document.createElement('div');
-      linkContainer.style.marginBottom = '5px';
-      
       const link = document.createElement('a');
       link.href = url.startsWith('http') ? url : `${baseUrl}/${url}`;
       link.textContent = platform;
       link.className = 'social-link';
       link.target = '_blank';
-      link.style.color = '#4dabf7';
-      link.style.textDecoration = 'none';
-      
-      linkContainer.appendChild(link);
-      return linkContainer;
+      return link;
     }
     
     // Fungsi untuk menyimpan profil
-    async function saveProfile() {
+    function saveProfile() {
+      const user = auth.currentUser;
+      if (!user) return;
+      
       const displayName = document.getElementById('displayNameInput').value.trim();
       const twitter = document.getElementById('twitterInput').value.trim();
       const instagram = document.getElementById('instagramInput').value.trim();
       const github = document.getElementById('githubInput').value.trim();
       
-      try {
-        // Update nama tampilan di Firebase Auth jika berubah
-        if (displayName !== user.displayName) {
-          await updateProfile(auth.currentUser, {
-            displayName: displayName
-          });
-        }
-        
-        // Update data di Firestore
-        const socialLinks = {};
-        if (twitter) socialLinks.twitter = twitter;
-        if (instagram) socialLinks.instagram = instagram;
-        if (github) socialLinks.github = github;
-        
-        await updateDoc(userRef, {
-          displayName,
-          socialLinks
-        });
-        
+      const socialLinks = {};
+      if (twitter) socialLinks.twitter = twitter;
+      if (instagram) socialLinks.instagram = instagram;
+      if (github) socialLinks.github = github;
+      
+      // Update data di Firestore
+      updateDoc(userRef, {
+        displayName,
+        socialLinks
+      }).then(() => {
         // Update UI
         userProfile.displayName = displayName;
         userProfile.socialLinks = socialLinks;
         
         document.getElementById('userDisplayName').textContent = displayName || 'Pengguna';
-        updateSocialLinksUI();
+        
+        const socialLinksContainer = document.getElementById('socialLinks');
+        socialLinksContainer.innerHTML = '';
+        
+        if (Object.keys(socialLinks).length > 0) {
+          if (socialLinks.twitter) {
+            const twitterLink = createSocialLink('Twitter', socialLinks.twitter, 'https://twitter.com');
+            socialLinksContainer.appendChild(twitterLink);
+          }
+          
+          if (socialLinks.instagram) {
+            const instagramLink = createSocialLink('Instagram', socialLinks.instagram, 'https://instagram.com');
+            socialLinksContainer.appendChild(instagramLink);
+          }
+          
+          if (socialLinks.github) {
+            const githubLink = createSocialLink('GitHub', socialLinks.github, 'https://github.com');
+            socialLinksContainer.appendChild(githubLink);
+          }
+        } else {
+          socialLinksContainer.innerHTML = '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
+        }
         
         editProfileForm.style.display = 'none';
         profileInfo.style.display = 'block';
         
         showToast('Profil berhasil diperbarui');
-      } catch (error) {
+      }).catch(error => {
         console.error('Error updating profile:', error);
         showToast('Gagal memperbarui profil');
-      }
+      });
     }
     
     // Fungsi untuk memuat notifikasi
     function loadNotifications() {
       const q = query(notificationsRef, 
-        where("userId", "==", user.uid),
+        where("userId", "==", auth.currentUser?.uid || ""),
         orderBy("timestamp", "desc"),
         limit(10)
       );
@@ -5348,22 +5325,17 @@ document.addEventListener("DOMContentLoaded", function () {
       notifications.forEach(notification => {
         const notificationItem = document.createElement('div');
         notificationItem.className = `notification-item ${notification.read ? '' : 'unread'}`;
-        notificationItem.style.display = 'flex';
-        notificationItem.style.alignItems = 'center';
-        notificationItem.style.padding = '10px';
-        notificationItem.style.borderBottom = '1px solid #444';
-        notificationItem.style.cursor = 'pointer';
         
         // Format waktu
         const timeAgo = formatTimeAgo(notification.timestamp?.toDate());
         
         notificationItem.innerHTML = `
-          <div class="notification-icon" style="margin-right: 10px; font-size: 20px;">
+          <div class="notification-icon">
             ${getNotificationIcon(notification.type)}
           </div>
-          <div class="notification-content" style="flex: 1;">
-            <p style="margin: 0; color: white;">${notification.message}</p>
-            <div class="notification-time" style="font-size: 12px; color: rgba(255,255,255,0.7);">${timeAgo}</div>
+          <div class="notification-content">
+            <p>${notification.message}</p>
+            <div class="notification-time">${timeAgo}</div>
           </div>
         `;
         
@@ -5380,6 +5352,38 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         
         notificationsList.appendChild(notificationItem);
+      });
+    }
+    
+    // Fungsi pembantu untuk mendapatkan ikon notifikasi
+    function getNotificationIcon(type) {
+      const icons = {
+        'comment': '💬',
+        'like': '👍',
+        'announcement': '📢',
+        'message': '✉️',
+        'system': '⚙️'
+      };
+      
+      return icons[type] || '🔔';
+    }
+    
+    // Fungsi pembantu untuk memformat waktu
+    function formatTimeAgo(date) {
+      if (!date) return '';
+      
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+      
+      if (diffInSeconds < 60) return 'Baru saja';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+      
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
       });
     }
     
@@ -5402,85 +5406,23 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
     
-    // Fungsi untuk memuat aktivitas
-    function loadActivities(type = 'recent') {
-      let q;
-      
-      if (type === 'recent') {
-        q = query(activitiesRef, 
-          where("userId", "==", user.uid),
-          orderBy("timestamp", "desc"),
-          limit(10)
-        );
-      } else {
-        q = query(activitiesRef, 
-          where("userId", "==", user.uid),
-          where("type", "==", type),
-          orderBy("timestamp", "desc"),
-          limit(10)
-        );
+    // Fungsi untuk menangani aksi notifikasi
+    function handleNotificationAction(notification) {
+      // Implementasikan logika berdasarkan jenis notifikasi
+      switch(notification.type) {
+        case 'comment':
+          // Navigasi ke komentar
+          break;
+        case 'like':
+          // Navigasi ke konten yang disukai
+          break;
+        case 'announcement':
+          // Navigasi ke pengumuman
+          break;
+        case 'message':
+          // Navigasi ke pesan
+          break;
       }
-      
-      getDocs(q).then(snapshot => {
-        activities = [];
-        snapshot.forEach(doc => {
-          activities.push({ id: doc.id, ...doc.data() });
-        });
-        
-        renderActivities();
-      });
-    }
-    
-    // Fungsi untuk merender aktivitas
-    function renderActivities() {
-      const activityContainer = document.getElementById('recentActivity');
-      
-      if (activities.length === 0) {
-        activityContainer.innerHTML = `
-          <div class="empty-activity">
-            <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas terkini</p>
-          </div>
-        `;
-        return;
-      }
-      
-      activityContainer.innerHTML = '';
-      
-      activities.forEach(activity => {
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.style.padding = '10px';
-        activityItem.style.borderBottom = '1px solid #444';
-        
-        const timeAgo = formatTimeAgo(activity.timestamp?.toDate());
-        
-        activityItem.innerHTML = `
-          <div style="display: flex; align-items: center;">
-            <div style="margin-right: 10px; font-size: 20px;">
-              ${getActivityIcon(activity.type)}
-            </div>
-            <div style="flex: 1;">
-              <p style="margin: 0; color: white;">${activity.message}</p>
-              <div style="font-size: 12px; color: rgba(255,255,255,0.7);">${timeAgo}</div>
-            </div>
-          </div>
-        `;
-        
-        activityContainer.appendChild(activityItem);
-      });
-    }
-    
-    // Fungsi untuk mendapatkan ikon aktivitas
-    function getActivityIcon(type) {
-      const icons = {
-        'comment': '💬',
-        'reply': '↩️',
-        'like': '👍',
-        'feedback': '📝',
-        'post': '✍️'
-      };
-      
-      return icons[type] || '🔹';
     }
     
     // Fungsi untuk memuat pengaturan notifikasi
@@ -5517,23 +5459,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
     
-    // Fungsi pembantu untuk memformat waktu
-    function formatTimeAgo(date) {
-      if (!date) return '';
-      
-      const now = new Date();
-      const diffInSeconds = Math.floor((now - date) / 1000);
-      
-      if (diffInSeconds < 60) return 'Baru saja';
-      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
-      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
-      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
-      
-      return date.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
+    // Fungsi untuk memuat aktivitas terkini
+    function loadRecentActivity() {
+      // Implementasi untuk memuat aktivitas dari Firestore
     }
     
     // Fungsi pembantu untuk menampilkan toast
@@ -5563,10 +5491,36 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     // Inisialisasi halaman
-    loadUserProfile();
-    loadNotifications();
-    loadActivities();
-});
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadUserProfile();
+        loadNotifications();
+        loadRecentActivity();
+      }
+    });
+    
+    // Event listener untuk tab aktivitas
+    document.querySelectorAll('.activity-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        const tabId = this.getAttribute('data-tab');
+        // Implementasi untuk memuat konten tab yang sesuai
+      });
+    });
+  });
+
+
+
+
+
+
+
+
+
+
+
 
 
 
