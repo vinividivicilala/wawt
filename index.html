@@ -5098,7 +5098,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
     const notificationSettingsModal = document.getElementById('notificationSettingsModal');
     const closeModal = document.querySelector('.close-modal');
-    saveNotificationSettingsBtn?.addEventListener('click', saveNotificationSettings);
+ const saveNotificationSettingsBtn = document.getElementById('saveNotificationSettingsBtn');
     const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
     
     // Event Listeners
@@ -5143,7 +5143,8 @@ document.addEventListener("DOMContentLoaded", function () {
         notificationSettingsModal.style.display = 'none';
     });
     
-    saveNotificationSettings?.addEventListener('click', saveNotificationSettings);
+  saveNotificationSettingsBtn?.addEventListener('click', saveNotificationSettings);
+
     
     // Fungsi untuk memuat profil pengguna
     function loadUserProfile(user) {
