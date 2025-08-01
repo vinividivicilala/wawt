@@ -4494,22 +4494,32 @@ a.footnote-link:hover {
 
 
 
-
-
-
-
-
-
 <div id="page11" style="display: none;">
   <div class="dashboard-container">
     <!-- Header Dashboard -->
     <div class="dashboard-header">
       <h1 style="color: white; font-size: 28px; margin-bottom: 20px;">Dashboard Pengguna</h1>
+      <div class="dashboard-notification-bell" id="notificationBell">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge" id="notificationBadge">0</span>
+      </div>
     </div>
 
     <!-- Profil Pengguna -->
     <div class="dashboard-profile linebox">
-      <h2 class="title-box-white">Profil Saya</h2>
+      <div class="profile-header">
+        <h2 class="title-box-white">Profil Saya</h2>
+        <button id="editProfileBtn" class="edit-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          Edit Profil
+        </button>
+      </div>
       
       <div class="profile-content">
         <div class="profile-picture-container">
@@ -4520,7 +4530,7 @@ a.footnote-link:hover {
           </div>
         </div>
         
-        <!-- Form Edit Profil -->
+        <!-- Form Edit Profil (Awalnya tersembunyi) -->
         <div id="editProfileForm" style="display: none; margin-top: 20px;">
           <div style="margin-bottom: 15px;">
             <label style="color: white; display: block; margin-bottom: 5px;">Nama Tampilan</label>
@@ -4551,7 +4561,7 @@ a.footnote-link:hover {
           </div>
         </div>
         
-        <!-- Info Profil -->
+        <!-- Info Profil (Awalnya ditampilkan) -->
         <div id="profileInfo" style="margin-top: 20px;">
           <div class="profile-detail">
             <span class="detail-label">Bergabung sejak:</span>
@@ -4561,17 +4571,10 @@ a.footnote-link:hover {
           <div class="profile-detail">
             <span class="detail-label">Media Sosial:</span>
             <div class="social-links" id="socialLinks">
+              <!-- Link media sosial akan dimuat di sini -->
               <span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>
             </div>
           </div>
-          
-          <button id="editProfileBtn" class="edit-btn" style="margin-top: 20px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-            Edit Profil
-          </button>
         </div>
       </div>
     </div>
@@ -4593,6 +4596,7 @@ a.footnote-link:hover {
       </div>
       
       <div class="notifications-list" id="notificationsList">
+        <!-- Notifikasi akan dimuat di sini -->
         <div class="empty-notifications">
           <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada notifikasi</p>
         </div>
@@ -4611,6 +4615,7 @@ a.footnote-link:hover {
       
       <div class="activity-content">
         <div class="activity-list" id="recentActivity">
+          <!-- Aktivitas akan dimuat di sini -->
           <div class="empty-activity">
             <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas terkini</p>
           </div>
@@ -4629,7 +4634,70 @@ a.footnote-link:hover {
       </button>
     </div>
   </div>
+  
+  <!-- Modal Pengaturan Notifikasi -->
+  <div id="notificationSettingsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Pengaturan Notifikasi</h3>
+        <span class="close-modal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="setting-item">
+          <label class="switch">
+            <input type="checkbox" id="emailNotifications" checked>
+            <span class="slider round"></span>
+          </label>
+          <span>Notifikasi Email</span>
+        </div>
+        
+        <div class="setting-item">
+          <label class="switch">
+            <input type="checkbox" id="pushNotifications" checked>
+            <span class="slider round"></span>
+          </label>
+          <span>Notifikasi Push</span>
+        </div>
+        
+        <div class="setting-item">
+          <label class="switch">
+            <input type="checkbox" id="activityNotifications" checked>
+            <span class="slider round"></span>
+          </label>
+          <span>Notifikasi Aktivitas</span>
+        </div>
+        
+        <div class="setting-item">
+          <label class="switch">
+            <input type="checkbox" id="announcementNotifications" checked>
+            <span class="slider round"></span>
+          </label>
+          <span>Pengumuman</span>
+        </div>
+        
+        <div class="setting-item">
+          <label class="switch">
+            <input type="checkbox" id="messageNotifications" checked>
+            <span class="slider round"></span>
+          </label>
+          <span>Pesan</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="saveNotificationSettings" class="save-btn">Simpan</button>
+        <button id="cancelNotificationSettings" class="cancel-btn">Batal</button>
+      </div>
+    </div>
+  </div>
 </div>
+
+
+
+
+
+
+
+
 
 
 
@@ -4691,15 +4759,6 @@ a.footnote-link:hover {
     const contentSectionSelect = document.getElementById('contentSection');
     const authorInput = document.getElementById('authorInput');
     const changeDescription = document.getElementById('changeDescription');
-	
-
-	
-	
-	
-	
-	
-	
-	
 
     // Toggle admin form
     toggleAdminBtn.addEventListener('click', function() {
@@ -5013,415 +5072,316 @@ a.footnote-link:hover {
 
 
 
-  // Inisialisasi saat halaman dimuat
-  document.addEventListener('DOMContentLoaded', function() {
-    // Dapatkan elemen DOM
+
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Referensi Firestore
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const userRef = doc(db, "users", user.uid);
+    const notificationsRef = collection(db, "notifications");
+    const activitiesRef = collection(db, "activities");
+    
+    // Variabel state
+    let userProfile = {};
+    let notifications = [];
+    let activities = [];
+    
+    // DOM Elements
     const backFromDashboard = document.getElementById('backFromDashboard');
     const editProfileBtn = document.getElementById('editProfileBtn');
     const editProfileForm = document.getElementById('editProfileForm');
     const profileInfo = document.getElementById('profileInfo');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationBadge = document.getElementById('notificationBadge');
     const markAllReadBtn = document.getElementById('markAllReadBtn');
-	
-	
-
-		 // Referensi ke koleksi Firestore
-  const userRef = doc(db, "users", auth.currentUser?.uid || "");
-  const notificationsRef = collection(db, "notifications");
-  const activitiesRef = collection(db, "activities");
-  
-   
-  // Variabel state
-  let userProfile = {};
-  let notifications = [];
-  let activities = [];
+    const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
+    const notificationSettingsModal = document.getElementById('notificationSettingsModal');
+    const closeModal = document.querySelector('.close-modal');
+    const saveNotificationSettings = document.getElementById('saveNotificationSettings');
+    const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
+    const activityTabs = document.querySelectorAll('.activity-tab');
     
-    
-    // Event listener untuk tombol kembali
+    // Event Listeners
     backFromDashboard?.addEventListener('click', function() {
       showPageContent(document.getElementById("page1"));
       history.pushState({ page: "home" }, "Beranda", "/");
     });
     
-    // Event listener untuk edit profil
     editProfileBtn?.addEventListener('click', function() {
       editProfileForm.style.display = 'block';
       profileInfo.style.display = 'none';
-      
-      // Isi form dengan data saat ini
-      document.getElementById('displayNameInput').value = userProfile.displayName || '';
+      // Isi form dengan data profil saat ini
+      document.getElementById('displayNameInput').value = userProfile.displayName || user.displayName || '';
       document.getElementById('twitterInput').value = userProfile.socialLinks?.twitter || '';
       document.getElementById('instagramInput').value = userProfile.socialLinks?.instagram || '';
       document.getElementById('githubInput').value = userProfile.socialLinks?.github || '';
     });
     
-    // Event listener untuk batal edit
     cancelEditBtn?.addEventListener('click', function() {
       editProfileForm.style.display = 'none';
       profileInfo.style.display = 'block';
     });
     
-    // Event listener untuk simpan profil
     saveProfileBtn?.addEventListener('click', saveProfile);
     
-    // Event listener untuk menandai semua notifikasi sebagai dibaca
-    markAllReadBtn?.addEventListener('click', function() {
-      const batch = writeBatch(db);
-      
-      notifications.forEach(notification => {
-        if (!notification.read) {
-          const notificationRef = doc(db, "notifications", notification.id);
-          batch.update(notificationRef, { read: true });
-        }
-      });
-      
-      batch.commit().then(() => {
-        showToast('Semua notifikasi ditandai sudah dibaca');
-      });
+    notificationBell?.addEventListener('click', function() {
+      // Fokus ke bagian notifikasi
+      document.querySelector('.dashboard-notifications').scrollIntoView({ behavior: 'smooth' });
     });
     
-    // Event listener untuk tab aktivitas
-    document.querySelectorAll('.activity-tab').forEach(tab => {
+    markAllReadBtn?.addEventListener('click', markAllNotificationsAsRead);
+    
+    notificationSettingsBtn?.addEventListener('click', function() {
+      notificationSettingsModal.style.display = 'block';
+      loadNotificationSettings();
+    });
+    
+    closeModal?.addEventListener('click', function() {
+      notificationSettingsModal.style.display = 'none';
+    });
+    
+    cancelNotificationSettings?.addEventListener('click', function() {
+      notificationSettingsModal.style.display = 'none';
+    });
+    
+    saveNotificationSettings?.addEventListener('click', saveNotificationSettings);
+    
+    activityTabs.forEach(tab => {
       tab.addEventListener('click', function() {
-        document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+        const tabId = this.getAttribute('data-tab');
+        loadActivities(tabId);
+        
+        // Update active tab
+        activityTabs.forEach(t => t.classList.remove('active'));
         this.classList.add('active');
-        
-        // Di sini Anda bisa menambahkan logika untuk menampilkan konten tab yang sesuai
       });
     });
     
-    // Pantau perubahan status autentikasi
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        loadUserProfile();
-        loadNotifications();
-        loadActivities();
-      }
-    });
-  });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
     // Fungsi untuk memuat profil pengguna
-  function loadUserProfile() {
-    const user = auth.currentUser;
-    if (!user) return;
-    
-    // Gunakan data dari Firebase Auth
-    document.getElementById('userProfilePicture').src = user.photoURL || 'https://via.placeholder.com/80';
-    document.getElementById('userDisplayName').textContent = user.displayName || 'Pengguna';
-    document.getElementById('userEmail').textContent = user.email;
-    
-    // Ambil data tambahan dari Firestore
-    getDoc(userRef).then(docSnap => {
-      if (docSnap.exists()) {
-        userProfile = docSnap.data();
-        
-        // Format tanggal bergabung
-        const joinDate = userProfile.joinDate?.toDate();
-        const formattedDate = joinDate ? joinDate.toLocaleDateString('id-ID', {
-          year: 'numeric',
-          month: 'long'
-        }) : 'Baru bergabung';
-        
-        document.getElementById('joinDate').textContent = formattedDate;
-        
-        // Tampilkan link media sosial
-        updateSocialLinksDisplay();
-      } else {
-        // Buat dokumen pengguna baru jika belum ada
-        setDoc(userRef, {
-          displayName: user.displayName || '',
-          email: user.email,
-          photoURL: user.photoURL || '',
-          joinDate: new Date(),
-          socialLinks: {},
-          notificationSettings: {
-            email: true,
-            push: true,
-            activity: true,
-            announcements: true,
-            messages: true
-          }
-        }).then(() => {
-          loadUserProfile(); // Muat ulang profil setelah dibuat
-        });
-      }
-    });
-  }
-
-  
-  
-   // Fungsi untuk memperbarui tampilan link media sosial
-  function updateSocialLinksDisplay() {
-    const socialLinksContainer = document.getElementById('socialLinks');
-    socialLinksContainer.innerHTML = '';
-    
-    if (userProfile.socialLinks) {
-      const { twitter, instagram, github } = userProfile.socialLinks;
+    function loadUserProfile() {
+      // Gunakan data dari Firebase Auth
+      document.getElementById('userProfilePicture').src = user.photoURL || 'https://via.placeholder.com/80';
+      document.getElementById('userDisplayName').textContent = user.displayName || 'Pengguna';
+      document.getElementById('userEmail').textContent = user.email;
       
-      if (twitter) {
-        const twitterLink = createSocialLink('Twitter', twitter, 'https://twitter.com');
-        socialLinksContainer.appendChild(twitterLink);
-      }
-      
-      if (instagram) {
-        const instagramLink = createSocialLink('Instagram', instagram, 'https://instagram.com');
-        socialLinksContainer.appendChild(instagramLink);
-      }
-      
-      if (github) {
-        const githubLink = createSocialLink('GitHub', github, 'https://github.com');
-        socialLinksContainer.appendChild(githubLink);
-      }
-      
-      if (!twitter && !instagram && !github) {
-        socialLinksContainer.innerHTML = '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
-      }
-    }
-  }
-  
-  // Fungsi untuk membuat elemen link media sosial
-  function createSocialLink(platform, url, baseUrl) {
-    const link = document.createElement('a');
-    link.href = url.startsWith('http') ? url : `${baseUrl}/${url}`;
-    link.textContent = platform;
-    link.className = 'social-link';
-    link.target = '_blank';
-    return link;
-  }
-  
-  
-  
-  
- 
-  // Fungsi untuk menyimpan profil
-  function saveProfile() {
-    const user = auth.currentUser;
-    if (!user) return;
-    
-    const displayName = document.getElementById('displayNameInput').value.trim();
-    const twitter = document.getElementById('twitterInput').value.trim();
-    const instagram = document.getElementById('instagramInput').value.trim();
-    const github = document.getElementById('githubInput').value.trim();
-    
-    const socialLinks = {};
-    if (twitter) socialLinks.twitter = twitter;
-    if (instagram) socialLinks.instagram = instagram;
-    if (github) socialLinks.github = github;
-    
-    // Update data di Firestore
-    updateDoc(userRef, {
-      displayName,
-      socialLinks
-    }).then(() => {
-      // Update UI
-      userProfile.displayName = displayName;
-      userProfile.socialLinks = socialLinks;
-      
-      document.getElementById('userDisplayName').textContent = displayName || 'Pengguna';
-      updateSocialLinksDisplay();
-      
-      editProfileForm.style.display = 'none';
-      profileInfo.style.display = 'block';
-      
-      showToast('Profil berhasil diperbarui');
-    }).catch(error => {
-      console.error('Error updating profile:', error);
-      showToast('Gagal memperbarui profil');
-    });
-  }
-  
-  
-  
- // Fungsi untuk memuat notifikasi
-  function loadNotifications() {
-    const q = query(notificationsRef, 
-      where("userId", "==", auth.currentUser?.uid || ""),
-      orderBy("timestamp", "desc"),
-      limit(10)
-    );
-    
-    onSnapshot(q, (snapshot) => {
-      notifications = [];
-      let unreadCount = 0;
-      
-      snapshot.forEach(doc => {
-        const notification = { id: doc.id, ...doc.data() };
-        notifications.push(notification);
-        if (!notification.read) unreadCount++;
-      });
-      
-      renderNotifications();
-    });
-  }
-
-
-
-  
-  // Fungsi untuk merender notifikasi
-  function renderNotifications() {
-    const notificationsList = document.getElementById('notificationsList');
-    
-    if (notifications.length === 0) {
-      notificationsList.innerHTML = `
-        <div class="empty-notifications">
-          <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada notifikasi</p>
-        </div>
-      `;
-      return;
-    }
-    
-    notificationsList.innerHTML = '';
-    
-    notifications.forEach(notification => {
-      const notificationItem = document.createElement('div');
-      notificationItem.className = `notification-item ${notification.read ? '' : 'unread'}`;
-      
-      // Format waktu
-      const timeAgo = formatTimeAgo(notification.timestamp?.toDate());
-      
-      notificationItem.innerHTML = `
-        <div class="notification-icon">
-          ${getNotificationIcon(notification.type)}
-        </div>
-        <div class="notification-content">
-          <p>${notification.message}</p>
-          <div class="notification-time">${timeAgo}</div>
-        </div>
-      `;
-      
-      notificationItem.addEventListener('click', () => {
-        // Tandai sebagai sudah dibaca
-        if (!notification.read) {
-          updateDoc(doc(db, "notifications", notification.id), {
-            read: true
+      // Ambil data tambahan dari Firestore
+      getDoc(userRef).then(docSnap => {
+        if (docSnap.exists()) {
+          userProfile = docSnap.data();
+          
+          // Format tanggal bergabung
+          const joinDate = userProfile.joinDate?.toDate();
+          const formattedDate = joinDate ? joinDate.toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'long'
+          }) : 'Baru bergabung';
+          
+          document.getElementById('joinDate').textContent = formattedDate;
+          
+          // Tampilkan link media sosial
+          updateSocialLinksUI();
+        } else {
+          // Buat dokumen pengguna baru jika belum ada
+          setDoc(userRef, {
+            displayName: user.displayName || '',
+            email: user.email,
+            photoURL: user.photoURL || '',
+            joinDate: new Date(),
+            socialLinks: {
+              twitter: '',
+              instagram: '',
+              github: ''
+            },
+            notificationSettings: {
+              email: true,
+              push: true,
+              activity: true,
+              announcements: true,
+              messages: true
+            }
+          }).then(() => {
+            loadUserProfile(); // Muat ulang setelah membuat profil
           });
         }
+      }).catch(error => {
+        console.error("Error loading user profile:", error);
       });
-      
-      notificationsList.appendChild(notificationItem);
-    });
-  }
-  
-  
-
- // Fungsi untuk memuat aktivitas
-  function loadActivities() {
-    const q = query(activitiesRef, 
-      where("userId", "==", auth.currentUser?.uid || ""),
-      orderBy("timestamp", "desc"),
-      limit(10)
-    );
-    
-    onSnapshot(q, (snapshot) => {
-      activities = [];
-      snapshot.forEach(doc => {
-        activities.push({ id: doc.id, ...doc.data() });
-      });
-      
-      renderActivities();
-    });
-  }
-  
-
-
- // Fungsi untuk merender aktivitas
-  function renderActivities() {
-    const activityList = document.getElementById('recentActivity');
-    
-    if (activities.length === 0) {
-      activityList.innerHTML = `
-        <div class="empty-activity">
-          <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas terkini</p>
-        </div>
-      `;
-      return;
     }
     
-    activityList.innerHTML = '';
-    
-    activities.forEach(activity => {
-      const activityItem = document.createElement('div');
-      activityItem.className = 'activity-item';
+    // Fungsi untuk memperbarui tampilan link media sosial
+    function updateSocialLinksUI() {
+      const socialLinksContainer = document.getElementById('socialLinks');
+      socialLinksContainer.innerHTML = '';
       
-      // Format waktu
-      const timeAgo = formatTimeAgo(activity.timestamp?.toDate());
+      if (userProfile.socialLinks) {
+        const { twitter, instagram, github } = userProfile.socialLinks;
+        
+        if (twitter) {
+          const twitterLink = createSocialLink('Twitter', twitter, 'https://twitter.com');
+          socialLinksContainer.appendChild(twitterLink);
+        }
+        
+        if (instagram) {
+          const instagramLink = createSocialLink('Instagram', instagram, 'https://instagram.com');
+          socialLinksContainer.appendChild(instagramLink);
+        }
+        
+        if (github) {
+          const githubLink = createSocialLink('GitHub', github, 'https://github.com');
+          socialLinksContainer.appendChild(githubLink);
+        }
+        
+        if (!twitter && !instagram && !github) {
+          socialLinksContainer.innerHTML = '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
+        }
+      }
+    }
+    
+    // Fungsi pembantu untuk membuat elemen link media sosial
+    function createSocialLink(platform, url, baseUrl) {
+      const linkContainer = document.createElement('div');
+      linkContainer.style.marginBottom = '5px';
       
-      activityItem.innerHTML = `
-        <p>${activity.description}</p>
-        <div class="activity-time">${timeAgo}</div>
-      `;
+      const link = document.createElement('a');
+      link.href = url.startsWith('http') ? url : `${baseUrl}/${url}`;
+      link.textContent = platform;
+      link.className = 'social-link';
+      link.target = '_blank';
+      link.style.color = '#4dabf7';
+      link.style.textDecoration = 'none';
       
-      activityList.appendChild(activityItem);
-    });
-  }
-
-
-
-
-
-  // Fungsi pembantu untuk format waktu
-  function formatTimeAgo(date) {
-    if (!date) return '';
+      linkContainer.appendChild(link);
+      return linkContainer;
+    }
     
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
+    // Fungsi untuk menyimpan profil
+    async function saveProfile() {
+      const displayName = document.getElementById('displayNameInput').value.trim();
+      const twitter = document.getElementById('twitterInput').value.trim();
+      const instagram = document.getElementById('instagramInput').value.trim();
+      const github = document.getElementById('githubInput').value.trim();
+      
+      try {
+        // Update nama tampilan di Firebase Auth jika berubah
+        if (displayName !== user.displayName) {
+          await updateProfile(auth.currentUser, {
+            displayName: displayName
+          });
+        }
+        
+        // Update data di Firestore
+        const socialLinks = {};
+        if (twitter) socialLinks.twitter = twitter;
+        if (instagram) socialLinks.instagram = instagram;
+        if (github) socialLinks.github = github;
+        
+        await updateDoc(userRef, {
+          displayName,
+          socialLinks
+        });
+        
+        // Update UI
+        userProfile.displayName = displayName;
+        userProfile.socialLinks = socialLinks;
+        
+        document.getElementById('userDisplayName').textContent = displayName || 'Pengguna';
+        updateSocialLinksUI();
+        
+        editProfileForm.style.display = 'none';
+        profileInfo.style.display = 'block';
+        
+        showToast('Profil berhasil diperbarui');
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        showToast('Gagal memperbarui profil');
+      }
+    }
     
-    if (diffInSeconds < 60) return 'Baru saja';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+    // Fungsi untuk memuat notifikasi
+    function loadNotifications() {
+      const q = query(notificationsRef, 
+        where("userId", "==", user.uid),
+        orderBy("timestamp", "desc"),
+        limit(10)
+      );
+      
+      onSnapshot(q, (snapshot) => {
+        notifications = [];
+        let unreadCount = 0;
+        
+        snapshot.forEach(doc => {
+          const notification = { id: doc.id, ...doc.data() };
+          notifications.push(notification);
+          if (!notification.read) unreadCount++;
+        });
+        
+        // Update badge notifikasi
+        notificationBadge.textContent = unreadCount;
+        notificationBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        
+        // Render notifikasi
+        renderNotifications();
+      });
+    }
     
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  }
-  
-  // Fungsi pembantu untuk ikon notifikasi
-  function getNotificationIcon(type) {
-    const icons = {
-      'comment': '💬',
-      'like': '👍',
-      'announcement': '📢',
-      'message': '✉️',
-      'system': '⚙️'
-    };
-    
-    return icons[type] || '🔔';
-  }
-  
-
-
-
-
-
-
-
-
-
-
+    // Fungsi untuk merender notifikasi
+    function renderNotifications() {
+      const notificationsList = document.getElementById('notificationsList');
+      
+      if (notifications.length === 0) {
+        notificationsList.innerHTML = `
+          <div class="empty-notifications">
+            <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada notifikasi</p>
+          </div>
+        `;
+        return;
+      }
+      
+      notificationsList.innerHTML = '';
+      
+      notifications.forEach(notification => {
+        const notificationItem = document.createElement('div');
+        notificationItem.className = `notification-item ${notification.read ? '' : 'unread'}`;
+        notificationItem.style.display = 'flex';
+        notificationItem.style.alignItems = 'center';
+        notificationItem.style.padding = '10px';
+        notificationItem.style.borderBottom = '1px solid #444';
+        notificationItem.style.cursor = 'pointer';
+        
+        // Format waktu
+        const timeAgo = formatTimeAgo(notification.timestamp?.toDate());
+        
+        notificationItem.innerHTML = `
+          <div class="notification-icon" style="margin-right: 10px; font-size: 20px;">
+            ${getNotificationIcon(notification.type)}
+          </div>
+          <div class="notification-content" style="flex: 1;">
+            <p style="margin: 0; color: white;">${notification.message}</p>
+            <div class="notification-time" style="font-size: 12px; color: rgba(255,255,255,0.7);">${timeAgo}</div>
+          </div>
+        `;
+        
+        notificationItem.addEventListener('click', () => {
+          // Tandai sebagai sudah dibaca
+          if (!notification.read) {
+            updateDoc(doc(db, "notifications", notification.id), {
+              read: true
+            });
+          }
+          
+          // Handle aksi notifikasi
+          handleNotificationAction(notification);
+        });
+        
+        notificationsList.appendChild(notificationItem);
+      });
+    }
     
     // Fungsi untuk menandai semua notifikasi sebagai sudah dibaca
     function markAllNotificationsAsRead() {
@@ -5442,23 +5402,85 @@ a.footnote-link:hover {
       });
     }
     
-    // Fungsi untuk menangani aksi notifikasi
-    function handleNotificationAction(notification) {
-      // Implementasikan logika berdasarkan jenis notifikasi
-      switch(notification.type) {
-        case 'comment':
-          // Navigasi ke komentar
-          break;
-        case 'like':
-          // Navigasi ke konten yang disukai
-          break;
-        case 'announcement':
-          // Navigasi ke pengumuman
-          break;
-        case 'message':
-          // Navigasi ke pesan
-          break;
+    // Fungsi untuk memuat aktivitas
+    function loadActivities(type = 'recent') {
+      let q;
+      
+      if (type === 'recent') {
+        q = query(activitiesRef, 
+          where("userId", "==", user.uid),
+          orderBy("timestamp", "desc"),
+          limit(10)
+        );
+      } else {
+        q = query(activitiesRef, 
+          where("userId", "==", user.uid),
+          where("type", "==", type),
+          orderBy("timestamp", "desc"),
+          limit(10)
+        );
       }
+      
+      getDocs(q).then(snapshot => {
+        activities = [];
+        snapshot.forEach(doc => {
+          activities.push({ id: doc.id, ...doc.data() });
+        });
+        
+        renderActivities();
+      });
+    }
+    
+    // Fungsi untuk merender aktivitas
+    function renderActivities() {
+      const activityContainer = document.getElementById('recentActivity');
+      
+      if (activities.length === 0) {
+        activityContainer.innerHTML = `
+          <div class="empty-activity">
+            <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas terkini</p>
+          </div>
+        `;
+        return;
+      }
+      
+      activityContainer.innerHTML = '';
+      
+      activities.forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        activityItem.style.padding = '10px';
+        activityItem.style.borderBottom = '1px solid #444';
+        
+        const timeAgo = formatTimeAgo(activity.timestamp?.toDate());
+        
+        activityItem.innerHTML = `
+          <div style="display: flex; align-items: center;">
+            <div style="margin-right: 10px; font-size: 20px;">
+              ${getActivityIcon(activity.type)}
+            </div>
+            <div style="flex: 1;">
+              <p style="margin: 0; color: white;">${activity.message}</p>
+              <div style="font-size: 12px; color: rgba(255,255,255,0.7);">${timeAgo}</div>
+            </div>
+          </div>
+        `;
+        
+        activityContainer.appendChild(activityItem);
+      });
+    }
+    
+    // Fungsi untuk mendapatkan ikon aktivitas
+    function getActivityIcon(type) {
+      const icons = {
+        'comment': '💬',
+        'reply': '↩️',
+        'like': '👍',
+        'feedback': '📝',
+        'post': '✍️'
+      };
+      
+      return icons[type] || '🔹';
     }
     
     // Fungsi untuk memuat pengaturan notifikasi
@@ -5495,60 +5517,56 @@ a.footnote-link:hover {
       });
     }
     
-    // Fungsi untuk memuat aktivitas terkini
-    function loadRecentActivity() {
-      // Implementasi untuk memuat aktivitas dari Firestore
+    // Fungsi pembantu untuk memformat waktu
+    function formatTimeAgo(date) {
+      if (!date) return '';
+      
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+      
+      if (diffInSeconds < 60) return 'Baru saja';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+      
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
     }
     
-
-
-
-  
-  // Fungsi untuk menampilkan toast
-  function showToast(message) {
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.position = 'fixed';
-    toast.style.bottom = '20px';
-    toast.style.left = '50%';
-    toast.style.transform = 'translateX(-50%)';
-    toast.style.backgroundColor = '#4CAF50';
-    toast.style.color = 'white';
-    toast.style.padding = '10px 20px';
-    toast.style.borderRadius = '5px';
-    toast.style.zIndex = '1000';
-    toast.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.5s';
+    // Fungsi pembantu untuk menampilkan toast
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.position = 'fixed';
+      toast.style.bottom = '20px';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.backgroundColor = '#4CAF50';
+      toast.style.color = 'white';
+      toast.style.padding = '10px 20px';
+      toast.style.borderRadius = '5px';
+      toast.style.zIndex = '1000';
+      toast.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+      
+      document.body.appendChild(toast);
+      
       setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 500);
-    }, 3000);
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 500);
+      }, 3000);
+    }
+    
+    // Inisialisasi halaman
+    loadUserProfile();
+    loadNotifications();
+    loadActivities();
+});
 
 
 
