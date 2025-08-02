@@ -6567,7 +6567,7 @@ async function markAllNotificationsAsRead() {
 
           // Di dalam fungsi setupEmojiReactions, ganti bagian createNotification dengan:
 await createActivityNotification(
-    'content-owner-id', // Ganti dengan ID pemilik konten yang sebenarnya
+    '9k1G7CiLZWNCkadVn3m8ZZRaQwg1', // Ganti dengan ID pemilik konten yang sebenarnya
     'reaction',
     user.uid,
     user.displayName || 'Pengguna',
@@ -7352,7 +7352,7 @@ function setupComments() {
       
       // Kirim notifikasi ke admin/pemilik konten
       // Ganti 'admin-user-id' dengan ID admin/pemilik konten yang sebenarnya
-      const contentOwnerId = "admin-user-id"; 
+      const contentOwnerId = "9k1G7CiLZWNCkadVn3m8ZZRaQwg1"; 
       if (contentOwnerId !== user.uid) {
         await createActivityNotification(
           contentOwnerId,
