@@ -2283,6 +2283,87 @@ a.footnote-link:hover {
   }
 
 
+
+
+
+
+
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #444;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.notification-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.notification-item.unread {
+    background-color: rgba(77, 166, 255, 0.1);
+}
+
+.notification-icon {
+    font-size: 20px;
+    margin-right: 15px;
+    width: 30px;
+    text-align: center;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 3px;
+}
+
+.notification-action {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 3px 8px;
+    background-color: #4da6ff;
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.highlight-comment {
+    animation: highlight 3s;
+    border-left: 3px solid #4da6ff;
+    padding-left: 10px;
+}
+
+.highlight-reply {
+    animation: highlight 3s;
+    background-color: rgba(77, 166, 255, 0.1);
+}
+
+@keyframes highlight {
+    0% { background-color: rgba(77, 166, 255, 0.3); }
+    100% { background-color: transparent; }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	
 	
   </style>
@@ -5358,83 +5439,133 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 3000);
     }
     
-    // Fungsi untuk memuat notifikasi
-    function loadNotifications(userId) {
-        if (!userId) return;
+ function loadNotifications(userId) {
+    if (!userId) return;
+    
+    const notificationsRef = collection(db, "notifications");
+    const q = query(notificationsRef, 
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(20) // Meningkatkan limit untuk menampilkan lebih banyak notifikasi
+    );
+    
+    onSnapshot(q, (snapshot) => {
+        notifications = [];
+        let unreadCount = 0;
         
-        const notificationsRef = collection(db, "notifications");
-        const q = query(notificationsRef, 
-            where("userId", "==", userId),
-            orderBy("timestamp", "desc"),
-            limit(10)
-        );
-        
-        onSnapshot(q, (snapshot) => {
-            notifications = [];
-            let unreadCount = 0;
-            
-            snapshot.forEach(doc => {
-                const notification = { id: doc.id, ...doc.data() };
-                notifications.push(notification);
-                if (!notification.read) unreadCount++;
-            });
-            
-            // Update badge notifikasi
-            notificationBadge.textContent = unreadCount;
-            notificationBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
-            
-            // Render notifikasi
-            renderNotifications();
+        snapshot.forEach(doc => {
+            const notification = { 
+                id: doc.id, 
+                ...doc.data(),
+                // Pastikan timestamp ada
+                timestamp: doc.data().timestamp?.toDate() || new Date()
+            };
+            notifications.push(notification);
+            if (!notification.read) unreadCount++;
         });
+        
+        // Update badge notifikasi
+        notificationBadge.textContent = unreadCount;
+        notificationBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        
+        // Render notifikasi
+        renderNotifications();
+    });
+}
+    
+	
+	
+	
+	function renderNotifications() {
+    const notificationsList = document.getElementById('notificationsList');
+    
+    if (notifications.length === 0) {
+        notificationsList.innerHTML = `
+            <div class="empty-notifications">
+                <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada notifikasi</p>
+            </div>
+        `;
+        return;
     }
     
-    // Fungsi untuk merender notifikasi
-    function renderNotifications() {
-        const notificationsList = document.getElementById('notificationsList');
+    notificationsList.innerHTML = '';
+    
+    notifications.forEach(notification => {
+        const notificationItem = document.createElement('div');
+        notificationItem.className = `notification-item ${notification.read ? '' : 'unread'}`;
         
-        if (notifications.length === 0) {
-            notificationsList.innerHTML = `
-                <div class="empty-notifications">
-                    <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada notifikasi</p>
-                </div>
-            `;
-            return;
-        }
+        // Format waktu
+        const timeAgo = formatTimeAgo(notification.timestamp);
         
-        notificationsList.innerHTML = '';
+        notificationItem.innerHTML = `
+            <div class="notification-icon">
+                ${getNotificationIcon(notification.type)}
+            </div>
+            <div class="notification-content">
+                <p>${notification.message}</p>
+                <div class="notification-time">${timeAgo}</div>
+                ${notification.link ? `<div class="notification-action" data-link="${notification.link}">Lihat</div>` : ''}
+            </div>
+        `;
         
-        notifications.forEach(notification => {
-            const notificationItem = document.createElement('div');
-            notificationItem.className = `notification-item ${notification.read ? '' : 'unread'}`;
+        notificationItem.addEventListener('click', () => {
+            // Tandai sebagai sudah dibaca jika belum dibaca
+            if (!notification.read) {
+                updateDoc(doc(db, "notifications", notification.id), {
+                    read: true
+                });
+            }
             
-            // Format waktu
-            const timeAgo = formatTimeAgo(notification.timestamp?.toDate());
-            
-            notificationItem.innerHTML = `
-                <div class="notification-icon">
-                    ${getNotificationIcon(notification.type)}
-                </div>
-                <div class="notification-content">
-                    <p>${notification.message}</p>
-                    <div class="notification-time">${timeAgo}</div>
-                </div>
-            `;
-            
-            notificationItem.addEventListener('click', () => {
-                // Tandai sebagai sudah dibaca
-                if (!notification.read) {
-                    updateDoc(doc(db, "notifications", notification.id), {
-                        read: true
-                    });
-                }
-                
-                // Handle aksi notifikasi
-                handleNotificationAction(notification);
-            });
-            
-            notificationsList.appendChild(notificationItem);
+            // Handle aksi notifikasi
+            handleNotificationAction(notification);
         });
+        
+        notificationsList.appendChild(notificationItem);
+    });
+}
+	
+	
+	
+	
+	
+	
+	async function createBatchNotifications(userIds, type, message, targetId = null, link = null) {
+    if (!userIds || userIds.length === 0) return;
+    
+    const batch = writeBatch(db);
+    const notificationsRef = collection(db, "notifications");
+    
+    userIds.forEach(userId => {
+        if (!userId) return;
+        
+        const newNotification = {
+            userId,
+            type,
+            message,
+            read: false,
+            timestamp: new Date(),
+            targetId,
+            link
+        };
+        
+        const docRef = doc(notificationsRef);
+        batch.set(docRef, newNotification);
+    });
+    
+    try {
+        await batch.commit();
+        console.log('Batch notifications created successfully');
+    } catch (error) {
+        console.error('Error creating batch notifications:', error);
     }
+}
+	
+	
+	
+	
+	
+	
+	
     
     // Fungsi pembantu untuk mendapatkan ikon notifikasi
     function getNotificationIcon(type) {
@@ -5487,24 +5618,96 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
     
-    // Fungsi untuk menangani aksi notifikasi
-    function handleNotificationAction(notification) {
-        // Implementasikan logika berdasarkan jenis notifikasi
-        switch(notification.type) {
-            case 'comment':
-                // Navigasi ke komentar
-                break;
-            case 'like':
-                // Navigasi ke konten yang disukai
-                break;
-            case 'announcement':
-                // Navigasi ke pengumuman
-                break;
-            case 'message':
-                // Navigasi ke pesan
-                break;
+  function handleNotificationAction(notification) {
+    if (notification.link) {
+        // Navigasi berdasarkan link yang disediakan
+        window.location.href = notification.link;
+        return;
+    }
+
+    // Implementasikan logika berdasarkan jenis notifikasi
+    switch(notification.type) {
+        case 'feedback':
+            // Navigasi ke feedback terkait
+            showPageContent(document.getElementById("pageFeedback"));
+            break;
+        case 'discussion':
+            // Navigasi ke diskusi terkait
+            showPageContent(document.getElementById("pageDiscussion"));
+            break;
+        case 'comment':
+            // Navigasi ke komentar terkait
+            scrollToComment(notification.targetId);
+            break;
+        case 'reply':
+            // Navigasi ke balasan komentar
+            scrollToReply(notification.targetId, notification.parentId);
+            break;
+        case 'like':
+            // Navigasi ke konten yang disukai
+            scrollToContent(notification.targetId);
+            break;
+        case 'announcement':
+            // Navigasi ke pengumuman
+            showPageContent(document.getElementById("pageAnnouncements"));
+            break;
+        case 'message':
+            // Navigasi ke pesan
+            showPageContent(document.getElementById("pageMessages"));
+            break;
+        default:
+            console.log('Notifikasi tidak dikenali:', notification.type);
+    }
+}
+
+
+
+
+
+
+function scrollToComment(commentId) {
+    const commentElement = document.getElementById(`comment-${commentId}`);
+    if (commentElement) {
+        commentElement.scrollIntoView({ behavior: 'smooth' });
+        commentElement.classList.add('highlight-comment');
+        setTimeout(() => {
+            commentElement.classList.remove('highlight-comment');
+        }, 3000);
+    }
+}
+
+function scrollToReply(replyId, commentId) {
+    const commentElement = document.getElementById(`comment-${commentId}`);
+    if (commentElement) {
+        commentElement.scrollIntoView({ behavior: 'smooth' });
+        const replyElement = document.getElementById(`reply-${replyId}`);
+        if (replyElement) {
+            replyElement.classList.add('highlight-reply');
+            setTimeout(() => {
+                replyElement.classList.remove('highlight-reply');
+            }, 3000);
         }
     }
+}
+
+function scrollToContent(contentId) {
+    const contentElement = document.getElementById(`content-${contentId}`);
+    if (contentElement) {
+        contentElement.scrollIntoView({ behavior: 'smooth' });
+        contentElement.classList.add('highlight-content');
+        setTimeout(() => {
+            contentElement.classList.remove('highlight-content');
+        }, 3000);
+    }
+}
+
+
+
+
+
+
+
+
     
     // Fungsi untuk memuat pengaturan notifikasi
     function loadNotificationSettings() {
@@ -5563,7 +5766,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-
+// Fungsi untuk membuat notifikasi baru
+async function createNotification(userId, type, message, targetId = null, link = null) {
+    if (!userId) return;
+    
+    const notificationsRef = collection(db, "notifications");
+    const newNotification = {
+        userId,
+        type,
+        message,
+        read: false,
+        timestamp: new Date(),
+        targetId,
+        link
+    };
+    
+    try {
+        await addDoc(notificationsRef, newNotification);
+        console.log('Notifikasi berhasil dibuat');
+    } catch (error) {
+        console.error('Gagal membuat notifikasi:', error);
+    }
+}
 
 
 
@@ -5610,98 +5834,87 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 
-// Fungsi untuk emoji reaksi dengan autentikasi
-function setupEmojiReactions(user) {
-  const emojiOptions = document.querySelectorAll('.emoji-option');
-  const storageKey = 'arduino-history-emoji-reaction';
-  const reactionMessage = document.querySelector('.reaction-message');
-  const loginMessage = document.querySelector('.login-message');
-  
-  // Sembunyikan pesan default
-  reactionMessage.style.display = 'none';
-  loginMessage.style.display = 'none';
-  
-  // Load saved reaction counts
-  const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
-    happy: 0,
-    sad: 0,
-    disappointed: 0,
-    angry: 0,
-    neutral: 0
-  };
-  
-  // Update counts display
-  Object.keys(reactionCounts).forEach(emoji => {
-    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
-  });
-  
-  // Jika pengguna sudah login
-  if (user) {
-    // Load saved reaction for this user
-    const userReactionKey = `${storageKey}-${user.uid}`;
-    const savedReaction = localStorage.getItem(userReactionKey);
+async function setupEmojiReactions(user) {
+    const emojiOptions = document.querySelectorAll('.emoji-option');
+    const storageKey = 'arduino-history-emoji-reaction';
+    const reactionMessage = document.querySelector('.reaction-message');
+    const loginMessage = document.querySelector('.login-message');
     
-    // Highlight saved reaction if exists
-    if (savedReaction) {
-      document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
-    }
+    reactionMessage.style.display = 'none';
+    loginMessage.style.display = 'none';
     
-    // Add click handlers
-    emojiOptions.forEach(option => {
-      option.addEventListener('click', function() {
-        const emojiType = this.dataset.emoji;
+    const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
+        happy: 0,
+        sad: 0,
+        disappointed: 0,
+        angry: 0,
+        neutral: 0
+    };
+    
+    Object.keys(reactionCounts).forEach(emoji => {
+        document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+    });
+    
+    if (user) {
+        const userReactionKey = `${storageKey}-${user.uid}`;
+        const savedReaction = localStorage.getItem(userReactionKey);
         
-        // If already selected, do nothing
-        if (savedReaction === emojiType) return;
-        
-        // Remove previous selection
-        emojiOptions.forEach(opt => opt.classList.remove('selected'));
-        
-        // Add new selection
-        this.classList.add('selected');
-        
-        // Update counts
         if (savedReaction) {
-          reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+            document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
         }
-        reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
         
-        // Update display
-        Object.keys(reactionCounts).forEach(emoji => {
-          document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+        emojiOptions.forEach(option => {
+            option.addEventListener('click', async function() {
+                const emojiType = this.dataset.emoji;
+                
+                if (savedReaction === emojiType) return;
+                
+                emojiOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                if (savedReaction) {
+                    reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+                }
+                reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
+                
+                Object.keys(reactionCounts).forEach(emoji => {
+                    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+                });
+                
+                localStorage.setItem(userReactionKey, emojiType);
+                localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
+                
+                // Create notification for content owner
+                await createNotification(
+                    'content-owner-id', // Replace with actual content owner ID
+                    'reaction',
+                    `${user.displayName || 'Seseorang'} bereaksi ${emojiType} pada konten Anda`,
+                    null,
+                    window.location.href
+                );
+                
+                reactionMessage.style.display = 'block';
+                reactionMessage.style.opacity = 1;
+                setTimeout(() => {
+                    reactionMessage.style.opacity = 0.7;
+                }, 2000);
+            });
         });
-        
-        // Save to localStorage
-        localStorage.setItem(userReactionKey, emojiType);
-        localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
-        
-        // Show thank you message
-        reactionMessage.style.display = 'block';
-        reactionMessage.style.opacity = 1;
-        setTimeout(() => {
-          reactionMessage.style.opacity = 0.7;
-        }, 2000);
-      });
-    });
-  } else {
-    // Jika pengguna belum login
-    loginMessage.style.display = 'block';
-    
-    // Nonaktifkan emoji options
-    emojiOptions.forEach(option => {
-      option.style.opacity = '0.5';
-      option.style.cursor = 'not-allowed';
-      option.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginMessage.style.opacity = 1;
-        setTimeout(() => {
-          loginMessage.style.opacity = 0.7;
-        }, 2000);
-      });
-    });
-  }
+    } else {
+        loginMessage.style.display = 'block';
+        emojiOptions.forEach(option => {
+            option.style.opacity = '0.5';
+            option.style.cursor = 'not-allowed';
+            option.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginMessage.style.opacity = 1;
+                setTimeout(() => {
+                    loginMessage.style.opacity = 0.7;
+                }, 2000);
+            });
+        });
+    }
 }
-
 
 
 
@@ -5977,6 +6190,166 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
+
+
+
+
+
+// Inside the comment submission part of setupComments
+submitComment.addEventListener("click", async () => {
+    const content = commentInput.value.trim();
+    if (!content) return;
+    
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Anda harus login untuk berkomentar");
+        return;
+    }
+    
+    try {
+        const docRef = await addDoc(commentsCollection, {
+            content,
+            userName: user.displayName || user.email.split('@')[0],
+            userId: user.uid,
+            timestamp: serverTimestamp(),
+            likes: 0,
+            replies: []
+        });
+        
+        // Create notification for content owner
+        await createNotification(
+            'content-owner-id', // Replace with actual content owner ID
+            'comment',
+            `${user.displayName || 'Seseorang'} mengomentari konten Anda`,
+            docRef.id,
+            `#comment-${docRef.id}`
+        );
+        
+        commentInput.value = "";
+    } catch (error) {
+        console.error("Error adding comment:", error);
+        alert("Gagal mengirim komentar");
+    }
+});
+
+// Inside the reply submission part of setupComments
+document.querySelectorAll(".reply-submit-btn").forEach(btn => {
+    btn.addEventListener("click", async function() {
+        const commentId = this.dataset.id;
+        const replyForm = document.getElementById(`replyForm-${commentId}`);
+        const textarea = replyForm.querySelector("textarea");
+        const content = textarea.value.trim();
+        
+        if (!content) return;
+        
+        const user = auth.currentUser;
+        if (!user) {
+            alert("Anda harus login untuk membalas komentar");
+            return;
+        }
+        
+        try {
+            const replyData = {
+                id: new Date().getTime().toString(),
+                content,
+                userName: user.displayName || user.email.split('@')[0],
+                userId: user.uid,
+                likes: 0,
+                timestamp: new Date()
+            };
+
+            // Get the original comment to notify its author
+            const commentDoc = await getDoc(doc(commentsCollection, commentId));
+            if (commentDoc.exists() && commentDoc.data().userId !== user.uid) {
+                await createNotification(
+                    commentDoc.data().userId,
+                    'reply',
+                    `${user.displayName || 'Seseorang'} membalas komentar Anda`,
+                    replyData.id,
+                    `#reply-${replyData.id}`
+                );
+            }
+
+            await updateDoc(doc(commentsCollection, commentId), {
+                replies: arrayUnion(replyData)
+            });
+            
+            textarea.value = "";
+            replyForm.classList.remove("active");
+        } catch (error) {
+            console.error("Error adding reply:", error);
+            alert("Gagal mengirim balasan");
+        }
+    });
+});
+
+// Inside the like button part of setupComments
+document.querySelectorAll(".like-btn").forEach(btn => {
+    btn.addEventListener("click", async function() {
+        const commentId = this.dataset.id;
+        const parentId = this.dataset.parent;
+        const user = auth.currentUser;
+        
+        if (!user) {
+            alert("Anda harus login untuk menyukai komentar");
+            return;
+        }
+        
+        try {
+            if (parentId) {
+                // Like pada balasan
+                const commentRef = doc(commentsCollection, parentId);
+                await runTransaction(db, async (transaction) => {
+                    const commentDoc = await transaction.get(commentRef);
+                    const replies = commentDoc.data().replies || [];
+                    const replyIndex = replies.findIndex(r => r.id === commentId);
+                    
+                    if (replyIndex === -1) return;
+                    
+                    const reply = replies[replyIndex];
+                    if (reply.userId !== user.uid) {
+                        // Create notification for reply author
+                        await createNotification(
+                            reply.userId,
+                            'like',
+                            `${user.displayName || 'Seseorang'} menyukai balasan Anda`,
+                            commentId,
+                            `#reply-${commentId}`
+                        );
+                    }
+                    
+                    const updatedReplies = [...replies];
+                    updatedReplies[replyIndex] = {
+                        ...updatedReplies[replyIndex],
+                        likes: (updatedReplies[replyIndex].likes || 0) + 1
+                    };
+                    
+                    transaction.update(commentRef, { replies: updatedReplies });
+                });
+            } else {
+                // Like pada komentar utama
+                const commentRef = doc(commentsCollection, commentId);
+                const commentDoc = await getDoc(commentRef);
+                if (commentDoc.exists() && commentDoc.data().userId !== user.uid) {
+                    // Create notification for comment author
+                    await createNotification(
+                        commentDoc.data().userId,
+                        'like',
+                        `${user.displayName || 'Seseorang'} menyukai komentar Anda`,
+                        commentId,
+                        `#comment-${commentId}`
+                    );
+                }
+                
+                await updateDoc(commentRef, {
+                    likes: increment(1)
+                });
+            }
+        } catch (error) {
+            console.error("Error liking comment:", error);
+        }
+    });
+});
 
 
 // Fungsi untuk mengelola komentar
@@ -6947,8 +7320,6 @@ function openReplyModal(feedback) {
 function closeReplyModal() {
     document.getElementById('replyModal').style.display = 'none';
 }
-
-// Fungsi untuk mengirim reply
 async function submitReply(e) {
     e.preventDefault();
     
@@ -6974,7 +7345,7 @@ async function submitReply(e) {
     try {
         // Tambahkan reply ke subcollection
         const repliesRef = collection(db, "feedback", feedbackId, "replies");
-        await addDoc(repliesRef, {
+        const replyDoc = await addDoc(repliesRef, {
             content,
             userId: user.uid,
             userName: user.displayName || 'Anonymous',
@@ -6988,6 +7359,18 @@ async function submitReply(e) {
             replyCount: increment(1)
         });
         
+        // Get feedback details to notify the author
+        const feedbackDoc = await getDoc(feedbackRef);
+        if (feedbackDoc.exists() && feedbackDoc.data().userId !== user.uid) {
+            await createNotification(
+                feedbackDoc.data().userId,
+                'reply',
+                `${user.displayName || 'Seseorang'} membalas masukan Anda`,
+                replyDoc.id,
+                `/feedback/${feedbackId}#reply-${replyDoc.id}`
+            );
+        }
+        
         // Update UI
         const feedbackItem = document.querySelector(`.feedback-item[data-id="${feedbackId}"]`);
         if (feedbackItem) {
@@ -6996,10 +7379,7 @@ async function submitReply(e) {
             replyCount.textContent = currentCount + 1;
         }
         
-        // Tutup modal dan reset form
         closeReplyModal();
-        
-        // Tampilkan notifikasi sukses
         alert('Balasan berhasil dikirim!');
         
     } catch (error) {
@@ -7171,19 +7551,13 @@ function renderPinnedAnnouncementItem(announcement) {
 
 
 
-
-
-
-
-// Fungsi submitFeedback yang diperbarui
 async function submitFeedback(e) {
     e.preventDefault();
     
-   
     const title = document.getElementById('feedbackTitle').value.trim();
     const category = document.getElementById('feedbackCategory').value;
-const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
-const normalizedCategory = validCategories.includes(category) ? category : 'other';
+    const validCategories = ['design', 'feature', 'content', 'bug', 'arduino', 'other'];
+    const normalizedCategory = validCategories.includes(category) ? category : 'other';
     const content = document.getElementById('feedbackContent').value.trim();
     
     // Validasi input
@@ -7191,8 +7565,6 @@ const normalizedCategory = validCategories.includes(category) ? category : 'othe
         showNotification('Judul dan isi masukan tidak boleh kosong!', 'error');
         return;
     }
-    
-   
     
     const submitBtn = document.getElementById('submitFeedback');
     const originalBtnText = submitBtn.innerHTML;
@@ -7202,7 +7574,7 @@ const normalizedCategory = validCategories.includes(category) ? category : 'othe
     const user = auth.currentUser;
     const feedbackData = {
         title,
-            category: normalizedCategory, // Pastikan kategori yang disimpan sudah dinormalisasi
+        category: normalizedCategory,
         content,
         userName: user?.displayName || 'Anonymous',
         userEmail: user?.email || null,
@@ -7219,10 +7591,17 @@ const normalizedCategory = validCategories.includes(category) ? category : 'othe
         const feedbackRef = collection(db, "feedback");
         const docRef = await addDoc(feedbackRef, feedbackData);
         
-        // Update UI langsung dengan data baru
-        const feedbackWithId = { ...feedbackData, id: docRef.id };
+        // Create notification for admin
+        await createNotification(
+            'admin-user-id', // Replace with actual admin ID
+            'feedback',
+            `Feedback baru: ${title}`,
+            docRef.id,
+            `/feedback/${docRef.id}`
+        );
         
-        // Dapatkan jumlah like dan reply (default 0)
+        // Update UI
+        const feedbackWithId = { ...feedbackData, id: docRef.id };
         const [repliesCount, likesCount, userLiked] = await Promise.all([
             getRepliesCount(docRef.id),
             getLikesCount(docRef.id),
@@ -7230,22 +7609,18 @@ const normalizedCategory = validCategories.includes(category) ? category : 'othe
         ]);
         
         renderFeedbackItem(feedbackWithId, repliesCount, likesCount, userLiked);
-        
-        // Reset form
         e.target.reset();
         showNotification('Masukan berhasil dikirim!', 'success');
         
     } catch (error) {
         console.error('Error submitting feedback:', error);
-        
-        // Coba simpan ke cache jika offline
         if (error.code === 'unavailable') {
             try {
                 const cachedFeedback = JSON.parse(localStorage.getItem('pendingFeedback') || "[]");
                 cachedFeedback.push({
                     ...feedbackData,
                     timestamp: new Date().toISOString(),
-                    category: category // Pastikan kategori yang disimpan sesuai
+                    category: category
                 });
                 localStorage.setItem('pendingFeedback', JSON.stringify(cachedFeedback));
                 showNotification('Masukan disimpan secara offline dan akan dikirim ketika online', 'warning');
@@ -7261,10 +7636,6 @@ const normalizedCategory = validCategories.includes(category) ? category : 'othe
         submitBtn.innerHTML = originalBtnText;
     }
 }
-
-
-
-
 
 
 
@@ -9232,6 +9603,40 @@ function closeEditComparison() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Global variables for forum
 let allDiscussions = [];
 let filteredDiscussions = [];
@@ -9496,68 +9901,6 @@ function searchDiscussions() {
   displayDiscussions();
 }
 
-// Create new discussion
-async function createNewDiscussion() {
-  const user = auth.currentUser;
-  if (!user) {
-    alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
-    return;
-  }
-  
-  const title = document.getElementById('discussionTitle').value.trim();
-  const category = document.getElementById('discussionCategory').value;
-  const content = document.getElementById('discussionContent').value.trim();
-  
-  if (!title || !category || !content) {
-    alert('Semua field harus diisi');
-    return;
-  }
-  
-  const submitBtn = document.getElementById('submitDiscussion');
-  const originalText = submitBtn.textContent;
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Membuat...';
-  
-  try {
-    const newDiscussion = {
-      title,
-      category,
-      content,
-      authorId: user.uid,
-      authorName: user.displayName || 'Anonymous',
-      authorEmail: user.email,
-      createdAt: serverTimestamp(),
-      views: 0,
-      likes: 0,
-      replyCount: 0
-    };
-    
-    const docRef = await addDoc(collection(db, "discussions"), newDiscussion);
-    
-    // Add to local array
-    newDiscussion.id = docRef.id;
-    newDiscussion.createdAt = new Date();
-    allDiscussions.unshift(newDiscussion);
-    filteredDiscussions.unshift(newDiscussion);
-    
-    // Reset form and close modal
-    document.getElementById('newDiscussionForm').reset();
-    document.getElementById('newDiscussionModal').style.display = 'none';
-    
-    // Refresh display
-    currentPage = 1;
-    displayDiscussions();
-    
-    // Show success message
-    alert('Diskusi berhasil dibuat!');
-  } catch (error) {
-    console.error("Error creating discussion:", error);
-    alert('Gagal membuat diskusi. Silakan coba lagi nanti.');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = originalText;
-  }
-}
 
 // View discussion details
 function viewDiscussion(discussionId) {
@@ -9713,67 +10056,95 @@ document.getElementById('newDiscussionForm').addEventListener('submit', function
 });
 
 
-// Fungsi untuk membuat diskusi baru
+
+
+
 async function createNewDiscussion() {
-  const user = auth.currentUser;
-  if (!user) {
-    alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
-    return;
-  }
+    const user = auth.currentUser;
+    if (!user) {
+        alert('Silakan login terlebih dahulu untuk membuat diskusi baru');
+        return;
+    }
 
-  const title = document.getElementById('discussionTitle').value.trim();
-  const category = document.getElementById('discussionCategory').value;
-  const content = document.getElementById('discussionContent').value.trim();
+    const title = document.getElementById('discussionTitle').value.trim();
+    const category = document.getElementById('discussionCategory').value;
+    const content = document.getElementById('discussionContent').value.trim();
 
-  if (!title || !category || !content) {
-    alert('Semua field harus diisi');
-    return;
-  }
+    if (!title || !category || !content) {
+        alert('Semua field harus diisi');
+        return;
+    }
 
-  const submitBtn = document.getElementById('submitDiscussion');
-  const originalBtnText = submitBtn.innerHTML;
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = 'Membuat...';
+    const submitBtn = document.getElementById('submitDiscussion');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Membuat...';
 
-  try {
-    const newDiscussion = {
-      title,
-      category,
-      content,
-      authorId: user.uid,
-      authorName: user.displayName || 'Anonymous',
-      authorEmail: user.email,
-      createdAt: serverTimestamp(),
-      views: 0,
-      likes: 0,
-      replyCount: 0
-    };
+    try {
+        const newDiscussion = {
+            title,
+            category,
+            content,
+            authorId: user.uid,
+            authorName: user.displayName || 'Anonymous',
+            authorEmail: user.email,
+            createdAt: serverTimestamp(),
+            views: 0,
+            likes: 0,
+            replyCount: 0
+        };
 
-    const docRef = await addDoc(collection(db, "discussions"), newDiscussion);
-    newDiscussion.id = docRef.id;
-    newDiscussion.createdAt = new Date();
+        const docRef = await addDoc(collection(db, "discussions"), newDiscussion);
+        newDiscussion.id = docRef.id;
+        newDiscussion.createdAt = new Date();
 
-    // Tambahkan ke array lokal
-    allDiscussions.unshift(newDiscussion);
-    filteredDiscussions.unshift(newDiscussion);
+        // Create notification for followers of this category
+        await createNotification(
+            'followers-of-' + category, // You'll need to implement getting followers
+            'discussion',
+            `Diskusi baru dalam ${category}: ${title}`,
+            docRef.id,
+            `/discussions/${docRef.id}`
+        );
 
-    // Reset form dan tutup modal
-    document.getElementById('newDiscussionForm').reset();
-    document.getElementById('newDiscussionModal').style.display = 'none';
-
-    // Refresh tampilan
-    currentPage = 1;
-    displayDiscussions();
-
-    alert('Diskusi berhasil dibuat!');
-  } catch (error) {
-    console.error("Error creating discussion:", error);
-    alert('Gagal membuat diskusi. Silakan coba lagi nanti.');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = originalBtnText;
-  }
+        // Update UI
+        allDiscussions.unshift(newDiscussion);
+        filteredDiscussions.unshift(newDiscussion);
+        document.getElementById('newDiscussionForm').reset();
+        document.getElementById('newDiscussionModal').style.display = 'none';
+        currentPage = 1;
+        displayDiscussions();
+        
+        alert('Diskusi berhasil dibuat!');
+    } catch (error) {
+        console.error("Error creating discussion:", error);
+        alert('Gagal membuat diskusi. Silakan coba lagi nanti.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Hapus event listener ganda untuk form diskusi
