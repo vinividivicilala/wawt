@@ -6627,7 +6627,24 @@ function setupReactionListeners() {
     });
 }
 
-
+function setupCommentListeners() {
+    const commentsRef = collection(db, "arduinoHistoryComments");
+    return onSnapshot(commentsRef, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "added") {
+                const newComment = change.doc.data();
+                if (newComment.userId !== auth.currentUser?.uid) {
+                    createActivityNotification('comment', {
+                        contentType: 'arduinoHistory',
+                        contentId: newComment.historyId,
+                        commentId: change.doc.id,
+                        recipientId: newComment.replyTo // Jika ini adalah balasan
+                    });
+                }
+            }
+        });
+    });
+}
 
 
 
