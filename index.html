@@ -5412,6 +5412,434 @@ a.footnote-link:hover {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    // DOM Elements
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const greeting = document.getElementById("greeting");
+    const likeBtn = document.getElementById("likeBtn");
+    const followBtn = document.getElementById("followBtn");
+	
+	
+	
+	
+	
+	
+	async function setupEmojiReactions(user, contentId = 'arduino-history') {
+    const emojiOptions = document.querySelectorAll('.emoji-option');
+    const reactionMessage = document.querySelector('.reaction-message');
+    const loginMessage = document.querySelector('.login-message');
+
+    reactionMessage.style.display = 'none';
+    loginMessage.style.display = 'none';
+
+    if (!user) {
+        loginMessage.style.display = 'block';
+        emojiOptions.forEach(option => {
+            option.style.opacity = '0.5';
+            option.style.cursor = 'not-allowed';
+            option.addEventListener('click', e => {
+                e.preventDefault();
+                loginMessage.style.opacity = 1;
+                setTimeout(() => loginMessage.style.opacity = 0.7, 2000);
+            });
+        });
+        return;
+    }
+
+    const reactionDocRef = doc(db, 'reactions', contentId);
+    const userReactionRef = doc(db, 'userReactions', `${user.uid}_${contentId}`);
+
+    // Realtime listener
+    onSnapshot(reactionDocRef, (snapshot) => {
+        const data = snapshot.data();
+        if (data) {
+            Object.keys(data).forEach(emoji => {
+                const el = document.getElementById(`${emoji}-count`);
+                if (el) el.textContent = data[emoji];
+            });
+        }
+    });
+
+    let userReaction = null;
+    const userReactionSnap = await getDoc(userReactionRef);
+    if (userReactionSnap.exists()) {
+        userReaction = userReactionSnap.data().emojiType;
+        const selected = document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`);
+        if (selected) selected.classList.add('selected');
+    }
+
+    emojiOptions.forEach(option => {
+        option.addEventListener('click', async function () {
+            const emojiType = this.dataset.emoji;
+            if (userReaction === emojiType) return;
+
+            emojiOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+
+            const updates = {};
+            if (userReaction) updates[userReaction] = increment(-1);
+            updates[emojiType] = increment(1);
+
+            await updateDoc(reactionDocRef, updates).catch(async () => {
+                await setDoc(reactionDocRef, updates, { merge: true });
+            });
+
+            await setDoc(userReactionRef, {
+                userId: user.uid,
+                contentId,
+                emojiType,
+                timestamp: Date.now()
+            });
+
+            userReaction = emojiType;
+
+          // Di dalam fungsi setupEmojiReactions, ganti bagian createNotification dengan:
+await createActivityNotification(
+    'content-owner-id', // Ganti dengan ID pemilik konten yang sebenarnya
+    'reaction',
+    user.uid,
+    user.displayName || 'Pengguna',
+    emojiType,
+    contentId.includes('arduino') ? 'arduino-history' : 'content',
+    contentId
+);
+
+            // ✅ Aktivitas pengguna
+            await addDoc(collection(db, "activities"), {
+                userId: user.uid,
+                type: "reaction",
+                emojiType,
+                contentId,
+                timestamp: Date.now()
+            });
+
+            // ✅ Pesan sukses
+            reactionMessage.style.display = 'block';
+            reactionMessage.style.opacity = 1;
+            setTimeout(() => reactionMessage.style.opacity = 0.7, 2000);
+        });
+    });
+}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+    // Authentication Functions
+    if (loginBtn) {
+        loginBtn.addEventListener("click", () => {
+            signInWithPopup(auth, provider).catch(console.error);
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            signOut(auth).catch(console.error);
+        });
+    }
+
+    // Auth State Listener
+    onAuthStateChanged(auth, (user) => {
+        const greeting = document.getElementById("greeting");
+        const loginBtn = document.getElementById("loginBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (user) {
+            document.getElementById("page1").style.display = "block";
+            document.getElementById("page2").style.display = "none";
+            document.getElementById("page3").style.display = "none";
+			
+
+            const hours = new Date().getHours();
+            let greet = "Selamat malam";
+            if (hours >= 5 && hours < 11) greet = "Selamat pagi";
+            else if (hours >= 11 && hours < 15) greet = "Selamat siang";
+            else if (hours >= 15 && hours < 18) greet = "Selamat sore";
+
+            if (greeting) greeting.textContent = `${greet}, ${user.displayName}`;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) {
+                const phrases = [
+                    `Ada apa kamu di sini, ${user.displayName}?`,
+                    `Lagi nyari inspirasi ya, ${user.displayName}?`,
+                    `Selamat datang kembali, ${user.displayName}!`,
+                    `Semangat belajar, ${user.displayName}!`,
+                    `Mau ngoprek Arduino lagi, ${user.displayName}?`
+                ];
+                let index = 0;
+                function changePhrase() {
+                    dynamicText.textContent = phrases[index];
+                    index = (index + 1) % phrases.length;
+                }
+                changePhrase();
+                setInterval(changePhrase, 20000);
+            }
+
+            if (loginBtn) loginBtn.style.display = "none";
+            if (logoutBtn) logoutBtn.style.display = "inline-block";
+            if (likeBtn) likeBtn.disabled = false;
+            if (followBtn) followBtn.disabled = false;
+			
+			    setupEmojiReactions(user);
+			
+
+
+        } else {
+            if (greeting) greeting.textContent = "";
+            if (loginBtn) loginBtn.style.display = "inline-block";
+            if (logoutBtn) logoutBtn.style.display = "none";
+            if (likeBtn) likeBtn.disabled = true;
+            if (followBtn) followBtn.disabled = true;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) dynamicText.textContent = "";
+			    setupEmojiReactions(null);
+
+        }
+    });
+
+    // Page Management
+    window.onload = function() {
+        const page1 = document.getElementById("page1");
+        const page2 = document.getElementById("page2");
+        const page3 = document.getElementById("page3");
+        const page4 = document.getElementById("page4");
+        const page5 = document.getElementById("page5");
+        const page6 = document.getElementById("page6");
+        const page7 = document.getElementById("page7");
+		  const page8 = document.getElementById("page8");
+		    const page9 = document.getElementById("page9");
+			const page10 = document.getElementById("page10");
+
+
+        // Format waktu lengkap
+        function formatTanggalLengkap(date) {
+            const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return `${hari[date.getDay()]}, ${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        // Waktu terakhir update disimpan di localStorage
+        let lastUpdatedTentang = localStorage.getItem("tentangLastUpdated");
+
+        if (!lastUpdatedTentang) {
+            lastUpdatedTentang = new Date("2025-07-14T00:00:00Z").toISOString();
+            localStorage.setItem("tentangLastUpdated", lastUpdatedTentang);
+        }
+
+        function updateTentangRelativeTime() {
+            const now = new Date();
+            const updatedDate = new Date(localStorage.getItem("tentangLastUpdated"));
+            const diffSec = Math.floor((now - updatedDate) / 1000);
+            let waktu = "baru saja";
+
+            if (diffSec >= 60 && diffSec < 3600)
+                waktu = `${Math.floor(diffSec / 60)} menit yang lalu`;
+            else if (diffSec >= 3600 && diffSec < 86400)
+                waktu = `${Math.floor(diffSec / 3600)} jam yang lalu`;
+            else if (diffSec >= 86400)
+                waktu = `${Math.floor(diffSec / 86400)} hari yang lalu`;
+
+            const lengkap = formatTanggalLengkap(updatedDate);
+            const span = document.getElementById("tentangKamiTime");
+            if (span) span.innerHTML = `${waktu} • ${lengkap}`;
+        }
+
+        // Update terus setiap 10 detik
+        setInterval(updateTentangRelativeTime, 10000);
+        updateTentangRelativeTime();
+		
+		
+		
+		
+	 
+	 // Fungsi utama untuk menampilkan halaman
+function showPageContent(pageElement) {
+  const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9, page10"];
+  
+  // Sembunyikan semua halaman
+  pageIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+
+  // Tampilkan halaman yang dipilih
+  if (pageElement) {
+    pageElement.style.display = "block";
+    
+    // Jika page7, muat pengumuman dan masukan
+    if (pageElement.id === "page7") {
+      loadPinnedAnnouncements();
+      loadFeedback().catch(console.error);
+    }
+  }
+  
+  window.scrollTo(0, 0);
+}
+
+
+
+
+
+
+
+
+
+
+// Fungsi untuk update sidebar dan scroll indicator
+function updateScrollTracking() {
+  const timelineItems = document.querySelectorAll('.timeline-item');
+  const contentLinks = document.querySelectorAll('.content-link');
+  const scrollIndicator = document.getElementById('scrollIndicator');
+  const timeline = document.querySelector('.history-timeline');
+  
+  // Hitung posisi dan tinggi
+  const timelineRect = timeline.getBoundingClientRect();
+  const timelineStart = timelineRect.top + window.scrollY;
+  const timelineEnd = timelineStart + timeline.offsetHeight;
+  const scrollPosition = window.scrollY;
+  
+  // Update scroll indicator
+  if (scrollPosition >= timelineStart && scrollPosition <= timelineEnd) {
+    const scrollPercent = (scrollPosition - timelineStart) / timeline.offsetHeight;
+    scrollIndicator.style.height = `${scrollPercent * 100}%`;
+  } else if (scrollPosition < timelineStart) {
+    scrollIndicator.style.height = '0%';
+  } else {
+    scrollIndicator.style.height = '100%';
+  }
+  
+  // Update active link di sidebar
+  timelineItems.forEach((item, index) => {
+    const itemRect = item.getBoundingClientRect();
+    const itemStart = itemRect.top + window.scrollY;
+    const itemEnd = itemStart + item.offsetHeight;
+    
+    if (scrollPosition >= itemStart - 200 && scrollPosition < itemEnd - 200) {
+      // Hapus class active dari semua link
+      contentLinks.forEach(link => link.classList.remove('active'));
+      
+      // Tambah class active ke link yang sesuai
+      contentLinks[index].classList.add('active');
+      
+      // Highlight item timeline
+      item.style.background = 'rgba(255, 255, 255, 0.15)';
+      item.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+    } else {
+      item.style.background = 'rgba(0, 0, 0, 0.3)';
+      item.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+    }
+  });
+}
+
+// Event listener untuk scroll
+window.addEventListener('scroll', updateScrollTracking);
+window.addEventListener('load', updateScrollTracking);
+
+// Smooth scroll untuk link di sidebar
+document.querySelectorAll('.content-link').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const targetId = this.getAttribute('href');
+    const targetElement = document.querySelector(targetId);
+    
+    if (targetElement) {
+      window.scrollTo({
+        top: targetElement.offsetTop - 120,
+        behavior: 'smooth'
+      });
+    }
+  });
+});
+
+// Fungsi untuk navigasi halaman
+function navigateToPage(pageNumber) {
+  const pageElement = document.getElementById(`page${pageNumber}`);
+  if (pageElement) {
+    showPageContent(pageElement);
+    history.pushState({ page: `page${pageNumber}` }, `Page ${pageNumber}`, `/halaman-${pageNumber}`);
+  }
+}
+
+
+
+
+
+// Tambahkan ini di bagian JavaScript
+document.querySelectorAll('.footnote-link').forEach(link => {
+  link.addEventListener('click', function(e) {
+    if(this.hash.startsWith('#footnote')) {
+      e.preventDefault();
+      const target = document.querySelector(this.hash);
+      if(target) {
+        window.scrollTo({
+          top: target.offsetTop - 100,
+          behavior: 'smooth'
+        });
+        
+        // Highlight sementara
+        target.style.backgroundColor = 'rgba(255,255,255,0.1)';
+        setTimeout(() => {
+          target.style.backgroundColor = 'transparent';
+        }, 2000);
+      }
+    }
+  });
+});
+
+
+
+
+	
+	
+	
+	
+
+
+
+
+
+
 document.addEventListener("DOMContentLoaded", function () {
 
     // Referensi dokumen pengguna
@@ -6446,448 +6874,8 @@ async function markAllNotificationsAsRead() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    // DOM Elements
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const greeting = document.getElementById("greeting");
-    const likeBtn = document.getElementById("likeBtn");
-    const followBtn = document.getElementById("followBtn");
 	
 	
-	
-	
-	
-	
-	async function setupEmojiReactions(user, contentId = 'arduino-history') {
-    const emojiOptions = document.querySelectorAll('.emoji-option');
-    const reactionMessage = document.querySelector('.reaction-message');
-    const loginMessage = document.querySelector('.login-message');
-
-    reactionMessage.style.display = 'none';
-    loginMessage.style.display = 'none';
-
-    if (!user) {
-        loginMessage.style.display = 'block';
-        emojiOptions.forEach(option => {
-            option.style.opacity = '0.5';
-            option.style.cursor = 'not-allowed';
-            option.addEventListener('click', e => {
-                e.preventDefault();
-                loginMessage.style.opacity = 1;
-                setTimeout(() => loginMessage.style.opacity = 0.7, 2000);
-            });
-        });
-        return;
-    }
-
-    const reactionDocRef = doc(db, 'reactions', contentId);
-    const userReactionRef = doc(db, 'userReactions', `${user.uid}_${contentId}`);
-
-    // Realtime listener
-    onSnapshot(reactionDocRef, (snapshot) => {
-        const data = snapshot.data();
-        if (data) {
-            Object.keys(data).forEach(emoji => {
-                const el = document.getElementById(`${emoji}-count`);
-                if (el) el.textContent = data[emoji];
-            });
-        }
-    });
-
-    let userReaction = null;
-    const userReactionSnap = await getDoc(userReactionRef);
-    if (userReactionSnap.exists()) {
-        userReaction = userReactionSnap.data().emojiType;
-        const selected = document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`);
-        if (selected) selected.classList.add('selected');
-    }
-
-    emojiOptions.forEach(option => {
-        option.addEventListener('click', async function () {
-            const emojiType = this.dataset.emoji;
-            if (userReaction === emojiType) return;
-
-            emojiOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-
-            const updates = {};
-            if (userReaction) updates[userReaction] = increment(-1);
-            updates[emojiType] = increment(1);
-
-            await updateDoc(reactionDocRef, updates).catch(async () => {
-                await setDoc(reactionDocRef, updates, { merge: true });
-            });
-
-            await setDoc(userReactionRef, {
-                userId: user.uid,
-                contentId,
-                emojiType,
-                timestamp: Date.now()
-            });
-
-            userReaction = emojiType;
-
-          // Di dalam fungsi setupEmojiReactions, ganti bagian createNotification dengan:
-await createActivityNotification(
-    'content-owner-id', // Ganti dengan ID pemilik konten yang sebenarnya
-    'reaction',
-    user.uid,
-    user.displayName || 'Pengguna',
-    emojiType,
-    contentId.includes('arduino') ? 'arduino-history' : 'content',
-    contentId
-);
-
-            // ✅ Aktivitas pengguna
-            await addDoc(collection(db, "activities"), {
-                userId: user.uid,
-                type: "reaction",
-                emojiType,
-                contentId,
-                timestamp: Date.now()
-            });
-
-            // ✅ Pesan sukses
-            reactionMessage.style.display = 'block';
-            reactionMessage.style.opacity = 1;
-            setTimeout(() => reactionMessage.style.opacity = 0.7, 2000);
-        });
-    });
-}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-
-
-    // Authentication Functions
-    if (loginBtn) {
-        loginBtn.addEventListener("click", () => {
-            signInWithPopup(auth, provider).catch(console.error);
-        });
-    }
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
-            signOut(auth).catch(console.error);
-        });
-    }
-
-    // Auth State Listener
-    onAuthStateChanged(auth, (user) => {
-        const greeting = document.getElementById("greeting");
-        const loginBtn = document.getElementById("loginBtn");
-        const logoutBtn = document.getElementById("logoutBtn");
-
-        if (user) {
-            document.getElementById("page1").style.display = "block";
-            document.getElementById("page2").style.display = "none";
-            document.getElementById("page3").style.display = "none";
-			
-
-            const hours = new Date().getHours();
-            let greet = "Selamat malam";
-            if (hours >= 5 && hours < 11) greet = "Selamat pagi";
-            else if (hours >= 11 && hours < 15) greet = "Selamat siang";
-            else if (hours >= 15 && hours < 18) greet = "Selamat sore";
-
-            if (greeting) greeting.textContent = `${greet}, ${user.displayName}`;
-
-            const dynamicText = document.getElementById("dynamicText");
-            if (dynamicText) {
-                const phrases = [
-                    `Ada apa kamu di sini, ${user.displayName}?`,
-                    `Lagi nyari inspirasi ya, ${user.displayName}?`,
-                    `Selamat datang kembali, ${user.displayName}!`,
-                    `Semangat belajar, ${user.displayName}!`,
-                    `Mau ngoprek Arduino lagi, ${user.displayName}?`
-                ];
-                let index = 0;
-                function changePhrase() {
-                    dynamicText.textContent = phrases[index];
-                    index = (index + 1) % phrases.length;
-                }
-                changePhrase();
-                setInterval(changePhrase, 20000);
-            }
-
-            if (loginBtn) loginBtn.style.display = "none";
-            if (logoutBtn) logoutBtn.style.display = "inline-block";
-            if (likeBtn) likeBtn.disabled = false;
-            if (followBtn) followBtn.disabled = false;
-			
-			    setupEmojiReactions(user);
-			
-
-
-        } else {
-            if (greeting) greeting.textContent = "";
-            if (loginBtn) loginBtn.style.display = "inline-block";
-            if (logoutBtn) logoutBtn.style.display = "none";
-            if (likeBtn) likeBtn.disabled = true;
-            if (followBtn) followBtn.disabled = true;
-
-            const dynamicText = document.getElementById("dynamicText");
-            if (dynamicText) dynamicText.textContent = "";
-			    setupEmojiReactions(null);
-
-        }
-    });
-
-    // Page Management
-    window.onload = function() {
-        const page1 = document.getElementById("page1");
-        const page2 = document.getElementById("page2");
-        const page3 = document.getElementById("page3");
-        const page4 = document.getElementById("page4");
-        const page5 = document.getElementById("page5");
-        const page6 = document.getElementById("page6");
-        const page7 = document.getElementById("page7");
-		  const page8 = document.getElementById("page8");
-		    const page9 = document.getElementById("page9");
-			const page10 = document.getElementById("page10");
-
-
-        // Format waktu lengkap
-        function formatTanggalLengkap(date) {
-            const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            return `${hari[date.getDay()]}, ${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
-        }
-
-        // Waktu terakhir update disimpan di localStorage
-        let lastUpdatedTentang = localStorage.getItem("tentangLastUpdated");
-
-        if (!lastUpdatedTentang) {
-            lastUpdatedTentang = new Date("2025-07-14T00:00:00Z").toISOString();
-            localStorage.setItem("tentangLastUpdated", lastUpdatedTentang);
-        }
-
-        function updateTentangRelativeTime() {
-            const now = new Date();
-            const updatedDate = new Date(localStorage.getItem("tentangLastUpdated"));
-            const diffSec = Math.floor((now - updatedDate) / 1000);
-            let waktu = "baru saja";
-
-            if (diffSec >= 60 && diffSec < 3600)
-                waktu = `${Math.floor(diffSec / 60)} menit yang lalu`;
-            else if (diffSec >= 3600 && diffSec < 86400)
-                waktu = `${Math.floor(diffSec / 3600)} jam yang lalu`;
-            else if (diffSec >= 86400)
-                waktu = `${Math.floor(diffSec / 86400)} hari yang lalu`;
-
-            const lengkap = formatTanggalLengkap(updatedDate);
-            const span = document.getElementById("tentangKamiTime");
-            if (span) span.innerHTML = `${waktu} • ${lengkap}`;
-        }
-
-        // Update terus setiap 10 detik
-        setInterval(updateTentangRelativeTime, 10000);
-        updateTentangRelativeTime();
-		
-		
-		
-		
-	 
-	 // Fungsi utama untuk menampilkan halaman
-function showPageContent(pageElement) {
-  const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9, page10"];
-  
-  // Sembunyikan semua halaman
-  pageIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-
-  // Tampilkan halaman yang dipilih
-  if (pageElement) {
-    pageElement.style.display = "block";
-    
-    // Jika page7, muat pengumuman dan masukan
-    if (pageElement.id === "page7") {
-      loadPinnedAnnouncements();
-      loadFeedback().catch(console.error);
-    }
-  }
-  
-  window.scrollTo(0, 0);
-}
-
-
-
-
-
-
-
-
-
-
-// Fungsi untuk update sidebar dan scroll indicator
-function updateScrollTracking() {
-  const timelineItems = document.querySelectorAll('.timeline-item');
-  const contentLinks = document.querySelectorAll('.content-link');
-  const scrollIndicator = document.getElementById('scrollIndicator');
-  const timeline = document.querySelector('.history-timeline');
-  
-  // Hitung posisi dan tinggi
-  const timelineRect = timeline.getBoundingClientRect();
-  const timelineStart = timelineRect.top + window.scrollY;
-  const timelineEnd = timelineStart + timeline.offsetHeight;
-  const scrollPosition = window.scrollY;
-  
-  // Update scroll indicator
-  if (scrollPosition >= timelineStart && scrollPosition <= timelineEnd) {
-    const scrollPercent = (scrollPosition - timelineStart) / timeline.offsetHeight;
-    scrollIndicator.style.height = `${scrollPercent * 100}%`;
-  } else if (scrollPosition < timelineStart) {
-    scrollIndicator.style.height = '0%';
-  } else {
-    scrollIndicator.style.height = '100%';
-  }
-  
-  // Update active link di sidebar
-  timelineItems.forEach((item, index) => {
-    const itemRect = item.getBoundingClientRect();
-    const itemStart = itemRect.top + window.scrollY;
-    const itemEnd = itemStart + item.offsetHeight;
-    
-    if (scrollPosition >= itemStart - 200 && scrollPosition < itemEnd - 200) {
-      // Hapus class active dari semua link
-      contentLinks.forEach(link => link.classList.remove('active'));
-      
-      // Tambah class active ke link yang sesuai
-      contentLinks[index].classList.add('active');
-      
-      // Highlight item timeline
-      item.style.background = 'rgba(255, 255, 255, 0.15)';
-      item.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-    } else {
-      item.style.background = 'rgba(0, 0, 0, 0.3)';
-      item.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-    }
-  });
-}
-
-// Event listener untuk scroll
-window.addEventListener('scroll', updateScrollTracking);
-window.addEventListener('load', updateScrollTracking);
-
-// Smooth scroll untuk link di sidebar
-document.querySelectorAll('.content-link').forEach(link => {
-  link.addEventListener('click', function(e) {
-    e.preventDefault();
-    const targetId = this.getAttribute('href');
-    const targetElement = document.querySelector(targetId);
-    
-    if (targetElement) {
-      window.scrollTo({
-        top: targetElement.offsetTop - 120,
-        behavior: 'smooth'
-      });
-    }
-  });
-});
-
-// Fungsi untuk navigasi halaman
-function navigateToPage(pageNumber) {
-  const pageElement = document.getElementById(`page${pageNumber}`);
-  if (pageElement) {
-    showPageContent(pageElement);
-    history.pushState({ page: `page${pageNumber}` }, `Page ${pageNumber}`, `/halaman-${pageNumber}`);
-  }
-}
-
-
-
-
-
-// Tambahkan ini di bagian JavaScript
-document.querySelectorAll('.footnote-link').forEach(link => {
-  link.addEventListener('click', function(e) {
-    if(this.hash.startsWith('#footnote')) {
-      e.preventDefault();
-      const target = document.querySelector(this.hash);
-      if(target) {
-        window.scrollTo({
-          top: target.offsetTop - 100,
-          behavior: 'smooth'
-        });
-        
-        // Highlight sementara
-        target.style.backgroundColor = 'rgba(255,255,255,0.1)';
-        setTimeout(() => {
-          target.style.backgroundColor = 'transparent';
-        }, 2000);
-      }
-    }
-  });
-});
-
-
-
-
-	
-	
-	/**
- * Creates a notification for user activities
- * @param {string} receiverId - User ID who will receive the notification
- * @param {string} activityType - Type of activity ('comment', 'reply', 'like', 'reaction')
- * @param {string} senderId - User ID who performed the action
- * @param {string} senderName - Display name of the user who performed the action
- * @param {string} content - Content of the activity (comment text, etc.)
- * @param {string} targetType - Type of target ('arduino-history', 'feedback', 'announcement')
- * @param {string} targetId - ID of the target document
- */
 async function createActivityNotification(receiverId, activityType, senderId, senderName, content, targetType, targetId) {
     if (!receiverId || receiverId === senderId) return; // Skip if no receiver or self-action
     
