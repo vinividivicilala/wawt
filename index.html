@@ -5519,7 +5519,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 	
-	function loadNotifications(userId) {
+	
+	// Fungsi untuk memuat notifikasi
+function loadNotifications(userId) {
     if (!userId) return;
     
     const notificationsRef = collection(db, "notifications");
@@ -5535,18 +5537,15 @@ document.addEventListener("DOMContentLoaded", function () {
         
         snapshot.forEach(doc => {
             const data = doc.data();
-            // Pastikan data yang diperlukan ada
-            if (data.message && data.timestamp) {
-                notifications.push({
-                    id: doc.id,
-                    message: data.message,
-                    type: data.type || 'general',
-                    read: data.read || false,
-                    timestamp: data.timestamp.toDate(),
-                    link: data.link || null
-                });
-                if (!data.read) unreadCount++;
-            }
+            notifications.push({
+                id: doc.id,
+                message: data.message,
+                type: data.type || 'general',
+                read: data.read || false,
+                timestamp: data.timestamp.toDate(),
+                link: data.link || null
+            });
+            if (!data.read) unreadCount++;
         });
 
         // Update UI
@@ -5556,6 +5555,15 @@ document.addEventListener("DOMContentLoaded", function () {
     return unsubscribe;
 }
 
+	
+	
+	
+	
+	
+	
+	
+
+// Fungsi untuk memperbarui tampilan notifikasi
 function updateNotificationUI(notifications, unreadCount) {
     const notificationList = document.getElementById('notificationsList');
     const badge = document.getElementById('notificationBadge');
@@ -5604,6 +5612,13 @@ function updateNotificationUI(notifications, unreadCount) {
         });
     });
 }
+	
+	
+	
+	
+	
+	
+	
 
 	
 	
@@ -5623,7 +5638,13 @@ function updateNotificationUI(notifications, unreadCount) {
 	
 	
 	
-	function loadRecentActivity(userId) {
+	
+	
+	
+	
+	
+// Fungsi untuk memuat aktivitas terkini
+function loadRecentActivity(userId) {
     if (!userId) return;
     
     // Gabungkan data dari berbagai koleksi
@@ -5699,7 +5720,10 @@ function updateNotificationUI(notifications, unreadCount) {
         console.error("Error loading activities:", error);
     });
 }
-
+	
+	
+	
+	// Fungsi untuk merender aktivitas terkini
 function renderRecentActivity(activities) {
     const activityList = document.getElementById('recentActivity');
     
@@ -5735,6 +5759,7 @@ function renderRecentActivity(activities) {
     });
 }
 
+// Fungsi pembantu untuk aktivitas
 function getActivityIcon(type) {
     const icons = {
         'feedback': '💡',
@@ -5770,6 +5795,84 @@ function navigateToActivity(type, id) {
             console.log('Navigasi tidak dikenali');
     }
 }
+
+// Fungsi untuk menandai notifikasi sebagai sudah dibaca
+async function markNotificationAsRead(notifId) {
+    try {
+        await updateDoc(doc(db, "notifications", notifId), {
+            read: true
+        });
+    } catch (error) {
+        console.error("Error marking notification as read:", error);
+    }
+}
+
+// Fungsi untuk menandai semua notifikasi sebagai sudah dibaca
+async function markAllNotificationsAsRead() {
+    const unreadNotifications = notifications.filter(n => !n.read);
+    
+    if (unreadNotifications.length === 0) return;
+    
+    const batch = writeBatch(db);
+    
+    unreadNotifications.forEach(notif => {
+        const notifRef = doc(db, "notifications", notif.id);
+        batch.update(notifRef, { read: true });
+    });
+    
+    try {
+        await batch.commit();
+        showToast('Semua notifikasi ditandai sudah dibaca');
+    } catch (error) {
+        console.error('Error marking all as read:', error);
+        showToast('Gagal menandai notifikasi');
+    }
+}
+
+// Inisialisasi saat auth state berubah
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        let unsubscribeNotifications = null;
+        let unsubscribeActivities = null;
+        
+        // Load data awal
+        loadUserProfile(user);
+        
+        // Setup real-time listeners
+        unsubscribeNotifications = loadNotifications(user.uid);
+        unsubscribeActivities = loadRecentActivity(user.uid);
+        
+        // Set interval untuk refresh periodik
+        const refreshInterval = setInterval(() => {
+            if (unsubscribeNotifications) unsubscribeNotifications();
+            if (unsubscribeActivities) unsubscribeActivities();
+            
+            unsubscribeNotifications = loadNotifications(user.uid);
+            unsubscribeActivities = loadRecentActivity(user.uid);
+        }, 30000); // Refresh setiap 30 detik
+        
+        // Cleanup saat komponen unmount
+        window.addEventListener('beforeunload', () => {
+            clearInterval(refreshInterval);
+            if (unsubscribeNotifications) unsubscribeNotifications();
+            if (unsubscribeActivities) unsubscribeActivities();
+        });
+    }
+});
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -6057,34 +6160,6 @@ function scrollToContent(contentId) {
         });
     }
     
-   
-   
-   
-   onAuthStateChanged(auth, (user) => {
-    if (user) {
-        loadUserProfile(user);
-        loadNotifications(user.uid);
-        loadRecentActivity(user.uid);
-        
-        // Set interval untuk refresh periodik
-        const refreshInterval = setInterval(() => {
-            loadNotifications(user.uid);
-            loadRecentActivity(user.uid);
-        }, 30000); // Refresh setiap 30 detik
-        
-        // Cleanup saat komponen unmount
-        window.addEventListener('beforeunload', () => {
-            clearInterval(refreshInterval);
-        });
-    }
-});
-   
-   
-   
-   
-   
-   
-   
    
    
    
