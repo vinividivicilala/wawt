@@ -5801,80 +5801,6 @@ function updateNotificationUI(notifications, unreadCount) {
 	
 	
 	
-	
-	
-	/**
- * Creates a notification for user activities
- * @param {string} receiverId - User ID who will receive the notification
- * @param {string} activityType - Type of activity ('comment', 'reply', 'like', 'reaction')
- * @param {string} senderId - User ID who performed the action
- * @param {string} senderName - Display name of the user who performed the action
- * @param {string} content - Content of the activity (comment text, etc.)
- * @param {string} targetType - Type of target ('arduino-history', 'feedback', 'announcement')
- * @param {string} targetId - ID of the target document
- */
-async function createActivityNotification(receiverId, activityType, senderId, senderName, content, targetType, targetId) {
-    if (!receiverId || receiverId === senderId) return; // Skip if no receiver or self-action
-    
-    // Skip if receiver doesn't exist
-    const receiverRef = doc(db, 'users', receiverId);
-    const receiverSnap = await getDoc(receiverRef);
-    if (!receiverSnap.exists()) return;
-    
-    // Skip if notification settings are disabled
-    const notificationSettings = receiverSnap.data().notificationSettings || {};
-    if (notificationSettings[`${activityType}Notifications`] === false) return;
-    
-    // Prepare notification data
-    let message = '';
-    let link = '';
-    
-    switch(activityType) {
-        case 'comment':
-            message = `mengomentari ${getTargetName(targetType)} Anda: "${truncate(content, 30)}"`;
-            link = `/${targetType}/${targetId}#comments`;
-            break;
-            
-        case 'reply':
-            message = `membalas komentar Anda: "${truncate(content, 30)}"`;
-            link = `/${targetType}/${targetId}#comment-${targetId}`;
-            break;
-            
-        case 'like':
-            message = `menyukai ${getTargetName(targetType)} Anda`;
-            link = `/${targetType}/${targetId}`;
-            break;
-            
-        case 'reaction':
-            message = `bereaksi ${content} pada ${getTargetName(targetType)} Anda`;
-            link = `/${targetType}/${targetId}`;
-            break;
-            
-        default:
-            message = content;
-    }
-    
-    // Create the notification document
-    try {
-        await addDoc(collection(db, 'notifications'), {
-            userId: receiverId,
-            type: activityType,
-            message: `${senderName} ${message}`,
-            read: false,
-            timestamp: serverTimestamp(),
-            link: link,
-            senderId: senderId,
-            senderName: senderName,
-            targetType: targetType,
-            targetId: targetId,
-            targetContent: content
-        });
-        
-        console.log('Notification created successfully');
-    } catch (error) {
-        console.error('Error creating notification:', error);
-    }
-}
 
 // Helper function to get display name for target type
 function getTargetName(targetType) {
@@ -6969,6 +6895,80 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
+	
+	
+	/**
+ * Creates a notification for user activities
+ * @param {string} receiverId - User ID who will receive the notification
+ * @param {string} activityType - Type of activity ('comment', 'reply', 'like', 'reaction')
+ * @param {string} senderId - User ID who performed the action
+ * @param {string} senderName - Display name of the user who performed the action
+ * @param {string} content - Content of the activity (comment text, etc.)
+ * @param {string} targetType - Type of target ('arduino-history', 'feedback', 'announcement')
+ * @param {string} targetId - ID of the target document
+ */
+async function createActivityNotification(receiverId, activityType, senderId, senderName, content, targetType, targetId) {
+    if (!receiverId || receiverId === senderId) return; // Skip if no receiver or self-action
+    
+    // Skip if receiver doesn't exist
+    const receiverRef = doc(db, 'users', receiverId);
+    const receiverSnap = await getDoc(receiverRef);
+    if (!receiverSnap.exists()) return;
+    
+    // Skip if notification settings are disabled
+    const notificationSettings = receiverSnap.data().notificationSettings || {};
+    if (notificationSettings[`${activityType}Notifications`] === false) return;
+    
+    // Prepare notification data
+    let message = '';
+    let link = '';
+    
+    switch(activityType) {
+        case 'comment':
+            message = `mengomentari ${getTargetName(targetType)} Anda: "${truncate(content, 30)}"`;
+            link = `/${targetType}/${targetId}#comments`;
+            break;
+            
+        case 'reply':
+            message = `membalas komentar Anda: "${truncate(content, 30)}"`;
+            link = `/${targetType}/${targetId}#comment-${targetId}`;
+            break;
+            
+        case 'like':
+            message = `menyukai ${getTargetName(targetType)} Anda`;
+            link = `/${targetType}/${targetId}`;
+            break;
+            
+        case 'reaction':
+            message = `bereaksi ${content} pada ${getTargetName(targetType)} Anda`;
+            link = `/${targetType}/${targetId}`;
+            break;
+            
+        default:
+            message = content;
+    }
+    
+    // Create the notification document
+    try {
+        await addDoc(collection(db, 'notifications'), {
+            userId: receiverId,
+            type: activityType,
+            message: `${senderName} ${message}`,
+            read: false,
+            timestamp: serverTimestamp(),
+            link: link,
+            senderId: senderId,
+            senderName: senderName,
+            targetType: targetType,
+            targetId: targetId,
+            targetContent: content
+        });
+        
+        console.log('Notification created successfully');
+    } catch (error) {
+        console.error('Error creating notification:', error);
+    }
+}
 
 
 
