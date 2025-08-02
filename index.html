@@ -6413,90 +6413,117 @@ async function createNotification(userId, type, content) {
 	
 	
 	
-
-async function setupEmojiReactions(user) {
+	
+	
+	
+	async function setupEmojiReactions(user, contentId = 'arduino-history') {
     const emojiOptions = document.querySelectorAll('.emoji-option');
-    const storageKey = 'arduino-history-emoji-reaction';
     const reactionMessage = document.querySelector('.reaction-message');
     const loginMessage = document.querySelector('.login-message');
-    
+
     reactionMessage.style.display = 'none';
     loginMessage.style.display = 'none';
-    
-    const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
-        happy: 0,
-        sad: 0,
-        disappointed: 0,
-        angry: 0,
-        neutral: 0
-    };
-    
-    Object.keys(reactionCounts).forEach(emoji => {
-        document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
-    });
-    
-    if (user) {
-        const userReactionKey = `${storageKey}-${user.uid}`;
-        const savedReaction = localStorage.getItem(userReactionKey);
-        
-        if (savedReaction) {
-            document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
-        }
-        
-        emojiOptions.forEach(option => {
-            option.addEventListener('click', async function() {
-                const emojiType = this.dataset.emoji;
-                
-                if (savedReaction === emojiType) return;
-                
-                emojiOptions.forEach(opt => opt.classList.remove('selected'));
-                this.classList.add('selected');
-                
-                if (savedReaction) {
-                    reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
-                }
-                reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
-                
-                Object.keys(reactionCounts).forEach(emoji => {
-                    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
-                });
-                
-                localStorage.setItem(userReactionKey, emojiType);
-                localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
-                
-                // Create notification for content owner
-                await createNotification(
-                    'content-owner-id', // Replace with actual content owner ID
-                    'reaction',
-                    `${user.displayName || 'Seseorang'} bereaksi ${emojiType} pada konten Anda`,
-                    null,
-                    window.location.href
-                );
-                
-                reactionMessage.style.display = 'block';
-                reactionMessage.style.opacity = 1;
-                setTimeout(() => {
-                    reactionMessage.style.opacity = 0.7;
-                }, 2000);
-            });
-        });
-    } else {
+
+    if (!user) {
         loginMessage.style.display = 'block';
         emojiOptions.forEach(option => {
             option.style.opacity = '0.5';
             option.style.cursor = 'not-allowed';
-            option.addEventListener('click', (e) => {
+            option.addEventListener('click', e => {
                 e.preventDefault();
                 loginMessage.style.opacity = 1;
-                setTimeout(() => {
-                    loginMessage.style.opacity = 0.7;
-                }, 2000);
+                setTimeout(() => loginMessage.style.opacity = 0.7, 2000);
             });
         });
+        return;
     }
+
+    const reactionDocRef = doc(db, 'reactions', contentId);
+    const userReactionRef = doc(db, 'userReactions', `${user.uid}_${contentId}`);
+
+    // Realtime listener
+    onSnapshot(reactionDocRef, (snapshot) => {
+        const data = snapshot.data();
+        if (data) {
+            Object.keys(data).forEach(emoji => {
+                const el = document.getElementById(`${emoji}-count`);
+                if (el) el.textContent = data[emoji];
+            });
+        }
+    });
+
+    let userReaction = null;
+    const userReactionSnap = await getDoc(userReactionRef);
+    if (userReactionSnap.exists()) {
+        userReaction = userReactionSnap.data().emojiType;
+        const selected = document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`);
+        if (selected) selected.classList.add('selected');
+    }
+
+    emojiOptions.forEach(option => {
+        option.addEventListener('click', async function () {
+            const emojiType = this.dataset.emoji;
+            if (userReaction === emojiType) return;
+
+            emojiOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+
+            const updates = {};
+            if (userReaction) updates[userReaction] = increment(-1);
+            updates[emojiType] = increment(1);
+
+            await updateDoc(reactionDocRef, updates).catch(async () => {
+                await setDoc(reactionDocRef, updates, { merge: true });
+            });
+
+            await setDoc(userReactionRef, {
+                userId: user.uid,
+                contentId,
+                emojiType,
+                timestamp: Date.now()
+            });
+
+            userReaction = emojiType;
+
+            // ✅ Notifikasi
+            await createNotification(
+                'content-owner-id',
+                'reaction',
+                `${user.displayName || 'Seseorang'} bereaksi ${emojiType} pada konten Anda`,
+                null,
+                window.location.href
+            );
+
+            // ✅ Aktivitas pengguna
+            await addDoc(collection(db, "activities"), {
+                userId: user.uid,
+                type: "reaction",
+                emojiType,
+                contentId,
+                timestamp: Date.now()
+            });
+
+            // ✅ Pesan sukses
+            reactionMessage.style.display = 'block';
+            reactionMessage.style.opacity = 1;
+            setTimeout(() => reactionMessage.style.opacity = 0.7, 2000);
+        });
+    });
 }
-
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 
 
