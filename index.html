@@ -5694,48 +5694,42 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 	
-	
-	
-	// Fungsi untuk memuat notifikasi
-async function loadNotifications() {
+	function loadNotifications(userId) {
+    if (!userId) return;
+    
     const notificationsRef = collection(db, "notifications");
-    const q = query(notificationsRef, where("userId", "==", auth.currentUser.uid), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
-    const notifications = [];
-    querySnapshot.forEach((doc) => {
-        notifications.push({ id: doc.id, ...doc.data() });
-    });
-    renderNotifications(notifications);
-}
-	
-	
-	
-	
-	
-	
-	// Fungsi untuk memuat aktivitas terkini
-async function loadActivities() {
-    const activitiesRef = collection(db, "activities");
-    const q = query(activitiesRef, orderBy("createdAt", "desc"), limit(10));
-    const querySnapshot = await getDocs(q);
-    const activities = [];
-    querySnapshot.forEach((doc) => {
-        activities.push({ id: doc.id, ...doc.data() });
-    });
-    renderActivities(activities);
-}
+    const q = query(notificationsRef, 
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(20)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        notifications = [];
+        let unreadCount = 0;
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // Pastikan data yang diperlukan ada
+            if (data.message && data.timestamp) {
+                notifications.push({
+                    id: doc.id,
+                    message: data.message,
+                    type: data.type || 'general',
+                    read: data.read || false,
+                    timestamp: data.timestamp.toDate(),
+                    link: data.link || null
+                });
+                if (!data.read) unreadCount++;
+            }
+        });
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+        // Update UI
+        updateNotificationUI(notifications, unreadCount);
+    });
+    
+    return unsubscribe;
+}
 
 function updateNotificationUI(notifications, unreadCount) {
     const notificationList = document.getElementById('notificationsList');
@@ -5881,9 +5875,6 @@ function updateNotificationUI(notifications, unreadCount) {
     });
 }
 
-
-
-// Fungsi untuk merender aktivitas terkini
 function renderRecentActivity(activities) {
     const activityList = document.getElementById('recentActivity');
     
@@ -5918,19 +5909,6 @@ function renderRecentActivity(activities) {
         });
     });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -5982,23 +5960,6 @@ function navigateToActivity(type, id) {
 	
 	
 	
-// Fungsi untuk merekam aktivitas
-async function logActivity(type, userId, targetId, message) {
-    const activitiesRef = collection(db, "activities");
-    await addDoc(activitiesRef, {
-        type: type,
-        userId: userId,
-        targetId: targetId,
-        message: message,
-        createdAt: serverTimestamp()
-    });
-}
-
-// Memuat notifikasi dan aktivitas saat halaman dimuat
-window.onload = async function () {
-    await loadNotifications();
-    await loadActivities();
-};
 	
 	
 	
@@ -7357,20 +7318,8 @@ document.getElementById('announcementForm')?.addEventListener('submit', async fu
     // Tidak perlu slug
 };
 
-
-
         const announcementsRef = collection(db, "announcements");
         await addDoc(announcementsRef, announcementData);
-		
-		// Log aktivitas
-        await logActivity(
-            "announcement",
-            auth.currentUser.uid,
-            null,
-            `${auth.currentUser.displayName || 'Admin'} membuat pengumuman baru`
-        );
-
-        alert('Pengumuman berhasil diposting!');
 
         // Reset form
         e.target.reset();
