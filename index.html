@@ -2352,7 +2352,83 @@ a.footnote-link:hover {
 
 
 
+/* Notifikasi */
+.notification-item {
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
 
+.notification-item.unread {
+    background: rgba(77, 166, 255, 0.15);
+    border-left: 3px solid #4da6ff;
+}
+
+.notification-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.notification-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-content small {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    display: block;
+    margin-top: 4px;
+}
+
+/* Aktivitas */
+.activity-item {
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.activity-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex-grow: 1;
+}
+
+.activity-content h4 {
+    margin: 0 0 4px 0;
+    color: #4da6ff;
+}
+
+.activity-content p {
+    margin: 0 0 4px 0;
+    color: rgba(255,255,255,0.8);
+}
+
+.activity-content small {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+}
 
 
 
@@ -5439,39 +5515,277 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 3000);
     }
     
- function loadNotifications(userId) {
+	
+	
+	
+	
+	function loadNotifications(userId) {
     if (!userId) return;
     
     const notificationsRef = collection(db, "notifications");
     const q = query(notificationsRef, 
         where("userId", "==", userId),
         orderBy("timestamp", "desc"),
-        limit(20) // Meningkatkan limit untuk menampilkan lebih banyak notifikasi
+        limit(20)
     );
     
-    onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
         notifications = [];
         let unreadCount = 0;
         
         snapshot.forEach(doc => {
-            const notification = { 
-                id: doc.id, 
-                ...doc.data(),
-                // Pastikan timestamp ada
-                timestamp: doc.data().timestamp?.toDate() || new Date()
-            };
-            notifications.push(notification);
-            if (!notification.read) unreadCount++;
+            const data = doc.data();
+            // Pastikan data yang diperlukan ada
+            if (data.message && data.timestamp) {
+                notifications.push({
+                    id: doc.id,
+                    message: data.message,
+                    type: data.type || 'general',
+                    read: data.read || false,
+                    timestamp: data.timestamp.toDate(),
+                    link: data.link || null
+                });
+                if (!data.read) unreadCount++;
+            }
         });
-        
-        // Update badge notifikasi
-        notificationBadge.textContent = unreadCount;
-        notificationBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
-        
-        // Render notifikasi
-        renderNotifications();
+
+        // Update UI
+        updateNotificationUI(notifications, unreadCount);
+    });
+    
+    return unsubscribe;
+}
+
+function updateNotificationUI(notifications, unreadCount) {
+    const notificationList = document.getElementById('notificationsList');
+    const badge = document.getElementById('notificationBadge');
+    
+    // Update badge
+    badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    
+    // Update list
+    if (notifications.length === 0) {
+        notificationList.innerHTML = `
+            <div class="empty-notifications">
+                <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada notifikasi</p>
+            </div>
+        `;
+        return;
+    }
+    
+    notificationList.innerHTML = notifications.map(notif => `
+        <div class="notification-item ${notif.read ? '' : 'unread'}" 
+             data-id="${notif.id}" 
+             data-link="${notif.link || '#'}">
+            <div class="notification-icon">
+                ${getNotificationIcon(notif.type)}
+            </div>
+            <div class="notification-content">
+                <p>${notif.message}</p>
+                <small>${formatTimeAgo(notif.timestamp)}</small>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add click handlers
+    document.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const link = this.getAttribute('data-link');
+            if (link && link !== '#') {
+                window.location.href = link;
+            }
+            
+            // Mark as read if unread
+            if (this.classList.contains('unread')) {
+                const notifId = this.getAttribute('data-id');
+                markNotificationAsRead(notifId);
+            }
+        });
     });
 }
+
+	
+	
+	
+	
+	async function markNotificationAsRead(notifId) {
+    try {
+        await updateDoc(doc(db, "notifications", notifId), {
+            read: true
+        });
+    } catch (error) {
+        console.error("Error marking notification as read:", error);
+    }
+}
+	
+	
+	
+	
+	
+	function loadRecentActivity(userId) {
+    if (!userId) return;
+    
+    // Gabungkan data dari berbagai koleksi
+    const activities = [];
+    
+    // 1. Ambil aktivitas feedback
+    const feedbackQuery = query(
+        collection(db, "feedback"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(5)
+    );
+    
+    // 2. Ambil aktivitas diskusi
+    const discussionsQuery = query(
+        collection(db, "discussions"),
+        where("authorId", "==", userId),
+        orderBy("createdAt", "desc"),
+        limit(5)
+    );
+    
+    // 3. Ambil aktivitas komentar
+    const commentsQuery = query(
+        collection(db, "arduinoHistoryComments"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(5)
+    );
+    
+    Promise.all([
+        getDocs(feedbackQuery),
+        getDocs(discussionsQuery),
+        getDocs(commentsQuery)
+    ]).then(([feedbackSnap, discussionsSnap, commentsSnap]) => {
+        // Proses feedback
+        feedbackSnap.forEach(doc => {
+            activities.push({
+                type: 'feedback',
+                id: doc.id,
+                title: doc.data().title,
+                timestamp: doc.data().timestamp?.toDate(),
+                content: doc.data().content.substring(0, 50) + '...'
+            });
+        });
+        
+        // Proses diskusi
+        discussionsSnap.forEach(doc => {
+            activities.push({
+                type: 'discussion',
+                id: doc.id,
+                title: doc.data().title,
+                timestamp: doc.data().createdAt?.toDate(),
+                content: doc.data().content.substring(0, 50) + '...'
+            });
+        });
+        
+        // Proses komentar
+        commentsSnap.forEach(doc => {
+            activities.push({
+                type: 'comment',
+                id: doc.id,
+                timestamp: doc.data().timestamp?.toDate(),
+                content: doc.data().content.substring(0, 50) + '...'
+            });
+        });
+        
+        // Urutkan berdasarkan timestamp
+        activities.sort((a, b) => b.timestamp - a.timestamp);
+        
+        // Render aktivitas
+        renderRecentActivity(activities.slice(0, 5));
+    }).catch(error => {
+        console.error("Error loading activities:", error);
+    });
+}
+
+function renderRecentActivity(activities) {
+    const activityList = document.getElementById('recentActivity');
+    
+    if (activities.length === 0) {
+        activityList.innerHTML = `
+            <div class="empty-activity">
+                <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas terkini</p>
+            </div>
+        `;
+        return;
+    }
+    
+    activityList.innerHTML = activities.map(activity => `
+        <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
+            <div class="activity-icon">
+                ${getActivityIcon(activity.type)}
+            </div>
+            <div class="activity-content">
+                <h4>${getActivityTitle(activity)}</h4>
+                <p>${activity.content}</p>
+                <small>${formatTimeAgo(activity.timestamp)}</small>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add click handlers
+    document.querySelectorAll('.activity-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const type = this.getAttribute('data-type');
+            const id = this.getAttribute('data-id');
+            navigateToActivity(type, id);
+        });
+    });
+}
+
+function getActivityIcon(type) {
+    const icons = {
+        'feedback': '💡',
+        'discussion': '💬',
+        'comment': '✏️',
+        'like': '👍',
+        'reply': '↩️'
+    };
+    return icons[type] || '🔔';
+}
+
+function getActivityTitle(activity) {
+    switch(activity.type) {
+        case 'feedback': return `Feedback: ${activity.title}`;
+        case 'discussion': return `Diskusi: ${activity.title}`;
+        case 'comment': return `Komentar baru`;
+        default: return 'Aktivitas baru';
+    }
+}
+
+function navigateToActivity(type, id) {
+    switch(type) {
+        case 'feedback':
+            window.location.href = `/feedback/${id}`;
+            break;
+        case 'discussion':
+            window.location.href = `/discussions/${id}`;
+            break;
+        case 'comment':
+            window.location.href = `#comment-${id}`;
+            break;
+        default:
+            console.log('Navigasi tidak dikenali');
+    }
+}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
     
 	
 	
@@ -5743,13 +6057,37 @@ function scrollToContent(contentId) {
         });
     }
     
-    // Inisialisasi halaman ketika auth state berubah
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            loadUserProfile(user);
+   
+   
+   
+   onAuthStateChanged(auth, (user) => {
+    if (user) {
+        loadUserProfile(user);
+        loadNotifications(user.uid);
+        loadRecentActivity(user.uid);
+        
+        // Set interval untuk refresh periodik
+        const refreshInterval = setInterval(() => {
             loadNotifications(user.uid);
-        }
-    });
+            loadRecentActivity(user.uid);
+        }, 30000); // Refresh setiap 30 detik
+        
+        // Cleanup saat komponen unmount
+        window.addEventListener('beforeunload', () => {
+            clearInterval(refreshInterval);
+        });
+    }
+});
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
     
     // Event listener untuk tab aktivitas
     document.querySelectorAll('.activity-tab').forEach(tab => {
@@ -5766,41 +6104,42 @@ function scrollToContent(contentId) {
 
 
 
-// Fungsi untuk membuat notifikasi baru
-async function createNotification(userId, type, message, targetId = null, link = null) {
-    if (!userId) return;
-    
-    const notificationsRef = collection(db, "notifications");
-    const newNotification = {
-        userId,
-        type,
-        message,
-        read: false,
-        timestamp: new Date(),
-        targetId,
-        link
-    };
-    
+
+
+
+
+
+
+
+async function createNotification(userId, type, content) {
+    if (!userId) {
+        console.error("User ID tidak valid");
+        return;
+    }
+
+    // Validasi input
+    if (!content || !content.message) {
+        console.error("Pesan notifikasi tidak valid");
+        return;
+    }
+
     try {
-        await addDoc(notificationsRef, newNotification);
-        console.log('Notifikasi berhasil dibuat');
+        const notificationData = {
+            userId,
+            type: type || 'general',
+            message: content.message,
+            read: false,
+            timestamp: new Date(),
+            link: content.link || null,
+            targetId: content.targetId || null
+        };
+
+        await addDoc(collection(db, "notifications"), notificationData);
+        console.log("Notifikasi berhasil dibuat");
     } catch (error) {
-        console.error('Gagal membuat notifikasi:', error);
+        console.error("Gagal membuat notifikasi:", error);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
