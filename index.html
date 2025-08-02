@@ -5821,27 +5821,45 @@ function setupCommentListeners() {
     return unsubscribe;
 }
 
-// Contoh trigger untuk like
 function setupLikeListeners() {
     const likesRef = collectionGroup(db, "likes");
     const unsubscribe = onSnapshot(likesRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
                 const newLike = change.doc.data();
+                
+                // Cek apakah bukan like dari diri sendiri
                 if (newLike.userId !== auth.currentUser?.uid) {
+                    const parentRef = change.doc.ref.parent.parent;
+
+                    // Validasi parentRef agar tidak error
+                    if (!parentRef) {
+                        console.warn("Parent document undefined for like:", change.doc.ref.path);
+                        return;
+                    }
+
+                    const contentType = parentRef.id;
+                    const contentId = parentRef.id;
+
+                    if (!contentType || !contentId) {
+                        console.warn("Like event tanpa contentType/contentId valid");
+                        return;
+                    }
+
+                    // Buat notifikasi
                     createActivityNotification('like', {
-                        contentType: change.doc.ref.parent.parent?.id || 'unknown',
-                        contentId: change.doc.ref.parent.parent?.id || 'unknown',
+                        contentType,
+                        contentId,
                         recipientId: newLike.contentAuthorId
                     });
                 }
             }
         });
     });
-    
+
     return unsubscribe;
 }
-	
+
 	
 	
 	
