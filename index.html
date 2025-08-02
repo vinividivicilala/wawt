@@ -6400,105 +6400,106 @@ async function createNotification(toUserId, type, message, contentId, link) {
 	
 	
 	
-	
-	
-	async function setupEmojiReactions(user) {
-  const emojiOptions = document.querySelectorAll('.emoji-option');
-  const storageKey = 'arduino-history-emoji-reaction';
-  const reactionMessage = document.querySelector('.reaction-message');
-  const loginMessage = document.querySelector('.login-message');
+async function setupEmojiReactions(user, contentId = "arduinoHistory", contentOwnerId = "faridardiansyah061@gmail.com") {
+    const emojiOptions = document.querySelectorAll('.emoji-option');
+    const storageKey = `emoji-reaction-${contentId}`;
+    const reactionMessage = document.querySelector('.reaction-message');
+    const loginMessage = document.querySelector('.login-message');
 
-  reactionMessage.style.display = 'none';
-  loginMessage.style.display = 'none';
+    reactionMessage.style.display = 'none';
+    loginMessage.style.display = 'none';
 
-  const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
-    happy: 0,
-    sad: 0,
-    disappointed: 0,
-    angry: 0,
-    neutral: 0
-  };
+    const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
+        happy: 0,
+        sad: 0,
+        disappointed: 0,
+        angry: 0,
+        neutral: 0
+    };
 
-  Object.keys(reactionCounts).forEach(emoji => {
-    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
-  });
+    Object.keys(reactionCounts).forEach(emoji => {
+        const el = document.getElementById(`${emoji}-count`);
+        if (el) el.textContent = reactionCounts[emoji];
+    });
 
-  if (user) {
-    const userReactionKey = `${storageKey}-${user.uid}`;
-    let savedReaction = localStorage.getItem(userReactionKey);
+    if (user) {
+        const userReactionKey = `${storageKey}-${user.uid}`;
+        let savedReaction = localStorage.getItem(userReactionKey);
 
-    if (savedReaction) {
-      document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
-    }
-
-    emojiOptions.forEach(option => {
-      option.addEventListener('click', async function() {
-        const emojiType = this.dataset.emoji;
-        if (savedReaction === emojiType) return;
-
-        // Update local selection
-        emojiOptions.forEach(opt => opt.classList.remove('selected'));
-        this.classList.add('selected');
-
-        // Update local counts
         if (savedReaction) {
-          reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+            const selectedEl = document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`);
+            if (selectedEl) selectedEl.classList.add('selected');
         }
-        reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
 
-        Object.keys(reactionCounts).forEach(emoji => {
-          document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+        emojiOptions.forEach(option => {
+            option.addEventListener('click', async function () {
+                const emojiType = this.dataset.emoji;
+                if (savedReaction === emojiType) return;
+
+                emojiOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+
+                // Update counts
+                if (savedReaction) {
+                    reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+                }
+                reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
+
+                Object.keys(reactionCounts).forEach(emoji => {
+                    const countEl = document.getElementById(`${emoji}-count`);
+                    if (countEl) countEl.textContent = reactionCounts[emoji];
+                });
+
+                // Simpan lokal
+                localStorage.setItem(userReactionKey, emojiType);
+                localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
+
+                // Notifikasi ke pemilik konten (jika bukan dirinya sendiri)
+                if (user.uid !== contentOwnerId) {
+                    await createNotification(
+                        contentOwnerId,
+                        "reaction",
+                        `${user.displayName || 'Seseorang'} memberi reaksi ${emojiType} pada konten Anda`,
+                        contentId,
+                        window.location.href
+                    );
+                }
+
+                // Catat aktivitas user sendiri
+                await logActivity(
+                    user.uid,
+                    "reacted",
+                    "pageContent",
+                    contentId,
+                    `Mengirim reaksi ${emojiType} di halaman sejarah Arduino`
+                );
+
+                // Animasi notifikasi UI
+                reactionMessage.style.display = 'block';
+                reactionMessage.style.opacity = 1;
+                setTimeout(() => {
+                    reactionMessage.style.opacity = 0.7;
+                }, 2000);
+
+                savedReaction = emojiType;
+            });
         });
-
-        // Save locally
-        localStorage.setItem(userReactionKey, emojiType);
-        localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
-
-        // Create notification for content owner
-        await createNotification(
-          'content-owner-id', // Ganti dengan UID pemilik konten
-          'reaction',
-          `${user.displayName || 'Seseorang'} bereaksi ${emojiType} pada konten Anda`,
-          null,
-          window.location.href
-        );
-
-        // Log activity to Firestore
-        await logActivity(
-          user.uid,
-          'reacted',
-          'announcement', // Sesuaikan: 'announcement', 'discussion', dsb.
-          'arduinoHistoryId', // Ganti dengan ID konten
-          `Memberi reaksi ${emojiType}`
-        );
-
-        // Feedback UI
-        reactionMessage.style.display = 'block';
-        reactionMessage.style.opacity = 1;
-        setTimeout(() => {
-          reactionMessage.style.opacity = 0.7;
-        }, 2000);
-
-        // Update savedReaction variable so it doesn't decrement again
-        savedReaction = emojiType;
-      });
-    });
-  } else {
-    loginMessage.style.display = 'block';
-    emojiOptions.forEach(option => {
-      option.style.opacity = '0.5';
-      option.style.cursor = 'not-allowed';
-      option.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginMessage.style.opacity = 1;
-        setTimeout(() => {
-          loginMessage.style.opacity = 0.7;
-        }, 2000);
-      });
-    });
-  }
+    } else {
+        loginMessage.style.display = 'block';
+        emojiOptions.forEach(option => {
+            option.style.opacity = '0.5';
+            option.style.cursor = 'not-allowed';
+            option.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginMessage.style.opacity = 1;
+                setTimeout(() => {
+                    loginMessage.style.opacity = 0.7;
+                }, 2000);
+            });
+        });
+    }
 }
-
+	
 	
 	
 	
