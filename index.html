@@ -7364,26 +7364,21 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
+const commentsCollection = collection(db, "arduinoHistoryComments");
 
 
 
 
-
-
-
-
-
-// Inside the comment submission part of setupComments
 submitComment.addEventListener("click", async () => {
     const content = commentInput.value.trim();
     if (!content) return;
-    
+
     const user = auth.currentUser;
     if (!user) {
         alert("Anda harus login untuk berkomentar");
         return;
     }
-    
+
     try {
         const docRef = await addDoc(commentsCollection, {
             content,
@@ -7393,22 +7388,22 @@ submitComment.addEventListener("click", async () => {
             likes: 0,
             replies: []
         });
-        
-        // Create notification for content owner
+
         await createNotification(
-            'content-owner-id', // Replace with actual content owner ID
+            'content-owner-id',  // Ganti ini dengan ID pemilik konten
             'comment',
             `${user.displayName || 'Seseorang'} mengomentari konten Anda`,
             docRef.id,
             `#comment-${docRef.id}`
         );
-        
+
         commentInput.value = "";
     } catch (error) {
         console.error("Error adding comment:", error);
         alert("Gagal mengirim komentar");
     }
 });
+
 
 // Inside the reply submission part of setupComments
 document.querySelectorAll(".reply-submit-btn").forEach(btn => {
@@ -7563,13 +7558,18 @@ function setupComments() {
     });
   }
   
-  // Fungsi untuk menentukan apakah komentar baru (≤7 hari)
   function isNewComment(timestamp) {
-    const now = new Date();
-    const commentDate = timestamp.toDate();
-    const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
-    return diffInDays <= 7;
-  }
+  if (!timestamp) return false;
+
+  const now = new Date();
+  const commentDate = (timestamp.toDate && typeof timestamp.toDate === 'function')
+    ? timestamp.toDate()
+    : new Date(timestamp);  // fallback jika hanya string/date
+
+  const diffInDays = Math.floor((now - commentDate) / (1000 * 60 * 60 * 24));
+  return diffInDays <= 7;
+}
+
   
   // Fungsi untuk render komentar
   function renderComments() {
