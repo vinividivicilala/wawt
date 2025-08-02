@@ -6434,40 +6434,40 @@ function scrollToContent(contentId) {
 
 
 
-
-
-
-// Fungsi untuk membuat notifikasi otomatis berdasarkan aktivitas
 async function createActivityNotification(activityType, activityData) {
     try {
-        // Dapatkan ID penerima notifikasi
+        if (!auth.currentUser) {
+            console.error("Pengguna belum login.");
+            return;
+        }
+
+        if (!activityData || typeof activityData !== 'object') {
+            console.error("activityData tidak valid:", activityData);
+            return;
+        }
+
+        if (!activityData.contentType || typeof activityData.contentType !== 'string') {
+            console.error("contentType tidak valid:", activityData.contentType);
+            return;
+        }
+
         let recipientId = activityData.recipientId;
-        
-        // Jika tidak ada recipientId spesifik, mungkin ini adalah aktivitas publik
+
         if (!recipientId) {
-            // Untuk komentar/reply, dapatkan author konten asli
-            if (activityType === 'comment' || activityType === 'reply') {
-                const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
-                if (contentDoc.exists()) {
-                    recipientId = contentDoc.data().authorId || contentDoc.data().userId;
-                }
-            }
-            // Untuk like/reaksi, dapatkan author konten
-            else if (activityType === 'like' || activityType === 'reaction') {
-                const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
+            if (['comment', 'reply', 'like', 'reaction'].includes(activityType)) {
+                const docRef = doc(db, activityData.contentType, activityData.contentId);
+                const contentDoc = await getDoc(docRef);
                 if (contentDoc.exists()) {
                     recipientId = contentDoc.data().authorId || contentDoc.data().userId;
                 }
             }
         }
 
-        // Jika tidak ada penerima yang valid, tidak perlu buat notifikasi
         if (!recipientId || recipientId === auth.currentUser.uid) return;
 
-        // Buat pesan notifikasi berdasarkan jenis aktivitas
         let message = '';
         let link = '';
-        
+
         switch(activityType) {
             case 'comment':
                 message = `${auth.currentUser.displayName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
@@ -6489,22 +6489,34 @@ async function createActivityNotification(activityType, activityData) {
                 return;
         }
 
-        // Buat notifikasi
         await addDoc(collection(db, "notifications"), {
             userId: recipientId,
             type: activityType,
-            message: message,
+            message,
             read: false,
             timestamp: new Date(),
-            link: link,
+            link,
             activityId: activityData.activityId,
             fromUserId: auth.currentUser.uid
         });
-        
+
     } catch (error) {
         console.error("Error creating activity notification:", error);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function getContentTypeName(contentType) {
     const names = {
