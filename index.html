@@ -6876,6 +6876,18 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
+
+function getTargetName(targetType) {
+    const names = {
+        'feedback': 'feedback',
+        'announcement': 'pengumuman',
+        'arduino-history': 'sejarah Arduino',
+        'discussion': 'diskusi'
+    };
+    return names[targetType] || 'konten';
+}
+
+
 	
 	
 	/**
