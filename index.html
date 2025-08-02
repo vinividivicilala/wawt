@@ -5730,10 +5730,16 @@ function loadNotifications(userId) {
     
     return unsubscribe;
 }
-// Fungsi untuk memperbarui UI notifikasi
+
+
+
+
+// Fungsi untuk memperbarui UI notifikasi (diperbarui)
 function updateNotificationUI(notifications, unreadCount) {
     const notificationList = document.getElementById('notificationsList');
     const notificationBadge = document.getElementById('notificationBadge');
+    
+    console.log("Updating UI with notifications:", notifications);
     
     // Update badge
     notificationBadge.textContent = unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount) : '';
@@ -5766,10 +5772,24 @@ function updateNotificationUI(notifications, unreadCount) {
             const notifId = this.getAttribute('data-id');
             if (this.classList.contains('unread')) {
                 await markNotificationAsRead(notifId);
+                this.classList.remove('unread');
+            }
+            
+            const link = this.querySelector('.notification-link')?.getAttribute('href');
+            if (link) {
+                window.location.href = link;
             }
         });
     });
 }
+
+
+
+
+
+
+
+
 
 // Fungsi untuk membuat notifikasi baru
 async function createNotification(userId, type, message, link = null, senderId = null) {
@@ -5858,18 +5878,6 @@ async function handleComment(contentId, contentOwnerId, commenterId, comment) {
 	
 
 	
-	
-	
-	
-	async function markNotificationAsRead(notifId) {
-    try {
-        await updateDoc(doc(db, "notifications", notifId), {
-            read: true
-        });
-    } catch (error) {
-        console.error("Error marking notification as read:", error);
-    }
-}
 	
 	
 	
@@ -6130,6 +6138,30 @@ async function loadReactionActivities(userId) {
 	
 	
 	
+// Fungsi untuk menandai notifikasi sebagai sudah dibaca
+async function markNotificationAsRead(notifId) {
+    try {
+        await updateDoc(doc(db, "notifications", notifId), {
+            read: true
+        });
+        console.log("Notification marked as read:", notifId);
+    } catch (error) {
+        console.error("Error marking notification as read:", error);
+    }
+}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	function renderRecentActivity(activities) {
@@ -6149,46 +6181,49 @@ async function loadReactionActivities(userId) {
     renderActivityTab(reactionsTab, reactionActivities);
 }
 
-function renderActivityTab(container, activities) {
-    if (!container || !container.innerHTML !== undefined) return;
+
+
+// Fungsi untuk merender tab aktivitas (diperbarui)
+function renderActivityTabs(activities) {
+    console.log("Rendering activities:", activities);
     
-    if (!activities || activities.length === 0) {
-        container.innerHTML = `
-            <div class="empty-activity">
-                <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas</p>
-            </div>
-        `;
-        return;
-    }
+    // Aktivitas terbaru (semua aktivitas)
+    const recentTab = document.getElementById('recentActivity');
+    recentTab.innerHTML = renderActivityList(activities);
     
-    container.innerHTML = activities.map(activity => `
-        <div class="activity-item" 
-             data-type="${activity.type}" 
-             data-id="${activity.id}"
-             data-link="${activity.link || '#'}">
-            <div class="activity-icon">${activity.icon}</div>
-            <div class="activity-content">
-                <p>${activity.content}</p>
-                <small>${formatTimeAgo(activity.timestamp)}</small>
-            </div>
-        </div>
-    `).join('');
+    // Aktivitas komentar (komentar dan balasan)
+    const commentActivities = activities.filter(a => 
+        a.type === 'comment' || a.type === 'reply'
+    );
+    const commentsTab = document.getElementById('commentsActivity');
+    commentsTab.innerHTML = renderActivityList(commentActivities);
     
-    // Tambahkan event listener untuk navigasi
-    container.querySelectorAll('.activity-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const link = this.getAttribute('data-link');
-            if (link && link !== '#') {
-                window.location.href = link;
-            }
-        });
-    });
+    // Aktivitas reaksi (like dan reaction)
+    const reactionActivities = activities.filter(a => 
+        a.type === 'like' || a.type === 'reaction'
+    );
+    const reactionsTab = document.getElementById('reactionsActivity');
+    reactionsTab.innerHTML = renderActivityList(reactionActivities);
+    
+    // Tambahkan event listener untuk tab
+    setupActivityTabs();
 }
 	
 	
 	
-	
-	
+	// Fungsi untuk setup tab aktivitas
+function setupActivityTabs() {
+    document.querySelectorAll('.activity-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.activity-tab-content').forEach(c => c.classList.remove('active'));
+            
+            this.classList.add('active');
+            document.getElementById(`${tabId}Activity`).classList.add('active');
+        });
+    });
+}
 	
 	
 	
@@ -6231,16 +6266,6 @@ function navigateToActivity(type, id) {
     }
 }
 
-// Fungsi untuk menandai notifikasi sebagai sudah dibaca
-async function markNotificationAsRead(notifId) {
-    try {
-        await updateDoc(doc(db, "notifications", notifId), {
-            read: true
-        });
-    } catch (error) {
-        console.error("Error marking notification as read:", error);
-    }
-}
 
 // Fungsi untuk menandai semua notifikasi sebagai sudah dibaca
 async function markAllNotificationsAsRead() {
@@ -6268,37 +6293,81 @@ async function markAllNotificationsAsRead() {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-onAuthStateChanged(auth, (user) => {
+	// Ganti onAuthStateChanged dengan implementasi yang lebih lengkap
+onAuthStateChanged(auth, async (user) => {
     if (user) {
-        let unsubscribeNotifications = null;
-
-        // Load data awal
-        loadUserProfile(user);
-        loadRecentActivity(user.uid); // ⬅️ Panggil langsung, tanpa simpan ke variabel
-
+        console.log("User logged in:", user.uid);
+        
+        // Load profil pengguna
+        await loadUserProfile(user);
+        
         // Setup real-time listeners
-        unsubscribeNotifications = loadNotifications(user.uid);
-
+        const unsubscribeNotifications = loadAndDisplayNotifications(user.uid);
+        const unsubscribeActivities = loadAndDisplayActivities(user.uid);
+        
         // Set interval untuk refresh periodik
         const refreshInterval = setInterval(() => {
-            if (unsubscribeNotifications) unsubscribeNotifications();
-            unsubscribeNotifications = loadNotifications(user.uid);
-            loadRecentActivity(user.uid); // ⬅️ Refresh data manual
+            console.log("Refreshing notifications and activities...");
+            loadAndDisplayNotifications(user.uid);
+            loadAndDisplayActivities(user.uid);
         }, 30000); // Refresh setiap 30 detik
-
+        
         // Cleanup saat komponen unmount
         window.addEventListener('beforeunload', () => {
             clearInterval(refreshInterval);
             if (unsubscribeNotifications) unsubscribeNotifications();
+            if (unsubscribeActivities) unsubscribeActivities();
         });
+    } else {
+        console.log("No user logged in");
     }
 });
+	
+	
+	
+	
+	// Fungsi untuk memuat dan menampilkan aktivitas terkini
+async function loadAndDisplayActivities(userId) {
+    console.log("Loading activities for user:", userId);
+    
+    try {
+        const q = query(
+            collection(db, "activities"),
+            where("userId", "==", userId),
+            orderBy("timestamp", "desc"),
+            limit(20)
+        );
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const activities = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                console.log("Activity data:", data);
+                activities.push({
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate() || new Date()
+                });
+            });
+            
+            if (activities.length === 0) {
+                console.log("No activities found");
+            }
+            
+            renderActivityTabs(activities);
+        });
+        
+        return unsubscribe;
+    } catch (error) {
+        console.error("Error loading activities:", error);
+        showToast("Gagal memuat aktivitas terkini");
+        return null;
+    }
+}
+
+	
+	
+	
 	
 	
 	
@@ -6957,44 +7026,54 @@ async function getUsername(userId) {
 
 
 
+
+
+
+
+
 // Fungsi untuk memuat dan menampilkan notifikasi
 async function loadAndDisplayNotifications(userId) {
-    const q = query(
-        collection(db, "notifications"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(20)
-    );
+    console.log("Loading notifications for user:", userId);
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const notifications = [];
-        let unreadCount = 0;
+    try {
+        const q = query(
+            collection(db, "notifications"),
+            where("userId", "==", userId),
+            orderBy("timestamp", "desc"),
+            limit(20)
+        );
         
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const notification = {
-                id: doc.id,
-                ...data,
-                timestamp: data.timestamp.toDate()
-            };
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const notifications = [];
+            let unreadCount = 0;
             
-            notifications.push(notification);
-            if (!data.read) unreadCount++;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                console.log("Notification data:", data);
+                const notification = {
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate() || new Date()
+                };
+                
+                notifications.push(notification);
+                if (!data.read) unreadCount++;
+            });
+            
+            if (notifications.length === 0) {
+                console.log("No notifications found");
+            }
+            
+            updateNotificationUI(notifications, unreadCount);
         });
         
-        updateNotificationUI(notifications, unreadCount);
-    });
-    
-    return unsubscribe;
+        return unsubscribe;
+    } catch (error) {
+        console.error("Error loading notifications:", error);
+        showToast("Gagal memuat notifikasi");
+        return null;
+    }
 }
-
-
-
-
-
-
-
-
 
 
 
