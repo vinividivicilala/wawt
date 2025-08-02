@@ -6202,24 +6202,6 @@ function renderActivityTab(container, activities) {
 	
 	
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
 // Fungsi pembantu untuk aktivitas
 function getActivityIcon(type) {
     const icons = {
@@ -6290,47 +6272,41 @@ async function markAllNotificationsAsRead() {
     }
 }
 
-// Inisialisasi saat auth state berubah
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 onAuthStateChanged(auth, (user) => {
     if (user) {
         let unsubscribeNotifications = null;
-        let unsubscribeActivities = null;
-        
+
         // Load data awal
         loadUserProfile(user);
-        
+        loadRecentActivity(user.uid); // ⬅️ Panggil langsung, tanpa simpan ke variabel
+
         // Setup real-time listeners
         unsubscribeNotifications = loadNotifications(user.uid);
-        unsubscribeActivities = loadRecentActivity(user.uid);
-        
+
         // Set interval untuk refresh periodik
         const refreshInterval = setInterval(() => {
             if (unsubscribeNotifications) unsubscribeNotifications();
-            if (unsubscribeActivities) unsubscribeActivities();
-            
             unsubscribeNotifications = loadNotifications(user.uid);
-            unsubscribeActivities = loadRecentActivity(user.uid);
+            loadRecentActivity(user.uid); // ⬅️ Refresh data manual
         }, 30000); // Refresh setiap 30 detik
-        
+
         // Cleanup saat komponen unmount
         window.addEventListener('beforeunload', () => {
             clearInterval(refreshInterval);
             if (unsubscribeNotifications) unsubscribeNotifications();
-            if (unsubscribeActivities) unsubscribeActivities();
         });
     }
 });
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	
