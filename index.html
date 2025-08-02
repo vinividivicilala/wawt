@@ -5049,7 +5049,7 @@ a.footnote-link:hover {
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getFirestore, collection, collectionGroup, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, getDoc, writeBatch, setDoc, doc, updateDoc, where, getDocs, documentId, limit, increment, getCountFromServer, arrayUnion, 
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, getDoc, writeBatch, setDoc, doc, updateDoc, where, getDocs, documentId, limit, increment, getCountFromServer, arrayUnion, 
     arrayRemove, deleteField, runTransaction } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider, setPersistence,
     browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -5700,7 +5700,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 	
-function loadNotifications(userId) {
+	function loadNotifications(userId) {
     if (!userId) return;
     
     const notificationsRef = collection(db, "notifications");
@@ -5710,7 +5710,7 @@ function loadNotifications(userId) {
         limit(20)
     );
     
-    return onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
         notifications = [];
         let unreadCount = 0;
         
@@ -5718,29 +5718,25 @@ function loadNotifications(userId) {
             const data = doc.data();
             notifications.push({
                 id: doc.id,
-                type: data.type || 'general',
                 message: data.message,
+                type: data.type || 'general',
                 read: data.read || false,
-                timestamp: data.timestamp?.toDate() || new Date(),
+                timestamp: data.timestamp.toDate(),
                 link: data.link || null,
-                activityId: data.activityId || null,
-                fromUserId: data.fromUserId || null
+                senderId: data.senderId || null,
+                senderName: data.senderName || 'Pengguna',
+                targetType: data.targetType || null,
+                targetId: data.targetId || null
             });
             
             if (!data.read) unreadCount++;
         });
 
-        // Update UI
         updateNotificationUI(notifications, unreadCount);
     });
-}	
-	
-	
-	
-	
-	
-	
-	
+    
+    return unsubscribe;
+}
 	
 	
 	
@@ -5748,11 +5744,10 @@ function updateNotificationUI(notifications, unreadCount) {
     const notificationList = document.getElementById('notificationsList');
     const badge = document.getElementById('notificationBadge');
     
-    // Update badge count
-    badge.textContent = unreadCount > 9 ? '9+' : unreadCount.toString();
+    // Update badge
+    badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
     badge.style.display = unreadCount > 0 ? 'flex' : 'none';
     
-    // Update list
     if (notifications.length === 0) {
         notificationList.innerHTML = `
             <div class="empty-notifications">
@@ -5764,13 +5759,16 @@ function updateNotificationUI(notifications, unreadCount) {
     
     notificationList.innerHTML = notifications.map(notif => `
         <div class="notification-item ${notif.read ? '' : 'unread'}" 
-             data-id="${notif.id}"
+             data-id="${notif.id}" 
+             data-type="${notif.type}"
+             data-target-type="${notif.targetType}"
+             data-target-id="${notif.targetId}"
              data-link="${notif.link || '#'}">
             <div class="notification-icon">
                 ${getNotificationIcon(notif.type)}
             </div>
             <div class="notification-content">
-                <p>${notif.message}</p>
+                <p><strong>${notif.senderName}</strong> ${notif.message}</p>
                 <small>${formatTimeAgo(notif.timestamp)}</small>
             </div>
         </div>
@@ -5781,85 +5779,25 @@ function updateNotificationUI(notifications, unreadCount) {
         item.addEventListener('click', function() {
             const link = this.getAttribute('data-link');
             const notifId = this.getAttribute('data-id');
+            const type = this.getAttribute('data-type');
+            const targetType = this.getAttribute('data-target-type');
+            const targetId = this.getAttribute('data-target-id');
             
-            // Navigasi jika ada link
-            if (link && link !== '#') {
-                window.location.href = link;
-            }
-            
-            // Tandai sebagai dibaca jika belum dibaca
+            // Mark as read if unread
             if (this.classList.contains('unread')) {
                 markNotificationAsRead(notifId);
+            }
+            
+            // Handle navigation
+            if (link && link !== '#') {
+                window.location.href = link;
+            } else {
+                handleNotificationAction(type, targetType, targetId);
             }
         });
     });
 }	
 	
-	
-	
-	
-	
-	// Contoh trigger untuk komentar
-function setupCommentListeners() {
-    const commentsRef = collection(db, "arduinoHistoryComments");
-    const unsubscribe = onSnapshot(commentsRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const newComment = change.doc.data();
-                if (newComment.userId !== auth.currentUser?.uid) {
-                    createActivityNotification('comment', {
-                        contentType: 'arduinoHistory',
-                        contentId: newComment.historyId,
-                        commentId: change.doc.id,
-                        recipientId: newComment.replyTo // Jika ini adalah balasan
-                    });
-                }
-            }
-        });
-    });
-    
-    return unsubscribe;
-}
-
-function setupLikeListeners() {
-    const likesRef = collectionGroup(db, "likes");
-    const unsubscribe = onSnapshot(likesRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const newLike = change.doc.data();
-                
-                // Cek apakah bukan like dari diri sendiri
-                if (newLike.userId !== auth.currentUser?.uid) {
-                    const parentRef = change.doc.ref.parent.parent;
-
-                    // Validasi parentRef agar tidak error
-                    if (!parentRef) {
-                        console.warn("Parent document undefined for like:", change.doc.ref.path);
-                        return;
-                    }
-
-                    const contentType = parentRef.id;
-                    const contentId = parentRef.id;
-
-                    if (!contentType || !contentId) {
-                        console.warn("Like event tanpa contentType/contentId valid");
-                        return;
-                    }
-
-                    // Buat notifikasi
-                    createActivityNotification('like', {
-                        contentType,
-                        contentId,
-                        recipientId: newLike.contentAuthorId
-                    });
-                }
-            }
-        });
-    });
-
-    return unsubscribe;
-}
-
 	
 	
 	
@@ -6403,28 +6341,45 @@ function scrollToContent(contentId) {
    
    
    
-   
-   
-   
-   onAuthStateChanged(auth, (user) => {
+// Inisialisasi saat auth state berubah
+onAuthStateChanged(auth, (user) => {
     if (user) {
-        let unsubscribeFunctions = [];
+        let unsubscribeNotifications = null;
+        let unsubscribeActivities = null;
+        let unsubscribeListeners = null;
         
         // Load data awal
         loadUserProfile(user);
         
-        // Setup listeners
-        unsubscribeFunctions.push(loadNotifications(user.uid));
-        unsubscribeFunctions.push(setupCommentListeners());
-        unsubscribeFunctions.push(setupLikeListeners());
-        // Tambahkan listener lain untuk aktivitas lainnya
+        // Setup real-time listeners
+        unsubscribeNotifications = loadNotifications(user.uid);
+        unsubscribeActivities = loadRecentActivity(user.uid);
+        unsubscribeListeners = setupActivityListeners(user.uid);
+        
+        // Set interval untuk refresh periodik
+        const refreshInterval = setInterval(() => {
+            if (unsubscribeNotifications) unsubscribeNotifications();
+            if (unsubscribeActivities) unsubscribeActivities();
+            if (unsubscribeListeners) unsubscribeListeners();
+            
+            unsubscribeNotifications = loadNotifications(user.uid);
+            unsubscribeActivities = loadRecentActivity(user.uid);
+            unsubscribeListeners = setupActivityListeners(user.uid);
+        }, 30000); // Refresh setiap 30 detik
         
         // Cleanup saat komponen unmount
-        return () => {
-            unsubscribeFunctions.forEach(unsub => unsub());
-        };
+        window.addEventListener('beforeunload', () => {
+            clearInterval(refreshInterval);
+            if (unsubscribeNotifications) unsubscribeNotifications();
+            if (unsubscribeActivities) unsubscribeActivities();
+            if (unsubscribeListeners) unsubscribeListeners();
+        });
     }
-});
+});   
+   
+   
+   
+   
    
    
    
@@ -6447,115 +6402,6 @@ function scrollToContent(contentId) {
         });
     });
 });
-
-
-
-
-
-async function createActivityNotification(activityType, activityData) {
-    try {
-        if (!auth.currentUser) {
-            console.error("Pengguna belum login.");
-            return;
-        }
-
-        if (!activityData || typeof activityData !== 'object') {
-            console.error("activityData tidak valid:", activityData);
-            return;
-        }
-
-        if (!activityData.contentType || typeof activityData.contentType !== 'string') {
-            console.error("contentType tidak valid:", activityData.contentType);
-            return;
-        }
-
-        let recipientId = activityData.recipientId;
-
-        if (!recipientId) {
-            if (['comment', 'reply', 'like', 'reaction'].includes(activityType)) {
-                const docRef = doc(db, activityData.contentType, activityData.contentId);
-                const contentDoc = await getDoc(docRef);
-                if (contentDoc.exists()) {
-                    recipientId = contentDoc.data().authorId || contentDoc.data().userId;
-                }
-            }
-        }
-
-        if (!recipientId || recipientId === auth.currentUser.uid) return;
-
-        let message = '';
-        let link = '';
-
-        switch(activityType) {
-            case 'comment':
-                message = `${auth.currentUser.displayName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
-                break;
-            case 'reply':
-                message = `${auth.currentUser.displayName} membalas komentar Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
-                break;
-            case 'like':
-                message = `${auth.currentUser.displayName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}`;
-                break;
-            case 'reaction':
-                message = `${auth.currentUser.displayName} memberikan reaksi pada ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}`;
-                break;
-            default:
-                return;
-        }
-
-        await addDoc(collection(db, "notifications"), {
-            userId: recipientId,
-            type: activityType,
-            message,
-            read: false,
-            timestamp: new Date(),
-            link,
-            activityId: activityData.activityId,
-            fromUserId: auth.currentUser.uid
-        });
-
-    } catch (error) {
-        console.error("Error creating activity notification:", error);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getContentTypeName(contentType) {
-    const names = {
-        'feedback': 'feedback',
-        'announcements': 'pengumuman',
-        'arduinoHistory': 'sejarah Arduino',
-        'discussions': 'diskusi'
-    };
-    return names[contentType] || 'konten';
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -7031,11 +6877,91 @@ document.querySelectorAll('.footnote-link').forEach(link => {
 
 
 
+function getTargetName(targetType) {
+    const names = {
+        'feedback': 'feedback',
+        'announcement': 'pengumuman',
+        'arduino-history': 'sejarah Arduino',
+        'discussion': 'diskusi'
+    };
+    return names[targetType] || 'konten';
+}
 
 
-
-
-
+	
+	
+	/**
+ * Creates a notification for user activities
+ * @param {string} receiverId - User ID who will receive the notification
+ * @param {string} activityType - Type of activity ('comment', 'reply', 'like', 'reaction')
+ * @param {string} senderId - User ID who performed the action
+ * @param {string} senderName - Display name of the user who performed the action
+ * @param {string} content - Content of the activity (comment text, etc.)
+ * @param {string} targetType - Type of target ('arduino-history', 'feedback', 'announcement')
+ * @param {string} targetId - ID of the target document
+ */
+async function createActivityNotification(receiverId, activityType, senderId, senderName, content, targetType, targetId) {
+    if (!receiverId || receiverId === senderId) return; // Skip if no receiver or self-action
+    
+    // Skip if receiver doesn't exist
+    const receiverRef = doc(db, 'users', receiverId);
+    const receiverSnap = await getDoc(receiverRef);
+    if (!receiverSnap.exists()) return;
+    
+    // Skip if notification settings are disabled
+    const notificationSettings = receiverSnap.data().notificationSettings || {};
+    if (notificationSettings[`${activityType}Notifications`] === false) return;
+    
+    // Prepare notification data
+    let message = '';
+    let link = '';
+    
+    switch(activityType) {
+        case 'comment':
+            message = `mengomentari ${getTargetName(targetType)} Anda: "${truncate(content, 30)}"`;
+            link = `/${targetType}/${targetId}#comments`;
+            break;
+            
+        case 'reply':
+            message = `membalas komentar Anda: "${truncate(content, 30)}"`;
+            link = `/${targetType}/${targetId}#comment-${targetId}`;
+            break;
+            
+        case 'like':
+            message = `menyukai ${getTargetName(targetType)} Anda`;
+            link = `/${targetType}/${targetId}`;
+            break;
+            
+        case 'reaction':
+            message = `bereaksi ${content} pada ${getTargetName(targetType)} Anda`;
+            link = `/${targetType}/${targetId}`;
+            break;
+            
+        default:
+            message = content;
+    }
+    
+    // Create the notification document
+    try {
+        await addDoc(collection(db, 'notifications'), {
+            userId: receiverId,
+            type: activityType,
+            message: `${senderName} ${message}`,
+            read: false,
+            timestamp: serverTimestamp(),
+            link: link,
+            senderId: senderId,
+            senderName: senderName,
+            targetType: targetType,
+            targetId: targetId,
+            targetContent: content
+        });
+        
+        console.log('Notification created successfully');
+    } catch (error) {
+        console.error('Error creating notification:', error);
+    }
+}
 
 
 
