@@ -6773,28 +6773,29 @@ function setupCommentListeners() {
     });
 }
 
-
 function setupLikeListeners() {
-    const likesRef = collectionGroup(db, "likes");
-    return onSnapshot(likesRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const newLike = change.doc.data();
-                if (newLike.userId !== auth.currentUser?.uid) {
-                    // Dapatkan informasi konten yang disukai
-                    getDoc(change.doc.ref.parent.parent).then(contentDoc => {
-                        if (contentDoc.exists()) {
-                            createActivityNotification('like', {
-                                contentType: change.doc.ref.parent.parent.id,
-                                contentId: contentDoc.id,
-                                recipientId: contentDoc.data().authorId || contentDoc.data().userId
-                            });
-                        }
-                    });
-                }
+  const likesRef = collectionGroup(db, "likes");
+  return onSnapshot(likesRef, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        const newLike = change.doc.data();
+        if (newLike.userId !== auth.currentUser?.uid) {
+          const parentDocRef = change.doc.ref.parent.parent;
+          if (!parentDocRef) return console.warn("Parent doc undefined for like", change.doc.id);
+
+          getDoc(parentDocRef).then(contentDoc => {
+            if (contentDoc.exists()) {
+              createActivityNotification('like', {
+                contentType: parentDocRef.parent.id, // 🛠️ gunakan nama koleksi, bukan ID dokumen
+                contentId: contentDoc.id,
+                recipientId: contentDoc.data().authorId || contentDoc.data().userId
+              });
             }
-        });
+          }).catch(err => console.error("Error fetching parent doc:", err));
+        }
+      }
     });
+  });
 }
 
 
