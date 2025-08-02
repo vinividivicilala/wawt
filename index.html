@@ -5730,15 +5730,14 @@ function loadNotifications(userId) {
     
     return unsubscribe;
 }
-
-// Fungsi untuk memperbarui tampilan notifikasi
+// Fungsi untuk memperbarui UI notifikasi
 function updateNotificationUI(notifications, unreadCount) {
     const notificationList = document.getElementById('notificationsList');
-    const badge = document.getElementById('notificationBadge');
+    const notificationBadge = document.getElementById('notificationBadge');
     
     // Update badge
-    badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    notificationBadge.textContent = unreadCount > 0 ? (unreadCount > 9 ? '9+' : unreadCount) : '';
+    notificationBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
     
     // Update list
     if (notifications.length === 0) {
@@ -5751,29 +5750,22 @@ function updateNotificationUI(notifications, unreadCount) {
     }
     
     notificationList.innerHTML = notifications.map(notif => `
-        <div class="notification-item ${notif.read ? '' : 'unread'}" 
-             data-id="${notif.id}" 
-             data-link="${notif.link || '#'}">
-            <div class="notification-icon">${notif.icon}</div>
+        <div class="notification-item ${notif.read ? '' : 'unread'}" data-id="${notif.id}">
+            <div class="notification-icon">${getActivityIcon(notif.type)}</div>
             <div class="notification-content">
-                <p><strong>${notif.sender}</strong> ${notif.message}</p>
+                <p>${notif.message}</p>
                 <small>${formatTimeAgo(notif.timestamp)}</small>
+                ${notif.link ? `<a href="${notif.link}" class="notification-link">Lihat</a>` : ''}
             </div>
         </div>
     `).join('');
     
-    // Add click handlers
+    // Tambahkan event listener
     document.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const link = this.getAttribute('data-link');
-            if (link && link !== '#') {
-                window.location.href = link;
-            }
-            
-            // Mark as read if unread
+        item.addEventListener('click', async function() {
+            const notifId = this.getAttribute('data-id');
             if (this.classList.contains('unread')) {
-                const notifId = this.getAttribute('data-id');
-                markNotificationAsRead(notifId);
+                await markNotificationAsRead(notifId);
             }
         });
     });
@@ -6313,14 +6305,172 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
+	// Fungsi untuk menambahkan aktivitas terkini
+async function addToRecentActivity(userId, activityType, contentId, additionalData = {}) {
+    try {
+        const activityRef = await addDoc(collection(db, "activities"), {
+            userId,
+            type: activityType,
+            contentId,
+            timestamp: new Date(),
+            ...additionalData
+        });
+        
+        // Perbarui UI aktivitas terkini
+        loadRecentActivities(userId);
+        
+        return activityRef.id;
+    } catch (error) {
+        console.error("Error adding recent activity:", error);
+        return null;
+    }
+}
+
 	
 	
 	
+	// Fungsi untuk memuat aktivitas terkini
+async function loadRecentActivities(userId) {
+    const q = query(
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(20)
+    );
+    
+    const snapshot = await getDocs(q);
+    const activities = [];
+    
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        activities.push({
+            id: doc.id,
+            ...data,
+            timestamp: data.timestamp.toDate()
+        });
+    });
+    
+    renderActivityTabs(activities);
+}
+
 	
 	
-	
-	
-	
+	// Fungsi untuk merender tab aktivitas
+function renderActivityTabs(activities) {
+    // Aktivitas terbaru (semua aktivitas)
+    const recentTab = document.getElementById('recentActivity');
+    recentTab.innerHTML = renderActivityList(activities);
+    
+    // Aktivitas komentar (komentar dan balasan)
+    const commentActivities = activities.filter(a => 
+        a.type === 'comment' || a.type === 'reply'
+    );
+    const commentsTab = document.getElementById('commentsActivity');
+    commentsTab.innerHTML = renderActivityList(commentActivities);
+    
+    // Aktivitas reaksi (like dan reaction)
+    const reactionActivities = activities.filter(a => 
+        a.type === 'like' || a.type === 'reaction'
+    );
+    const reactionsTab = document.getElementById('reactionsActivity');
+    reactionsTab.innerHTML = renderActivityList(reactionActivities);
+}
+
+// Fungsi untuk merender daftar aktivitas
+function renderActivityList(activities) {
+    if (activities.length === 0) {
+        return `
+            <div class="empty-activity">
+                <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas</p>
+            </div>
+        `;
+    }
+    
+    return activities.map(activity => `
+        <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
+            <div class="activity-icon">${getActivityIcon(activity.type)}</div>
+            <div class="activity-content">
+                <p>${getActivityDescription(activity)}</p>
+                <small>${formatTimeAgo(activity.timestamp)}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Fungsi untuk mendapatkan deskripsi aktivitas
+function getActivityDescription(activity) {
+    switch(activity.type) {
+        case 'like':
+            return `Menyukai konten ${activity.contentId}`;
+        case 'comment':
+            return `Mengomentari konten ${activity.contentId}`;
+        case 'reply':
+            return `Membalas komentar pada konten ${activity.contentId}`;
+        case 'feedback':
+            return `Memberikan masukan pada konten ${activity.contentId}`;
+        case 'reaction':
+            return `Memberi reaksi pada konten ${activity.contentId}`;
+        default:
+            return `Melakukan aktivitas ${activity.type}`;
+    }
+}
+
+
+
+
+
+
+// Contoh implementasi untuk berbagai jenis aktivitas
+document.addEventListener('DOMContentLoaded', function() {
+    // Contoh untuk like
+    document.querySelectorAll('.like-button').forEach(button => {
+        button.addEventListener('click', async function() {
+            const contentId = this.dataset.contentId;
+            const contentOwnerId = this.dataset.ownerId;
+            const userId = auth.currentUser?.uid;
+            
+            if (userId) {
+                await handleUserActivity('like', contentId, contentOwnerId, userId);
+            }
+        });
+    });
+    
+    // Contoh untuk komentar
+    document.querySelectorAll('.comment-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const contentId = this.dataset.contentId;
+            const contentOwnerId = this.dataset.ownerId;
+            const userId = auth.currentUser?.uid;
+            const commentContent = this.querySelector('textarea').value;
+            
+            if (userId && commentContent) {
+                await handleUserActivity('comment', contentId, contentOwnerId, userId, {
+                    content: commentContent
+                });
+                this.reset();
+            }
+        });
+    });
+    
+    // Contoh untuk balasan komentar
+    document.querySelectorAll('.reply-button').forEach(button => {
+        button.addEventListener('click', async function() {
+            const commentId = this.dataset.commentId;
+            const contentId = this.dataset.contentId;
+            const commentOwnerId = this.dataset.ownerId;
+            const userId = auth.currentUser?.uid;
+            const replyContent = prompt('Tulis balasan Anda:');
+            
+            if (userId && replyContent) {
+                await handleUserActivity('reply', contentId, commentOwnerId, userId, {
+                    commentId,
+                    replyContent
+                });
+            }
+        });
+    });
+});
 	
 	
 	
@@ -6558,7 +6708,28 @@ function scrollToContent(contentId) {
 
 
 
-
+// Fungsi untuk membuat notifikasi otomatis
+async function createAutoNotification(userId, activityType, content, link = null, relatedUserId = null) {
+    try {
+        const notificationRef = await addDoc(collection(db, "notifications"), {
+            userId,
+            type: activityType,
+            message: content,
+            read: false,
+            timestamp: new Date(),
+            link,
+            relatedUserId
+        });
+        
+        // Update badge notifikasi
+        updateNotificationBadge();
+        
+        return notificationRef.id;
+    } catch (error) {
+        console.error("Error creating notification:", error);
+        return null;
+    }
+}
 
 
 
@@ -6740,10 +6911,82 @@ async function handleReaction(contentId, contentOwnerId, reactorId, reactionType
 
 
 
+// Fungsi untuk menangani berbagai jenis aktivitas
+async function handleUserActivity(activityType, contentId, contentOwnerId, actorId, additionalData = {}) {
+    const activityMessages = {
+        'like': 'menyukai konten Anda',
+        'comment': 'mengomentari konten Anda',
+        'reply': 'membalas komentar Anda',
+        'feedback': 'memberikan masukan pada konten Anda',
+        'reaction': 'bereaksi pada konten Anda',
+        'announcement': 'membuat pengumuman baru'
+    };
+    
+    const activityLinks = {
+        'like': `/content/${contentId}`,
+        'comment': `/content/${contentId}#comments`,
+        'reply': `/content/${contentId}#reply-${additionalData.replyId || ''}`,
+        'feedback': `/feedback/${contentId}`,
+        'reaction': `/content/${contentId}`,
+        'announcement': '/announcements'
+    };
+    
+    // Buat notifikasi untuk pemilik konten jika berbeda dengan aktor
+    if (contentOwnerId && contentOwnerId !== actorId) {
+        await createAutoNotification(
+            contentOwnerId,
+            activityType,
+            `${await getUsername(actorId)} ${activityMessages[activityType]}`,
+            activityLinks[activityType],
+            actorId
+        );
+    }
+    
+    // Tambahkan juga ke aktivitas terkini pengguna yang melakukan aksi
+    await addToRecentActivity(actorId, activityType, contentId, additionalData);
+}
+
+// Fungsi pembantu untuk mendapatkan username
+async function getUsername(userId) {
+    const userDoc = await getDoc(doc(db, "users", userId));
+    return userDoc.exists() ? 
+        (userDoc.data().displayName || userDoc.data().email.split('@')[0]) : 
+        'Pengguna';
+}
 
 
 
 
+// Fungsi untuk memuat dan menampilkan notifikasi
+async function loadAndDisplayNotifications(userId) {
+    const q = query(
+        collection(db, "notifications"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(20)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const notifications = [];
+        let unreadCount = 0;
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const notification = {
+                id: doc.id,
+                ...data,
+                timestamp: data.timestamp.toDate()
+            };
+            
+            notifications.push(notification);
+            if (!data.read) unreadCount++;
+        });
+        
+        updateNotificationUI(notifications, unreadCount);
+    });
+    
+    return unsubscribe;
+}
 
 
 
