@@ -5693,21 +5693,18 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 	
-	
-	
-	// Fungsi untuk memuat notifikasi (diperbarui)
+	// Fungsi untuk memuat notifikasi
 function loadNotifications(userId) {
     if (!userId) return;
     
     const notificationsRef = collection(db, "notifications");
-    const q = query(
-        notificationsRef, 
+    const q = query(notificationsRef, 
         where("userId", "==", userId),
         orderBy("timestamp", "desc"),
         limit(20)
     );
     
-    return onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
         notifications = [];
         let unreadCount = 0;
         
@@ -5715,26 +5712,24 @@ function loadNotifications(userId) {
             const data = doc.data();
             notifications.push({
                 id: doc.id,
-                ...data,
-                timestamp: data.timestamp.toDate()
+                message: data.message,
+                type: data.type || 'general',
+                read: data.read || false,
+                timestamp: data.timestamp.toDate(),
+                link: data.link || null
             });
             if (!data.read) unreadCount++;
         });
-        
+
+        // Update UI
         updateNotificationUI(notifications, unreadCount);
     });
+    
+    return unsubscribe;
 }
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
 
 // Fungsi untuk memperbarui tampilan notifikasi
 function updateNotificationUI(notifications, unreadCount) {
@@ -5788,17 +5783,6 @@ function updateNotificationUI(notifications, unreadCount) {
 
 
 
-	
-	
-	
-	
-	
-	
-	
-	
-
-
-
 
 
 
@@ -5823,33 +5807,81 @@ function updateNotificationUI(notifications, unreadCount) {
 	
 	
 	
-	
-	
-	// Fungsi untuk memuat aktivitas terkini (diperbarui)
+// Fungsi untuk memuat aktivitas terkini
 function loadRecentActivity(userId) {
     if (!userId) return;
     
-    const activitiesQuery = query(
-        collection(db, "activities"),
+    // Gabungkan data dari berbagai koleksi
+    const activities = [];
+    
+    // 1. Ambil aktivitas feedback
+    const feedbackQuery = query(
+        collection(db, "feedback"),
         where("userId", "==", userId),
         orderBy("timestamp", "desc"),
-        limit(10)
+        limit(5)
     );
     
-    return onSnapshot(activitiesQuery, (snapshot) => {
-        const activities = [];
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
+    // 2. Ambil aktivitas diskusi
+    const discussionsQuery = query(
+        collection(db, "discussions"),
+        where("authorId", "==", userId),
+        orderBy("createdAt", "desc"),
+        limit(5)
+    );
+    
+    // 3. Ambil aktivitas komentar
+    const commentsQuery = query(
+        collection(db, "arduinoHistoryComments"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(5)
+    );
+    
+    Promise.all([
+        getDocs(feedbackQuery),
+        getDocs(discussionsQuery),
+        getDocs(commentsQuery)
+    ]).then(([feedbackSnap, discussionsSnap, commentsSnap]) => {
+        // Proses feedback
+        feedbackSnap.forEach(doc => {
             activities.push({
+                type: 'feedback',
                 id: doc.id,
-                type: data.type,
-                data: data.data,
-                timestamp: data.timestamp.toDate()
+                title: doc.data().title,
+                timestamp: doc.data().timestamp?.toDate(),
+                content: doc.data().content.substring(0, 50) + '...'
             });
         });
         
-        renderRecentActivity(activities);
+        // Proses diskusi
+        discussionsSnap.forEach(doc => {
+            activities.push({
+                type: 'discussion',
+                id: doc.id,
+                title: doc.data().title,
+                timestamp: doc.data().createdAt?.toDate(),
+                content: doc.data().content.substring(0, 50) + '...'
+            });
+        });
+        
+        // Proses komentar
+        commentsSnap.forEach(doc => {
+            activities.push({
+                type: 'comment',
+                id: doc.id,
+                timestamp: doc.data().timestamp?.toDate(),
+                content: doc.data().content.substring(0, 50) + '...'
+            });
+        });
+        
+        // Urutkan berdasarkan timestamp
+        activities.sort((a, b) => b.timestamp - a.timestamp);
+        
+        // Render aktivitas
+        renderRecentActivity(activities.slice(0, 5));
+    }).catch(error => {
+        console.error("Error loading activities:", error);
     });
 }
 	
@@ -5857,7 +5889,18 @@ function loadRecentActivity(userId) {
 	
 	
 	
-// Fungsi untuk merender aktivitas terkini (diperbarui)
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+// Fungsi untuk merender aktivitas terkini
 function renderRecentActivity(activities) {
     const activityList = document.getElementById('recentActivity');
     
@@ -5877,7 +5920,7 @@ function renderRecentActivity(activities) {
             </div>
             <div class="activity-content">
                 <h4>${getActivityTitle(activity)}</h4>
-                <p>${getActivityDescription(activity)}</p>
+                <p>${activity.content}</p>
                 <small>${formatTimeAgo(activity.timestamp)}</small>
             </div>
         </div>
@@ -5893,126 +5936,6 @@ function renderRecentActivity(activities) {
     });
 }
 
-// Fungsi untuk mendapatkan deskripsi aktivitas
-function getActivityDescription(activity) {
-    switch(activity.type) {
-        case 'comment':
-            return activity.data.content.substring(0, 50) + '...';
-        case 'like':
-            return `Menyukai ${getContentTypeName(activity.data.targetType)}`;
-        case 'reply':
-            return activity.data.content.substring(0, 50) + '...';
-        case 'announcement':
-            return `Membuat pengumuman: ${activity.data.title}`;
-        case 'discussion':
-            return `Memulai diskusi: ${activity.data.title}`;
-        default:
-            return 'Melakukan aktivitas baru';
-    }
-}	
-	
-
-
-// Contoh implementasi untuk komentar
-document.querySelectorAll('.comment-form').forEach(form => {
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const content = form.querySelector('.comment-input').value;
-        const targetId = form.getAttribute('data-target-id');
-        const targetType = form.getAttribute('data-target-type');
-        
-        if (!content || !targetId || !targetType) return;
-        
-        try {
-            // Simpan komentar ke database
-            const commentRef = await addDoc(collection(db, "comments"), {
-                userId: auth.currentUser.uid,
-                content,
-                targetId,
-                targetType,
-                timestamp: new Date()
-            });
-            
-            // Catat aktivitas dan kirim notifikasi
-            await handleNewComment({
-                userId: auth.currentUser.uid,
-                content,
-                targetId,
-                targetType
-            });
-            
-            form.querySelector('.comment-input').value = '';
-            showToast('Komentar berhasil dikirim');
-        } catch (error) {
-            console.error("Error adding comment:", error);
-            showToast('Gagal mengirim komentar');
-        }
-    });
-});
-
-
-
-// Fungsi untuk membuat notifikasi (diperbarui)
-async function createBatchNotifications(userIds, type, message, targetId = null, link = null) {
-    if (!userIds || userIds.length === 0) return;
-    
-    const batch = writeBatch(db);
-    const notificationsRef = collection(db, "notifications");
-    
-    // Tambahkan notifikasi untuk setiap user
-    userIds.forEach(userId => {
-        if (!userId) return;
-        
-        const docRef = doc(notificationsRef);
-        batch.set(docRef, {
-            userId,
-            type,
-            message,
-            read: false,
-            timestamp: new Date(),
-            targetId,
-            link
-        });
-    });
-    
-    try {
-        await batch.commit();
-        console.log('Notifikasi berhasil dikirim ke', userIds.length, 'penerima');
-    } catch (error) {
-        console.error('Error sending notifications:', error);
-    }
-}
-
-// Fungsi untuk memuat notifikasi (diperbarui)
-function loadNotifications(userId) {
-    if (!userId) return;
-    
-    const notificationsRef = collection(db, "notifications");
-    const q = query(
-        notificationsRef, 
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(20)
-    );
-    
-    return onSnapshot(q, (snapshot) => {
-        notifications = [];
-        let unreadCount = 0;
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            notifications.push({
-                id: doc.id,
-                ...data,
-                timestamp: data.timestamp.toDate()
-            });
-            if (!data.read) unreadCount++;
-        });
-        
-        updateNotificationUI(notifications, unreadCount);
-    });
-}
 
 
 
@@ -6358,30 +6281,40 @@ function scrollToContent(contentId) {
    
    
    
-   // Inisialisasi saat auth state berubah (diperbarui)
+   
+   
+   // Inisialisasi saat auth state berubah
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        let unsubscribeFunctions = [];
+        let unsubscribeNotifications = null;
+        let unsubscribeActivities = null;
         
         // Load data awal
         loadUserProfile(user);
         
         // Setup real-time listeners
-        unsubscribeFunctions.push(loadNotifications(user.uid));
-        unsubscribeFunctions.push(loadRecentActivity(user.uid));
+        unsubscribeNotifications = loadNotifications(user.uid);
+        unsubscribeActivities = loadRecentActivity(user.uid);
+        
+        // Set interval untuk refresh periodik
+        const refreshInterval = setInterval(() => {
+            if (unsubscribeNotifications) unsubscribeNotifications();
+            if (unsubscribeActivities) unsubscribeActivities();
+            
+            unsubscribeNotifications = loadNotifications(user.uid);
+            unsubscribeActivities = loadRecentActivity(user.uid);
+        }, 30000); // Refresh setiap 30 detik
         
         // Cleanup saat komponen unmount
         window.addEventListener('beforeunload', () => {
-            unsubscribeFunctions.forEach(unsubscribe => {
-                if (unsubscribe) unsubscribe();
-            });
+            clearInterval(refreshInterval);
+            if (unsubscribeNotifications) unsubscribeNotifications();
+            if (unsubscribeActivities) unsubscribeActivities();
         });
-    } else {
-        // Reset state jika logout
-        userProfile = {};
-        notifications = [];
     }
 });
+   
+   
    
    
    
@@ -6491,194 +6424,6 @@ async function createNotification(userId, type, content) {
 
 
 
-
-// Fungsi untuk mencatat aktivitas dan mengirim notifikasi
-async function logActivityAndNotify({
-    userId, 
-    activityType, 
-    activityData, 
-    notificationRecipients = [],
-    notificationMessage,
-    notificationLink
-}) {
-    if (!userId) return;
-    
-    try {
-        // 1. Catat aktivitas di koleksi activities
-        const activityRef = await addDoc(collection(db, "activities"), {
-            userId,
-            type: activityType,
-            data: activityData,
-            timestamp: new Date()
-        });
-        
-        // 2. Kirim notifikasi ke penerima
-        if (notificationRecipients.length > 0 && notificationMessage) {
-            await createBatchNotifications(
-                notificationRecipients,
-                activityType,
-                notificationMessage,
-                activityRef.id,
-                notificationLink
-            );
-        }
-        
-        return activityRef.id;
-    } catch (error) {
-        console.error("Error logging activity:", error);
-        return null;
-    }
-}
-
-
-
-// Fungsi untuk menangani komentar baru
-async function handleNewComment(commentData) {
-    const { userId, content, targetId, targetType } = commentData;
-    
-    // Catat aktivitas dan kirim notifikasi
-    const activityId = await logActivityAndNotify({
-        userId,
-        activityType: 'comment',
-        activityData: {
-            content,
-            targetId,
-            targetType
-        },
-        notificationRecipients: getNotificationRecipients(targetType, targetId, userId),
-        notificationMessage: `${userProfile.displayName} memberikan komentar baru`,
-        notificationLink: getLinkForActivity(targetType, targetId)
-    });
-    
-    return activityId;
-}
-
-// Fungsi untuk menangani like/reaction
-async function handleLike(likeData) {
-    const { userId, targetId, targetType } = likeData;
-    
-    await logActivityAndNotify({
-        userId,
-        activityType: 'like',
-        activityData: {
-            targetId,
-            targetType
-        },
-        notificationRecipients: [getContentOwner(targetType, targetId)],
-        notificationMessage: `${userProfile.displayName} menyukai ${getContentTypeName(targetType)} Anda`,
-        notificationLink: getLinkForActivity(targetType, targetId)
-    });
-}
-
-// Fungsi untuk menangani balasan komentar
-async function handleReply(replyData) {
-    const { userId, content, commentId, targetId, targetType } = replyData;
-    
-    await logActivityAndNotify({
-        userId,
-        activityType: 'reply',
-        activityData: {
-            content,
-            commentId,
-            targetId,
-            targetType
-        },
-        notificationRecipients: [getCommentOwner(commentId)],
-        notificationMessage: `${userProfile.displayName} membalas komentar Anda`,
-        notificationLink: getLinkForActivity(targetType, targetId)
-    });
-}
-
-// Fungsi untuk menangani pengumuman baru
-async function handleNewAnnouncement(announcementData) {
-    const { userId, title } = announcementData;
-    
-    await logActivityAndNotify({
-        userId,
-        activityType: 'announcement',
-        activityData: {
-            title
-        },
-        notificationRecipients: getAllUsersExcept(userId),
-        notificationMessage: `Pengumuman baru: ${title}`,
-        notificationLink: `/announcements/${announcementData.id}`
-    });
-}
-
-
-
-
-// Fungsi untuk mendapatkan penerima notifikasi
-async function getNotificationRecipients(targetType, targetId, excludeUserId) {
-    let recipients = [];
-    
-    switch(targetType) {
-        case 'announcement':
-            // Kirim ke admin dan pembuat konten terkait
-            const admins = await getAdminUsers();
-            recipients = [...admins];
-            break;
-            
-        case 'discussion':
-            // Kirim ke pembuat diskusi dan peserta lainnya
-            const discussion = await getDiscussionParticipants(targetId);
-            recipients = [...discussion.participants];
-            break;
-            
-        case 'feedback':
-            // Kirim ke admin
-            recipients = await getAdminUsers();
-            break;
-    }
-    
-    // Hapus userId yang dikecualikan (biasanya pembuat aktivitas)
-    return recipients.filter(id => id !== excludeUserId);
-}
-
-// Fungsi untuk mendapatkan semua user kecuali yang dikecualikan
-async function getAllUsersExcept(excludeUserId) {
-    const usersRef = collection(db, "users");
-    const snapshot = await getDocs(usersRef);
-    
-    return snapshot.docs
-        .map(doc => doc.id)
-        .filter(id => id !== excludeUserId);
-}
-
-// Fungsi untuk mendapatkan pemilik konten
-async function getContentOwner(targetType, targetId) {
-    let ownerId = '';
-    
-    switch(targetType) {
-        case 'announcement':
-            const announcement = await getDoc(doc(db, "announcements", targetId));
-            ownerId = announcement.data().authorId;
-            break;
-            
-        case 'discussion':
-            const discussion = await getDoc(doc(db, "discussions", targetId));
-            ownerId = discussion.data().authorId;
-            break;
-            
-        case 'comment':
-            const comment = await getDoc(doc(db, "comments", targetId));
-            ownerId = comment.data().userId;
-            break;
-    }
-    
-    return ownerId;
-}
-
-// Fungsi untuk mendapatkan link berdasarkan jenis aktivitas
-function getLinkForActivity(targetType, targetId) {
-    switch(targetType) {
-        case 'announcement': return `/announcements/${targetId}`;
-        case 'discussion': return `/discussions/${targetId}`;
-        case 'feedback': return `/feedback/${targetId}`;
-        case 'comment': return `#comment-${targetId}`;
-        default: return '/';
-    }
-}
 
 
 
