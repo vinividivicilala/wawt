@@ -6382,6 +6382,28 @@ async function createNotification(userId, type, content) {
     }
 }
 
+async function logActivity(userId, action, targetType, targetId, detail) {
+  await addDoc(collection(db, "activities"), {
+    userId,
+    action,
+    targetType,
+    targetId,
+    detail,
+    timestamp: serverTimestamp()
+  });
+}
+
+async function createNotification(toUserId, type, message, contentId, link) {
+  await addDoc(collection(db, "notifications"), {
+    userId: toUserId,
+    type,
+    message,
+    contentId,
+    link,
+    timestamp: serverTimestamp(),
+    read: false
+  });
+}
 
 
 
@@ -6413,92 +6435,120 @@ async function createNotification(userId, type, content) {
 	
 	
 	
+	
+	
+	
+	async function setupEmojiReactions(user) {
+  const emojiOptions = document.querySelectorAll('.emoji-option');
+  const storageKey = 'arduino-history-emoji-reaction';
+  const reactionMessage = document.querySelector('.reaction-message');
+  const loginMessage = document.querySelector('.login-message');
 
-async function setupEmojiReactions(user) {
-    const emojiOptions = document.querySelectorAll('.emoji-option');
-    const storageKey = 'arduino-history-emoji-reaction';
-    const reactionMessage = document.querySelector('.reaction-message');
-    const loginMessage = document.querySelector('.login-message');
-    
-    reactionMessage.style.display = 'none';
-    loginMessage.style.display = 'none';
-    
-    const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
-        happy: 0,
-        sad: 0,
-        disappointed: 0,
-        angry: 0,
-        neutral: 0
-    };
-    
-    Object.keys(reactionCounts).forEach(emoji => {
-        document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
-    });
-    
-    if (user) {
-        const userReactionKey = `${storageKey}-${user.uid}`;
-        const savedReaction = localStorage.getItem(userReactionKey);
-        
-        if (savedReaction) {
-            document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
-        }
-        
-        emojiOptions.forEach(option => {
-            option.addEventListener('click', async function() {
-                const emojiType = this.dataset.emoji;
-                
-                if (savedReaction === emojiType) return;
-                
-                emojiOptions.forEach(opt => opt.classList.remove('selected'));
-                this.classList.add('selected');
-                
-                if (savedReaction) {
-                    reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
-                }
-                reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
-                
-                Object.keys(reactionCounts).forEach(emoji => {
-                    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
-                });
-                
-                localStorage.setItem(userReactionKey, emojiType);
-                localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
-                
-                // Create notification for content owner
-                await createNotification(
-                    'content-owner-id', // Replace with actual content owner ID
-                    'reaction',
-                    `${user.displayName || 'Seseorang'} bereaksi ${emojiType} pada konten Anda`,
-                    null,
-                    window.location.href
-                );
-                
-                reactionMessage.style.display = 'block';
-                reactionMessage.style.opacity = 1;
-                setTimeout(() => {
-                    reactionMessage.style.opacity = 0.7;
-                }, 2000);
-            });
-        });
-    } else {
-        loginMessage.style.display = 'block';
-        emojiOptions.forEach(option => {
-            option.style.opacity = '0.5';
-            option.style.cursor = 'not-allowed';
-            option.addEventListener('click', (e) => {
-                e.preventDefault();
-                loginMessage.style.opacity = 1;
-                setTimeout(() => {
-                    loginMessage.style.opacity = 0.7;
-                }, 2000);
-            });
-        });
+  reactionMessage.style.display = 'none';
+  loginMessage.style.display = 'none';
+
+  const reactionCounts = JSON.parse(localStorage.getItem(storageKey + '-counts')) || {
+    happy: 0,
+    sad: 0,
+    disappointed: 0,
+    angry: 0,
+    neutral: 0
+  };
+
+  Object.keys(reactionCounts).forEach(emoji => {
+    document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+  });
+
+  if (user) {
+    const userReactionKey = `${storageKey}-${user.uid}`;
+    let savedReaction = localStorage.getItem(userReactionKey);
+
+    if (savedReaction) {
+      document.querySelector(`.emoji-option[data-emoji="${savedReaction}"]`).classList.add('selected');
     }
+
+    emojiOptions.forEach(option => {
+      option.addEventListener('click', async function() {
+        const emojiType = this.dataset.emoji;
+        if (savedReaction === emojiType) return;
+
+        // Update local selection
+        emojiOptions.forEach(opt => opt.classList.remove('selected'));
+        this.classList.add('selected');
+
+        // Update local counts
+        if (savedReaction) {
+          reactionCounts[savedReaction] = Math.max(0, reactionCounts[savedReaction] - 1);
+        }
+        reactionCounts[emojiType] = (reactionCounts[emojiType] || 0) + 1;
+
+        Object.keys(reactionCounts).forEach(emoji => {
+          document.getElementById(`${emoji}-count`).textContent = reactionCounts[emoji];
+        });
+
+        // Save locally
+        localStorage.setItem(userReactionKey, emojiType);
+        localStorage.setItem(storageKey + '-counts', JSON.stringify(reactionCounts));
+
+        // Create notification for content owner
+        await createNotification(
+          'content-owner-id', // Ganti dengan UID pemilik konten
+          'reaction',
+          `${user.displayName || 'Seseorang'} bereaksi ${emojiType} pada konten Anda`,
+          null,
+          window.location.href
+        );
+
+        // Log activity to Firestore
+        await logActivity(
+          user.uid,
+          'reacted',
+          'announcement', // Sesuaikan: 'announcement', 'discussion', dsb.
+          'arduinoHistoryId', // Ganti dengan ID konten
+          `Memberi reaksi ${emojiType}`
+        );
+
+        // Feedback UI
+        reactionMessage.style.display = 'block';
+        reactionMessage.style.opacity = 1;
+        setTimeout(() => {
+          reactionMessage.style.opacity = 0.7;
+        }, 2000);
+
+        // Update savedReaction variable so it doesn't decrement again
+        savedReaction = emojiType;
+      });
+    });
+  } else {
+    loginMessage.style.display = 'block';
+    emojiOptions.forEach(option => {
+      option.style.opacity = '0.5';
+      option.style.cursor = 'not-allowed';
+      option.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginMessage.style.opacity = 1;
+        setTimeout(() => {
+          loginMessage.style.opacity = 0.7;
+        }, 2000);
+      });
+    });
+  }
 }
 
-
-
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
     // Authentication Functions
     if (loginBtn) {
