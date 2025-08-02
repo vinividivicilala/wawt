@@ -6437,6 +6437,103 @@ function scrollToContent(contentId) {
 
 
 
+// Fungsi untuk membuat notifikasi otomatis berdasarkan aktivitas
+async function createActivityNotification(activityType, activityData) {
+    try {
+        // Dapatkan ID penerima notifikasi
+        let recipientId = activityData.recipientId;
+        
+        // Jika tidak ada recipientId spesifik, mungkin ini adalah aktivitas publik
+        if (!recipientId) {
+            // Untuk komentar/reply, dapatkan author konten asli
+            if (activityType === 'comment' || activityType === 'reply') {
+                const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
+                if (contentDoc.exists()) {
+                    recipientId = contentDoc.data().authorId || contentDoc.data().userId;
+                }
+            }
+            // Untuk like/reaksi, dapatkan author konten
+            else if (activityType === 'like' || activityType === 'reaction') {
+                const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
+                if (contentDoc.exists()) {
+                    recipientId = contentDoc.data().authorId || contentDoc.data().userId;
+                }
+            }
+        }
+
+        // Jika tidak ada penerima yang valid, tidak perlu buat notifikasi
+        if (!recipientId || recipientId === auth.currentUser.uid) return;
+
+        // Buat pesan notifikasi berdasarkan jenis aktivitas
+        let message = '';
+        let link = '';
+        
+        switch(activityType) {
+            case 'comment':
+                message = `${auth.currentUser.displayName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
+                link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
+                break;
+            case 'reply':
+                message = `${auth.currentUser.displayName} membalas komentar Anda`;
+                link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
+                break;
+            case 'like':
+                message = `${auth.currentUser.displayName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
+                link = `/${activityData.contentType}/${activityData.contentId}`;
+                break;
+            case 'reaction':
+                message = `${auth.currentUser.displayName} memberikan reaksi pada ${getContentTypeName(activityData.contentType)} Anda`;
+                link = `/${activityData.contentType}/${activityData.contentId}`;
+                break;
+            default:
+                return;
+        }
+
+        // Buat notifikasi
+        await addDoc(collection(db, "notifications"), {
+            userId: recipientId,
+            type: activityType,
+            message: message,
+            read: false,
+            timestamp: new Date(),
+            link: link,
+            activityId: activityData.activityId,
+            fromUserId: auth.currentUser.uid
+        });
+        
+    } catch (error) {
+        console.error("Error creating activity notification:", error);
+    }
+}
+
+function getContentTypeName(contentType) {
+    const names = {
+        'feedback': 'feedback',
+        'announcements': 'pengumuman',
+        'arduinoHistory': 'sejarah Arduino',
+        'discussions': 'diskusi'
+    };
+    return names[contentType] || 'konten';
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Fungsi untuk menandai notifikasi sebagai sudah dibaca
 async function markNotificationAsRead(notifId) {
@@ -6899,90 +6996,6 @@ document.querySelectorAll('.footnote-link').forEach(link => {
     }
   });
 });
-
-
-
-
-
-// Fungsi untuk membuat notifikasi otomatis berdasarkan aktivitas
-async function createActivityNotification(activityType, activityData) {
-    try {
-        // Dapatkan ID penerima notifikasi
-        let recipientId = activityData.recipientId;
-        
-        // Jika tidak ada recipientId spesifik, mungkin ini adalah aktivitas publik
-        if (!recipientId) {
-            // Untuk komentar/reply, dapatkan author konten asli
-            if (activityType === 'comment' || activityType === 'reply') {
-                const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
-                if (contentDoc.exists()) {
-                    recipientId = contentDoc.data().authorId || contentDoc.data().userId;
-                }
-            }
-            // Untuk like/reaksi, dapatkan author konten
-            else if (activityType === 'like' || activityType === 'reaction') {
-                const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
-                if (contentDoc.exists()) {
-                    recipientId = contentDoc.data().authorId || contentDoc.data().userId;
-                }
-            }
-        }
-
-        // Jika tidak ada penerima yang valid, tidak perlu buat notifikasi
-        if (!recipientId || recipientId === auth.currentUser.uid) return;
-
-        // Buat pesan notifikasi berdasarkan jenis aktivitas
-        let message = '';
-        let link = '';
-        
-        switch(activityType) {
-            case 'comment':
-                message = `${auth.currentUser.displayName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
-                break;
-            case 'reply':
-                message = `${auth.currentUser.displayName} membalas komentar Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
-                break;
-            case 'like':
-                message = `${auth.currentUser.displayName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}`;
-                break;
-            case 'reaction':
-                message = `${auth.currentUser.displayName} memberikan reaksi pada ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}`;
-                break;
-            default:
-                return;
-        }
-
-        // Buat notifikasi
-        await addDoc(collection(db, "notifications"), {
-            userId: recipientId,
-            type: activityType,
-            message: message,
-            read: false,
-            timestamp: new Date(),
-            link: link,
-            activityId: activityData.activityId,
-            fromUserId: auth.currentUser.uid
-        });
-        
-    } catch (error) {
-        console.error("Error creating activity notification:", error);
-    }
-}
-
-function getContentTypeName(contentType) {
-    const names = {
-        'feedback': 'feedback',
-        'announcements': 'pengumuman',
-        'arduinoHistory': 'sejarah Arduino',
-        'discussions': 'diskusi'
-    };
-    return names[contentType] || 'konten';
-}
-
 
 
 
