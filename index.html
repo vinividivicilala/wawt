@@ -5820,113 +5820,109 @@ async function handleComment(contentId, contentOwnerId, commenterId, comment) {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	// Fungsi untuk memuat aktivitas terkini
-function loadRecentActivity(userId) {
-    if (!userId) return;
-    
-    // Gabungkan data dari berbagai koleksi
-    const activities = [];
-    
-    // 1. Aktivitas feedback
-    const feedbackQuery = query(
-        collection(db, "feedback"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(5)
-    );
-    
-    // 2. Aktivitas komentar
-    const commentsQuery = query(
-        collection(db, "arduinoHistoryComments"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(5)
-    );
-    
-    // 3. Aktivitas like
-    const likesQuery = query(
-        collection(db, "likes"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(5)
-    );
-    
-    // 4. Aktivitas reply
-    const repliesQuery = query(
-        collection(db, "replies"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(5)
-    );
-    
-    Promise.all([
-        getDocs(feedbackQuery),
-        getDocs(commentsQuery),
-        getDocs(likesQuery),
-        getDocs(repliesQuery)
-    ]).then(([feedbackSnap, commentsSnap, likesSnap, repliesSnap]) => {
-        // Proses feedback
-        feedbackSnap.forEach(doc => {
-            activities.push({
-                type: 'feedback',
-                id: doc.id,
-                title: doc.data().title,
-                content: doc.data().content.substring(0, 100) + '...',
-                timestamp: doc.data().timestamp?.toDate(),
-                icon: '💡'
-            });
-        });
-        
-        // Proses komentar
-        commentsSnap.forEach(doc => {
-            activities.push({
-                type: 'comment',
-                id: doc.id,
-                content: doc.data().content.substring(0, 100) + '...',
-                timestamp: doc.data().timestamp?.toDate(),
-                icon: '💬'
-            });
-        });
-        
-        // Proses like
-        likesSnap.forEach(doc => {
-            activities.push({
-                type: 'like',
-                id: doc.id,
-                content: 'Menyukai konten Anda',
-                timestamp: doc.data().timestamp?.toDate(),
-                icon: '👍'
-            });
-        });
-        
-        // Proses reply
-        repliesSnap.forEach(doc => {
-            activities.push({
-                type: 'reply',
-                id: doc.id,
-                content: doc.data().content.substring(0, 100) + '...',
-                timestamp: doc.data().timestamp?.toDate(),
-                icon: '↩️'
-            });
-        });
-        
-        // Urutkan berdasarkan timestamp
-        activities.sort((a, b) => b.timestamp - a.timestamp);
-        
-        // Render aktivitas
-        renderRecentActivity(activities.slice(0, 10));
-    }).catch(error => {
-        console.error("Error loading activities:", error);
+	function loadRecentActivity(userId) {
+  if (!userId) return;
+
+  const activities = [];
+
+  const feedbackQuery = query(
+    collection(db, "feedback"),
+    where("userId", "==", userId),
+    orderBy("timestamp", "desc"),
+    limit(5)
+  );
+
+  const commentsQuery = query(
+    collection(db, "arduinoHistoryComments"),
+    orderBy("lastUpdated", "desc"), // ambil semua komentar, filter nanti
+    limit(10) // ambil lebih banyak karena filter reply juga
+  );
+
+  const likesQuery = query(
+    collection(db, "likes"),
+    where("userId", "==", userId),
+    orderBy("timestamp", "desc"),
+    limit(5)
+  );
+
+  Promise.all([
+    getDocs(feedbackQuery),
+    getDocs(commentsQuery),
+    getDocs(likesQuery)
+  ]).then(([feedbackSnap, commentsSnap, likesSnap]) => {
+
+    // Aktivitas feedback
+    feedbackSnap.forEach(doc => {
+      const data = doc.data();
+      activities.push({
+        type: 'feedback',
+        id: doc.id,
+        title: data.title,
+        content: data.content?.substring(0, 100) + '...',
+        timestamp: data.timestamp?.toDate(),
+        icon: '💡'
+      });
     });
+
+    // Aktivitas komentar dan reply (dari dalam komentar)
+    commentsSnap.forEach(doc => {
+      const data = doc.data();
+
+      // Komentar utama milik user
+      if (data.userId === userId) {
+        activities.push({
+          type: 'comment',
+          id: doc.id,
+          content: data.content?.substring(0, 100) + '...',
+          timestamp: data.timestamp?.toDate(),
+          icon: '💬'
+        });
+      }
+
+      // Balasan dalam komentar
+      if (Array.isArray(data.replies)) {
+        data.replies.forEach(reply => {
+          if (reply.userId === userId) {
+            activities.push({
+              type: 'reply',
+              id: reply.id,
+              content: reply.content?.substring(0, 100) + '...',
+              timestamp: new Date(reply.timestamp?.seconds * 1000),
+              icon: '↩️'
+            });
+          }
+        });
+      }
+    });
+
+    // Aktivitas likes
+    likesSnap.forEach(doc => {
+      const data = doc.data();
+      activities.push({
+        type: 'like',
+        id: doc.id,
+        content: 'Menyukai konten Anda',
+        timestamp: data.timestamp?.toDate(),
+        icon: '👍'
+      });
+    });
+
+    // Urutkan berdasarkan timestamp terbaru
+    activities.sort((a, b) => b.timestamp - a.timestamp);
+
+    // Render hanya 10 aktivitas terbaru
+    renderRecentActivity(activities.slice(0, 10));
+
+  }).catch(error => {
+    console.error("Error loading activities:", error);
+  });
 }
+
+	
+	
+	
+	
+	
 
 // Fungsi untuk merender aktivitas terkini
 function renderRecentActivity(activities) {
