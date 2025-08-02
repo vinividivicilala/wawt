@@ -7135,8 +7135,8 @@ function setupComments() {
       commentElement.className = "comment-item";
       commentElement.dataset.id = comment.id;
       
-      // Avatar dari inisial user
-      const initials = comment.userName.split(" ").map(n => n[0]).join("").toUpperCase();
+      const initials = (comment.userName || "User").split(" ").map(n => n[0]).join("").toUpperCase();
+
       
       commentElement.innerHTML = `
         <div class="comment-header">
