@@ -6346,42 +6346,6 @@ async function markAllNotificationsAsRead() {
 
 
 
-
-
-
-
-
-
-async function createNotification(userId, type, content) {
-    if (!userId) {
-        console.error("User ID tidak valid");
-        return;
-    }
-
-    // Validasi input
-    if (!content || !content.message) {
-        console.error("Pesan notifikasi tidak valid");
-        return;
-    }
-
-    try {
-        const notificationData = {
-            userId,
-            type: type || 'general',
-            message: content.message,
-            read: false,
-            timestamp: new Date(),
-            link: content.link || null,
-            targetId: content.targetId || null
-        };
-
-        await addDoc(collection(db, "notifications"), notificationData);
-        console.log("Notifikasi berhasil dibuat");
-    } catch (error) {
-        console.error("Gagal membuat notifikasi:", error);
-    }
-}
-
 async function logActivity(userId, action, targetType, targetId, detail) {
   await addDoc(collection(db, "activities"), {
     userId,
