@@ -5695,46 +5695,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
 	
-	// Fungsi untuk memuat notifikasi
-function loadNotifications(userId) {
-    if (!userId) return;
-    
-    const notificationsRef = collection(db, "notifications");
-    const q = query(notificationsRef, 
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(20)
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        notifications = [];
-        let unreadCount = 0;
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            notifications.push({
-                id: doc.id,
-                message: data.message,
-                type: data.type || 'general',
-                read: data.read || false,
-                timestamp: data.timestamp.toDate(),
-                link: data.link || null,
-                icon: getNotificationIcon(data.type),
-                sender: data.senderName || 'Pengguna'
-            });
-            if (!data.read) unreadCount++;
-        });
-
-        updateNotificationUI(notifications, unreadCount);
-    });
-    
-    return unsubscribe;
-}
-
-
-
-
-// Fungsi untuk memperbarui UI notifikasi (diperbarui)
+	
+	
+	
+	
+// Move this function to the top of your script, near other utility functions
 function updateNotificationUI(notifications, unreadCount) {
     const notificationList = document.getElementById('notificationsList');
     const notificationBadge = document.getElementById('notificationBadge');
@@ -5782,6 +5747,60 @@ function updateNotificationUI(notifications, unreadCount) {
         });
     });
 }
+
+// Then keep your loadNotifications function where it was
+function loadNotifications(userId) {
+    if (!userId) return;
+    
+    const notificationsRef = collection(db, "notifications");
+    const q = query(notificationsRef, 
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(20)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        notifications = [];
+        let unreadCount = 0;
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            notifications.push({
+                id: doc.id,
+                message: data.message,
+                type: data.type || 'general',
+                read: data.read || false,
+                timestamp: data.timestamp.toDate(),
+                link: data.link || null,
+                icon: getNotificationIcon(data.type),
+                sender: data.senderName || 'Pengguna'
+            });
+            if (!data.read) unreadCount++;
+        });
+
+        updateNotificationUI(notifications, unreadCount);
+    });
+    
+    return unsubscribe;
+}	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 
 
