@@ -5801,25 +5801,6 @@ function updateNotificationUI(notifications, unreadCount) {
 	
 	
 	
-
-// Helper function to get display name for target type
-function getTargetName(targetType) {
-    const names = {
-        'arduino-history': 'sejarah Arduino',
-        'feedback': 'feedback',
-        'announcement': 'pengumuman',
-        'discussion': 'diskusi'
-    };
-    return names[targetType] || 'konten';
-}
-
-// Helper function to truncate text
-function truncate(text, length) {
-    return text.length > length ? text.substring(0, length) + '...' : text;
-}
-	
-	
-	
 	
 	
 	
@@ -6969,6 +6950,27 @@ async function createActivityNotification(receiverId, activityType, senderId, se
         console.error('Error creating notification:', error);
     }
 }
+
+
+
+// Helper function to get display name for target type
+function getTargetName(targetType) {
+    const names = {
+        'arduino-history': 'sejarah Arduino',
+        'feedback': 'feedback',
+        'announcement': 'pengumuman',
+        'discussion': 'diskusi'
+    };
+    return names[targetType] || 'konten';
+}
+
+// Helper function to truncate text
+function truncate(text, length) {
+    return text.length > length ? text.substring(0, length) + '...' : text;
+}
+	
+	
+	
 
 
 
