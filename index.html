@@ -6765,17 +6765,24 @@ function getTargetName(targetType) {
 
 
 	
-	
-async function createActivityNotification(activityType, activityData) {
+	async function createActivityNotification(activityType, activityData) {
     try {
-        // Jika ini pengumuman untuk semua user
+        // Validasi awal
+        if (!activityType || !activityData || !auth.currentUser) {
+            console.error("Missing essential data for notification:", { activityType, activityData });
+            return;
+        }
+
+        const currentUserId = auth.currentUser.uid;
+        const currentUserName = auth.currentUser.displayName || 'Seseorang';
+
+        // Jika pengumuman untuk semua user
         if (activityType === 'announcement' && !activityData.recipientId) {
-            // Dapatkan semua user (implementasi tergantung struktur database)
             const usersSnapshot = await getDocs(collection(db, "users"));
             const batch = writeBatch(db);
-            
+
             usersSnapshot.forEach(userDoc => {
-                if (userDoc.id !== auth.currentUser.uid) {
+                if (userDoc.id !== currentUserId) {
                     const notificationRef = doc(collection(db, "notifications"));
                     batch.set(notificationRef, {
                         userId: userDoc.id,
@@ -6783,57 +6790,65 @@ async function createActivityNotification(activityType, activityData) {
                         message: activityData.message || `Pengumuman baru: ${activityData.title}`,
                         read: false,
                         timestamp: new Date(),
-                        link: `/${activityData.contentType}/${activityData.contentId}`,
-                        fromUserId: auth.currentUser.uid
+                        link: `/announcements/${activityData.contentId}`,
+                        fromUserId: currentUserId
                     });
                 }
             });
-            
+
             await batch.commit();
             return;
         }
 
-        // Untuk notifikasi individual
+        // Dapatkan penerima notifikasi
         let recipientId = activityData.recipientId;
-        
-        // Jika tidak ada recipientId spesifik, dapatkan author konten
+
+        // Jika belum ada, ambil dari dokumen konten terkait
         if (!recipientId) {
-            const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
+            if (!activityData.contentType || !activityData.contentId) {
+                console.error("Missing contentType or contentId", activityData);
+                return;
+            }
+
+            const contentRef = doc(db, activityData.contentType, activityData.contentId);
+            const contentDoc = await getDoc(contentRef);
+
             if (contentDoc.exists()) {
-                recipientId = contentDoc.data().authorId || contentDoc.data().userId;
+                const data = contentDoc.data();
+                recipientId = data.authorId || data.userId;
             }
         }
 
-        // Jika tidak ada penerima yang valid atau penerima adalah user saat ini
-        if (!recipientId || recipientId === auth.currentUser.uid) return;
+        // Jika tidak ada penerima atau penerima adalah diri sendiri, batal
+        if (!recipientId || recipientId === currentUserId) return;
 
-        // Buat pesan notifikasi
+        // Siapkan isi notifikasi
         let message = '';
         let link = '';
-        
-        switch(activityType) {
+
+        switch (activityType) {
             case 'comment':
-                message = `${auth.currentUser.displayName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
+                message = `${currentUserName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
                 link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
                 break;
             case 'reply':
-                message = `${auth.currentUser.displayName} membalas komentar Anda`;
+                message = `${currentUserName} membalas komentar Anda`;
                 link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
                 break;
             case 'like':
-                message = `${auth.currentUser.displayName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
+                message = `${currentUserName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
                 link = `/${activityData.contentType}/${activityData.contentId}`;
                 break;
             case 'reaction':
-                message = `${auth.currentUser.displayName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`;
+                message = `${currentUserName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`;
                 link = `/${activityData.contentType}/${activityData.contentId}`;
                 break;
             case 'feedback':
-                message = `${auth.currentUser.displayName} memberikan feedback baru`;
+                message = `${currentUserName} memberikan feedback baru`;
                 link = `/feedback/${activityData.contentId}`;
                 break;
             case 'discussion':
-                message = `${auth.currentUser.displayName} memulai diskusi baru`;
+                message = `${currentUserName} memulai diskusi baru`;
                 link = `/discussions/${activityData.contentId}`;
                 break;
             case 'announcement':
@@ -6841,10 +6856,11 @@ async function createActivityNotification(activityType, activityData) {
                 link = `/announcements/${activityData.contentId}`;
                 break;
             default:
+                console.error("Unknown activity type:", activityType);
                 return;
         }
 
-        // Buat notifikasi
+        // Tambahkan notifikasi ke Firestore
         await addDoc(collection(db, "notifications"), {
             userId: recipientId,
             type: activityType,
@@ -6852,22 +6868,26 @@ async function createActivityNotification(activityType, activityData) {
             read: false,
             timestamp: new Date(),
             link: link,
-            activityId: activityData.activityId,
-            fromUserId: auth.currentUser.uid,
+            activityId: activityData.activityId || null,
+            fromUserId: currentUserId,
             ...(activityData.emoji && { emoji: activityData.emoji })
         });
-        
+
     } catch (error) {
         console.error("Error creating activity notification:", error);
     }
-}	
-	
-	
+}
 
-
-
-
-
+// Fungsi bantu: konversi nama konten untuk tampil di notifikasi
+function getContentTypeName(type) {
+    switch (type) {
+        case 'contents': return 'konten';
+        case 'feedback': return 'masukan';
+        case 'announcements': return 'pengumuman';
+        case 'discussions': return 'diskusi';
+        default: return 'konten';
+    }
+}
 
 
 
