@@ -6897,6 +6897,216 @@ function getContentTypeName(type) {
 
 
 
+// Fungsi untuk memuat aktivitas terkini
+function loadRecentActivities(userId) {
+    if (!userId) {
+        console.error("User ID tidak valid");
+        return;
+    }
+
+    const activitiesContainer = document.getElementById('recentActivity');
+    activitiesContainer.innerHTML = '<div class="loading-text">Memuat aktivitas...</div>';
+
+    // Gabungkan query dari berbagai sumber
+    const activitiesQuery = query(
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(10)
+    );
+
+    const unsubscribe = onSnapshot(activitiesQuery, 
+        (snapshot) => {
+            const activities = [];
+            
+            snapshot.forEach(doc => {
+                try {
+                    const data = doc.data();
+                    activities.push({
+                        id: doc.id,
+                        type: data.type || 'activity',
+                        content: data.content || '',
+                        timestamp: data.timestamp?.toDate() || new Date(),
+                        targetId: data.targetId,
+                        targetType: data.targetType
+                    });
+                } catch (error) {
+                    console.error("Error processing activity:", error);
+                }
+            });
+
+            renderActivities(activities);
+        },
+        (error) => {
+            console.error("Error loading activities:", error);
+            activitiesContainer.innerHTML = `
+                <div class="error-message">
+                    Gagal memuat aktivitas. Silakan refresh halaman.
+                </div>
+            `;
+        }
+    );
+
+    return unsubscribe;
+}
+
+
+
+// Fungsi untuk merender aktivitas
+function renderActivities(activities) {
+    const container = document.getElementById('recentActivity');
+    
+    if (activities.length === 0) {
+        container.innerHTML = `
+            <div class="empty-activities">
+                <p>Tidak ada aktivitas terkini</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = activities.map(activity => `
+        <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
+            <div class="activity-icon">
+                ${getActivityIcon(activity.type)}
+            </div>
+            <div class="activity-content">
+                <p>${formatActivityContent(activity)}</p>
+                <small>${formatTimeAgo(activity.timestamp)}</small>
+            </div>
+        </div>
+    `).join('');
+
+    // Tambahkan event listeners
+    document.querySelectorAll('.activity-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const type = item.getAttribute('data-type');
+            const id = item.getAttribute('data-id');
+            navigateToActivity(type, id);
+        });
+    });
+}
+
+
+
+
+function formatActivityContent(activity) {
+    switch(activity.type) {
+        case 'comment':
+            return `Anda memberikan komentar`;
+        case 'like':
+            return `Anda menyukai sebuah ${activity.targetType || 'konten'}`;
+        case 'reply':
+            return `Anda membalas komentar`;
+        case 'post':
+            return `Anda membuat postingan baru`;
+        default:
+            return `Aktivitas baru`;
+    }
+}
+
+ // Inisialisasi tab aktivitas
+    const activityTabs = document.querySelectorAll('.activity-tab');
+    activityTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchActivityTab(tabName);
+        });
+    });
+    
+    // Fungsi untuk switch tab
+    function switchActivityTab(tabName) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+        
+        // Hapus listener sebelumnya
+        if (window.currentActivityUnsubscribe) {
+            window.currentActivityUnsubscribe();
+        }
+        
+        // Load data berdasarkan tab
+        switch(tabName) {
+            case 'comments':
+                window.currentActivityUnsubscribe = loadCommentsActivities(userId);
+                break;
+            case 'reactions':
+                window.currentActivityUnsubscribe = loadReactionsActivities(userId);
+                break;
+            case 'posts':
+                window.currentActivityUnsubscribe = loadPostsActivities(userId);
+                break;
+            default:
+                window.currentActivityUnsubscribe = loadAllActivities(userId);
+        }
+    }
+    
+    // Default load tab pertama
+    switchActivityTab('all');
+});
+
+
+
+// Fungsi untuk memuat semua aktivitas
+function loadAllActivities(userId) {
+    const q = query(
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(15)
+    );
+    
+    return setupActivitiesListener(q);
+}
+
+// Fungsi untuk memuat aktivitas komentar saja
+function loadCommentsActivities(userId) {
+    const q = query(
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        where("type", "in", ["comment", "reply"]),
+        orderBy("timestamp", "desc"),
+        limit(15)
+    );
+    
+    return setupActivitiesListener(q);
+}
+
+
+
+
+
+
+
+// Fungsi dasar untuk listener aktivitas
+function setupActivitiesListener(query) {
+    return onSnapshot(query, 
+        (snapshot) => {
+            const activities = [];
+            snapshot.forEach(doc => {
+                activities.push({
+                    id: doc.id,
+                    ...doc.data(),
+                    timestamp: doc.data().timestamp?.toDate() || new Date()
+                });
+            });
+            renderActivities(activities);
+        },
+        (error) => {
+            console.error("Activities listener error:", error);
+            document.getElementById('recentActivity').innerHTML = `
+                <div class="error-message">
+                    Gagal memuat aktivitas. Coba lagi nanti.
+                </div>
+            `;
+        }
+    );
+}
+
+
+
+
+
+
 
 
 
