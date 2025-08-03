@@ -6654,20 +6654,6 @@ function setupAllListeners(userId) {
 }
 
 
-// Inisialisasi
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        loadUserProfile(user);
-        const cleanup = setupAllListeners(user.uid);
-        
-        // Cleanup saat komponen unmount
-        return cleanup;
-    } else {
-        // Handle logout
-        notifications = [];
-        updateNotificationUI([], 0);
-    }
-});
 
 
 
@@ -12841,3 +12827,5 @@ async function loadAnnouncementById(id) {
 
 
 
+
+	
