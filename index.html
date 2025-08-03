@@ -6515,15 +6515,16 @@ async function createActivityNotification(activityType, activityData) {
       usersSnapshot.forEach(userDoc => {
         if (userDoc.id !== currentUser.uid) {
           const notificationRef = doc(collection(db, "notifications"));
-          batch.set(notificationRef, {
-            userId: userDoc.id,
-            type: activityType,
-            message: activityData.message || `Pengumuman baru: ${activityData.title}`,
-            read: false,
-            timestamp: new Date(),
-            link: `/${activityData.contentType}/${activityData.contentId}`,
-            fromUserId: currentUser.uid
-          });
+        batch.set(notificationRef, {
+  recipientId: userDoc.id,  // ✅ COCOK dengan rules
+  type: activityType,
+  message: activityData.message || `Pengumuman baru: ${activityData.title}`,
+  read: false,
+  timestamp: new Date(),
+  link: `/${activityData.contentType}/${activityData.contentId}`,
+  fromUserId: currentUser.uid
+});
+
         }
       });
 
@@ -6601,17 +6602,18 @@ async function createActivityNotification(activityType, activityData) {
     }
 
     // === 4. Tambahkan notifikasi ke Firestore ===
-    await addDoc(collection(db, "notifications"), {
-      userId: recipientId,
-      type: activityType,
-      message: message,
-      read: false,
-      timestamp: new Date(),
-      link: link,
-      activityId: activityData.activityId || null,
-      fromUserId: currentUser.uid,
-      ...(activityData.emoji && { emoji: activityData.emoji })
-    });
+  await addDoc(collection(db, "notifications"), {
+  recipientId: recipientId,  // ✅ sesuai Firestore rules
+  type: activityType,
+  message: message,
+  read: false,
+  timestamp: new Date(),
+  link: link,
+  activityId: activityData.activityId || null,
+  fromUserId: currentUser.uid,
+  ...(activityData.emoji && { emoji: activityData.emoji })
+});
+
 
   } catch (error) {
     console.error("Error creating activity notification:", error);
