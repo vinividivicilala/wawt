@@ -6783,7 +6783,7 @@ function getTargetName(targetType) {
 
             usersSnapshot.forEach(userDoc => {
                 if (userDoc.id !== currentUserId) {
-                    const notificationRef = doc(collection(db, `users/${userDoc.id}/notifications`));
+                    const notificationRef = doc(collection(db, "notifications"));
                     batch.set(notificationRef, {
                         userId: userDoc.id,
                         type: activityType,
