@@ -6301,43 +6301,6 @@ function scrollToContent(contentId) {
    
    
    
-   onAuthStateChanged(auth, (user) => {
-    if (user) {
-        let unsubscribeFunctions = [];
-        
-        // Load data awal
-        loadUserProfile(user);
-		
-		 setupNotificationListeners(user.uid);
-            setupActivityListeners(user.uid);
-        
-        // Setup listeners untuk semua jenis aktivitas
-        unsubscribeFunctions.push(loadNotifications(user.uid));
-        unsubscribeFunctions.push(setupCommentListeners());
-        unsubscribeFunctions.push(setupLikeListeners());
-        unsubscribeFunctions.push(setupFeedbackListeners());
-        unsubscribeFunctions.push(setupDiscussionListeners());
-        unsubscribeFunctions.push(setupDiscussionCommentListeners());
-        unsubscribeFunctions.push(setupAnnouncementListeners());
-        unsubscribeFunctions.push(setupReactionListeners());
-        
-        // Cleanup saat komponen unmount
-        return () => {
-            unsubscribeFunctions.forEach(unsub => {
-                if (unsub && typeof unsub === 'function') {
-                    unsub();
-                }
-            });
-        };
-    } else {
-        // Handle case ketika user logout
-        notifications = [];
-        updateNotificationUI([], 0);
-    }
-});
-   
-   
-   
        // Fungsi untuk mengatur listener notifikasi
     function setupNotificationListeners(userId) {
         const notificationsRef = collection(db, "notifications");
@@ -6446,49 +6409,143 @@ function getTargetName(targetType) {
 
 
 
-
-
-
-
 async function createActivityNotification(activityType, activityData) {
     try {
-        // Validasi awal
-        if (!activityType || !activityData || !auth.currentUser) {
-            console.error("Data utama tidak lengkap");
+        // Validasi dasar
+        if (!auth.currentUser || !activityType || !activityData) {
+            console.error("Data tidak lengkap untuk membuat notifikasi");
             return;
         }
 
-        const currentUserId = auth.currentUser.uid;
-        const currentUserName = auth.currentUser.displayName || 'Seseorang';
-
-        // Validasi data yang diperlukan
-        if (!activityData.contentType && activityType !== 'announcement') {
-            console.error("contentType tidak ditemukan");
+        const currentUser = auth.currentUser;
+        
+        // Validasi contentType untuk semua jenis kecuali announcement
+        if (activityType !== 'announcement' && !activityData.contentType) {
+            console.error("contentType tidak ditemukan untuk:", activityType);
             return;
         }
 
-        // Jika ini pengumuman untuk semua user
+        // Jika pengumuman untuk semua user
         if (activityType === 'announcement' && !activityData.recipientId) {
-            await sendAnnouncementToAllUsers(activityData, currentUserId);
+            await handleAnnouncementNotification(activityData, currentUser.uid);
             return;
         }
 
-        // Cari recipientId jika belum ada
+        // Dapatkan recipientId jika belum ada
         let recipientId = activityData.recipientId;
         if (!recipientId && activityData.contentType && activityData.contentId) {
-            recipientId = await getContentAuthorId(activityData);
+            recipientId = await determineRecipientId(activityData);
         }
 
-        // Hindari notifikasi ke diri sendiri
-        if (!recipientId || recipientId === currentUserId) return;
+        // Pastikan recipientId valid dan bukan diri sendiri
+        if (!recipientId || recipientId === currentUser.uid) {
+            return;
+        }
 
         // Buat notifikasi
-        await createSingleNotification(activityType, activityData, recipientId, currentUserId, currentUserName);
+        await createNotificationDocument(activityType, activityData, recipientId, currentUser);
 
     } catch (error) {
         console.error("Error dalam createActivityNotification:", error);
     }
 }
+
+
+
+// Fungsi pembantu untuk menentukan recipientId
+async function determineRecipientId(activityData) {
+    try {
+        // Coba dapatkan dari konten utama
+        const contentRef = doc(db, activityData.contentType, activityData.contentId);
+        const contentDoc = await getDoc(contentRef);
+        
+        if (contentDoc.exists()) {
+            return contentDoc.data().userId || contentDoc.data().authorId;
+        }
+
+        // Jika tidak ditemukan, coba dari komentar
+        if (activityData.commentId) {
+            const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
+            const commentDoc = await getDoc(commentRef);
+            if (commentDoc.exists()) {
+                return commentDoc.data().userId || commentDoc.data().replyTo;
+            }
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Error menentukan recipientId:", error);
+        return null;
+    }
+}
+
+
+// Fungsi untuk menangani notifikasi pengumuman
+async function handleAnnouncementNotification(activityData, currentUserId) {
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const batch = writeBatch(db);
+
+    usersSnapshot.forEach(userDoc => {
+        if (userDoc.id !== currentUserId) {
+            const notificationRef = doc(collection(db, "notifications"));
+            batch.set(notificationRef, {
+                userId: userDoc.id,
+                type: 'announcement',
+                message: activityData.message || `Pengumuman baru: ${activityData.title}`,
+                read: false,
+                timestamp: new Date(),
+                link: `/announcements/${activityData.contentId}`,
+                fromUserId: currentUserId
+            });
+        }
+    });
+
+    await batch.commit();
+}
+
+
+
+
+// Fungsi untuk membuat dokumen notifikasi
+async function createNotificationDocument(activityType, activityData, recipientId, currentUser) {
+    const notificationData = {
+        userId: recipientId,
+        type: activityType,
+        read: false,
+        timestamp: new Date(),
+        fromUserId: currentUser.uid,
+        fromUserName: currentUser.displayName || 'Pengguna'
+    };
+
+    // Tambahkan data spesifik berdasarkan jenis aktivitas
+    switch(activityType) {
+        case 'comment':
+            notificationData.message = `${notificationData.fromUserName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
+            notificationData.link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
+            notificationData.contentType = activityData.contentType;
+            notificationData.contentId = activityData.contentId;
+            notificationData.commentId = activityData.commentId;
+            break;
+            
+        case 'like':
+            notificationData.message = `${notificationData.fromUserName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
+            notificationData.link = `/${activityData.contentType}/${activityData.contentId}`;
+            notificationData.contentType = activityData.contentType;
+            notificationData.contentId = activityData.contentId;
+            break;
+            
+        // Tambahkan case lainnya sesuai kebutuhan
+        default:
+            notificationData.message = `${notificationData.fromUserName} melakukan aktivitas baru`;
+            notificationData.link = '/';
+    }
+
+    await addDoc(collection(db, "notifications"), notificationData);
+}
+
+
+
+
 
 
 
@@ -6613,23 +6670,15 @@ function generateNotificationContent(activityType, activityData, currentUserName
 
 
 
-
-
-
-
-
-// Fungsi pembantu untuk mendapatkan nama tipe konten
 function getContentTypeName(type) {
-    const map = {
+    const names = {
         'arduinoHistory': 'catatan Arduino',
-        'feedback': 'feedback',
         'discussions': 'diskusi',
-        'announcements': 'pengumuman',
-        'reactions': 'reaksi'
+        'feedback': 'feedback',
+        'announcements': 'pengumuman'
     };
-    return map[type] || type;
+    return names[type] || type;
 }
-
 
 
 
@@ -7018,30 +7067,49 @@ function setupReactionListeners() {
 
 
 
+
 function setupCommentListeners() {
     const commentsRef = collection(db, "arduinoHistoryComments");
     return onSnapshot(commentsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
                 const newComment = change.doc.data();
-                if (newComment.userId !== auth.currentUser?.uid) {
-                    // Pastikan semua data yang diperlukan ada
-                    if (!newComment.historyId) {
-                        console.error("historyId tidak ditemukan dalam komentar");
-                        return;
-                    }
-
-                    createActivityNotification('comment', {
-                        contentType: 'arduinoHistory',
-                        contentId: newComment.historyId,
-                        commentId: change.doc.id,
-                        recipientId: newComment.replyTo || newComment.contentAuthorId
-                    });
+                
+                // Validasi data komentar
+                if (!newComment.userId || newComment.userId === auth.currentUser?.uid) {
+                    return;
                 }
+
+                // Pastikan historyId ada
+                if (!newComment.historyId) {
+                    console.error("Komentar tidak memiliki historyId:", change.doc.id);
+                    return;
+                }
+
+                // Dapatkan recipientId (pemilik konten atau komentar yang dibalas)
+                const recipientId = newComment.replyTo || newComment.contentAuthorId;
+                if (!recipientId) {
+                    console.error("Tidak dapat menentukan penerima notifikasi untuk komentar:", change.doc.id);
+                    return;
+                }
+
+                // Buat notifikasi
+                createActivityNotification('comment', {
+                    contentType: 'arduinoHistory',
+                    contentId: newComment.historyId,
+                    commentId: change.doc.id,
+                    recipientId: recipientId
+                });
             }
         });
+    }, (error) => {
+        console.error("Error dalam comment listener:", error);
     });
 }
+
+
+
+
 
 function setupLikeListeners() {
     const likesRef = collectionGroup(db, "likes");
@@ -7071,7 +7139,41 @@ function setupLikeListeners() {
     });
 }
 
-
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        let unsubscribeFunctions = [];
+        
+        // Load data awal
+        loadUserProfile(user);
+        
+        // Setup listeners
+        unsubscribeFunctions.push(setupNotificationListeners(user.uid));
+        unsubscribeFunctions.push(setupActivityListeners(user.uid));
+        
+        // Setup listeners untuk semua jenis aktivitas
+        unsubscribeFunctions.push(loadNotifications(user.uid));
+        unsubscribeFunctions.push(setupCommentListeners());
+        unsubscribeFunctions.push(setupLikeListeners());
+        unsubscribeFunctions.push(setupFeedbackListeners());
+        unsubscribeFunctions.push(setupDiscussionListeners());
+        unsubscribeFunctions.push(setupDiscussionCommentListeners());
+        unsubscribeFunctions.push(setupAnnouncementListeners());
+        unsubscribeFunctions.push(setupReactionListeners());
+        
+        // Cleanup saat komponen unmount
+        return () => {
+            unsubscribeFunctions.forEach(unsub => {
+                if (unsub && typeof unsub === 'function') {
+                    unsub();
+                }
+            });
+        };
+    } else {
+        // Handle case ketika user logout
+        notifications = [];
+        updateNotificationUI([], 0);
+    }
+});
 
 
 
@@ -12827,5 +12929,3 @@ async function loadAnnouncementById(id) {
 
 
 
-
-	
