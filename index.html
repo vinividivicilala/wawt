@@ -6449,133 +6449,176 @@ function getTargetName(targetType) {
 
 
 
+
 async function createActivityNotification(activityType, activityData) {
     try {
-        // Validasi awal umum
+        // Validasi awal
         if (!activityType || !activityData || !auth.currentUser) {
-            console.error("❗ Data utama hilang:", { activityType, activityData });
+            console.error("Data utama tidak lengkap");
             return;
         }
 
         const currentUserId = auth.currentUser.uid;
         const currentUserName = auth.currentUser.displayName || 'Seseorang';
 
-        // Validasi per tipe activity
-        const requiresContent = ['comment', 'reply', 'like', 'reaction', 'announcement', 'discussion'];
-        if (requiresContent.includes(activityType)) {
-            if (!activityData.contentType || !activityData.contentId) {
-                console.error("❗ Missing contentType or contentId:", activityData);
-                return;
-            }
-        }
-
-        // Jika pengumuman untuk semua user (tanpa recipientId)
-        if (activityType === 'announcement' && !activityData.recipientId) {
-            const usersSnapshot = await getDocs(collection(db, "users"));
-            const batch = writeBatch(db);
-
-            usersSnapshot.forEach(userDoc => {
-                if (userDoc.id !== currentUserId) {
-                    const notificationRef = doc(collection(db, "notifications"));
-                    batch.set(notificationRef, {
-                        userId: userDoc.id,
-                        type: activityType,
-                        message: activityData.message || `Pengumuman baru: ${activityData.title}`,
-                        read: false,
-                        timestamp: new Date(),
-                        link: `/announcements/${activityData.contentId}`,
-                        fromUserId: currentUserId
-                    });
-                }
-            });
-
-            await batch.commit();
+        // Validasi data yang diperlukan
+        if (!activityData.contentType && activityType !== 'announcement') {
+            console.error("contentType tidak ditemukan");
             return;
         }
 
-        // Cari recipientId jika belum dikirim
-        let recipientId = activityData.recipientId;
-
-        if (!recipientId && activityData.contentType && activityData.contentId) {
-            const contentRef = doc(db, activityData.contentType, activityData.contentId);
-            const contentDoc = await getDoc(contentRef);
-
-            if (contentDoc.exists()) {
-                const data = contentDoc.data();
-                recipientId = data.userId || data.authorId;
-            }
-
-            // Fallback ekstra untuk komentar
-            if (!recipientId && activityData.commentId) {
-                const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
-                const commentDoc = await getDoc(commentRef);
-                if (commentDoc.exists()) {
-                    recipientId = commentDoc.data().userId;
-                }
-            }
+        // Jika ini pengumuman untuk semua user
+        if (activityType === 'announcement' && !activityData.recipientId) {
+            await sendAnnouncementToAllUsers(activityData, currentUserId);
+            return;
         }
 
-        // Hindari kirim notifikasi ke diri sendiri
+        // Cari recipientId jika belum ada
+        let recipientId = activityData.recipientId;
+        if (!recipientId && activityData.contentType && activityData.contentId) {
+            recipientId = await getContentAuthorId(activityData);
+        }
+
+        // Hindari notifikasi ke diri sendiri
         if (!recipientId || recipientId === currentUserId) return;
 
-        // Tentukan isi pesan & link
-        let message = '';
-        let link = '';
-
-        switch (activityType) {
-            case 'comment':
-                message = `${currentUserName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
-                break;
-            case 'reply':
-                message = `${currentUserName} membalas komentar Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
-                break;
-            case 'like':
-                message = `${currentUserName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}`;
-                break;
-            case 'reaction':
-                message = `${currentUserName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`;
-                link = `/${activityData.contentType}/${activityData.contentId}`;
-                break;
-            case 'feedback':
-                message = `${currentUserName} memberikan feedback baru`;
-                link = `/feedback/${activityData.contentId}`;
-                break;
-            case 'discussion':
-                message = `${currentUserName} memulai diskusi baru`;
-                link = `/discussions/${activityData.contentId}`;
-                break;
-            case 'announcement':
-                message = activityData.message || `Pengumuman baru: ${activityData.title}`;
-                link = `/announcements/${activityData.contentId}`;
-                break;
-            default:
-                console.error("❗ Unknown activity type:", activityType);
-                return;
-        }
-
-        // Simpan ke Firestore
-        await addDoc(collection(db, "notifications"), {
-            userId: recipientId,
-            type: activityType,
-            message,
-            read: false,
-            timestamp: new Date(),
-            link,
-            activityId: activityData.activityId || null,
-            fromUserId: currentUserId,
-            ...(activityData.emoji && { emoji: activityData.emoji })
-        });
+        // Buat notifikasi
+        await createSingleNotification(activityType, activityData, recipientId, currentUserId, currentUserName);
 
     } catch (error) {
-        console.error("❗ Gagal membuat notifikasi aktivitas:", error);
+        console.error("Error dalam createActivityNotification:", error);
     }
 }
 
 
 
+
+
+
+
+
+
+
+// Fungsi pembantu untuk mengirim pengumuman ke semua user
+async function sendAnnouncementToAllUsers(activityData, currentUserId) {
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const batch = writeBatch(db);
+
+    usersSnapshot.forEach(userDoc => {
+        if (userDoc.id !== currentUserId) {
+            const notificationRef = doc(collection(db, "notifications"));
+            batch.set(notificationRef, {
+                userId: userDoc.id,
+                type: 'announcement',
+                message: activityData.message || `Pengumuman baru: ${activityData.title}`,
+                read: false,
+                timestamp: new Date(),
+                link: `/announcements/${activityData.contentId}`,
+                fromUserId: currentUserId
+            });
+        }
+    });
+
+    await batch.commit();
+}
+
+// Fungsi pembantu untuk mendapatkan author ID dari konten
+async function getContentAuthorId(activityData) {
+    try {
+        // Coba ambil dari konten utama
+        const contentRef = doc(db, activityData.contentType, activityData.contentId);
+        const contentDoc = await getDoc(contentRef);
+        
+        if (contentDoc.exists()) {
+            return contentDoc.data().userId || contentDoc.data().authorId;
+        }
+
+        // Jika tidak ditemukan, coba ambil dari komentar
+        if (activityData.commentId) {
+            const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
+            const commentDoc = await getDoc(commentRef);
+            if (commentDoc.exists()) {
+                return commentDoc.data().userId;
+            }
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Error mendapatkan author ID:", error);
+        return null;
+    }
+}
+
+// Fungsi pembantu untuk membuat notifikasi tunggal
+async function createSingleNotification(activityType, activityData, recipientId, currentUserId, currentUserName) {
+    const { message, link } = generateNotificationContent(activityType, activityData, currentUserName);
+
+    await addDoc(collection(db, "notifications"), {
+        userId: recipientId,
+        type: activityType,
+        message,
+        read: false,
+        timestamp: new Date(),
+        link,
+        fromUserId: currentUserId,
+        ...(activityData.emoji && { emoji: activityData.emoji })
+    });
+}
+
+// Fungsi pembantu untuk membuat konten notifikasi
+function generateNotificationContent(activityType, activityData, currentUserName) {
+    let message = '';
+    let link = '';
+
+    switch (activityType) {
+        case 'comment':
+            message = `${currentUserName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
+            link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
+            break;
+        case 'reply':
+            message = `${currentUserName} membalas komentar Anda`;
+            link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
+            break;
+        case 'like':
+            message = `${currentUserName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
+            link = `/${activityData.contentType}/${activityData.contentId}`;
+            break;
+        case 'reaction':
+            message = `${currentUserName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`;
+            link = `/${activityData.contentType}/${activityData.contentId}`;
+            break;
+        case 'feedback':
+            message = `${currentUserName} memberikan feedback baru`;
+            link = `/feedback/${activityData.contentId}`;
+            break;
+        case 'discussion':
+            message = `${currentUserName} memulai diskusi baru`;
+            link = `/discussions/${activityData.contentId}`;
+            break;
+        case 'announcement':
+            message = activityData.message || `Pengumuman baru: ${activityData.title}`;
+            link = `/announcements/${activityData.contentId}`;
+            break;
+        default:
+            message = `${currentUserName} melakukan aktivitas baru`;
+            link = '/';
+    }
+
+    return { message, link };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// Fungsi pembantu untuk mendapatkan nama tipe konten
 function getContentTypeName(type) {
     const map = {
         'arduinoHistory': 'catatan Arduino',
@@ -6586,6 +6629,46 @@ function getContentTypeName(type) {
     };
     return map[type] || type;
 }
+
+
+
+
+// Setup semua listener
+function setupAllListeners(userId) {
+    const unsubscribeFunctions = [];
+    
+    unsubscribeFunctions.push(setupCommentListeners());
+    unsubscribeFunctions.push(setupLikeListeners());
+    unsubscribeFunctions.push(setupFeedbackListeners());
+    unsubscribeFunctions.push(setupDiscussionListeners());
+    unsubscribeFunctions.push(setupAnnouncementListeners());
+    unsubscribeFunctions.push(setupReactionListeners());
+    
+    return () => {
+        unsubscribeFunctions.forEach(unsub => {
+            if (unsub && typeof unsub === 'function') {
+                unsub();
+            }
+        });
+    };
+}
+
+
+// Inisialisasi
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        loadUserProfile(user);
+        const cleanup = setupAllListeners(user.uid);
+        
+        // Cleanup saat komponen unmount
+        return cleanup;
+    } else {
+        // Handle logout
+        notifications = [];
+        updateNotificationUI([], 0);
+    }
+});
+
 
 
 
@@ -6945,6 +7028,10 @@ function setupReactionListeners() {
     });
 }
 
+
+
+
+
 function setupCommentListeners() {
     const commentsRef = collection(db, "arduinoHistoryComments");
     return onSnapshot(commentsRef, (snapshot) => {
@@ -6952,18 +7039,23 @@ function setupCommentListeners() {
             if (change.type === "added") {
                 const newComment = change.doc.data();
                 if (newComment.userId !== auth.currentUser?.uid) {
+                    // Pastikan semua data yang diperlukan ada
+                    if (!newComment.historyId) {
+                        console.error("historyId tidak ditemukan dalam komentar");
+                        return;
+                    }
+
                     createActivityNotification('comment', {
                         contentType: 'arduinoHistory',
                         contentId: newComment.historyId,
                         commentId: change.doc.id,
-                        recipientId: newComment.replyTo // Jika ini adalah balasan
+                        recipientId: newComment.replyTo || newComment.contentAuthorId
                     });
                 }
             }
         });
     });
 }
-
 
 function setupLikeListeners() {
     const likesRef = collectionGroup(db, "likes");
@@ -6972,15 +7064,20 @@ function setupLikeListeners() {
             if (change.type === "added") {
                 const newLike = change.doc.data();
                 if (newLike.userId !== auth.currentUser?.uid) {
-                    // Dapatkan informasi konten yang disukai
-                    getDoc(change.doc.ref.parent.parent).then(contentDoc => {
-                        if (contentDoc.exists()) {
-                            createActivityNotification('like', {
-                                contentType: change.doc.ref.parent.parent.id,
-                                contentId: contentDoc.id,
-                                recipientId: contentDoc.data().authorId || contentDoc.data().userId
-                            });
-                        }
+                    // Dapatkan path lengkap untuk menentukan contentType
+                    const pathParts = change.doc.ref.parent.parent?.path.split('/');
+                    if (!pathParts || pathParts.length < 2) {
+                        console.error("Struktur path tidak valid");
+                        return;
+                    }
+                    
+                    const contentType = pathParts[0];
+                    const contentId = pathParts[1];
+
+                    createActivityNotification('like', {
+                        contentType,
+                        contentId,
+                        recipientId: newLike.targetUserId
                     });
                 }
             }
