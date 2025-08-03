@@ -6478,25 +6478,51 @@ function scrollToContent(contentId) {
         });
     }
     
-   
-   
-   
-   
+   // Fungsi untuk menyiapkan semua listener
+function setupAllListeners(userId) {
+    const unsubscribes = [];
+    
+    // Listener untuk notifikasi
+    unsubscribes.push(loadAllNotifications(userId));
+    
+    // Listener untuk semua jenis aktivitas
+    unsubscribes.push(setupArduinoHistoryListeners());
+    unsubscribes.push(setupFeedbackListeners());
+    unsubscribes.push(setupDiscussionListeners());
+    unsubscribes.push(setupAnnouncementListeners());
+    unsubscribes.push(setupContentListeners());
+    unsubscribes.push(setupCommentListeners());
+    unsubscribes.push(setupLikeListeners());
+    unsubscribes.push(setupReactionListeners());
+    unsubscribes.push(setupUploadListeners());
+    unsubscribes.push(setupEditListeners());
+    
+    // Cleanup function
+    return () => {
+        unsubscribes.forEach(unsub => {
+            if (unsub && typeof unsub === 'function') unsub();
+        });
+    };
+}
    
    
    onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Load data awal
-        loadUserProfile(user);
-        
-        // Setup semua listener
-        const cleanupListeners = setupAllListeners(user.uid);
-        
-        // Load aktivitas terkini
-        loadEnhancedRecentActivity(user.uid);
-        
-        // Cleanup saat komponen unmount
-        return cleanupListeners;
+        try {
+            // Load data awal
+            loadUserProfile(user);
+            
+            // Setup semua listener
+            const cleanupListeners = setupAllListeners(user.uid);
+            
+            // Load aktivitas terkini
+            loadEnhancedRecentActivity(user.uid);
+            
+            // Cleanup saat komponen unmount
+            return cleanupListeners;
+        } catch (error) {
+            console.error("Error setting up listeners:", error);
+        }
     } else {
         // Reset state saat logout
         notifications = [];
@@ -6506,13 +6532,6 @@ function scrollToContent(contentId) {
         document.getElementById('reactionsActivity').innerHTML = '';
     }
 });
-   
-   
-   
-   
-   
-   
-   
    
    
    
@@ -6877,32 +6896,6 @@ function createActivityItem(activity) {
 
 
 
-// Fungsi untuk menyiapkan semua listener
-function setupAllListeners(userId) {
-    const unsubscribes = [];
-    
-    // Listener untuk notifikasi
-    unsubscribes.push(loadAllNotifications(userId));
-    
-    // Listener untuk semua jenis aktivitas
-    unsubscribes.push(setupArduinoHistoryListeners());
-    unsubscribes.push(setupFeedbackListeners());
-    unsubscribes.push(setupDiscussionListeners());
-    unsubscribes.push(setupAnnouncementListeners());
-    unsubscribes.push(setupContentListeners());
-    unsubscribes.push(setupCommentListeners());
-    unsubscribes.push(setupLikeListeners());
-    unsubscribes.push(setupReactionListeners());
-    unsubscribes.push(setupUploadListeners());
-    unsubscribes.push(setupEditListeners());
-    
-    // Cleanup function
-    return () => {
-        unsubscribes.forEach(unsub => {
-            if (unsub && typeof unsub === 'function') unsub();
-        });
-    };
-}
 
 // Listener untuk upload
 function setupUploadListeners() {
