@@ -6504,6 +6504,252 @@ function setupAllListeners(userId) {
         });
     };
 }
+
+
+   function setupActivityListeners(userId) {
+        const commentsQuery = query(
+            collection(db, "arduinoHistoryComments"),
+            where("parentId", "!=", null),
+            orderBy("parentId"),
+            orderBy("timestamp", "desc")
+        );
+        
+        const commentsUnsubscribe = onSnapshot(commentsQuery, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const comment = change.doc.data();
+                    if (comment.userId !== userId) {
+                        getDoc(doc(db, "arduinoHistoryComments", comment.parentId)).then(parentDoc => {
+                            if (parentDoc.exists()) {
+                                const parentComment = parentDoc.data();
+                                if (parentComment.userId === userId) {
+                                    createActivityNotification(
+                                        'reply',
+                                        {
+                                            contentType: 'arduino-history',
+                                            contentId: comment.historyId,
+                                            replyId: change.doc.id,
+                                            recipientId: userId,
+                                            contentPreview: comment.content
+                                        }
+                                    );
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        });
+        
+        const likesQuery = query(
+            collection(db, "userReactions"),
+            where("targetUserId", "==", userId),
+            where("type", "==", "like")
+        );
+        
+        const likesUnsubscribe = onSnapshot(likesQuery, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const like = change.doc.data();
+                    if (like.userId !== userId) {
+                        createActivityNotification(
+                            'like',
+                            {
+                                contentType: like.targetType,
+                                contentId: like.targetId,
+                                recipientId: userId
+                            }
+                        );
+                    }
+                }
+            });
+        });
+        
+        return () => {
+            commentsUnsubscribe();
+            likesUnsubscribe();
+        };
+    }
+
+    function setupFeedbackListeners() {
+        const feedbackRef = collection(db, "feedback");
+        return onSnapshot(feedbackRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const newFeedback = change.doc.data();
+                    if (newFeedback.userId !== auth.currentUser?.uid) {
+                        createActivityNotification('feedback', {
+                            contentType: 'feedback',
+                            contentId: change.doc.id,
+                            recipientId: 'admin_user_id'
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    function setupDiscussionListeners() {
+        const discussionsRef = collection(db, "discussions");
+        return onSnapshot(discussionsRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const newDiscussion = change.doc.data();
+                    if (newDiscussion.authorId !== auth.currentUser?.uid) {
+                        createActivityNotification('discussion', {
+                            contentType: 'discussions',
+                            contentId: change.doc.id,
+                            recipientId: 'admin_user_id'
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    function setupDiscussionCommentListeners() {
+        const commentsRef = collectionGroup(db, "comments");
+        return onSnapshot(commentsRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const newComment = change.doc.data();
+                    if (newComment.userId !== auth.currentUser?.uid) {
+                        getDoc(change.doc.ref.parent.parent).then(discussionDoc => {
+                            if (discussionDoc.exists()) {
+                                createActivityNotification('comment', {
+                                    contentType: 'discussions',
+                                    contentId: discussionDoc.id,
+                                    commentId: change.doc.id,
+                                    recipientId: discussionDoc.data().authorId
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    function setupAnnouncementListeners() {
+        const announcementsRef = collection(db, "announcements");
+        return onSnapshot(announcementsRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    createActivityNotification('announcement', {
+                        contentType: 'announcements',
+                        contentId: change.doc.id,
+                        message: `Pengumuman baru: ${change.doc.data().title}`
+                    });
+                }
+            });
+        });
+    }
+
+    function setupReactionListeners() {
+        const reactionsRef = collection(db, "reactions");
+        return onSnapshot(reactionsRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const newReaction = change.doc.data();
+                    if (newReaction.userId !== auth.currentUser?.uid) {
+                        createActivityNotification('reaction', {
+                            contentType: newReaction.contentType,
+                            contentId: newReaction.contentId,
+                            recipientId: newReaction.contentAuthorId,
+                            emoji: newReaction.emoji
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    function setupCommentListeners() {
+        const commentsRef = collection(db, "arduinoHistoryComments");
+        return onSnapshot(commentsRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const newComment = change.doc.data();
+                    if (newComment.userId !== auth.currentUser?.uid) {
+                        createActivityNotification('comment', {
+                            contentType: 'arduinoHistory',
+                            contentId: newComment.historyId,
+                            commentId: change.doc.id,
+                            recipientId: newComment.replyTo
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    function setupLikeListeners() {
+        const likesRef = collectionGroup(db, "likes");
+        return onSnapshot(likesRef, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const newLike = change.doc.data();
+                    if (newLike.userId !== auth.currentUser?.uid) {
+                        getDoc(change.doc.ref.parent.parent).then(contentDoc => {
+                            if (contentDoc.exists()) {
+                                createActivityNotification('like', {
+                                    contentType: change.doc.ref.parent.parent.id,
+                                    contentId: contentDoc.id,
+                                    recipientId: contentDoc.data().authorId || contentDoc.data().userId
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    function setupArduinoHistoryListeners() {
+        const commentsUnsubscribe = onSnapshot(
+            collection(db, "arduinoHistoryComments"),
+            (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const comment = change.doc.data();
+                        if (comment.userId !== auth.currentUser?.uid) {
+                            createActivityNotification('comment', {
+                                contentType: 'arduino-history',
+                                contentId: comment.historyId,
+                                commentId: change.doc.id,
+                                recipientId: comment.replyTo || comment.historyAuthorId,
+                                contentPreview: comment.content
+                            });
+                        }
+                    }
+                });
+            }
+        );
+        
+        const editsUnsubscribe = onSnapshot(
+            collection(db, "arduinoHistoryEdits"),
+            (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const edit = change.doc.data();
+                        if (edit.userId !== auth.currentUser?.uid) {
+                            createActivityNotification('edit', {
+                                contentType: 'arduino-history',
+                                contentId: edit.historyId,
+                                recipientId: edit.historyAuthorId,
+                                contentPreview: edit.changes
+                            });
+                        }
+                    }
+                });
+            }
+        );
+        
+        return () => {
+            commentsUnsubscribe();
+            editsUnsubscribe();
+        };
+    }
    
    
    onAuthStateChanged(auth, (user) => {
