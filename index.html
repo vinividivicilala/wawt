@@ -6534,28 +6534,33 @@ async function createActivityNotification(activityType, activityData) {
     // === 2. INDIVIDUAL NOTIFICATION ===
     let recipientId = activityData.recipientId;
 
-    // Cek validitas path untuk doc(...)
-    if (!recipientId) {
-      if (!activityData.contentType || !activityData.contentId) {
-        console.warn("Konten tidak lengkap untuk notifikasi:", activityData);
-        return;
-      }
+   if (!recipientId) {
+  if (!activityData.contentType || !activityData.contentId) {
+    console.warn("❌ Konten tidak lengkap untuk notifikasi:", activityData);
+    return;
+  }
 
-      const contentPath = doc(db, activityData.contentType, activityData.contentId);
-      const contentDoc = await getDoc(contentPath);
+  try {
+    const contentPath = doc(db, activityData.contentType, activityData.contentId);
+    const contentDoc = await getDoc(contentPath);
 
-      if (contentDoc.exists()) {
-        recipientId = contentDoc.data().authorId || contentDoc.data().userId;
-      } else {
-        console.warn("Dokumen konten tidak ditemukan:", activityData);
-        return;
-      }
-    }
-
-    if (!recipientId || recipientId === currentUser.uid) {
-      // Tidak mengirim notifikasi ke diri sendiri
+    if (!contentDoc.exists()) {
+      console.warn("❌ Dokumen konten tidak ditemukan:", activityData.contentType, activityData.contentId);
       return;
     }
+
+    const contentData = contentDoc.data();
+    recipientId = contentData.authorId || contentData.userId;
+
+    if (!recipientId) {
+      console.warn("❌ recipientId tidak ditemukan di konten:", contentData);
+      return;
+    }
+  } catch (err) {
+    console.error("❌ Gagal mengambil dokumen konten:", err);
+    return;
+  }
+}
 
     // === 3. Buat pesan dan link ===
     let message = "";
