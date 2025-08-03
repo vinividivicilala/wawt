@@ -7106,18 +7106,6 @@ function setupActivitiesListener(query) {
 
 
 
-// Test query langsung di console
-const test = async () => {
-    const snapshot = await getDocs(query(
-        collection(db, "activities"),
-        where("userId", "==", auth.currentUser.uid),
-        limit(1)
-    ));
-    console.log(snapshot.docs.map(doc => doc.data()));
-}
-test();
-
-
 
 
 // Fungsi untuk menandai notifikasi sebagai sudah dibaca
