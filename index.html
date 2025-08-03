@@ -6524,197 +6524,251 @@ async function markAllNotificationsAsRead() {
 
 
 
+
+
+
 /**
- * Creates a notification for various types of user activities
- * @param {string} activityType - Type of activity ('comment', 'reply', 'like', 'reaction', etc.)
- * @param {object} activityData - Data about the activity containing:
- *   - contentType: Type of content being interacted with ('arduinoHistory', 'discussions', etc.)
- *   - contentId: ID of the content being interacted with
- *   - [recipientId]: Optional direct recipient ID (if not provided, will be looked up from content)
- *   - [commentId]: For comment/reply notifications
- *   - [replyId]: For reply notifications
- *   - [emoji]: For reaction notifications
- *   - [title]: For announcements
- *   - [message]: Custom message for announcements
+ * Creates a notification for user activities with complete validation and error handling
+ * @param {string} activityType - Type of activity ('comment', 'reply', 'like', 'announcement', etc.)
+ * @param {object} activityData - Data about the activity including content and recipient info
  * @returns {Promise<void>}
  */
 async function createActivityNotification(activityType, activityData) {
-  try {
-    // Validate current user
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      console.warn("User not logged in, notification cancelled.");
-      return;
-    }
-
-    // Validate basic parameters
-    if (!activityType || typeof activityType !== 'string') {
-      console.warn("Invalid activity type:", activityType);
-      return;
-    }
-
-    if (!activityData || typeof activityData !== 'object') {
-      console.warn("Invalid activity data:", activityData);
-      return;
-    }
-
-    // Correct common typo in contentType
-    if (activityData.contentType === "ardulnollistory") {
-      activityData.contentType = "arduinoHistory";
-    }
-
-    // === 1. ANNOUNCEMENT NOTIFICATIONS (SENT TO ALL USERS) ===
-    if (activityType === 'announcement' && !activityData.recipientId) {
-      if (!activityData.contentId || !activityData.contentType) {
-        console.warn("Announcement missing required fields:", activityData);
-        return;
-      }
-
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const batch = writeBatch(db);
-
-      usersSnapshot.forEach(userDoc => {
-        if (userDoc.id !== currentUser.uid) {
-          const notificationRef = doc(collection(db, "notifications"));
-          batch.set(notificationRef, {
-            recipientId: userDoc.id,
-            type: activityType,
-            message: activityData.message || `Pengumuman baru: ${activityData.title}`,
-            read: false,
-            timestamp: new Date(),
-            link: `/${activityData.contentType}/${activityData.contentId}`,
-            fromUserId: currentUser.uid,
-            contentType: activityData.contentType,
-            contentId: activityData.contentId
-          });
-        }
-      });
-
-      await batch.commit();
-      return;
-    }
-
-    // === 2. INDIVIDUAL NOTIFICATIONS ===
-    let recipientId = activityData.recipientId;
-    
-    // If no recipientId provided, try to look it up from content
-    if (!recipientId) {
-      if (!activityData.contentType || !activityData.contentId) {
-        console.warn("Incomplete content data for notification:", activityData);
-        return;
-      }
-
-      try {
-        const contentPath = doc(db, activityData.contentType, activityData.contentId);
-        const contentDoc = await getDoc(contentPath);
-
-        if (!contentDoc.exists()) {
-          console.warn("Content document not found:", activityData.contentType, activityData.contentId);
-          return;
-        }
-
-        const contentData = contentDoc.data();
-        recipientId = contentData.authorId || contentData.userId;
-
-        if (!recipientId) {
-          console.warn("No recipientId found in content:", contentData);
-          return;
-        }
-      } catch (err) {
-        console.error("Error fetching content document:", err);
-        return;
-      }
-    }
-
-    // Don't send notification to self
-    if (recipientId === currentUser.uid) {
-      return;
-    }
-
-    // === 3. CREATE NOTIFICATION MESSAGE AND LINK ===
-    let message = "";
-    let link = "";
-
-    // Get sender name (fallback to "Pengguna")
-    const senderName = currentUser.displayName || 'Pengguna';
-
-    switch (activityType) {
-      case "comment":
-        message = `${senderName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
-        link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
-        break;
-      case "reply":
-        message = `${senderName} membalas komentar Anda`;
-        link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId || activityData.commentId}`;
-        break;
-      case "like":
-        message = `${senderName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
-        link = `/${activityData.contentType}/${activityData.contentId}`;
-        break;
-      case "reaction":
-        message = `${senderName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`;
-        link = `/${activityData.contentType}/${activityData.contentId}`;
-        break;
-      case "feedback":
-        message = `${senderName} memberikan feedback baru`;
-        link = `/feedback/${activityData.contentId}`;
-        break;
-      case "discussion":
-        message = `${senderName} memulai diskusi baru`;
-        link = `/discussions/${activityData.contentId}`;
-        break;
-      case "announcement":
-        message = activityData.message || `Pengumuman baru: ${activityData.title}`;
-        link = `/announcements/${activityData.contentId}`;
-        break;
-      default:
-        console.warn("Unknown activity type:", activityType);
-        return;
-    }
-
-    // === 4. CREATE NOTIFICATION DOCUMENT ===
-    const notificationData = {
-      recipientId: recipientId,
-      type: activityType,
-      message: message,
-      read: false,
-      timestamp: new Date(),
-      link: link,
-      fromUserId: currentUser.uid,
-      contentType: activityData.contentType,
-      contentId: activityData.contentId
-    };
-
-    // Add optional fields if they exist
-    if (activityData.commentId) notificationData.commentId = activityData.commentId;
-    if (activityData.replyId) notificationData.replyId = activityData.replyId;
-    if (activityData.emoji) notificationData.emoji = activityData.emoji;
-    if (activityData.activityId) notificationData.activityId = activityData.activityId;
-
-    await addDoc(collection(db, "notifications"), notificationData);
-    console.log("Notification created successfully for", recipientId);
-
-  } catch (error) {
-    console.error("Error creating activity notification:", error);
+  // Validate basic parameters
+  if (!validateInputParameters(activityType, activityData)) {
+    return;
   }
+
+  // Get current authenticated user
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.warn("Notification cancelled: No authenticated user");
+    return;
+  }
+
+  try {
+    // Handle announcement notifications (sent to all users)
+    if (activityType === 'announcement' && !activityData.recipientId) {
+      await handleAnnouncementNotification(currentUser, activityData);
+      return;
+    }
+
+    // Handle individual notifications
+    await handleIndividualNotification(currentUser, activityType, activityData);
+  } catch (error) {
+    console.error("Notification creation failed:", {
+      error: error.message,
+      activityType,
+      activityData,
+      timestamp: new Date().toISOString()
+    });
+    // Consider adding error tracking service call here
+  }
+}
+
+/**
+ * Validates the input parameters for the notification
+ */
+function validateInputParameters(activityType, activityData) {
+  if (!activityType || typeof activityType !== 'string') {
+    console.error("Invalid activity type:", activityType);
+    return false;
+  }
+
+  if (!activityData || typeof activityData !== 'object') {
+    console.error("Invalid activity data:", activityData);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Handles announcement notifications sent to all users
+ */
+async function handleAnnouncementNotification(currentUser, activityData) {
+  // Validate required fields for announcements
+  if (!activityData.contentId || !activityData.contentType) {
+    console.warn("Announcement missing required fields:", activityData);
+    return;
+  }
+
+  // Get all users except the sender
+  const usersSnapshot = await getDocs(collection(db, "users"));
+  const batch = writeBatch(db);
+
+  usersSnapshot.forEach(userDoc => {
+    if (userDoc.id !== currentUser.uid) {
+      const notificationRef = doc(collection(db, "notifications"));
+      batch.set(notificationRef, {
+        recipientId: userDoc.id,
+        type: 'announcement',
+        message: activityData.message || `Pengumuman baru: ${activityData.title}`,
+        read: false,
+        timestamp: new Date(),
+        link: `/${activityData.contentType}/${activityData.contentId}`,
+        fromUserId: currentUser.uid,
+        contentType: activityData.contentType,
+        contentId: activityData.contentId,
+        isAnnouncement: true
+      });
+    }
+  });
+
+  await batch.commit();
+  console.log(`Announcement sent to ${usersSnapshot.size} users`);
+}
+
+/**
+ * Handles individual user notifications
+ */
+async function handleIndividualNotification(currentUser, activityType, activityData) {
+  // Correct common data issues
+  activityData = sanitizeNotificationData(activityData);
+
+  // Determine recipient - either provided directly or from content
+  const recipientId = await determineRecipient(currentUser, activityData);
+  if (!recipientId) return;
+
+  // Don't send notification to self
+  if (recipientId === currentUser.uid) {
+    return;
+  }
+
+  // Create notification message and link
+  const { message, link } = createNotificationContent(currentUser, activityType, activityData);
+
+  // Prepare notification document
+  const notificationData = {
+    recipientId: recipientId,
+    type: activityType,
+    message: message,
+    read: false,
+    timestamp: new Date(),
+    link: link,
+    fromUserId: currentUser.uid,
+    contentType: activityData.contentType,
+    contentId: activityData.contentId,
+    ...(activityData.commentId && { commentId: activityData.commentId }),
+    ...(activityData.replyId && { replyId: activityData.replyId }),
+    ...(activityData.emoji && { emoji: activityData.emoji })
+  };
+
+  // Create the notification
+  await addDoc(collection(db, "notifications"), notificationData);
+  console.log("Notification created for", recipientId);
+}
+
+/**
+ * Sanitizes and corrects common data issues
+ */
+function sanitizeNotificationData(activityData) {
+  // Correct common typo in contentType
+  if (activityData.contentType === "ardulnollistory") {
+    activityData.contentType = "arduinoHistory";
+  }
+
+  // Ensure contentId is string
+  if (activityData.contentId && typeof activityData.contentId !== 'string') {
+    activityData.contentId = String(activityData.contentId);
+  }
+
+  return activityData;
+}
+
+/**
+ * Determines the notification recipient
+ */
+async function determineRecipient(currentUser, activityData) {
+  // If recipient is explicitly provided
+  if (activityData.recipientId) {
+    return activityData.recipientId;
+  }
+
+  // Validate required fields for recipient lookup
+  if (!activityData.contentType || !activityData.contentId) {
+    console.warn("Cannot determine recipient - missing content data:", activityData);
+    return null;
+  }
+
+  try {
+    // Look up content document to find author
+    const contentPath = doc(db, activityData.contentType, activityData.contentId);
+    const contentDoc = await getDoc(contentPath);
+
+    if (!contentDoc.exists()) {
+      console.warn("Content document not found:", activityData.contentType, activityData.contentId);
+      return null;
+    }
+
+    const contentData = contentDoc.data();
+    const recipientId = contentData.authorId || contentData.userId;
+
+    if (!recipientId) {
+      console.warn("No recipientId found in content:", contentData);
+      return null;
+    }
+
+    return recipientId;
+  } catch (err) {
+    console.error("Error fetching content document:", err);
+    return null;
+  }
+}
+
+/**
+ * Creates the notification message and link based on activity type
+ */
+function createNotificationContent(currentUser, activityType, activityData) {
+  const senderName = currentUser.displayName || 'Pengguna';
+  let message = "";
+  let link = "";
+
+  switch (activityType) {
+    case "comment":
+      message = `${senderName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
+      link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
+      break;
+    case "reply":
+      message = `${senderName} membalas komentar Anda`;
+      link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId || activityData.commentId}`;
+      break;
+    case "like":
+      message = `${senderName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
+      link = `/${activityData.contentType}/${activityData.contentId}`;
+      break;
+    case "reaction":
+      message = `${senderName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`;
+      link = `/${activityData.contentType}/${activityData.contentId}`;
+      break;
+    case "feedback":
+      message = `${senderName} memberikan feedback baru`;
+      link = `/feedback/${activityData.contentId}`;
+      break;
+    case "discussion":
+      message = `${senderName} memulai diskusi baru`;
+      link = `/discussions/${activityData.contentId}`;
+      break;
+    default:
+      console.warn("Unknown activity type:", activityType);
+      return { message: "", link: "" };
+  }
+
+  return { message, link };
 }
 
 /**
  * Helper function to get display name for content types
- * @param {string} type - Content type
- * @returns {string} Display name for the content type
  */
 function getContentTypeName(type) {
-  switch (type) {
-    case "feedback": return "feedback";
-    case "discussions": return "diskusi";
-    case "arduinoHistory": return "entri Arduino";
-    case "announcements": return "pengumuman";
-    default: return "konten";
-  }
+  const typeNames = {
+    "feedback": "feedback",
+    "discussions": "diskusi",
+    "arduinoHistory": "entri Arduino",
+    "announcements": "pengumuman"
+  };
+  return typeNames[type] || "konten";
 }
-
-
 
 
 
@@ -6835,32 +6889,96 @@ function setupReactionListeners() {
 
 
 
-
 function setupCommentListeners() {
     const commentsRef = collection(db, "arduinoHistoryComments");
     return onSnapshot(commentsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
                 const newComment = change.doc.data();
-                if (newComment.userId !== auth.currentUser?.uid) {
-                    // Ensure we have all required fields
-                    if (!newComment.historyId) {
-                        console.warn("Missing historyId in comment:", newComment);
-                        return;
-                    }
-                    
+                
+                // Skip if comment is from current user
+                if (newComment.userId === auth.currentUser?.uid) {
+                    return;
+                }
+
+                // Validate required fields
+                if (!newComment.historyId) {
+                    console.error("Invalid comment - missing historyId:", newComment);
+                    return;
+                }
+
+                // Determine recipient - either the person being replied to or content author
+                let recipientId = newComment.replyTo;
+                if (!recipientId) {
+                    // Need to fetch the history document to get author
+                    getDoc(doc(db, "arduinoHistory", newComment.historyId))
+                        .then(historyDoc => {
+                            if (historyDoc.exists()) {
+                                createActivityNotification('comment', {
+                                    contentType: 'arduinoHistory',
+                                    contentId: newComment.historyId,
+                                    commentId: change.doc.id,
+                                    recipientId: historyDoc.data().authorId
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error fetching history document:", error);
+                        });
+                } else {
                     createActivityNotification('comment', {
-                        contentType: 'arduinoHistory', // Fixed typo
+                        contentType: 'arduinoHistory',
                         contentId: newComment.historyId,
                         commentId: change.doc.id,
-                        recipientId: newComment.replyTo || newComment.historyAuthorId
+                        recipientId: recipientId
                     });
                 }
             }
         });
+    }, error => {
+        console.error("Comment listener error:", error);
     });
 }
 
+
+
+function validateNotificationData(data) {
+    const requiredFields = {
+        'comment': ['contentType', 'contentId', 'commentId', 'recipientId'],
+        'reply': ['contentType', 'contentId', 'replyId', 'recipientId'],
+        'like': ['contentType', 'contentId', 'recipientId'],
+        'announcement': ['contentType', 'contentId']
+    };
+
+    const fields = requiredFields[data.type];
+    if (!fields) {
+        console.error("Unknown notification type:", data.type);
+        return false;
+    }
+
+    for (const field of fields) {
+        if (!data[field]) {
+            console.error(`Missing required field ${field} for ${data.type} notification`);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function sanitizeContentType(contentType) {
+    const validTypes = [
+        'arduinoHistory', 
+        'discussions', 
+        'feedback', 
+        'announcements'
+    ];
+    
+    // Correct common typos
+    if (contentType === "ardulnollistory") return "arduinoHistory";
+    
+    return validTypes.includes(contentType) ? contentType : null;
+}
 
 
 
