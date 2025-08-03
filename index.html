@@ -5360,6 +5360,55 @@ document.addEventListener("DOMContentLoaded", function () {
   saveNotificationSettingsBtn?.addEventListener('click', saveNotificationSettings);
 
     
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        let unsubscribeFunctions = [];
+        
+        // Load data awal
+        loadUserProfile(user);
+        
+        // Setup listeners
+        unsubscribeFunctions.push(setupNotificationListeners(user.uid));
+        unsubscribeFunctions.push(setupActivityListeners(user.uid));
+        
+        // Setup listeners untuk semua jenis aktivitas
+        unsubscribeFunctions.push(loadNotifications(user.uid));
+        unsubscribeFunctions.push(setupCommentListeners());
+        unsubscribeFunctions.push(setupLikeListeners());
+        unsubscribeFunctions.push(setupFeedbackListeners());
+        unsubscribeFunctions.push(setupDiscussionListeners());
+        unsubscribeFunctions.push(setupDiscussionCommentListeners());
+        unsubscribeFunctions.push(setupAnnouncementListeners());
+        unsubscribeFunctions.push(setupReactionListeners());
+        
+        // Cleanup saat komponen unmount
+        return () => {
+            unsubscribeFunctions.forEach(unsub => {
+                if (unsub && typeof unsub === 'function') {
+                    unsub();
+                }
+            });
+        };
+    } else {
+        // Handle case ketika user logout
+        notifications = [];
+        updateNotificationUI([], 0);
+    }
+});	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
     // Fungsi untuk memuat profil pengguna
     function loadUserProfile(user) {
         if (!user) return;
@@ -7139,41 +7188,6 @@ function setupLikeListeners() {
     });
 }
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        let unsubscribeFunctions = [];
-        
-        // Load data awal
-        loadUserProfile(user);
-        
-        // Setup listeners
-        unsubscribeFunctions.push(setupNotificationListeners(user.uid));
-        unsubscribeFunctions.push(setupActivityListeners(user.uid));
-        
-        // Setup listeners untuk semua jenis aktivitas
-        unsubscribeFunctions.push(loadNotifications(user.uid));
-        unsubscribeFunctions.push(setupCommentListeners());
-        unsubscribeFunctions.push(setupLikeListeners());
-        unsubscribeFunctions.push(setupFeedbackListeners());
-        unsubscribeFunctions.push(setupDiscussionListeners());
-        unsubscribeFunctions.push(setupDiscussionCommentListeners());
-        unsubscribeFunctions.push(setupAnnouncementListeners());
-        unsubscribeFunctions.push(setupReactionListeners());
-        
-        // Cleanup saat komponen unmount
-        return () => {
-            unsubscribeFunctions.forEach(unsub => {
-                if (unsub && typeof unsub === 'function') {
-                    unsub();
-                }
-            });
-        };
-    } else {
-        // Handle case ketika user logout
-        notifications = [];
-        updateNotificationUI([], 0);
-    }
-});
 
 
 
