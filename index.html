@@ -6012,6 +6012,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
+
 async function createActivityNotification(activityType, activityData) {
     try {
         const user = auth.currentUser;
@@ -6025,15 +6026,15 @@ async function createActivityNotification(activityType, activityData) {
             return;
         }
 
-        // Jika ini pengumuman untuk semua user
+        // PENGUMUMAN MASSAL KE SEMUA USER
         if (activityType === 'announcement' && !activityData.recipientId) {
             const usersSnapshot = await getDocs(collection(db, "users"));
             const batch = writeBatch(db);
 
             usersSnapshot.forEach(userDoc => {
                 if (userDoc.id !== user.uid) {
-                    const notificationRef = doc(collection(db, "notifications"));
-                    batch.set(notificationRef, {
+                    const notifRef = doc(collection(db, "notifications"));
+                    batch.set(notifRef, {
                         userId: userDoc.id,
                         type: activityType,
                         message: activityData.message || `Pengumuman baru: ${activityData.title}`,
@@ -6046,28 +6047,35 @@ async function createActivityNotification(activityType, activityData) {
             });
 
             await batch.commit();
+
+            await createActivityLog(activityType, {
+                message: `Membuat pengumuman massal: ${activityData.title}`,
+                link: `/${activityData.contentType}/${activityData.contentId}`
+            });
+
             return;
         }
 
-        // Untuk notifikasi individual
+        // NOTIFIKASI INDIVIDU
         let recipientId = activityData.recipientId;
 
+        // Ambil owner konten jika belum ada recipient
         if (!recipientId) {
             if (!activityData.contentType || !activityData.contentId) {
                 console.warn("Content type atau ID tidak tersedia");
                 return;
             }
 
-            const contentDoc = await getDoc(doc(db, activityData.contentType, activityData.contentId));
+            const contentRef = doc(db, activityData.contentType, activityData.contentId);
+            const contentDoc = await getDoc(contentRef);
+
             if (contentDoc.exists()) {
                 const data = contentDoc.data();
                 recipientId = data.userId || data.authorId;
             }
         }
 
-        if (!recipientId || recipientId === user.uid) {
-            return; // Tidak kirim notifikasi ke diri sendiri atau tanpa target
-        }
+        if (!recipientId || recipientId === user.uid) return;
 
         // Buat pesan dan link
         let message = '';
@@ -6106,7 +6114,7 @@ async function createActivityNotification(activityType, activityData) {
                 return;
         }
 
-        // Kirim notifikasi ke target
+        // Simpan notifikasi
         await addDoc(collection(db, "notifications"), {
             userId: recipientId,
             type: activityType,
@@ -6119,10 +6127,54 @@ async function createActivityNotification(activityType, activityData) {
             ...(activityData.activityId && { activityId: activityData.activityId })
         });
 
+        // Simpan log aktivitas
+        await createActivityLog(activityType, {
+            message,
+            link,
+            targetUserId: recipientId
+        });
+
     } catch (error) {
         console.error("Error creating activity notification:", error);
     }
 }
+
+
+
+
+async function createActivityLog(type, data) {
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        await addDoc(collection(db, "activities"), {
+            userId: user.uid,
+            type,
+            message: data.message || '',
+            link: data.link || '',
+            targetUserId: data.targetUserId || null,
+            timestamp: new Date()
+        });
+    } catch (err) {
+        console.error("Error creating activity log:", err);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     function loadEnhancedNotifications(userId) {
