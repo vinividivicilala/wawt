@@ -7005,43 +7005,44 @@ function formatActivityContent(activity) {
     }
 }
 
- // Inisialisasi tab aktivitas
-    const activityTabs = document.querySelectorAll('.activity-tab');
-    activityTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
-            switchActivityTab(tabName);
-        });
+ document.addEventListener('DOMContentLoaded', () => {
+  // Inisialisasi tab aktivitas
+  const activityTabs = document.querySelectorAll('.activity-tab');
+  activityTabs.forEach(tab => {
+    tab.addEventListener('click', function () {
+      const tabName = this.getAttribute('data-tab');
+      switchActivityTab(tabName);
     });
-    
-    // Fungsi untuk switch tab
-    function switchActivityTab(tabName) {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return;
-        
-        // Hapus listener sebelumnya
-        if (window.currentActivityUnsubscribe) {
-            window.currentActivityUnsubscribe();
-        }
-        
-        // Load data berdasarkan tab
-        switch(tabName) {
-            case 'comments':
-                window.currentActivityUnsubscribe = loadCommentsActivities(userId);
-                break;
-            case 'reactions':
-                window.currentActivityUnsubscribe = loadReactionsActivities(userId);
-                break;
-            case 'posts':
-                window.currentActivityUnsubscribe = loadPostsActivities(userId);
-                break;
-            default:
-                window.currentActivityUnsubscribe = loadAllActivities(userId);
-        }
+  });
+
+  // Fungsi untuk switch tab
+  function switchActivityTab(tabName) {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    // Hapus listener sebelumnya
+    if (window.currentActivityUnsubscribe) {
+      window.currentActivityUnsubscribe();
     }
-    
-    // Default load tab pertama
-    switchActivityTab('all');
+
+    // Load data berdasarkan tab
+    switch (tabName) {
+      case 'comments':
+        window.currentActivityUnsubscribe = loadCommentsActivities(userId);
+        break;
+      case 'reactions':
+        window.currentActivityUnsubscribe = loadReactionsActivities(userId);
+        break;
+      case 'posts':
+        window.currentActivityUnsubscribe = loadPostsActivities(userId);
+        break;
+      default:
+        window.currentActivityUnsubscribe = loadAllActivities(userId);
+    }
+  }
+
+  // Default load tab pertama
+  switchActivityTab('all');
 });
 
 
