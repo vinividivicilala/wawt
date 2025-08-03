@@ -6658,7 +6658,70 @@ function scrollToContent(contentId) {
    
    
    
-   
+       // Fungsi untuk mengatur listener notifikasi
+    function setupNotificationListeners(userId) {
+        const notificationsRef = collection(db, "notifications");
+        const q = query(
+            notificationsRef, 
+            where("userId", "==", userId),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        );
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            notifications = [];
+            let unreadCount = 0;
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const notification = {
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate() || new Date()
+                };
+                
+                notifications.push(notification);
+                if (!notification.read) unreadCount++;
+            });
+            
+            updateNotificationUI(notifications, unreadCount);
+        });
+        
+        unsubscribeFunctions.push(unsubscribe);
+    }
+    
+    // Fungsi untuk mengatur listener aktivitas
+    function setupActivityListeners(userId) {
+        // Listener untuk semua aktivitas yang melibatkan user
+        const activitiesRef = collection(db, "activities");
+        const q = query(
+            activitiesRef,
+            or(
+                where("userId", "==", userId),
+                where("targetUserId", "==", userId)
+            ),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        );
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            activities = [];
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                activities.push({
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate() || new Date()
+                });
+            });
+            
+            renderActivities(activities, 'all');
+        });
+        
+        unsubscribeFunctions.push(unsubscribe);
+    }
+    
    
    
    
