@@ -6526,35 +6526,34 @@ async function markAllNotificationsAsRead() {
 
 
 
-
 /**
- * Creates a notification for user activities with complete validation and error handling
+ * Creates notifications for user activities with complete validation and error handling
  * @param {string} activityType - Type of activity ('comment', 'reply', 'like', 'announcement', etc.)
  * @param {object} activityData - Data about the activity including content and recipient info
  * @returns {Promise<void>}
  */
 async function createActivityNotification(activityType, activityData) {
-  // Validate basic parameters
-  if (!validateInputParameters(activityType, activityData)) {
-    return;
-  }
-
-  // Get current authenticated user
-  const currentUser = auth.currentUser;
-  if (!currentUser) {
-    console.warn("Notification cancelled: No authenticated user");
-    return;
-  }
-
   try {
+    // Validate basic parameters
+    if (!validateNotificationInput(activityType, activityData)) {
+      return;
+    }
+
+    // Get current authenticated user
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.warn("Notification cancelled: No authenticated user");
+      return;
+    }
+
     // Handle announcement notifications (sent to all users)
     if (activityType === 'announcement' && !activityData.recipientId) {
       await handleAnnouncementNotification(currentUser, activityData);
       return;
     }
 
-    // Handle individual notifications
-    await handleIndividualNotification(currentUser, activityType, activityData);
+    // Process individual notifications
+    await processIndividualNotification(currentUser, activityType, activityData);
   } catch (error) {
     console.error("Notification creation failed:", {
       error: error.message,
@@ -6562,14 +6561,13 @@ async function createActivityNotification(activityType, activityData) {
       activityData,
       timestamp: new Date().toISOString()
     });
-    // Consider adding error tracking service call here
   }
 }
 
 /**
- * Validates the input parameters for the notification
+ * Validates notification input parameters
  */
-function validateInputParameters(activityType, activityData) {
+function validateNotificationInput(activityType, activityData) {
   if (!activityType || typeof activityType !== 'string') {
     console.error("Invalid activity type:", activityType);
     return false;
@@ -6578,6 +6576,26 @@ function validateInputParameters(activityType, activityData) {
   if (!activityData || typeof activityData !== 'object') {
     console.error("Invalid activity data:", activityData);
     return false;
+  }
+
+  // Validate content type if present
+  if (activityData.contentType) {
+    const validContentTypes = [
+      'arduinoHistory', 
+      'discussions', 
+      'feedback', 
+      'announcements'
+    ];
+    
+    // Correct common typo
+    if (activityData.contentType === "ardulnollistory") {
+      activityData.contentType = "arduinoHistory";
+    }
+    
+    if (!validContentTypes.includes(activityData.contentType)) {
+      console.error("Invalid content type:", activityData.contentType);
+      return false;
+    }
   }
 
   return true;
@@ -6593,41 +6611,46 @@ async function handleAnnouncementNotification(currentUser, activityData) {
     return;
   }
 
-  // Get all users except the sender
-  const usersSnapshot = await getDocs(collection(db, "users"));
-  const batch = writeBatch(db);
+  try {
+    // Get all users except the sender
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const batch = writeBatch(db);
 
-  usersSnapshot.forEach(userDoc => {
-    if (userDoc.id !== currentUser.uid) {
-      const notificationRef = doc(collection(db, "notifications"));
-      batch.set(notificationRef, {
-        recipientId: userDoc.id,
-        type: 'announcement',
-        message: activityData.message || `Pengumuman baru: ${activityData.title}`,
-        read: false,
-        timestamp: new Date(),
-        link: `/${activityData.contentType}/${activityData.contentId}`,
-        fromUserId: currentUser.uid,
-        contentType: activityData.contentType,
-        contentId: activityData.contentId,
-        isAnnouncement: true
-      });
-    }
-  });
+    usersSnapshot.forEach(userDoc => {
+      if (userDoc.id !== currentUser.uid) {
+        const notificationRef = doc(collection(db, "notifications"));
+        batch.set(notificationRef, {
+          recipientId: userDoc.id,
+          type: 'announcement',
+          message: activityData.message || `Pengumuman baru: ${activityData.title}`,
+          read: false,
+          timestamp: new Date(),
+          link: `/${activityData.contentType}/${activityData.contentId}`,
+          fromUserId: currentUser.uid,
+          contentType: activityData.contentType,
+          contentId: activityData.contentId,
+          isAnnouncement: true
+        });
+      }
+    });
 
-  await batch.commit();
-  console.log(`Announcement sent to ${usersSnapshot.size} users`);
+    await batch.commit();
+    console.log(`Announcement sent to ${usersSnapshot.size} users`);
+  } catch (error) {
+    console.error("Error sending announcement:", error);
+    throw error;
+  }
 }
 
 /**
- * Handles individual user notifications
+ * Processes individual notifications
  */
-async function handleIndividualNotification(currentUser, activityType, activityData) {
+async function processIndividualNotification(currentUser, activityType, activityData) {
   // Correct common data issues
   activityData = sanitizeNotificationData(activityData);
 
-  // Determine recipient - either provided directly or from content
-  const recipientId = await determineRecipient(currentUser, activityData);
+  // Determine recipient ID
+  const recipientId = await determineNotificationRecipient(activityData);
   if (!recipientId) return;
 
   // Don't send notification to self
@@ -6635,32 +6658,26 @@ async function handleIndividualNotification(currentUser, activityType, activityD
     return;
   }
 
-  // Create notification message and link
-  const { message, link } = createNotificationContent(currentUser, activityType, activityData);
+  // Create notification content
+  const { message, link } = createNotificationMessage(
+    currentUser.displayName || 'Pengguna',
+    activityType,
+    activityData
+  );
 
-  // Prepare notification document
-  const notificationData = {
-    recipientId: recipientId,
-    type: activityType,
-    message: message,
-    read: false,
-    timestamp: new Date(),
-    link: link,
+  // Create notification document
+  await createNotificationDocument({
+    recipientId,
+    activityType,
+    message,
+    link,
     fromUserId: currentUser.uid,
-    contentType: activityData.contentType,
-    contentId: activityData.contentId,
-    ...(activityData.commentId && { commentId: activityData.commentId }),
-    ...(activityData.replyId && { replyId: activityData.replyId }),
-    ...(activityData.emoji && { emoji: activityData.emoji })
-  };
-
-  // Create the notification
-  await addDoc(collection(db, "notifications"), notificationData);
-  console.log("Notification created for", recipientId);
+    activityData
+  });
 }
 
 /**
- * Sanitizes and corrects common data issues
+ * Sanitizes and corrects notification data
  */
 function sanitizeNotificationData(activityData) {
   // Correct common typo in contentType
@@ -6679,7 +6696,7 @@ function sanitizeNotificationData(activityData) {
 /**
  * Determines the notification recipient
  */
-async function determineRecipient(currentUser, activityData) {
+async function determineNotificationRecipient(activityData) {
   // If recipient is explicitly provided
   if (activityData.recipientId) {
     return activityData.recipientId;
@@ -6717,38 +6734,57 @@ async function determineRecipient(currentUser, activityData) {
 }
 
 /**
- * Creates the notification message and link based on activity type
+ * Creates the notification message and link
  */
-function createNotificationContent(currentUser, activityType, activityData) {
-  const senderName = currentUser.displayName || 'Pengguna';
+function createNotificationMessage(senderName, activityType, activityData) {
+  const contentName = getContentTypeName(activityData.contentType);
   let message = "";
   let link = "";
 
   switch (activityType) {
     case "comment":
-      message = `${senderName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
+      if (!activityData.commentId) {
+        console.warn("Missing commentId for comment notification");
+        return { message: "", link: "" };
+      }
+      message = `${senderName} mengomentari ${contentName} Anda`;
       link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
       break;
+      
     case "reply":
+      const replyId = activityData.replyId || activityData.commentId;
+      if (!replyId) {
+        console.warn("Missing replyId/commentId for reply notification");
+        return { message: "", link: "" };
+      }
       message = `${senderName} membalas komentar Anda`;
-      link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId || activityData.commentId}`;
+      link = `/${activityData.contentType}/${activityData.contentId}#reply-${replyId}`;
       break;
+      
     case "like":
-      message = `${senderName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
+      message = `${senderName} menyukai ${contentName} Anda`;
       link = `/${activityData.contentType}/${activityData.contentId}`;
       break;
+      
     case "reaction":
-      message = `${senderName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`;
+      if (!activityData.emoji) {
+        console.warn("Missing emoji for reaction notification");
+        return { message: "", link: "" };
+      }
+      message = `${senderName} memberikan reaksi ${activityData.emoji} pada ${contentName} Anda`;
       link = `/${activityData.contentType}/${activityData.contentId}`;
       break;
+      
     case "feedback":
       message = `${senderName} memberikan feedback baru`;
       link = `/feedback/${activityData.contentId}`;
       break;
+      
     case "discussion":
       message = `${senderName} memulai diskusi baru`;
       link = `/discussions/${activityData.contentId}`;
       break;
+      
     default:
       console.warn("Unknown activity type:", activityType);
       return { message: "", link: "" };
@@ -6758,7 +6794,50 @@ function createNotificationContent(currentUser, activityType, activityData) {
 }
 
 /**
- * Helper function to get display name for content types
+ * Creates the notification document in Firestore
+ */
+async function createNotificationDocument({
+  recipientId,
+  activityType,
+  message,
+  link,
+  fromUserId,
+  activityData
+}) {
+  if (!message || !link) {
+    console.warn("Not creating notification - empty message or link");
+    return;
+  }
+
+  const notificationData = {
+    recipientId,
+    type: activityType,
+    message,
+    read: false,
+    timestamp: new Date(),
+    link,
+    fromUserId,
+    contentType: activityData.contentType,
+    contentId: activityData.contentId
+  };
+
+  // Add optional fields
+  if (activityData.commentId) notificationData.commentId = activityData.commentId;
+  if (activityData.replyId) notificationData.replyId = activityData.replyId;
+  if (activityData.emoji) notificationData.emoji = activityData.emoji;
+  if (activityData.activityId) notificationData.activityId = activityData.activityId;
+
+  try {
+    await addDoc(collection(db, "notifications"), notificationData);
+    console.log("Notification created for", recipientId);
+  } catch (error) {
+    console.error("Error creating notification document:", error);
+    throw error;
+  }
+}
+
+/**
+ * Gets display name for content types
  */
 function getContentTypeName(type) {
   const typeNames = {
@@ -6769,6 +6848,23 @@ function getContentTypeName(type) {
   };
   return typeNames[type] || "konten";
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
