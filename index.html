@@ -5432,21 +5432,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const saveNotificationSettings = document.getElementById('saveNotificationSettings');
     const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
     
-    // Event Listeners
-    backFromDashboard?.addEventListener('click', function() {
-        showPageContent(document.getElementById("page1"));
-        history.pushState({ page: "home" }, "Beranda", "/");
-    });
-    
-    editProfileBtn?.addEventListener('click', showEditProfileForm);
-    cancelEditBtn?.addEventListener('click', cancelEditProfile);
-    saveProfileBtn?.addEventListener('click', saveProfile);
-    notificationBell?.addEventListener('click', toggleNotifications);
-    markAllReadBtn?.addEventListener('click', markAllNotificationsAsRead);
-    notificationSettingsBtn?.addEventListener('click', showNotificationSettings);
-    closeModal?.addEventListener('click', hideNotificationSettings);
-    cancelNotificationSettings?.addEventListener('click', hideNotificationSettings);
-    saveNotificationSettings?.addEventListener('click', saveNotificationSettings);
+   
     
     // Fungsi untuk menampilkan form edit profil
     function showEditProfileForm() {
