@@ -6577,6 +6577,9 @@ function scrollToContent(contentId) {
         // Load data awal
         loadUserProfile(user);
 		
+		    loadNotifications(user.uid);
+
+		
 		 setupNotificationListeners(user.uid);
             setupActivityListeners(user.uid);
         
