@@ -2598,7 +2598,80 @@ a.footnote-link:hover {
 
 
 
+/* Gaya untuk notifikasi dan aktivitas */
+.notification-item, .activity-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
 
+.notification-item:hover, .activity-item:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.notification-item.unread {
+    background-color: rgba(0, 119, 255, 0.1);
+    border-left: 3px solid #0077ff;
+}
+
+.notification-icon, .activity-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.notification-content, .activity-content {
+    flex-grow: 1;
+}
+
+.notification-preview, .activity-preview {
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    margin: 5px 0;
+    padding: 5px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+
+.notification-time, .activity-content small {
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+}
+
+.notification-emoji {
+    margin-left: 10px;
+    font-size: 18px;
+}
+
+/* Tab aktivitas */
+.activity-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 15px;
+}
+
+.activity-tab {
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.activity-tab.active {
+    color: white;
+    border-bottom-color: #0077ff;
+}
+
+.activity-tab-content {
+    display: none;
+}
+
+.activity-tab-content.active {
+    display: block;
+}
 
 
 
@@ -5740,6 +5813,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 	
+	
+	
+// Fungsi untuk memperbarui tampilan notifikasi
 function updateNotificationUI(notifications, unreadCount) {
     const notificationList = document.getElementById('notificationsList');
     const badge = document.getElementById('notificationBadge');
@@ -5765,23 +5841,21 @@ function updateNotificationUI(notifications, unreadCount) {
              data-target-id="${notif.targetId}"
              data-link="${notif.link || '#'}">
             <div class="notification-icon">
-                ${getNotificationIcon(notif.type)}
+                ${getEnhancedNotificationIcon(notif.type, notif.emoji)}
             </div>
             <div class="notification-content">
                 <p><strong>${notif.senderName}</strong> ${notif.message}</p>
+                ${notif.contentPreview ? `<p class="notification-preview">${notif.contentPreview}</p>` : ''}
                 <small>${formatTimeAgo(notif.timestamp)}</small>
             </div>
+            ${notif.emoji ? `<div class="notification-emoji">${notif.emoji}</div>` : ''}
         </div>
     `).join('');
     
     // Add click handlers
     document.querySelectorAll('.notification-item').forEach(item => {
         item.addEventListener('click', function() {
-            const link = this.getAttribute('data-link');
             const notifId = this.getAttribute('data-id');
-            const type = this.getAttribute('data-type');
-            const targetType = this.getAttribute('data-target-type');
-            const targetId = this.getAttribute('data-target-id');
             
             // Mark as read if unread
             if (this.classList.contains('unread')) {
@@ -5789,14 +5863,49 @@ function updateNotificationUI(notifications, unreadCount) {
             }
             
             // Handle navigation
-            if (link && link !== '#') {
-                window.location.href = link;
-            } else {
-                handleNotificationAction(type, targetType, targetId);
-            }
+            handleNotificationAction(
+                this.getAttribute('data-type'),
+                this.getAttribute('data-target-type'),
+                this.getAttribute('data-target-id'),
+                this.getAttribute('data-link')
+            );
         });
     });
-}	
+}
+	
+	
+	
+	// Fungsi icon notifikasi yang lebih lengkap
+function getEnhancedNotificationIcon(type, emoji = null) {
+    if (emoji) return emoji;
+    
+    const icons = {
+        'comment': '💬',
+        'reply': '↩️',
+        'like': '👍',
+        'reaction': '❤️',
+        'announcement': '📢',
+        'feedback': '💡',
+        'discussion': '🗨️',
+        'edit': '✏️',
+        'upload': '📤',
+        'system': '⚙️'
+    };
+    
+    return icons[type] || '🔔';
+}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 // Shared state untuk menghindari duplikasi notifikasi
@@ -5876,47 +5985,246 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
 
 
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	function handleNotificationAction(type, targetType, targetId) {
+// Fungsi untuk menangani aksi notifikasi
+function handleNotificationAction(type, targetType, targetId, link) {
+    if (link && link !== '#') {
+        window.location.href = link;
+        return;
+    }
+    
     switch(type) {
         case 'comment':
         case 'reply':
             if (targetType && targetId) {
-                window.location.href = `/${targetType}/${targetId}#comment-${targetId}`;
+                const baseUrl = getBaseUrlForContentType(targetType);
+                window.location.href = `${baseUrl}/${targetId}#comment-${targetId}`;
             }
             break;
         case 'like':
+        case 'reaction':
             if (targetType && targetId) {
-                window.location.href = `/${targetType}/${targetId}`;
+                const baseUrl = getBaseUrlForContentType(targetType);
+                window.location.href = `${baseUrl}/${targetId}`;
             }
             break;
         case 'feedback':
-            if (targetId) {
-                window.location.href = `/feedback/${targetId}`;
-            }
+            window.location.href = `/feedback/${targetId}`;
+            break;
+        case 'discussion':
+            window.location.href = `/discussions/${targetId}`;
             break;
         case 'announcement':
-            showPageContent(document.getElementById("pageAnnouncements"));
+            window.location.href = `/announcements/${targetId}`;
+            break;
+        case 'edit':
+            if (targetType === 'arduino-history') {
+                window.location.href = `/arduino-history/edit/${targetId}`;
+            }
             break;
         default:
             console.log('Aksi notifikasi tidak dikenali');
     }
+}	
+	
+	
+function getBaseUrlForContentType(type) {
+    const urls = {
+        'arduino-history': '/arduino-history',
+        'feedback': '/feedback',
+        'discussion': '/discussions',
+        'announcement': '/announcements',
+        'content': '/contents'
+    };
+    return urls[type] || '';
+}	
+	
+	
+	
+	
+// Fungsi untuk memuat aktivitas terkini yang lebih komprehensif
+function loadEnhancedRecentActivity(userId) {
+    if (!userId) return;
+    
+    // Gabungkan data dari berbagai koleksi
+    const activities = [];
+    
+    // 1. Ambil aktivitas pengguna sendiri
+    const userActivitiesQuery = query(
+        collection(db, "userActivities"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(20)
+    );
+    
+    // 2. Ambil aktivitas yang melibatkan pengguna (komentar, like, dll)
+    const relatedActivitiesQuery = query(
+        collection(db, "activities"),
+        where("relatedUserId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(20)
+    );
+    
+    Promise.all([
+        getDocs(userActivitiesQuery),
+        getDocs(relatedActivitiesQuery)
+    ]).then(([userSnap, relatedSnap]) => {
+        // Proses aktivitas pengguna sendiri
+        userSnap.forEach(doc => {
+            const data = doc.data();
+            activities.push({
+                id: doc.id,
+                type: data.type,
+                timestamp: data.timestamp?.toDate(),
+                content: data.content || '',
+                targetType: data.targetType,
+                targetId: data.targetId,
+                isUserAction: true
+            });
+        });
+        
+        // Proses aktivitas terkait pengguna
+        relatedSnap.forEach(doc => {
+            const data = doc.data();
+            activities.push({
+                id: doc.id,
+                type: data.type,
+                timestamp: data.timestamp?.toDate(),
+                content: data.content || '',
+                targetType: data.targetType,
+                targetId: data.targetId,
+                isUserAction: false,
+                actorName: data.actorName,
+                actorId: data.actorId
+            });
+        });
+        
+        // Urutkan berdasarkan timestamp
+        activities.sort((a, b) => b.timestamp - a.timestamp);
+        
+        // Render aktivitas
+        renderEnhancedRecentActivity(activities);
+    }).catch(error => {
+        console.error("Error loading activities:", error);
+    });
+}	
+	
+	
+	
+	
+	
+// Fungsi untuk merender aktivitas terkini
+function renderEnhancedRecentActivity(activities) {
+    const recentActivity = document.getElementById('recentActivity');
+    const commentsActivity = document.getElementById('commentsActivity');
+    const reactionsActivity = document.getElementById('reactionsActivity');
+    
+    if (activities.length === 0) {
+        const emptyMsg = `
+            <div class="empty-activity">
+                <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada aktivitas terkini</p>
+            </div>
+        `;
+        recentActivity.innerHTML = emptyMsg;
+        commentsActivity.innerHTML = emptyMsg;
+        reactionsActivity.innerHTML = emptyMsg;
+        return;
+    }
+    
+    // Filter aktivitas berdasarkan jenis
+    const allActivities = activities;
+    const commentActivities = activities.filter(a => 
+        a.type === 'comment' || a.type === 'reply');
+    const reactionActivities = activities.filter(a => 
+        a.type === 'like' || a.type === 'reaction');
+    
+    // Render semua aktivitas (tab Terbaru)
+    recentActivity.innerHTML = allActivities.map(activity => 
+        createActivityItem(activity)).join('');
+    
+    // Render aktivitas komentar (tab Komentar)
+    commentsActivity.innerHTML = commentActivities.map(activity => 
+        createActivityItem(activity)).join('');
+    
+    // Render aktivitas reaksi (tab Reaksi)
+    reactionsActivity.innerHTML = reactionActivities.map(activity => 
+        createActivityItem(activity)).join('');
+    
+    // Add click handlers
+    document.querySelectorAll('.activity-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const type = this.getAttribute('data-type');
+            const targetType = this.getAttribute('data-target-type');
+            const targetId = this.getAttribute('data-target-id');
+            handleActivityAction(type, targetType, targetId);
+        });
+    });
 }
+
+// Fungsi pembuat item aktivitas
+function createActivityItem(activity) {
+    const actionText = getActionText(activity);
+    const actorText = activity.isUserAction ? 'Anda' : 
+        `<strong>${activity.actorName || 'Pengguna'}</strong>`;
+    
+    return `
+        <div class="activity-item" 
+             data-type="${activity.type}" 
+             data-target-type="${activity.targetType}" 
+             data-target-id="${activity.targetId}">
+            <div class="activity-icon">
+                ${getEnhancedActivityIcon(activity.type, activity.emoji)}
+            </div>
+            <div class="activity-content">
+                <p>${actorText} ${actionText}</p>
+                ${activity.content ? `<p class="activity-preview">${activity.content.substring(0, 100)}${activity.content.length > 100 ? '...' : ''}</p>` : ''}
+                <small>${formatTimeAgo(activity.timestamp)}</small>
+            </div>
+        </div>
+    `;
+}
+	
+	
+	
+// Fungsi untuk mendapatkan teks aksi
+function getActionText(activity) {
+    const targetName = getTargetName(activity.targetType);
+    
+    switch(activity.type) {
+        case 'comment':
+            return `memberikan komentar pada ${targetName}`;
+        case 'reply':
+            return `membalas komentar pada ${targetName}`;
+        case 'like':
+            return `menyukai ${targetName}`;
+        case 'reaction':
+            return `memberi reaksi ${activity.emoji || ''} pada ${targetName}`;
+        case 'upload':
+            return `mengupload ${targetName}`;
+        case 'edit':
+            return `mengedit ${targetName}`;
+        case 'feedback':
+            return `memberikan feedback`;
+        case 'discussion':
+            return `memulai diskusi`;
+        case 'announcement':
+            return `membuat pengumuman`;
+        default:
+            return `melakukan aktivitas`;
+    }
+}	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
 	
 	
 	
@@ -6419,86 +6727,91 @@ function scrollToContent(contentId) {
    
    
    
-   
-   
-   
-   
    onAuthStateChanged(auth, (user) => {
-    if (user) {
-        let unsubscribeFunctions = [];
-        
-        // Load data awal
-        loadUserProfile(user);
-        
-        // Setup listeners untuk semua jenis aktivitas
-        unsubscribeFunctions.push(loadNotifications(user.uid));
-        unsubscribeFunctions.push(setupCommentListeners());
-        unsubscribeFunctions.push(setupLikeListeners());
-        unsubscribeFunctions.push(setupFeedbackListeners());
-        unsubscribeFunctions.push(setupDiscussionListeners());
-        unsubscribeFunctions.push(setupDiscussionCommentListeners());
-        unsubscribeFunctions.push(setupAnnouncementListeners());
-        unsubscribeFunctions.push(setupReactionListeners());
-        
-        // Cleanup saat komponen unmount
-        return () => {
-            unsubscribeFunctions.forEach(unsub => {
-                if (unsub && typeof unsub === 'function') {
-                    unsub();
-                }
-            });
-        };
-    } else {
-        // Handle case ketika user logout
-        notifications = [];
-        updateNotificationUI([], 0);
-    }
-});
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
+        if (user) {
+            // Load data awal
+            loadUserProfile(user);
+            
+            // Setup semua listener
+            const cleanupListeners = setupAllListeners(user.uid);
+            
+            // Load aktivitas terkini
+            loadEnhancedRecentActivity(user.uid);
+            
+            // Cleanup saat komponen unmount
+            return cleanupListeners;
+        } else {
+            // Reset state saat logout
+            notifications = [];
+            updateNotificationUI([], 0);
+            document.getElementById('recentActivity').innerHTML = '';
+            document.getElementById('commentsActivity').innerHTML = '';
+            document.getElementById('reactionsActivity').innerHTML = '';
+        }
+    });
     
-    // Event listener untuk tab aktivitas
+   
+   
+     // Event listener untuk tab aktivitas
     document.querySelectorAll('.activity-tab').forEach(tab => {
         tab.addEventListener('click', function() {
-            document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+            const tabId = this.getAttribute('data-tab');
+            
+            // Update tab aktif
+            document.querySelectorAll('.activity-tab').forEach(t => 
+                t.classList.remove('active'));
             this.classList.add('active');
             
-            const tabId = this.getAttribute('data-tab');
-            // Implementasi untuk memuat konten tab yang sesuai
+            // Update konten aktif
+            document.querySelectorAll('.activity-tab-content').forEach(content => 
+                content.classList.remove('active'));
+            document.getElementById(`${tabId}Activity`).classList.add('active');
         });
     });
 });
+   
+   
+   
+   
+   
+   
+   
 
 
 
 
 
 
-
-
-
+// Fungsi untuk mendapatkan nama target
 function getTargetName(targetType) {
     const names = {
-        'feedback': 'feedback',
-        'announcement': 'pengumuman',
         'arduino-history': 'sejarah Arduino',
-        'discussion': 'diskusi'
+        'feedback': 'feedback',
+        'discussion': 'diskusi',
+        'announcement': 'pengumuman',
+        'content': 'konten'
     };
-    return names[targetType] || 'konten';
+    return names[targetType] || 'item';
 }
 
+// Fungsi icon aktivitas yang lebih lengkap
+function getEnhancedActivityIcon(type, emoji = null) {
+    if (emoji) return emoji;
+    
+    const icons = {
+        'comment': '💬',
+        'reply': '↩️',
+        'like': '👍',
+        'reaction': '❤️',
+        'upload': '📤',
+        'edit': '✏️',
+        'feedback': '💡',
+        'discussion': '🗨️',
+        'announcement': '📢'
+    };
+    
+    return icons[type] || '🔔';
+}
 
 	
 	
@@ -6603,6 +6916,30 @@ async function createActivityNotification(activityType, activityData) {
 
 
 
+// Fungsi untuk menyiapkan semua listener
+function setupAllListeners(userId) {
+    const unsubscribes = [];
+    
+    // Listener untuk notifikasi
+    unsubscribes.push(loadEnhancedNotifications(userId));
+    
+    // Listener untuk aktivitas
+    unsubscribes.push(setupActivityListeners(userId));
+    
+    // Listener spesifik untuk berbagai jenis konten
+    unsubscribes.push(setupArduinoHistoryListeners());
+    unsubscribes.push(setupFeedbackListeners());
+    unsubscribes.push(setupDiscussionListeners());
+    unsubscribes.push(setupAnnouncementListeners());
+    unsubscribes.push(setupContentListeners());
+    
+    // Cleanup function
+    return () => {
+        unsubscribes.forEach(unsub => {
+            if (unsub && typeof unsub === 'function') unsub();
+        });
+    };
+}
 
 
 
@@ -6796,6 +7133,151 @@ function setupLikeListeners() {
         });
     });
 }
+
+
+// Contoh setup listener untuk sejarah Arduino
+function setupArduinoHistoryListeners() {
+    // Listener untuk komentar
+    const commentsUnsubscribe = onSnapshot(
+        collection(db, "arduinoHistoryComments"),
+        (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const comment = change.doc.data();
+                    if (comment.userId !== auth.currentUser?.uid) {
+                        createActivityNotification('comment', {
+                            contentType: 'arduino-history',
+                            contentId: comment.historyId,
+                            commentId: change.doc.id,
+                            recipientId: comment.replyTo || comment.historyAuthorId,
+                            contentPreview: comment.content
+                        });
+                    }
+                }
+            });
+        }
+    );
+    
+    // Listener untuk edit
+    const editsUnsubscribe = onSnapshot(
+        collection(db, "arduinoHistoryEdits"),
+        (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const edit = change.doc.data();
+                    if (edit.userId !== auth.currentUser?.uid) {
+                        createActivityNotification('edit', {
+                            contentType: 'arduino-history',
+                            contentId: edit.historyId,
+                            recipientId: edit.historyAuthorId,
+                            contentPreview: edit.changes
+                        });
+                    }
+                }
+            });
+        }
+    );
+    
+    return () => {
+        commentsUnsubscribe();
+        editsUnsubscribe();
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Fungsi untuk memuat notifikasi yang lebih komprehensif
+function loadEnhancedNotifications(userId) {
+    if (!userId) return;
+    
+    const notificationsRef = collection(db, "notifications");
+    const q = query(notificationsRef, 
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(50)
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        notifications = [];
+        let unreadCount = 0;
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const notification = {
+                id: doc.id,
+                message: data.message,
+                type: data.type || 'general',
+                read: data.read || false,
+                timestamp: data.timestamp.toDate(),
+                link: data.link || null,
+                senderId: data.senderId || null,
+                senderName: data.senderName || 'Pengguna',
+                targetType: data.targetType || null,
+                targetId: data.targetId || null,
+                emoji: data.emoji || null,
+                contentPreview: data.contentPreview || null
+            };
+            
+            if (!data.read) unreadCount++;
+            notifications.push(notification);
+        });
+
+        updateNotificationUI(notifications, unreadCount);
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7215,6 +7697,11 @@ document.querySelectorAll('.footnote-link').forEach(link => {
     }
   });
 });
+
+
+
+
+
 
 
 
