@@ -7257,33 +7257,6 @@ function setupReactionListeners(userId) {
     });
 }
 
-// Perbaikan pada fungsi yang memproses timestamp
-function processActivityData(doc) {
-    const data = doc.data();
-    return {
-        id: doc.id,
-        type: data.type || 'activity',
-        content: data.content || '',
-        timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
-        targetId: data.targetId || null,
-        targetType: data.targetType || null
-    };
-}
-
-// Gunakan dalam listener
-const unsubscribe = onSnapshot(activitiesQuery, (snapshot) => {
-    activities = []; // Reset activities array
-    snapshot.forEach(doc => {
-        try {
-            activities.push(processActivityData(doc));
-        } catch (error) {
-            console.error("Error processing activity:", error);
-        }
-    });
-    renderActivities(activities);
-});
-
-
 
 
 // 2. Perbaikan setupCommentListeners
