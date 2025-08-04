@@ -7362,106 +7362,105 @@ function setupAnnouncementListeners() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Perbaikan di setupReactionListeners()
 function setupReactionListeners() {
     const reactionsRef = collection(db, "userReactions");
     return onSnapshot(reactionsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
-                const reaction = change.doc.data();
-                
-                // Validasi data reaksi
-                if (!reaction.contentType || !reaction.contentId) {
-                    console.error("Data reaksi tidak lengkap:", {
-                        id: change.doc.id,
-                        data: reaction,
-                        error: "contentType atau contentId tidak ditemukan"
+                try {
+                    const reaction = change.doc.data();
+                    
+                    // Enhanced validation
+                    if (!reaction.contentType || !reaction.contentId) {
+                        console.error("Incomplete reaction data - missing contentType or contentId:", {
+                            id: change.doc.id,
+                            data: reaction
+                        });
+                        return;
+                    }
+
+                    if (reaction.userId === auth.currentUser?.uid) {
+                        return;
+                    }
+
+                    createActivityNotification('reaction', {
+                        contentType: reaction.contentType,
+                        contentId: reaction.contentId,
+                        recipientId: reaction.targetUserId,
+                        emoji: reaction.emoji,
+                        timestamp: reaction.timestamp || new Date()
                     });
-                    return;
+                } catch (error) {
+                    console.error("Error processing reaction:", error);
                 }
-
-                if (reaction.userId === auth.currentUser?.uid) {
-                    return;
-                }
-
-                // Buat notifikasi dengan data lengkap
-                createActivityNotification('reaction', {
-                    contentType: reaction.contentType,
-                    contentId: reaction.contentId,
-                    recipientId: reaction.targetUserId,
-                    emoji: reaction.emoji,
-                    timestamp: reaction.timestamp || new Date()
-                });
             }
         });
     }, (error) => {
-        console.error("Error dalam reaction listener:", error);
+        console.error("Reaction listener error:", error);
     });
 }
 
 
 
 
-// Perbaikan di setupCommentListeners()
+
+
 function setupCommentListeners() {
     const commentsRef = collection(db, "arduinoHistoryComments");
     return onSnapshot(commentsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
-                const commentData = change.doc.data();
-                
-                // Validasi data penting
-                if (!commentData.historyId) {
-                    console.error("Dokumen komentar tidak valid:", {
-                        id: change.doc.id,
-                        data: commentData,
-                        error: "historyId tidak ditemukan"
+                try {
+                    const commentData = change.doc.data();
+                    
+                    // Enhanced validation
+                    if (!commentData.historyId) {
+                        console.error("Invalid comment document - missing historyId:", {
+                            id: change.doc.id,
+                            data: commentData
+                        });
+                        return;
+                    }
+
+                    // Skip if current user's comment
+                    if (!commentData.userId || commentData.userId === auth.currentUser?.uid) {
+                        return;
+                    }
+
+                    // Get recipient - fallback to content author if no replyTo
+                    const recipientId = commentData.replyTo || commentData.contentAuthorId;
+                    if (!recipientId) {
+                        console.error("Cannot determine notification recipient for comment:", change.doc.id);
+                        return;
+                    }
+
+                    createActivityNotification('comment', {
+                        contentType: 'arduinoHistory',
+                        contentId: commentData.historyId,
+                        commentId: change.doc.id,
+                        recipientId: recipientId,
+                        timestamp: commentData.timestamp || new Date()
                     });
-                    return;
+                } catch (error) {
+                    console.error("Error processing comment:", error);
                 }
-
-                if (!commentData.userId || commentData.userId === auth.currentUser?.uid) {
-                    return;
-                }
-
-                // Dapatkan penerima notifikasi
-                const recipientId = commentData.replyTo || commentData.contentAuthorId;
-                if (!recipientId) {
-                    console.error("Tidak dapat menentukan penerima notifikasi");
-                    return;
-                }
-
-                // Buat notifikasi dengan data lengkap
-                createActivityNotification('comment', {
-                    contentType: 'arduinoHistory',
-                    contentId: commentData.historyId,
-                    commentId: change.doc.id,
-                    recipientId: recipientId,
-                    timestamp: commentData.timestamp || new Date()
-                });
             }
         });
     }, (error) => {
-        console.error("Error dalam comment listener:", error);
+        console.error("Comment listener error:", error);
     });
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7500,7 +7499,35 @@ function setupLikeListeners() {
     });
 }
 
+async function handleBroadcastNotification(activityData, currentUserId) {
+    try {
+        // Get all users except the sender
+        const usersSnapshot = await getDocs(query(
+            collection(db, "users"),
+            where("__name__", "!=", currentUserId)
+        ));
 
+        const batch = writeBatch(db);
+        const notificationsRef = collection(db, "notifications");
+
+        usersSnapshot.forEach(userDoc => {
+            const notificationRef = doc(notificationsRef);
+            batch.set(notificationRef, {
+                userId: userDoc.id,
+                type: 'announcement',
+                message: activityData.message || `Pengumuman baru: ${activityData.title}`,
+                read: false,
+                timestamp: new Date(),
+                link: `/announcements/${activityData.contentId}`,
+                fromUserId: currentUserId
+            });
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error("Error broadcasting notification:", error);
+    }
+}
 
 
 
