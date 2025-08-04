@@ -6458,6 +6458,7 @@ function getTargetName(targetType) {
 
 
 
+// 5. Perbaikan createActivityNotification dengan validasi lebih baik
 async function createActivityNotification(activityType, activityData) {
     try {
         // Validasi dasar
@@ -6467,6 +6468,7 @@ async function createActivityNotification(activityType, activityData) {
         }
 
         const currentUser = auth.currentUser;
+        const currentUserId = currentUser.uid;
         
         // Validasi contentType untuk semua jenis kecuali announcement
         if (activityType !== 'announcement' && !activityData.contentType) {
@@ -6476,18 +6478,18 @@ async function createActivityNotification(activityType, activityData) {
 
         // Jika pengumuman untuk semua user
         if (activityType === 'announcement' && !activityData.recipientId) {
-            await handleAnnouncementNotification(activityData, currentUser.uid);
+            await sendAnnouncementToAllUsers(activityData, currentUserId);
             return;
         }
 
         // Dapatkan recipientId jika belum ada
         let recipientId = activityData.recipientId;
         if (!recipientId && activityData.contentType && activityData.contentId) {
-            recipientId = await determineRecipientId(activityData);
+            recipientId = await getContentAuthorId(activityData);
         }
 
         // Pastikan recipientId valid dan bukan diri sendiri
-        if (!recipientId || recipientId === currentUser.uid) {
+        if (!recipientId || recipientId === currentUserId) {
             return;
         }
 
@@ -6498,6 +6500,20 @@ async function createActivityNotification(activityType, activityData) {
         console.error("Error dalam createActivityNotification:", error);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6731,16 +6747,21 @@ function getContentTypeName(type) {
 
 
 
-// Setup semua listener
+
+
+// 1. Perbaikan setupAllListeners
 function setupAllListeners(userId) {
     const unsubscribeFunctions = [];
     
-    unsubscribeFunctions.push(setupCommentListeners());
-    unsubscribeFunctions.push(setupLikeListeners());
-    unsubscribeFunctions.push(setupFeedbackListeners());
-    unsubscribeFunctions.push(setupDiscussionListeners());
-    unsubscribeFunctions.push(setupAnnouncementListeners());
-    unsubscribeFunctions.push(setupReactionListeners());
+    // Setup semua listener yang diperlukan
+    unsubscribeFunctions.push(setupCommentListeners(userId));
+    unsubscribeFunctions.push(setupLikeListeners(userId));
+    unsubscribeFunctions.push(setupFeedbackListeners(userId));
+    unsubscribeFunctions.push(setupDiscussionListeners(userId));
+    unsubscribeFunctions.push(setupDiscussionCommentListeners(userId));
+    unsubscribeFunctions.push(setupAnnouncementListeners(userId));
+    unsubscribeFunctions.push(setupReactionListeners(userId));
+    unsubscribeFunctions.push(setupContentUploadListeners(userId));
     
     return () => {
         unsubscribeFunctions.forEach(unsub => {
@@ -6750,10 +6771,6 @@ function setupAllListeners(userId) {
         });
     };
 }
-
-
-
-
 
 
 
@@ -6818,20 +6835,36 @@ function loadRecentActivities(userId) {
 
 
 
-// Fungsi untuk merender aktivitas
-function renderActivities(activities) {
+
+// 6. Perbaikan renderActivities untuk filter tab
+function renderActivities(activities, filterType = 'all') {
     const container = document.getElementById('recentActivity');
     
-    if (activities.length === 0) {
+    // Filter aktivitas berdasarkan jenis
+    let filteredActivities = activities;
+    if (filterType !== 'all') {
+        filteredActivities = activities.filter(activity => {
+            if (filterType === 'comments') {
+                return activity.type === 'comment' || activity.type === 'reply';
+            } else if (filterType === 'reactions') {
+                return activity.type === 'like' || activity.type === 'reaction';
+            } else if (filterType === 'posts') {
+                return activity.type === 'content' || activity.type === 'post';
+            }
+            return true;
+        });
+    }
+    
+    if (filteredActivities.length === 0) {
         container.innerHTML = `
             <div class="empty-activities">
-                <p>Tidak ada aktivitas terkini</p>
+                <p>Tidak ada aktivitas ${getFilterName(filterType)}</p>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = activities.map(activity => `
+    container.innerHTML = filteredActivities.map(activity => `
         <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
             <div class="activity-icon">
                 ${getActivityIcon(activity.type)}
@@ -6855,6 +6888,33 @@ function renderActivities(activities) {
 
 
 
+// 7. Fungsi pembantu baru
+function getFilterName(filterType) {
+    const names = {
+        'all': 'terkini',
+        'comments': 'komentar',
+        'reactions': 'reaksi',
+        'posts': 'postingan'
+    };
+    return names[filterType] || filterType;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function formatActivityContent(activity) {
     switch(activity.type) {
@@ -6871,45 +6931,48 @@ function formatActivityContent(activity) {
     }
 }
 
- document.addEventListener('DOMContentLoaded', () => {
-  // Inisialisasi tab aktivitas
-  const activityTabs = document.querySelectorAll('.activity-tab');
-  activityTabs.forEach(tab => {
-    tab.addEventListener('click', function () {
-      const tabName = this.getAttribute('data-tab');
-      switchActivityTab(tabName);
+
+
+
+
+
+
+// 8. Perbaikan inisialisasi tab
+document.addEventListener('DOMContentLoaded', () => {
+    const activityTabs = document.querySelectorAll('.activity-tab');
+    activityTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchActivityTab(tabName);
+        });
     });
-  });
 
-  // Fungsi untuk switch tab
-  function switchActivityTab(tabName) {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    // Hapus listener sebelumnya
-    if (window.currentActivityUnsubscribe) {
-      window.currentActivityUnsubscribe();
-    }
-
-    // Load data berdasarkan tab
-    switch (tabName) {
-      case 'comments':
-        window.currentActivityUnsubscribe = loadCommentsActivities(userId);
-        break;
-      case 'reactions':
-        window.currentActivityUnsubscribe = loadReactionsActivities(userId);
-        break;
-      case 'posts':
-        window.currentActivityUnsubscribe = loadPostsActivities(userId);
-        break;
-      default:
-        window.currentActivityUnsubscribe = loadAllActivities(userId);
-    }
-  }
-
-  // Default load tab pertama
-  switchActivityTab('all');
+    // Default load tab pertama
+    switchActivityTab('all');
 });
+
+function switchActivityTab(tabName) {
+    // Update UI tab
+    document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.activity-tab[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update konten
+    document.querySelectorAll('.activity-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`${tabName}Activity`).classList.add('active');
+    
+    // Render ulang dengan filter
+    renderActivities(activities, tabName);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7115,9 +7178,8 @@ function setupReactionListeners() {
 
 
 
-
-
-function setupCommentListeners() {
+// 2. Perbaikan setupCommentListeners
+function setupCommentListeners(userId) {
     const commentsRef = collection(db, "arduinoHistoryComments");
     return onSnapshot(commentsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
@@ -7125,29 +7187,22 @@ function setupCommentListeners() {
                 const newComment = change.doc.data();
                 
                 // Validasi data komentar
-                if (!newComment.userId || newComment.userId === auth.currentUser?.uid) {
-                    return;
-                }
-
-                // Pastikan historyId ada
-                if (!newComment.historyId) {
-                    console.error("Komentar tidak memiliki historyId:", change.doc.id);
+                if (!newComment.userId || newComment.userId === userId || !newComment.historyId) {
                     return;
                 }
 
                 // Dapatkan recipientId (pemilik konten atau komentar yang dibalas)
                 const recipientId = newComment.replyTo || newComment.contentAuthorId;
-                if (!recipientId) {
-                    console.error("Tidak dapat menentukan penerima notifikasi untuk komentar:", change.doc.id);
-                    return;
-                }
+                if (!recipientId) return;
 
                 // Buat notifikasi
                 createActivityNotification('comment', {
                     contentType: 'arduinoHistory',
                     contentId: newComment.historyId,
                     commentId: change.doc.id,
-                    recipientId: recipientId
+                    recipientId: recipientId,
+                    senderId: newComment.userId,
+                    senderName: newComment.userName || 'Pengguna'
                 });
             }
         });
@@ -7156,45 +7211,74 @@ function setupCommentListeners() {
     });
 }
 
-
-
-
-
-function setupLikeListeners() {
+// 3. Perbaikan setupLikeListeners
+function setupLikeListeners(userId) {
     const likesRef = collectionGroup(db, "likes");
     return onSnapshot(likesRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
                 const newLike = change.doc.data();
-                if (newLike.userId !== auth.currentUser?.uid) {
-                    // Dapatkan path lengkap untuk menentukan contentType
-                    const pathParts = change.doc.ref.parent.parent?.path.split('/');
-                    if (!pathParts || pathParts.length < 2) {
-                        console.error("Struktur path tidak valid");
-                        return;
-                    }
-                    
-                    const contentType = pathParts[0];
-                    const contentId = pathParts[1];
+                if (newLike.userId === userId) return;
 
-                    createActivityNotification('like', {
-                        contentType,
-                        contentId,
-                        recipientId: newLike.targetUserId
-                    });
-                }
+                // Dapatkan path lengkap untuk menentukan contentType
+                const pathParts = change.doc.ref.parent.parent?.path.split('/');
+                if (!pathParts || pathParts.length < 2) return;
+                
+                const contentType = pathParts[0];
+                const contentId = pathParts[1];
+
+                createActivityNotification('like', {
+                    contentType: contentType,
+                    contentId: contentId,
+                    recipientId: newLike.targetUserId,
+                    senderId: newLike.userId,
+                    senderName: newLike.userName || 'Pengguna'
+                });
             }
         });
     });
 }
 
+// 4. Listener baru untuk upload konten
+function setupContentUploadListeners(userId) {
+    const contentTypes = ['arduinoHistory', 'announcements', 'feedback', 'discussions'];
+    const unsubscribeFunctions = [];
+    
+    contentTypes.forEach(type => {
+        const ref = collection(db, type);
+        const unsubscribe = onSnapshot(ref, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const newContent = change.doc.data();
+                    if (newContent.userId === userId) return;
 
-
-
-
-
-
-
+                    // Untuk admin saja jika bukan pengumuman
+                    if (type !== 'announcements') {
+                        createActivityNotification('content', {
+                            contentType: type,
+                            contentId: change.doc.id,
+                            recipientId: ADMIN_EMAIL,
+                            senderId: newContent.userId,
+                            senderName: newContent.userName || 'Pengguna',
+                            title: newContent.title || 'Konten Baru'
+                        });
+                    } else {
+                        // Pengumuman untuk semua user
+                        createActivityNotification('announcement', {
+                            contentType: type,
+                            contentId: change.doc.id,
+                            message: `Pengumuman baru: ${newContent.title}`,
+                            title: newContent.title
+                        });
+                    }
+                }
+            });
+        });
+        unsubscribeFunctions.push(unsubscribe);
+    });
+    
+    return () => unsubscribeFunctions.forEach(fn => fn());
+}
 
 
 
