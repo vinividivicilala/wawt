@@ -6807,31 +6807,6 @@ async function sendAnnouncementToAllUsers(activityData, senderId) {
 
 
 
-
-
-// Fungsi pembantu untuk mengirim pengumuman ke semua user
-async function sendAnnouncementToAllUsers(activityData, currentUserId) {
-    const usersSnapshot = await getDocs(collection(db, "users"));
-    const batch = writeBatch(db);
-
-    usersSnapshot.forEach(userDoc => {
-        if (userDoc.id !== currentUserId) {
-            const notificationRef = doc(collection(db, "notifications"));
-            batch.set(notificationRef, {
-                userId: userDoc.id,
-                type: 'announcement',
-                message: activityData.message || `Pengumuman baru: ${activityData.title}`,
-                read: false,
-                timestamp: new Date(),
-                link: `/announcements/${activityData.contentId}`,
-                fromUserId: currentUserId
-            });
-        }
-    });
-
-    await batch.commit();
-}
-
 // Fungsi pembantu untuk mendapatkan author ID dari konten
 async function getContentAuthorId(activityData) {
     try {
