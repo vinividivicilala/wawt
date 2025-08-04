@@ -5292,6 +5292,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	 let userRef = null;
 	 
 	 let currentActivities = []
+	 let currentUnsubscribe = null; // agar bisa hentikan listener sebelumnya
+
 
  
     
@@ -7000,10 +7002,6 @@ function formatActivityContent(activity) {
 
 
 
-
-
-
-// Fungsi untuk memuat semua aktivitas
 function loadAllActivities(userId) {
     const q = query(
         collection(db, "activities"),
@@ -7011,11 +7009,9 @@ function loadAllActivities(userId) {
         orderBy("timestamp", "desc"),
         limit(15)
     );
-    
-    return setupActivitiesListener(q);
+    return setupActivitiesListener(q, 'all'); // ✅
 }
 
-// Fungsi untuk memuat aktivitas komentar saja
 function loadCommentsActivities(userId) {
     const q = query(
         collection(db, "activities"),
@@ -7024,18 +7020,36 @@ function loadCommentsActivities(userId) {
         orderBy("timestamp", "desc"),
         limit(15)
     );
-    
-    return setupActivitiesListener(q);
+    return setupActivitiesListener(q, 'comments'); // ✅
+}
+
+function loadReactionActivities(userId) {
+    const q = query(
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        where("type", "in", ["like", "reaction"]),
+        orderBy("timestamp", "desc"),
+        limit(15)
+    );
+    return setupActivitiesListener(q, 'reactions'); // ✅
+}
+
+function loadPostActivities(userId) {
+    const q = query(
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        where("type", "in", ["content", "post", "feedback", "discussion"]),
+        orderBy("timestamp", "desc"),
+        limit(15)
+    );
+    return setupActivitiesListener(q, 'posts'); // ✅
 }
 
 
 
 
 
-
-
-// Fungsi dasar untuk listener aktivitas
-function setupActivitiesListener(query) {
+function setupActivitiesListener(query, filterType = 'all') {
     return onSnapshot(query, 
         (snapshot) => {
             const activities = [];
@@ -7046,7 +7060,7 @@ function setupActivitiesListener(query) {
                     timestamp: doc.data().timestamp?.toDate() || new Date()
                 });
             });
-            renderActivities(activities);
+            renderActivities(activities, filterType); // ✅ tambahkan filterType
         },
         (error) => {
             console.error("Activities listener error:", error);
@@ -7058,6 +7072,48 @@ function setupActivitiesListener(query) {
         }
     );
 }
+
+
+
+
+
+
+function setupActivityTabs(userId) {
+    document.querySelectorAll('.activity-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            const filter = this.getAttribute('data-filter');
+
+            // Hapus class aktif di semua
+            document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            if (currentUnsubscribe) currentUnsubscribe(); // stop listener sebelumnya
+
+            switch (filter) {
+                case 'comments':
+                    currentUnsubscribe = loadCommentsActivities(userId);
+                    break;
+                case 'reactions':
+                    currentUnsubscribe = loadReactionActivities(userId);
+                    break;
+                case 'posts':
+                    currentUnsubscribe = loadPostActivities(userId);
+                    break;
+                default:
+                    currentUnsubscribe = loadAllActivities(userId);
+            }
+        });
+    });
+
+    // Load default tab
+    currentUnsubscribe = loadAllActivities(userId);
+}
+
+
+
+
+
+
 
 
 
