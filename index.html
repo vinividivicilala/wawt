@@ -5290,6 +5290,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let activities = [];
     let unsubscribeFunctions = [];
 	 let userRef = null;
+	 
+	 let currentActivities = []
 
  
     
@@ -5407,19 +5409,31 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 
-// 8. Perbaikan inisialisasi tab
-document.addEventListener('DOMContentLoaded', () => {
-    const activityTabs = document.querySelectorAll('.activity-tab');
-    activityTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
-            switchActivityTab(tabName);
-        });
-    });
+document.querySelectorAll('.activity-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
 
-    // Default load tab pertama
-    switchActivityTab('all');
+    const tabType = tab.dataset.tab;
+    document.querySelectorAll('.activity-tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`${tabType}Activity`).classList.add('active');
+
+    // Render ulang dengan filter
+    renderActivities(currentActivities, tabType);
+  });
 });
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Perbaikan fungsi switchActivityTab
@@ -5442,7 +5456,23 @@ function switchActivityTab(tabName) {
 	
 	
 	
-	
+	async function logActivity({ type, contentId, contentType, description }) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const activity = {
+    userId: user.uid,
+    userName: user.displayName,
+    userPhoto: user.photoURL || "",
+    type, // e.g. "comment", "reply", "like", "emoji", "upload"
+    contentId,
+    contentType, // e.g. "announcement", "arduinoHistory", "discussion", "feedback"
+    description,
+    timestamp: serverTimestamp()
+  };
+
+  await addDoc(collection(db, "activities"), activity);
+}
 	
 	
 	
@@ -6772,30 +6802,19 @@ function validateActivityData(data) {
     };
 }
 
-
-
-
-// 1. Perbaikan setupAllListeners
 function setupAllListeners(userId) {
-    const unsubscribeFunctions = [];
-    
-    // Setup semua listener yang diperlukan
-    unsubscribeFunctions.push(setupCommentListeners(userId));
-    unsubscribeFunctions.push(setupLikeListeners(userId));
-    unsubscribeFunctions.push(setupFeedbackListeners(userId));
-    unsubscribeFunctions.push(setupDiscussionListeners(userId));
-    unsubscribeFunctions.push(setupDiscussionCommentListeners(userId));
-    unsubscribeFunctions.push(setupAnnouncementListeners(userId));
-    unsubscribeFunctions.push(setupReactionListeners(userId));
-    unsubscribeFunctions.push(setupContentUploadListeners(userId));
-    
-    return () => {
-        unsubscribeFunctions.forEach(unsub => {
-            if (unsub && typeof unsub === 'function') {
-                unsub();
-            }
-        });
-    };
+  const unsubscribes = [
+    setupCommentListeners(userId),
+    setupLikeListeners(userId),
+    setupFeedbackListeners(userId),
+    setupDiscussionListeners(userId),
+    setupDiscussionCommentListeners(userId),
+    setupAnnouncementListeners(userId),
+    setupReactionListeners(userId),
+    setupContentUploadListeners(userId),
+    setupActivityListeners(userId), // tambahan penting
+  ];
+  return () => unsubscribes.forEach(fn => fn && fn());
 }
 
 
@@ -6806,135 +6825,93 @@ function setupAllListeners(userId) {
 
 
 
-// Fungsi untuk memuat aktivitas terkini
+
 function loadRecentActivities(userId) {
-    if (!userId) {
-        console.error("User ID tidak valid");
-        return;
-    }
+  const q = query(collection(db, "activities"), where("userId", "==", userId), orderBy("timestamp", "desc"));
 
-    const activitiesContainer = document.getElementById('recentActivity');
-    activitiesContainer.innerHTML = '<div class="loading-text">Memuat aktivitas...</div>';
+  onSnapshot(q, (snapshot) => {
+    currentActivities = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    }));
 
-    // Gabungkan query dari berbagai sumber
-    const activitiesQuery = query(
-        collection(db, "activities"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(10)
-    );
-
-    const unsubscribe = onSnapshot(activitiesQuery, 
-        (snapshot) => {
-            const activities = [];
-            
-            snapshot.forEach(doc => {
-                try {
-                    const data = doc.data();
-                    activities.push({
-                        id: doc.id,
-                        type: data.type || 'activity',
-                        content: data.content || '',
-                        timestamp: data.timestamp?.toDate() || new Date(),
-                        targetId: data.targetId,
-                        targetType: data.targetType
-                    });
-                } catch (error) {
-                    console.error("Error processing activity:", error);
-                }
-            });
-
-            renderActivities(activities);
-        },
-        (error) => {
-            console.error("Error loading activities:", error);
-            activitiesContainer.innerHTML = `
-                <div class="error-message">
-                    Gagal memuat aktivitas. Silakan refresh halaman.
-                </div>
-            `;
-        }
-    );
-
-    return unsubscribe;
+    renderActivities(currentActivities, 'all');
+  }, (error) => {
+    console.error("Gagal memuat aktivitas:", error);
+    document.getElementById("allActivity").innerHTML = `<div class="error-message">Gagal memuat aktivitas.</div>`;
+  });
 }
 
 
 
 
 
-// 3. Perbaikan fungsi renderActivities dengan validasi lebih ketat
-function renderActivities(activitiesList, filterType = 'all') {
-    const container = document.getElementById('recentActivity');
-    if (!container) return;
-    
-    // Validasi input
-    if (!Array.isArray(activitiesList)) {
-        console.error("activitiesList harus berupa array");
-        return;
+
+
+
+
+
+
+
+
+
+
+function renderActivities(activities, filter = 'all') {
+  const containerMap = {
+    all: document.getElementById("allActivity"),
+    comments: document.getElementById("commentsActivity"),
+    reactions: document.getElementById("reactionsActivity"),
+    posts: document.getElementById("postsActivity")
+  };
+
+  const container = containerMap[filter];
+  if (!container) return;
+
+  const filtered = activities.filter(activity => {
+    if (!activity?.type) return false;
+    switch (filter) {
+      case 'comments': return ['comment', 'reply'].includes(activity.type);
+      case 'reactions': return ['like', 'reaction'].includes(activity.type);
+      case 'posts': return ['content', 'post', 'feedback', 'discussion', 'announcement'].includes(activity.type);
+      default: return true;
     }
+  });
 
-    // Filter aktivitas
-    let filteredActivities = activitiesList.filter(activity => {
-        if (!activity || !activity.type) return false;
-        
-        switch(filterType) {
-            case 'comments':
-                return activity.type === 'comment' || activity.type === 'reply';
-            case 'reactions':
-                return activity.type === 'like' || activity.type === 'reaction';
-            case 'posts':
-                return activity.type === 'content' || activity.type === 'post' || 
-                       activity.type === 'feedback' || activity.type === 'discussion';
-            default:
-                return true;
-        }
-    });
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-activities"><p>Tidak ada aktivitas ${getFilterName(filter)}</p></div>`;
+    return;
+  }
 
-    // Handle empty state
-    if (filteredActivities.length === 0) {
-        container.innerHTML = `
-            <div class="empty-activities">
-                <p>Tidak ada aktivitas ${getFilterName(filterType)}</p>
-            </div>
-        `;
-        return;
-    }
-
-    // Render activities
-    container.innerHTML = filteredActivities.map(activity => {
-        // Validasi data activity
-        const safeActivity = {
-            type: activity.type || 'activity',
-            id: activity.id || 'unknown',
-            timestamp: activity.timestamp instanceof Date ? activity.timestamp : new Date(),
-            content: activity.content || ''
-        };
-        
-        return `
-            <div class="activity-item" data-type="${safeActivity.type}" data-id="${safeActivity.id}">
-                <div class="activity-icon">
-                    ${getActivityIcon(safeActivity.type)}
-                </div>
-                <div class="activity-content">
-                    <p>${formatActivityContent(safeActivity)}</p>
-                    <small>${formatTimeAgo(safeActivity.timestamp)}</small>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    // Add event listeners
-    document.querySelectorAll('.activity-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const type = this.getAttribute('data-type');
-            const id = this.getAttribute('data-id');
-            if (type && id) {
-                navigateToActivity(type, id);
-            }
-        });
-    });
+  container.innerHTML = filtered.map(act => `
+    <div class="activity-item" data-type="${act.type}" data-id="${act.id}">
+      <div class="activity-icon">${getActivityIcon(act.type)}</div>
+      <div class="activity-content">
+        <p>${formatActivityContent(act)}</p>
+        <small>${formatTimeAgo(act.timestamp)}</small>
+      </div>
+    </div>
+  `).join('');
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // 4. Perbaikan fungsi formatTimeAgo dengan validasi
 function formatTimeAgo(date) {
