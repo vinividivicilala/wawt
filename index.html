@@ -5363,7 +5363,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        let unsubscribeFunctions = [];
+	
+	  // Reset variabel saat user berubah
+            activities = [];
+            notifications = [];
+            unsubscribeFunctions = [];
+    
         
         // Load data awal
         loadUserProfile(user);
@@ -5394,6 +5399,8 @@ onAuthStateChanged(auth, (user) => {
         // Handle case ketika user logout
         notifications = [];
         updateNotificationUI([], 0);
+		 activities = [];
+		  renderActivities([]);
     }
 });	
 	
@@ -6836,25 +6843,36 @@ function loadRecentActivities(userId) {
 
 
 
-// 6. Perbaikan renderActivities untuk filter tab
-function renderActivities(activities, filterType = 'all') {
+
+// 3. Perbaikan fungsi renderActivities dengan validasi lebih ketat
+function renderActivities(activitiesList, filterType = 'all') {
     const container = document.getElementById('recentActivity');
+    if (!container) return;
     
-    // Filter aktivitas berdasarkan jenis
-    let filteredActivities = activities;
-    if (filterType !== 'all') {
-        filteredActivities = activities.filter(activity => {
-            if (filterType === 'comments') {
-                return activity.type === 'comment' || activity.type === 'reply';
-            } else if (filterType === 'reactions') {
-                return activity.type === 'like' || activity.type === 'reaction';
-            } else if (filterType === 'posts') {
-                return activity.type === 'content' || activity.type === 'post';
-            }
-            return true;
-        });
+    // Validasi input
+    if (!Array.isArray(activitiesList)) {
+        console.error("activitiesList harus berupa array");
+        return;
     }
-    
+
+    // Filter aktivitas
+    let filteredActivities = activitiesList.filter(activity => {
+        if (!activity || !activity.type) return false;
+        
+        switch(filterType) {
+            case 'comments':
+                return activity.type === 'comment' || activity.type === 'reply';
+            case 'reactions':
+                return activity.type === 'like' || activity.type === 'reaction';
+            case 'posts':
+                return activity.type === 'content' || activity.type === 'post' || 
+                       activity.type === 'feedback' || activity.type === 'discussion';
+            default:
+                return true;
+        }
+    });
+
+    // Handle empty state
     if (filteredActivities.length === 0) {
         container.innerHTML = `
             <div class="empty-activities">
@@ -6864,27 +6882,72 @@ function renderActivities(activities, filterType = 'all') {
         return;
     }
 
-    container.innerHTML = filteredActivities.map(activity => `
-        <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
-            <div class="activity-icon">
-                ${getActivityIcon(activity.type)}
+    // Render activities
+    container.innerHTML = filteredActivities.map(activity => {
+        // Validasi data activity
+        const safeActivity = {
+            type: activity.type || 'activity',
+            id: activity.id || 'unknown',
+            timestamp: activity.timestamp instanceof Date ? activity.timestamp : new Date(),
+            content: activity.content || ''
+        };
+        
+        return `
+            <div class="activity-item" data-type="${safeActivity.type}" data-id="${safeActivity.id}">
+                <div class="activity-icon">
+                    ${getActivityIcon(safeActivity.type)}
+                </div>
+                <div class="activity-content">
+                    <p>${formatActivityContent(safeActivity)}</p>
+                    <small>${formatTimeAgo(safeActivity.timestamp)}</small>
+                </div>
             </div>
-            <div class="activity-content">
-                <p>${formatActivityContent(activity)}</p>
-                <small>${formatTimeAgo(activity.timestamp)}</small>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
-    // Tambahkan event listeners
+    // Add event listeners
     document.querySelectorAll('.activity-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const type = item.getAttribute('data-type');
-            const id = item.getAttribute('data-id');
-            navigateToActivity(type, id);
+        item.addEventListener('click', function() {
+            const type = this.getAttribute('data-type');
+            const id = this.getAttribute('data-id');
+            if (type && id) {
+                navigateToActivity(type, id);
+            }
         });
     });
 }
+
+// 4. Perbaikan fungsi formatTimeAgo dengan validasi
+function formatTimeAgo(date) {
+    if (!(date instanceof Date)) {
+        console.error("Parameter date harus berupa instance Date");
+        return '';
+    }
+    
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Baru saja';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+    
+    return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
