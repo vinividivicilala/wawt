@@ -6218,6 +6218,106 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
+	async function setupEmojiReactions(user, contentId = 'arduino-history') {
+    const emojiOptions = document.querySelectorAll('.emoji-option');
+    const reactionMessage = document.querySelector('.reaction-message');
+    const loginMessage = document.querySelector('.login-message');
+
+    reactionMessage.style.display = 'none';
+    loginMessage.style.display = 'none';
+
+    if (!user) {
+        loginMessage.style.display = 'block';
+        emojiOptions.forEach(option => {
+            option.style.opacity = '0.5';
+            option.style.cursor = 'not-allowed';
+            option.addEventListener('click', e => {
+                e.preventDefault();
+                loginMessage.style.opacity = 1;
+                setTimeout(() => loginMessage.style.opacity = 0.7, 2000);
+            });
+        });
+        return;
+    }
+
+    const reactionDocRef = doc(db, 'reactions', contentId);
+    const userReactionRef = doc(db, 'userReactions', `${user.uid}_${contentId}`);
+
+    // Realtime listener
+    onSnapshot(reactionDocRef, (snapshot) => {
+        const data = snapshot.data();
+        if (data) {
+            Object.keys(data).forEach(emoji => {
+                const el = document.getElementById(`${emoji}-count`);
+                if (el) el.textContent = data[emoji];
+            });
+        }
+    });
+
+    let userReaction = null;
+    const userReactionSnap = await getDoc(userReactionRef);
+    if (userReactionSnap.exists()) {
+        userReaction = userReactionSnap.data().emojiType;
+        const selected = document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`);
+        if (selected) selected.classList.add('selected');
+    }
+
+    emojiOptions.forEach(option => {
+        option.addEventListener('click', async function () {
+            const emojiType = this.dataset.emoji;
+            if (userReaction === emojiType) return;
+
+            emojiOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+
+            const updates = {};
+            if (userReaction) updates[userReaction] = increment(-1);
+            updates[emojiType] = increment(1);
+
+            await updateDoc(reactionDocRef, updates).catch(async () => {
+                await setDoc(reactionDocRef, updates, { merge: true });
+            });
+
+            await setDoc(userReactionRef, {
+                userId: user.uid,
+                contentId,
+                emojiType,
+                timestamp: Date.now()
+            });
+
+            userReaction = emojiType;
+
+          // Di dalam fungsi setupEmojiReactions, ganti bagian createNotification dengan:
+await createActivityNotification(
+    '9k1G7CiLZWNCkadVn3m8ZZRaQwg1', // Ganti dengan ID pemilik konten yang sebenarnya
+    'reaction',
+    user.uid,
+    user.displayName || 'Pengguna',
+    emojiType,
+    contentId.includes('arduino') ? 'arduino-history' : 'content',
+    contentId
+);
+
+            // ✅ Aktivitas pengguna
+            await addDoc(collection(db, "activities"), {
+                userId: user.uid,
+                type: "reaction",
+                emojiType,
+                contentId,
+                timestamp: Date.now()
+            });
+
+            // ✅ Pesan sukses
+            reactionMessage.style.display = 'block';
+            reactionMessage.style.opacity = 1;
+            setTimeout(() => reactionMessage.style.opacity = 0.7, 2000);
+        });
+    });
+}
+	
+	
+	
+	
 	
 	
 	
@@ -8438,106 +8538,6 @@ function setupActivitiesListener(query, filterType = 'all') {
     const followBtn = document.getElementById("followBtn");
 	
 	
-	
-	
-	
-	
-	async function setupEmojiReactions(user, contentId = 'arduino-history') {
-    const emojiOptions = document.querySelectorAll('.emoji-option');
-    const reactionMessage = document.querySelector('.reaction-message');
-    const loginMessage = document.querySelector('.login-message');
-
-    reactionMessage.style.display = 'none';
-    loginMessage.style.display = 'none';
-
-    if (!user) {
-        loginMessage.style.display = 'block';
-        emojiOptions.forEach(option => {
-            option.style.opacity = '0.5';
-            option.style.cursor = 'not-allowed';
-            option.addEventListener('click', e => {
-                e.preventDefault();
-                loginMessage.style.opacity = 1;
-                setTimeout(() => loginMessage.style.opacity = 0.7, 2000);
-            });
-        });
-        return;
-    }
-
-    const reactionDocRef = doc(db, 'reactions', contentId);
-    const userReactionRef = doc(db, 'userReactions', `${user.uid}_${contentId}`);
-
-    // Realtime listener
-    onSnapshot(reactionDocRef, (snapshot) => {
-        const data = snapshot.data();
-        if (data) {
-            Object.keys(data).forEach(emoji => {
-                const el = document.getElementById(`${emoji}-count`);
-                if (el) el.textContent = data[emoji];
-            });
-        }
-    });
-
-    let userReaction = null;
-    const userReactionSnap = await getDoc(userReactionRef);
-    if (userReactionSnap.exists()) {
-        userReaction = userReactionSnap.data().emojiType;
-        const selected = document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`);
-        if (selected) selected.classList.add('selected');
-    }
-
-    emojiOptions.forEach(option => {
-        option.addEventListener('click', async function () {
-            const emojiType = this.dataset.emoji;
-            if (userReaction === emojiType) return;
-
-            emojiOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-
-            const updates = {};
-            if (userReaction) updates[userReaction] = increment(-1);
-            updates[emojiType] = increment(1);
-
-            await updateDoc(reactionDocRef, updates).catch(async () => {
-                await setDoc(reactionDocRef, updates, { merge: true });
-            });
-
-            await setDoc(userReactionRef, {
-                userId: user.uid,
-                contentId,
-                emojiType,
-                timestamp: Date.now()
-            });
-
-            userReaction = emojiType;
-
-          // Di dalam fungsi setupEmojiReactions, ganti bagian createNotification dengan:
-await createActivityNotification(
-    '9k1G7CiLZWNCkadVn3m8ZZRaQwg1', // Ganti dengan ID pemilik konten yang sebenarnya
-    'reaction',
-    user.uid,
-    user.displayName || 'Pengguna',
-    emojiType,
-    contentId.includes('arduino') ? 'arduino-history' : 'content',
-    contentId
-);
-
-            // ✅ Aktivitas pengguna
-            await addDoc(collection(db, "activities"), {
-                userId: user.uid,
-                type: "reaction",
-                emojiType,
-                contentId,
-                timestamp: Date.now()
-            });
-
-            // ✅ Pesan sukses
-            reactionMessage.style.display = 'block';
-            reactionMessage.style.opacity = 1;
-            setTimeout(() => reactionMessage.style.opacity = 0.7, 2000);
-        });
-    });
-}
 	
 	
 	
