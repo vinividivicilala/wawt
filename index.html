@@ -5406,6 +5406,39 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
+
+// 8. Perbaikan inisialisasi tab
+document.addEventListener('DOMContentLoaded', () => {
+    const activityTabs = document.querySelectorAll('.activity-tab');
+    activityTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchActivityTab(tabName);
+        });
+    });
+
+    // Default load tab pertama
+    switchActivityTab('all');
+});
+
+
+// Perbaikan fungsi switchActivityTab
+function switchActivityTab(tabName) {
+    if (!activities) activities = []; // Pastikan activities terdefinisi
+    
+    // Update UI tab
+    document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.activity-tab[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update konten
+    document.querySelectorAll('.activity-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`${tabName}Activity`).classList.add('active');
+    
+    // Render ulang dengan filter
+    renderActivities(activities, tabName);
+}
+
+
 	
 	
 	
@@ -6994,38 +7027,6 @@ function formatActivityContent(activity) {
     }
 }
 
-
-
-
-
-
-
-// 8. Perbaikan inisialisasi tab
-document.addEventListener('DOMContentLoaded', () => {
-    const activityTabs = document.querySelectorAll('.activity-tab');
-    activityTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
-            switchActivityTab(tabName);
-        });
-    });
-
-    // Default load tab pertama
-    switchActivityTab('all');
-});
-
-function switchActivityTab(tabName) {
-    // Update UI tab
-    document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`.activity-tab[data-tab="${tabName}"]`).classList.add('active');
-    
-    // Update konten
-    document.querySelectorAll('.activity-tab-content').forEach(c => c.classList.remove('active'));
-    document.getElementById(`${tabName}Activity`).classList.add('active');
-    
-    // Render ulang dengan filter
-    renderActivities(activities, tabName);
-}
 
 
 
