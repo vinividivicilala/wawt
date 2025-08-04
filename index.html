@@ -5414,6 +5414,53 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
+	
+function setupActivityTabs(userId) {
+    document.querySelectorAll('.activity-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            const filter = this.getAttribute('data-tab');
+
+            // Hapus class aktif dari semua tab
+            document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            // Tampilkan hanya konten yang sesuai
+            document.querySelectorAll('.activity-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(filter + 'Activity').classList.add('active');
+
+            // Hentikan listener lama
+            if (currentUnsubscribe) currentUnsubscribe();
+
+            // Muat data sesuai filter
+            switch (filter) {
+                case 'comments':
+                    currentUnsubscribe = loadCommentsActivities(userId);
+                    break;
+                case 'reactions':
+                    currentUnsubscribe = loadReactionActivities(userId);
+                    break;
+                case 'posts':
+                    currentUnsubscribe = loadPostActivities(userId);
+                    break;
+                default:
+                    currentUnsubscribe = loadAllActivities(userId);
+            }
+        });
+    });
+
+    // Load default
+    currentUnsubscribe = loadAllActivities(userId);
+    document.getElementById('allActivity').classList.add('active');
+}
+	
+	
+	
+	
+	
+	
+	
 
 document.querySelectorAll('.activity-tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -6134,17 +6181,26 @@ function renderRecentActivity(activities) {
 
 
 
-// Fungsi pembantu untuk aktivitas
+
+
 function getActivityIcon(type) {
-    const icons = {
-        'feedback': '💡',
-        'discussion': '💬',
-        'comment': '✏️',
-        'like': '👍',
-        'reply': '↩️'
-    };
-    return icons[type] || '🔔';
+    switch (type) {
+        case 'comment':
+        case 'reply':
+            return '<i class="fas fa-comment-dots"></i>';
+        case 'like':
+        case 'reaction':
+            return '<i class="fas fa-heart"></i>';
+        case 'post':
+        case 'feedback':
+        case 'discussion':
+        case 'content':
+            return '<i class="fas fa-pen"></i>';
+        default:
+            return '<i class="fas fa-bell"></i>';
+    }
 }
+
 
 
 
@@ -7141,45 +7197,6 @@ function setupActivitiesListener(query, filterType = 'all') {
 
 
 
-function setupActivityTabs(userId) {
-    document.querySelectorAll('.activity-tab').forEach(tab => {
-        tab.addEventListener('click', function () {
-            const filter = this.getAttribute('data-tab');
-
-            // Hapus class aktif dari semua tab
-            document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-
-            // Tampilkan hanya konten yang sesuai
-            document.querySelectorAll('.activity-tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(filter + 'Activity').classList.add('active');
-
-            // Hentikan listener lama
-            if (currentUnsubscribe) currentUnsubscribe();
-
-            // Muat data sesuai filter
-            switch (filter) {
-                case 'comments':
-                    currentUnsubscribe = loadCommentsActivities(userId);
-                    break;
-                case 'reactions':
-                    currentUnsubscribe = loadReactionActivities(userId);
-                    break;
-                case 'posts':
-                    currentUnsubscribe = loadPostActivities(userId);
-                    break;
-                default:
-                    currentUnsubscribe = loadAllActivities(userId);
-            }
-        });
-    });
-
-    // Load default
-    currentUnsubscribe = loadAllActivities(userId);
-    document.getElementById('allActivity').classList.add('active');
-}
 
 
 
