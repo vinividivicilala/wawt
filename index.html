@@ -8572,14 +8572,15 @@ function setupComments() {
         }
         
         // Buat data balasan
-        const replyData = {
-          id: doc(commentsCollection).id, // Generate ID baru
-          content,
-          userName,
-          userId: user.uid,
-          likes: 0,
-          timestamp: serverTimestamp()
-        };
+      const replyData = {
+  id: doc(commentsCollection).id,
+  content,
+  userName,
+  userId: user.uid,
+  likes: 0,
+  timestamp: new Date() // ✅ timestamp yang valid untuk arrayUnion
+};
+
         
         try {
           // Tambahkan balasan ke Firestore
