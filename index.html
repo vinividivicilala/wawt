@@ -6773,18 +6773,27 @@ function generateNotificationContent(activityType, activityData, currentUserName
 
 
 
-
-
 function getContentTypeName(type) {
-    const names = {
-        'arduinoHistory': 'catatan Arduino',
-        'discussions': 'diskusi',
-        'feedback': 'feedback',
-        'announcements': 'pengumuman'
+    const typeMap = {
+        'arduinoHistory': 'Sejarah Arduino',
+        'discussions': 'Diskusi',
+        'feedback': 'Feedback',
+        'announcements': 'Pengumuman',
+        'unknown': 'Konten'
     };
-    return names[type] || type;
+    return typeMap[type] || type;
 }
 
+function validateActivityData(data) {
+    return {
+        id: data.id || 'unknown',
+        type: data.type || 'activity',
+        timestamp: data.timestamp instanceof Date ? data.timestamp : new Date(),
+        content: data.content || '',
+        targetId: data.targetId || null,
+        targetType: data.targetType || null
+    };
+}
 
 
 
@@ -7220,24 +7229,59 @@ function setupAnnouncementListeners() {
 }
 
 
-function setupReactionListeners() {
+function setupReactionListeners(userId) {
     const reactionsRef = collection(db, "reactions");
     return onSnapshot(reactionsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
                 const newReaction = change.doc.data();
-                if (newReaction.userId !== auth.currentUser?.uid) {
+                
+                // Validasi data reaksi
+                if (!newReaction.contentType) {
+                    console.warn("Reaction missing contentType:", newReaction);
+                    newReaction.contentType = 'unknown';
+                }
+                
+                if (newReaction.userId !== userId) {
                     createActivityNotification('reaction', {
                         contentType: newReaction.contentType,
                         contentId: newReaction.contentId,
                         recipientId: newReaction.contentAuthorId,
-                        emoji: newReaction.emoji
+                        emoji: newReaction.emoji,
+                        senderId: newReaction.userId,
+                        senderName: newReaction.userName || 'Pengguna'
                     });
                 }
             }
         });
     });
 }
+
+// Perbaikan pada fungsi yang memproses timestamp
+function processActivityData(doc) {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        type: data.type || 'activity',
+        content: data.content || '',
+        timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
+        targetId: data.targetId || null,
+        targetType: data.targetType || null
+    };
+}
+
+// Gunakan dalam listener
+const unsubscribe = onSnapshot(activitiesQuery, (snapshot) => {
+    activities = []; // Reset activities array
+    snapshot.forEach(doc => {
+        try {
+            activities.push(processActivityData(doc));
+        } catch (error) {
+            console.error("Error processing activity:", error);
+        }
+    });
+    renderActivities(activities);
+});
 
 
 
