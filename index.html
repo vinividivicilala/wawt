@@ -5418,6 +5418,76 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
+
+// Fungsi untuk membuat notifikasi
+async function createActivityNotification(activityType, activityData) {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    // Validasi data
+    if (!activityType || !activityData) {
+      console.error("Data tidak lengkap untuk membuat notifikasi");
+      return;
+    }
+
+    // Skip jika sudah diproses
+    if (processedNotificationIds.has(activityData.contentId + activityType)) {
+      return;
+    }
+    processedNotificationIds.add(activityData.contentId + activityType);
+
+    // Handle pengumuman untuk semua user
+    if (activityType === 'announcement' && !activityData.recipientId) {
+      await sendAnnouncementToAllUsers(activityData, currentUser.uid);
+      return;
+    }
+
+    // Dapatkan penerima notifikasi
+    let recipientId = activityData.recipientId;
+    if (!recipientId && activityData.contentType && activityData.contentId) {
+      recipientId = await getContentAuthorId(activityData);
+    }
+
+    if (!recipientId) return;
+
+    // Buat notifikasi
+    const notificationRef = doc(collection(db, "notifications"));
+    const notificationData = {
+      id: notificationRef.id,
+      userId: recipientId,
+      type: activityType,
+      read: false,
+      timestamp: new Date(),
+      fromUserId: currentUser.uid,
+      fromUserName: currentUser.displayName || 'Pengguna',
+      ...generateNotificationContent(activityType, activityData, currentUser.displayName || 'Pengguna')
+    };
+
+    await setDoc(notificationRef, notificationData);
+
+    // Juga simpan sebagai aktivitas
+    await logActivity({
+      type: activityType,
+      contentId: activityData.contentId,
+      contentType: activityData.contentType,
+      description: notificationData.message
+    });
+
+  } catch (error) {
+    console.error("Error dalam createActivityNotification:", error);
+  }
+}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 function setupActivityTabs(userId) {
     document.querySelectorAll('.activity-tab').forEach(tab => {
         tab.addEventListener('click', function () {
@@ -6548,66 +6618,6 @@ function getTargetName(targetType) {
 }
 
 
-
-// Fungsi untuk membuat notifikasi
-async function createActivityNotification(activityType, activityData) {
-  try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    // Validasi data
-    if (!activityType || !activityData) {
-      console.error("Data tidak lengkap untuk membuat notifikasi");
-      return;
-    }
-
-    // Skip jika sudah diproses
-    if (processedNotificationIds.has(activityData.contentId + activityType)) {
-      return;
-    }
-    processedNotificationIds.add(activityData.contentId + activityType);
-
-    // Handle pengumuman untuk semua user
-    if (activityType === 'announcement' && !activityData.recipientId) {
-      await sendAnnouncementToAllUsers(activityData, currentUser.uid);
-      return;
-    }
-
-    // Dapatkan penerima notifikasi
-    let recipientId = activityData.recipientId;
-    if (!recipientId && activityData.contentType && activityData.contentId) {
-      recipientId = await getContentAuthorId(activityData);
-    }
-
-    if (!recipientId) return;
-
-    // Buat notifikasi
-    const notificationRef = doc(collection(db, "notifications"));
-    const notificationData = {
-      id: notificationRef.id,
-      userId: recipientId,
-      type: activityType,
-      read: false,
-      timestamp: new Date(),
-      fromUserId: currentUser.uid,
-      fromUserName: currentUser.displayName || 'Pengguna',
-      ...generateNotificationContent(activityType, activityData, currentUser.displayName || 'Pengguna')
-    };
-
-    await setDoc(notificationRef, notificationData);
-
-    // Juga simpan sebagai aktivitas
-    await logActivity({
-      type: activityType,
-      contentId: activityData.contentId,
-      contentType: activityData.contentType,
-      description: notificationData.message
-    });
-
-  } catch (error) {
-    console.error("Error dalam createActivityNotification:", error);
-  }
-}
 
 // Fungsi untuk log aktivitas
 async function logActivity(activityData) {
