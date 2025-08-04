@@ -6183,25 +6183,6 @@ function renderRecentActivity(activities) {
 
 
 
-function getActivityIcon(type) {
-    switch (type) {
-        case 'comment':
-        case 'reply':
-            return '<i class="fas fa-comment-dots"></i>';
-        case 'like':
-        case 'reaction':
-            return '<i class="fas fa-heart"></i>';
-        case 'post':
-        case 'feedback':
-        case 'discussion':
-        case 'content':
-            return '<i class="fas fa-pen"></i>';
-        default:
-            return '<i class="fas fa-bell"></i>';
-    }
-}
-
-
 
 
 
@@ -6994,6 +6975,25 @@ function renderActivities(activitiesList, filterType = 'all') {
 }
 
 
+
+
+function getActivityIcon(type) {
+    switch (type) {
+        case 'comment':
+        case 'reply':
+            return '<i class="fas fa-comment-dots"></i>';
+        case 'like':
+        case 'reaction':
+            return '<i class="fas fa-heart"></i>';
+        case 'post':
+        case 'feedback':
+        case 'discussion':
+        case 'content':
+            return '<i class="fas fa-pen"></i>';
+        default:
+            return '<i class="fas fa-bell"></i>';
+    }
+}
 
 
 
