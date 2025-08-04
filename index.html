@@ -5376,6 +5376,10 @@ onAuthStateChanged(auth, (user) => {
         
         // Load data awal
         loadUserProfile(user);
+		
+		
+		        setupActivityTabs(user.uid);
+
         
         // Setup listeners
         unsubscribeFunctions.push(setupNotificationListeners(user.uid));
@@ -6856,44 +6860,81 @@ function loadRecentActivities(userId) {
 
 
 
-
-
-
-function renderActivities(activities, filter = 'all') {
-  const containerMap = {
-    all: document.getElementById("allActivity"),
-    comments: document.getElementById("commentsActivity"),
-    reactions: document.getElementById("reactionsActivity"),
-    posts: document.getElementById("postsActivity")
-  };
-
-  const container = containerMap[filter];
-  if (!container) return;
-
-  const filtered = activities.filter(activity => {
-    if (!activity?.type) return false;
-    switch (filter) {
-      case 'comments': return ['comment', 'reply'].includes(activity.type);
-      case 'reactions': return ['like', 'reaction'].includes(activity.type);
-      case 'posts': return ['content', 'post', 'feedback', 'discussion', 'announcement'].includes(activity.type);
-      default: return true;
+function renderActivities(activitiesList, filterType = 'all') {
+    let containerId = '';
+    switch (filterType) {
+        case 'comments': containerId = 'commentsActivity'; break;
+        case 'reactions': containerId = 'reactionsActivity'; break;
+        case 'posts': containerId = 'postsActivity'; break;
+        default: containerId = 'allActivity';
     }
-  });
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-  if (filtered.length === 0) {
-    container.innerHTML = `<div class="empty-activities"><p>Tidak ada aktivitas ${getFilterName(filter)}</p></div>`;
-    return;
-  }
+    // Validasi input
+    if (!Array.isArray(activitiesList)) {
+        console.error("activitiesList harus berupa array");
+        return;
+    }
 
-  container.innerHTML = filtered.map(act => `
-    <div class="activity-item" data-type="${act.type}" data-id="${act.id}">
-      <div class="activity-icon">${getActivityIcon(act.type)}</div>
-      <div class="activity-content">
-        <p>${formatActivityContent(act)}</p>
-        <small>${formatTimeAgo(act.timestamp)}</small>
-      </div>
-    </div>
-  `).join('');
+    // Filter aktivitas
+    let filteredActivities = activitiesList.filter(activity => {
+        if (!activity || !activity.type) return false;
+        switch(filterType) {
+            case 'comments':
+                return activity.type === 'comment' || activity.type === 'reply';
+            case 'reactions':
+                return activity.type === 'like' || activity.type === 'reaction';
+            case 'posts':
+                return ['content', 'post', 'feedback', 'discussion'].includes(activity.type);
+            default:
+                return true;
+        }
+    });
+
+    // Handle empty state
+    if (filteredActivities.length === 0) {
+        container.innerHTML = `
+            <div class="empty-activities">
+                <p>Tidak ada aktivitas ${getFilterName(filterType)}</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Render activities
+    container.innerHTML = filteredActivities.map(activity => {
+        const safeActivity = {
+            type: activity.type || 'activity',
+            id: activity.id || 'unknown',
+            timestamp: activity.timestamp instanceof Date ? activity.timestamp : new Date(),
+            content: activity.content || '',
+            targetType: activity.targetType || ''
+        };
+        
+        return `
+            <div class="activity-item" data-type="${safeActivity.type}" data-id="${safeActivity.id}">
+                <div class="activity-icon">
+                    ${getActivityIcon(safeActivity.type)}
+                </div>
+                <div class="activity-content">
+                    <p>${formatActivityContent(safeActivity)}</p>
+                    <small>${formatTimeAgo(safeActivity.timestamp)}</small>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Add event listeners
+    document.querySelectorAll('.activity-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const type = this.getAttribute('data-type');
+            const id = this.getAttribute('data-id');
+            if (type && id) {
+                navigateToActivity(type, id);
+            }
+        });
+    });
 }
 
 
@@ -7076,19 +7117,25 @@ function setupActivitiesListener(query, filterType = 'all') {
 
 
 
-
-
 function setupActivityTabs(userId) {
     document.querySelectorAll('.activity-tab').forEach(tab => {
         tab.addEventListener('click', function () {
-            const filter = this.getAttribute('data-filter');
+            const filter = this.getAttribute('data-tab');
 
-            // Hapus class aktif di semua
+            // Hapus class aktif dari semua tab
             document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
 
-            if (currentUnsubscribe) currentUnsubscribe(); // stop listener sebelumnya
+            // Tampilkan hanya konten yang sesuai
+            document.querySelectorAll('.activity-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(filter + 'Activity').classList.add('active');
 
+            // Hentikan listener lama
+            if (currentUnsubscribe) currentUnsubscribe();
+
+            // Muat data sesuai filter
             switch (filter) {
                 case 'comments':
                     currentUnsubscribe = loadCommentsActivities(userId);
@@ -7105,9 +7152,11 @@ function setupActivityTabs(userId) {
         });
     });
 
-    // Load default tab
+    // Load default
     currentUnsubscribe = loadAllActivities(userId);
+    document.getElementById('allActivity').classList.add('active');
 }
+
 
 
 
