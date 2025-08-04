@@ -7452,6 +7452,171 @@ async function createReaction(contentType, contentId, emojiType) {
 
 
 
+// Client-side reaction creation with validation
+async function createContentReaction(contentType, contentId, emojiType) {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error('User must be authenticated to react');
+    }
+
+    // Validate inputs
+    const validContentTypes = ['arduinoHistory', 'discussions', 'feedback', 'announcements'];
+    if (!validContentTypes.includes(contentType)) {
+        throw new Error('Invalid content type');
+    }
+    if (!contentId) throw new Error('Content ID is required');
+    if (!emojiType) throw new Error('Emoji type is required');
+
+    try {
+        // Verify the content exists and get the author
+        const contentRef = doc(db, contentType, contentId);
+        const contentDoc = await getDoc(contentRef);
+        
+        if (!contentDoc.exists()) {
+            throw new Error('Content not found');
+        }
+
+        const targetUserId = contentDoc.data().userId || contentDoc.data().authorId;
+        if (!targetUserId) {
+            throw new Error('Cannot determine content author');
+        }
+
+        // Create reaction with all required fields
+        const reactionData = {
+            contentType,
+            contentId,
+            emojiType,
+            userId: user.uid,
+            targetUserId,
+            timestamp: new Date()
+        };
+
+        const docRef = await addDoc(collection(db, 'userReactions'), reactionData);
+        return docRef.id;
+    } catch (error) {
+        console.error('Error creating reaction:', error);
+        throw error;
+    }
+}
+
+
+
+// Run this script once to clean up invalid documents
+async function cleanupInvalidDocuments() {
+    const batch = writeBatch(db);
+    let deletedCount = 0;
+
+    // Clean invalid comments
+    const commentsSnapshot = await getDocs(collection(db, 'arduinoHistoryComments'));
+    commentsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (!data.historyId || !data.content || !data.userId) {
+            batch.delete(doc.ref);
+            deletedCount++;
+            console.log('Deleting invalid comment:', doc.id);
+        }
+    });
+
+    // Clean invalid reactions
+    const reactionsSnapshot = await getDocs(collection(db, 'userReactions'));
+    reactionsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (!data.contentType || !data.contentId || !data.targetUserId) {
+            batch.delete(doc.ref);
+            deletedCount++;
+            console.log('Deleting invalid reaction:', doc.id);
+        }
+    });
+
+    if (deletedCount > 0) {
+        await batch.commit();
+        console.log(`Deleted ${deletedCount} invalid documents`);
+    } else {
+        console.log('No invalid documents found');
+    }
+}
+
+
+
+// Example error handling
+function showError(message) {
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    setTimeout(() => errorElement.style.display = 'none', 5000);
+}
+
+
+
+
+
+// Client-side comment creation with validation
+async function createArduinoHistoryComment(historyId, content, parentCommentId = null) {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error('User must be authenticated to comment');
+    }
+
+    // Validate inputs
+    if (!historyId) throw new Error('History ID is required');
+    if (!content || content.trim().length < 2) throw new Error('Comment must be at least 2 characters');
+
+    try {
+        // Verify the history document exists
+        const historyRef = doc(db, 'arduinoHistory', historyId);
+        const historyDoc = await getDoc(historyRef);
+        
+        if (!historyDoc.exists()) {
+            throw new Error('Invalid history reference');
+        }
+
+        const commentData = {
+            historyId,
+            content: content.trim(),
+            userId: user.uid,
+            userName: user.displayName || 'Anonymous',
+            timestamp: new Date(),
+            likes: 0,
+            replies: []
+        };
+
+        // Add parent reference if this is a reply
+        if (parentCommentId) {
+            commentData.parentId = parentCommentId;
+            commentData.replyTo = await getCommentAuthor(parentCommentId);
+        }
+
+        // Create the comment
+        const docRef = await addDoc(collection(db, 'arduinoHistoryComments'), commentData);
+        return docRef.id;
+    } catch (error) {
+        console.error('Error creating comment:', error);
+        throw error;
+    }
+}
+
+async function getCommentAuthor(commentId) {
+    const commentRef = doc(db, 'arduinoHistoryComments', commentId);
+    const commentDoc = await getDoc(commentRef);
+    return commentDoc.exists() ? commentDoc.data().userId : null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
