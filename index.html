@@ -6468,7 +6468,7 @@ function getTargetName(targetType) {
 
 
 
-// 5. Perbaikan createActivityNotification dengan validasi lebih baik
+
 async function createActivityNotification(activityType, activityData) {
     try {
         // Validasi dasar
@@ -6479,7 +6479,7 @@ async function createActivityNotification(activityType, activityData) {
 
         const currentUser = auth.currentUser;
         const currentUserId = currentUser.uid;
-        
+
         // Validasi contentType untuk semua jenis kecuali announcement
         if (activityType !== 'announcement' && !activityData.contentType) {
             console.error("contentType tidak ditemukan untuk:", activityType);
@@ -6498,8 +6498,8 @@ async function createActivityNotification(activityType, activityData) {
             recipientId = await getContentAuthorId(activityData);
         }
 
-        // Pastikan recipientId valid dan bukan diri sendiri
-        if (!recipientId || recipientId === currentUserId) {
+        // ✅ Hapus pengecekan "recipientId === currentUserId"
+        if (!recipientId) {
             return;
         }
 
@@ -6580,8 +6580,6 @@ async function handleAnnouncementNotification(activityData, currentUserId) {
 
 
 
-
-// Fungsi untuk membuat dokumen notifikasi
 async function createNotificationDocument(activityType, activityData, recipientId, currentUser) {
     const notificationData = {
         userId: recipientId,
@@ -6592,7 +6590,6 @@ async function createNotificationDocument(activityType, activityData, recipientI
         fromUserName: currentUser.displayName || 'Pengguna'
     };
 
-    // Tambahkan data spesifik berdasarkan jenis aktivitas
     switch(activityType) {
         case 'comment':
             notificationData.message = `${notificationData.fromUserName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
@@ -6601,15 +6598,28 @@ async function createNotificationDocument(activityType, activityData, recipientI
             notificationData.contentId = activityData.contentId;
             notificationData.commentId = activityData.commentId;
             break;
-            
+
         case 'like':
             notificationData.message = `${notificationData.fromUserName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
             notificationData.link = `/${activityData.contentType}/${activityData.contentId}`;
             notificationData.contentType = activityData.contentType;
             notificationData.contentId = activityData.contentId;
             break;
-            
-        // Tambahkan case lainnya sesuai kebutuhan
+
+        case 'reaction':
+            const isSelf = recipientId === currentUser.uid;
+            const contentName = getContentTypeName(activityData.contentType);
+
+            notificationData.message = isSelf
+                ? `Kamu memberikan reaksi ${activityData.emoji} pada ${contentName}`
+                : `${notificationData.fromUserName} memberikan reaksi ${activityData.emoji} pada ${contentName} Anda`;
+
+            notificationData.link = `/${activityData.contentType}/${activityData.contentId}`;
+            notificationData.contentType = activityData.contentType;
+            notificationData.contentId = activityData.contentId;
+            notificationData.emoji = activityData.emoji;
+            break;
+
         default:
             notificationData.message = `${notificationData.fromUserName} melakukan aktivitas baru`;
             notificationData.link = '/';
@@ -6617,8 +6627,6 @@ async function createNotificationDocument(activityType, activityData, recipientI
 
     await addDoc(collection(db, "notifications"), notificationData);
 }
-
-
 
 
 
@@ -6741,11 +6749,9 @@ function generateNotificationContent(activityType, activityData, currentUserName
 
 
 
-
-
 function getContentTypeName(type) {
     const typeMap = {
-        'arduinoHistory': 'Sejarah Arduino',
+        'arduino-history': 'Sejarah Arduino',
         'discussions': 'Diskusi',
         'feedback': 'Feedback',
         'announcements': 'Pengumuman',
@@ -6753,6 +6759,7 @@ function getContentTypeName(type) {
     };
     return typeMap[type] || type;
 }
+
 
 function validateActivityData(data) {
     return {
@@ -7199,43 +7206,31 @@ function setupAnnouncementListeners() {
 }
 
 
-function setupReactionListeners(userId) {
+
+function setupReactionListeners(currentUserId) {
     const reactionsRef = collection(db, "reactions");
 
     return onSnapshot(reactionsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const newReaction = change.doc.data();
+            if (change.type !== "added") return;
 
-                // Validasi dan fallback
-                const {
-                    contentType = 'unknown',
-                    contentId,
-                    contentAuthorId,
-                    emoji,
-                    userId: senderId,
-                    userName
-                } = newReaction;
+            const data = change.doc.data();
 
-                // Minimal data yang wajib ada
-                if (!contentId || !contentAuthorId || !emoji || !senderId) {
-                    console.warn("Reaction data incomplete:", newReaction);
-                    return; // Skip pemrosesan
-                }
-
-                // Jangan kirim notifikasi ke diri sendiri
-                if (senderId === userId) return;
-
-                // Kirim notifikasi
-                createActivityNotification('reaction', {
-                    contentType,
-                    contentId,
-                    recipientId: contentAuthorId,
-                    emoji,
-                    senderId,
-                    senderName: userName || 'Pengguna'
-                });
+            // Filter untuk memastikan ini reaksi valid & untuk halaman sejarah arduino
+            if (data.contentType !== "arduino-history" || !data.emoji || !data.userId) {
+                console.warn("Reaksi tidak relevan:", data);
+                return;
             }
+
+            // Kirim notifikasi (baik ke diri sendiri maupun orang lain)
+            createActivityNotification('reaction', {
+                contentType: data.contentType,
+                contentId: data.contentId,
+                recipientId: currentUserId,
+                emoji: data.emoji,
+                senderId: data.userId,
+                senderName: data.userName || 'Pengguna'
+            });
         });
     });
 }
