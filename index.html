@@ -7201,31 +7201,45 @@ function setupAnnouncementListeners() {
 
 function setupReactionListeners(userId) {
     const reactionsRef = collection(db, "reactions");
+
     return onSnapshot(reactionsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
                 const newReaction = change.doc.data();
-                
-                // Validasi data reaksi
-                if (!newReaction.contentType) {
-                    console.warn("Reaction missing contentType:", newReaction);
-                    newReaction.contentType = 'unknown';
+
+                // Validasi dan fallback
+                const {
+                    contentType = 'unknown',
+                    contentId,
+                    contentAuthorId,
+                    emoji,
+                    userId: senderId,
+                    userName
+                } = newReaction;
+
+                // Minimal data yang wajib ada
+                if (!contentId || !contentAuthorId || !emoji || !senderId) {
+                    console.warn("Reaction data incomplete:", newReaction);
+                    return; // Skip pemrosesan
                 }
-                
-                if (newReaction.userId !== userId) {
-                    createActivityNotification('reaction', {
-                        contentType: newReaction.contentType,
-                        contentId: newReaction.contentId,
-                        recipientId: newReaction.contentAuthorId,
-                        emoji: newReaction.emoji,
-                        senderId: newReaction.userId,
-                        senderName: newReaction.userName || 'Pengguna'
-                    });
-                }
+
+                // Jangan kirim notifikasi ke diri sendiri
+                if (senderId === userId) return;
+
+                // Kirim notifikasi
+                createActivityNotification('reaction', {
+                    contentType,
+                    contentId,
+                    recipientId: contentAuthorId,
+                    emoji,
+                    senderId,
+                    senderName: userName || 'Pengguna'
+                });
             }
         });
     });
 }
+
 
 
 
