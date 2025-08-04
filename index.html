@@ -7361,43 +7361,91 @@ function setupAnnouncementListeners() {
 
 
 
-
+// Updated reaction listener
 function setupReactionListeners() {
     const reactionsRef = collection(db, "userReactions");
-    return onSnapshot(reactionsRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                try {
-                    const reaction = change.doc.data();
-                    
-                    // Enhanced validation
-                    if (!reaction.contentType || !reaction.contentId) {
-                        console.error("Incomplete reaction data - missing contentType or contentId:", {
-                            id: change.doc.id,
-                            data: reaction
+    return onSnapshot(reactionsRef, 
+        (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    try {
+                        const reaction = change.doc.data();
+                        
+                        // Comprehensive validation
+                        const requiredFields = ['contentType', 'contentId', 'emojiType', 'userId', 'targetUserId'];
+                        const missingFields = requiredFields.filter(field => !reaction[field]);
+                        
+                        if (missingFields.length > 0) {
+                            console.error(`Incomplete reaction data - missing fields: ${missingFields.join(', ')}`, {
+                                id: change.doc.id,
+                                data: reaction
+                            });
+                            return;
+                        }
+
+                        // Skip if current user's reaction
+                        if (reaction.userId === auth.currentUser?.uid) return;
+
+                        createActivityNotification('reaction', {
+                            contentType: reaction.contentType,
+                            contentId: reaction.contentId,
+                            recipientId: reaction.targetUserId,
+                            emoji: reaction.emojiType,
+                            timestamp: reaction.timestamp
                         });
-                        return;
+                    } catch (error) {
+                        console.error("Error processing reaction:", error);
                     }
-
-                    if (reaction.userId === auth.currentUser?.uid) {
-                        return;
-                    }
-
-                    createActivityNotification('reaction', {
-                        contentType: reaction.contentType,
-                        contentId: reaction.contentId,
-                        recipientId: reaction.targetUserId,
-                        emoji: reaction.emoji,
-                        timestamp: reaction.timestamp || new Date()
-                    });
-                } catch (error) {
-                    console.error("Error processing reaction:", error);
                 }
-            }
-        });
-    }, (error) => {
-        console.error("Reaction listener error:", error);
-    });
+            });
+        },
+        (error) => {
+            console.error("Reaction listener error:", error);
+        }
+    );
+}
+
+
+
+
+
+// Enhanced reaction creation function
+async function createReaction(contentType, contentId, emojiType) {
+    // Validate inputs
+    if (!contentType || !contentId || !emojiType) {
+        throw new Error('contentType, contentId, and emojiType are required');
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error('User must be authenticated');
+    }
+
+    try {
+        // First get the content to verify it exists and get the author
+        const contentRef = doc(db, contentType, contentId);
+        const contentDoc = await getDoc(contentRef);
+        
+        if (!contentDoc.exists()) {
+            throw new Error('Content not found');
+        }
+
+        const reactionData = {
+            contentType,
+            contentId,
+            emojiType,
+            userId: user.uid,
+            targetUserId: contentDoc.data().userId || contentDoc.data().authorId,
+            timestamp: new Date()
+        };
+
+        // Add document to Firestore
+        const docRef = await addDoc(collection(db, "userReactions"), reactionData);
+        return docRef.id;
+    } catch (error) {
+        console.error("Error creating reaction:", error);
+        throw error;
+    }
 }
 
 
@@ -7405,63 +7453,94 @@ function setupReactionListeners() {
 
 
 
+
+
+
+
+// Updated comment listener with better error handling
 function setupCommentListeners() {
     const commentsRef = collection(db, "arduinoHistoryComments");
-    return onSnapshot(commentsRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                try {
-                    const commentData = change.doc.data();
-                    
-                    // Enhanced validation
-                    if (!commentData.historyId) {
-                        console.error("Invalid comment document - missing historyId:", {
-                            id: change.doc.id,
-                            data: commentData
+    return onSnapshot(commentsRef, 
+        (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    try {
+                        const comment = change.doc.data();
+                        
+                        // Comprehensive validation
+                        const requiredFields = ['historyId', 'content', 'userId', 'timestamp'];
+                        const missingFields = requiredFields.filter(field => !comment[field]);
+                        
+                        if (missingFields.length > 0) {
+                            console.error(`Invalid comment document - missing fields: ${missingFields.join(', ')}`, {
+                                id: change.doc.id,
+                                data: comment
+                            });
+                            return;
+                        }
+
+                        // Skip if current user's comment
+                        if (comment.userId === auth.currentUser?.uid) return;
+
+                        // Get recipient (either reply target or content author)
+                        const recipientId = comment.replyTo || comment.contentAuthorId;
+                        if (!recipientId) {
+                            console.error("Cannot determine notification recipient for comment:", change.doc.id);
+                            return;
+                        }
+
+                        createActivityNotification('comment', {
+                            contentType: 'arduinoHistory',
+                            contentId: comment.historyId,
+                            commentId: change.doc.id,
+                            recipientId: recipientId,
+                            timestamp: comment.timestamp
                         });
-                        return;
+                    } catch (error) {
+                        console.error("Error processing comment:", error);
                     }
-
-                    // Skip if current user's comment
-                    if (!commentData.userId || commentData.userId === auth.currentUser?.uid) {
-                        return;
-                    }
-
-                    // Get recipient - fallback to content author if no replyTo
-                    const recipientId = commentData.replyTo || commentData.contentAuthorId;
-                    if (!recipientId) {
-                        console.error("Cannot determine notification recipient for comment:", change.doc.id);
-                        return;
-                    }
-
-                    createActivityNotification('comment', {
-                        contentType: 'arduinoHistory',
-                        contentId: commentData.historyId,
-                        commentId: change.doc.id,
-                        recipientId: recipientId,
-                        timestamp: commentData.timestamp || new Date()
-                    });
-                } catch (error) {
-                    console.error("Error processing comment:", error);
                 }
-            }
-        });
-    }, (error) => {
-        console.error("Comment listener error:", error);
-    });
+            });
+        },
+        (error) => {
+            console.error("Comment listener error:", error);
+        }
+    );
 }
 
 
 
+// Enhanced comment creation function with validation
+async function createComment(historyId, content) {
+    // Validate inputs
+    if (!historyId || !content) {
+        throw new Error('historyId and content are required');
+    }
 
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error('User must be authenticated');
+    }
 
+    try {
+        const commentData = {
+            historyId,
+            content,
+            userId: user.uid,
+            userName: user.displayName || 'Anonymous',
+            timestamp: new Date(),
+            likes: 0,
+            replies: []
+        };
 
-
-
-
-
-
-
+        // Add document to Firestore
+        const docRef = await addDoc(collection(db, "arduinoHistoryComments"), commentData);
+        return docRef.id;
+    } catch (error) {
+        console.error("Error creating comment:", error);
+        throw error;
+    }
+}
 
 
 
