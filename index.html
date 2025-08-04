@@ -4750,6 +4750,9 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const db = getFirestore(app);
 const ADMIN_EMAIL = "faridardiansyah061@gmail.com";
+ const CONTENT_DOC_ID = 'page10_content';
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
     // Variabel state
@@ -4772,7 +4775,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
     const notificationSettingsModal = document.getElementById('notificationSettingsModal');
     const closeModal = document.querySelector('.close-modal');
-    const saveNotificationSettings = document.getElementById('saveNotificationSettings');
+  const saveNotificationSettingsBtn = document.getElementById('saveNotificationSettings');
+
     const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
     
     // Event Listeners
@@ -4801,7 +4805,8 @@ document.addEventListener("DOMContentLoaded", function () {
     notificationSettingsBtn?.addEventListener('click', showNotificationSettings);
     closeModal?.addEventListener('click', hideNotificationSettings);
     cancelNotificationSettings?.addEventListener('click', hideNotificationSettings);
-    saveNotificationSettings?.addEventListener('click', saveNotificationSettings);
+ saveNotificationSettingsBtn?.addEventListener('click', saveNotificationSettings);
+
     
     // Tab Aktivitas
     document.querySelectorAll('.activity-tab').forEach(tab => {
