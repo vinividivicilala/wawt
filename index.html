@@ -5361,43 +5361,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
     
 
-onAuthStateChanged(auth, (user) => {
+	
+	onAuthStateChanged(auth, (user) => {
     if (user) {
-        let unsubscribeFunctions = [];
+        const cleanupFunctions = [];
         
-        // Load data awal
+        // Load profile
         loadUserProfile(user);
         
-        // Setup listeners
-        unsubscribeFunctions.push(setupNotificationListeners(user.uid));
-        unsubscribeFunctions.push(setupActivityListeners(user.uid));
-        
-        // Setup listeners untuk semua jenis aktivitas
-        unsubscribeFunctions.push(loadNotifications(user.uid));
-        unsubscribeFunctions.push(setupCommentListeners());
-        unsubscribeFunctions.push(setupLikeListeners());
-        unsubscribeFunctions.push(setupFeedbackListeners());
-        unsubscribeFunctions.push(setupDiscussionListeners());
-        unsubscribeFunctions.push(setupDiscussionCommentListeners());
-        unsubscribeFunctions.push(setupAnnouncementListeners());
-        unsubscribeFunctions.push(setupReactionListeners());
-        
-        // Cleanup saat komponen unmount
-        return () => {
-            unsubscribeFunctions.forEach(unsub => {
-                if (unsub && typeof unsub === 'function') {
-                    unsub();
+        // Setup listeners dengan error handling
+        const setupListener = (fn, name) => {
+            try {
+                const unsubscribe = fn();
+                if (unsubscribe) {
+                    cleanupFunctions.push(unsubscribe);
                 }
-            });
+            } catch (error) {
+                console.error(`Gagal setup ${name} listener:`, error);
+            }
         };
+        
+        setupListener(() => setupNotificationListeners(user.uid), 'notifikasi');
+        setupListener(() => setupActivityListeners(user.uid), 'aktivitas');
+        setupListener(setupCommentListeners, 'komentar');
+        setupListener(setupLikeListeners, 'like');
+        setupListener(setupFeedbackListeners, 'feedback');
+        setupListener(setupDiscussionListeners, 'diskusi');
+        setupListener(setupDiscussionCommentListeners, 'komentar diskusi');
+        setupListener(setupAnnouncementListeners, 'pengumuman');
+        setupListener(setupReactionListeners, 'reaksi');
+        
+        // Cleanup
+        return () => cleanupFunctions.forEach(fn => fn());
     } else {
-        // Handle case ketika user logout
+        // Handle logout
         notifications = [];
+        activities = [];
         updateNotificationUI([], 0);
     }
-});	
-	
-	
+});
 	
 	
 	
@@ -6458,46 +6460,158 @@ function getTargetName(targetType) {
 
 
 
+
 async function createActivityNotification(activityType, activityData) {
     try {
         // Validasi dasar
         if (!auth.currentUser || !activityType || !activityData) {
-            console.error("Data tidak lengkap untuk membuat notifikasi");
+            console.error("Parameter tidak lengkap");
             return;
         }
 
         const currentUser = auth.currentUser;
         
-        // Validasi contentType untuk semua jenis kecuali announcement
-        if (activityType !== 'announcement' && !activityData.contentType) {
-            console.error("contentType tidak ditemukan untuk:", activityType);
-            return;
+        // Validasi khusus berdasarkan jenis aktivitas
+        switch(activityType) {
+            case 'comment':
+                if (!activityData.contentType || !activityData.contentId || !activityData.commentId) {
+                    console.error("Data komentar tidak lengkap", activityData);
+                    return;
+                }
+                break;
+                
+            case 'reaction':
+                if (!activityData.contentType || !activityData.contentId || !activityData.emoji) {
+                    console.error("Data reaksi tidak lengkap", activityData);
+                    return;
+                }
+                break;
+                
+            case 'announcement':
+                if (!activityData.contentId || !activityData.message) {
+                    console.error("Data pengumuman tidak lengkap", activityData);
+                    return;
+                }
+                break;
+                
+            default:
+                if (!activityData.contentType || !activityData.contentId) {
+                    console.error("Data aktivitas tidak lengkap", activityData);
+                    return;
+                }
         }
 
-        // Jika pengumuman untuk semua user
+        // Handle pengumuman khusus
         if (activityType === 'announcement' && !activityData.recipientId) {
-            await handleAnnouncementNotification(activityData, currentUser.uid);
+            await handleBroadcastNotification(activityData, currentUser.uid);
             return;
         }
 
-        // Dapatkan recipientId jika belum ada
-        let recipientId = activityData.recipientId;
-        if (!recipientId && activityData.contentType && activityData.contentId) {
-            recipientId = await determineRecipientId(activityData);
-        }
-
-        // Pastikan recipientId valid dan bukan diri sendiri
+        // Pastikan ada penerima dan bukan diri sendiri
+        const recipientId = activityData.recipientId || await getContentOwner(activityData);
         if (!recipientId || recipientId === currentUser.uid) {
             return;
         }
 
-        // Buat notifikasi
-        await createNotificationDocument(activityType, activityData, recipientId, currentUser);
-
+        // Buat data notifikasi
+        const notificationData = buildNotificationData(activityType, activityData, currentUser);
+        
+        // Simpan ke Firestore
+        await addDoc(collection(db, "notifications"), notificationData);
+        
     } catch (error) {
-        console.error("Error dalam createActivityNotification:", error);
+        console.error("Gagal membuat notifikasi:", error);
     }
 }
+
+
+
+// Fungsi pembantu
+async function getContentOwner(activityData) {
+    try {
+        // Coba dari konten utama
+        const contentRef = doc(db, activityData.contentType, activityData.contentId);
+        const contentDoc = await getDoc(contentRef);
+        if (contentDoc.exists()) {
+            return contentDoc.data().userId || contentDoc.data().authorId;
+        }
+
+        // Coba dari komentar jika ada
+        if (activityData.commentId) {
+            const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
+            const commentDoc = await getDoc(commentRef);
+            if (commentDoc.exists()) {
+                return commentDoc.data().userId;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error("Gagal mendapatkan pemilik konten:", error);
+        return null;
+    }
+}
+
+function buildNotificationData(activityType, activityData, currentUser) {
+    const baseData = {
+        userId: activityData.recipientId,
+        type: activityType,
+        read: false,
+        timestamp: activityData.timestamp || new Date(),
+        fromUserId: currentUser.uid,
+        fromUserName: currentUser.displayName || 'Pengguna'
+    };
+
+    switch(activityType) {
+        case 'comment':
+            return {
+                ...baseData,
+                message: `${baseData.fromUserName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`,
+                link: `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`,
+                contentType: activityData.contentType,
+                contentId: activityData.contentId,
+                commentId: activityData.commentId
+            };
+            
+        case 'reaction':
+            return {
+                ...baseData,
+                message: `${baseData.fromUserName} memberikan reaksi ${activityData.emoji} pada ${getContentTypeName(activityData.contentType)} Anda`,
+                link: `/${activityData.contentType}/${activityData.contentId}`,
+                contentType: activityData.contentType,
+                contentId: activityData.contentId,
+                emoji: activityData.emoji
+            };
+            
+        // Tambahkan case lainnya sesuai kebutuhan
+        default:
+            return {
+                ...baseData,
+                message: `${baseData.fromUserName} melakukan aktivitas baru`,
+                link: '/'
+            };
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7007,147 +7121,340 @@ async function markAllNotificationsAsRead() {
     }
 }
 
-function setupFeedbackListeners() {
-    const feedbackRef = collection(db, "feedback");
-    return onSnapshot(feedbackRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const newFeedback = change.doc.data();
-                // Notifikasi untuk admin tentang feedback baru
-                if (newFeedback.userId !== auth.currentUser?.uid) {
-                    createActivityNotification('feedback', {
-                        contentType: 'feedback',
-                        contentId: change.doc.id,
-                        recipientId: 'admin_user_id' // Ganti dengan ID admin
-                    });
-                }
-            }
-        });
-    });
+
+
+// Helper function to get admin ID (cache it for better performance)
+let cachedAdminId = null;
+async function getAdminId() {
+    if (cachedAdminId) return cachedAdminId;
+    
+    try {
+        // Query users collection for admin (adjust based on your admin identification logic)
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("isAdmin", "==", true), limit(1));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            cachedAdminId = querySnapshot.docs[0].id;
+            return cachedAdminId;
+        }
+        
+        console.error("No admin user found");
+        return null;
+    } catch (error) {
+        console.error("Error getting admin ID:", error);
+        return null;
+    }
 }
+
+
+
+function setupFeedbackListeners() {
+    try {
+        const feedbackRef = collection(db, "feedback");
+        return onSnapshot(feedbackRef, 
+            (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        try {
+                            const newFeedback = change.doc.data();
+                            
+                            // Validate feedback data
+                            if (!newFeedback.userId || !change.doc.id) {
+                                console.error("Invalid feedback data:", newFeedback);
+                                return;
+                            }
+
+                            // Skip if it's the current user's feedback
+                            if (newFeedback.userId === auth.currentUser?.uid) return;
+
+                            // Get admin ID (replace with your actual admin ID retrieval logic)
+                            const adminId = getAdminId();
+                            if (!adminId) {
+                                console.error("Admin ID not found");
+                                return;
+                            }
+
+                            createActivityNotification('feedback', {
+                                contentType: 'feedback',
+                                contentId: change.doc.id,
+                                recipientId: adminId,
+                                title: newFeedback.title || "Feedback Baru",
+                                timestamp: newFeedback.timestamp || new Date()
+                            });
+                        } catch (error) {
+                            console.error("Error processing feedback:", error);
+                        }
+                    }
+                });
+            },
+            (error) => {
+                console.error("Feedback listener error:", error);
+            }
+        );
+    } catch (error) {
+        console.error("Failed to setup feedback listener:", error);
+        return () => {}; // Return empty function for consistency
+    }
+}
+
+
+
+
+
 
 
 
 function setupDiscussionListeners() {
-    const discussionsRef = collection(db, "discussions");
-    return onSnapshot(discussionsRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const newDiscussion = change.doc.data();
-                // Notifikasi untuk admin tentang diskusi baru
-                if (newDiscussion.authorId !== auth.currentUser?.uid) {
-                    createActivityNotification('discussion', {
-                        contentType: 'discussions',
-                        contentId: change.doc.id,
-                        recipientId: 'admin_user_id' // Ganti dengan ID admin
-                    });
-                }
+    try {
+        const discussionsRef = collection(db, "discussions");
+        return onSnapshot(discussionsRef, 
+            (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        try {
+                            const newDiscussion = change.doc.data();
+                            
+                            // Validate discussion data
+                            if (!newDiscussion.authorId || !change.doc.id) {
+                                console.error("Invalid discussion data:", newDiscussion);
+                                return;
+                            }
+
+                            // Skip if it's the current user's discussion
+                            if (newDiscussion.authorId === auth.currentUser?.uid) return;
+
+                            // Get admin ID
+                            const adminId = getAdminId();
+                            if (!adminId) {
+                                console.error("Admin ID not found");
+                                return;
+                            }
+
+                            createActivityNotification('discussion', {
+                                contentType: 'discussions',
+                                contentId: change.doc.id,
+                                recipientId: adminId,
+                                title: newDiscussion.title || "Diskusi Baru",
+                                timestamp: newDiscussion.createdAt || new Date()
+                            });
+                        } catch (error) {
+                            console.error("Error processing discussion:", error);
+                        }
+                    }
+                });
+            },
+            (error) => {
+                console.error("Discussion listener error:", error);
             }
-        });
-    });
+        );
+    } catch (error) {
+        console.error("Failed to setup discussion listener:", error);
+        return () => {};
+    }
 }
+
 
 
 
 function setupDiscussionCommentListeners() {
-    const commentsRef = collectionGroup(db, "comments");
-    return onSnapshot(commentsRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const newComment = change.doc.data();
-                if (newComment.userId !== auth.currentUser?.uid) {
-                    // Dapatkan diskusi induk
-                    getDoc(change.doc.ref.parent.parent).then(discussionDoc => {
-                        if (discussionDoc.exists()) {
-                            createActivityNotification('comment', {
-                                contentType: 'discussions',
-                                contentId: discussionDoc.id,
-                                commentId: change.doc.id,
-                                recipientId: discussionDoc.data().authorId
+    try {
+        const commentsRef = collectionGroup(db, "comments");
+        return onSnapshot(commentsRef, 
+            (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        try {
+                            const newComment = change.doc.data();
+                            
+                            // Validate comment data
+                            if (!newComment.userId || !change.doc.id) {
+                                console.error("Invalid comment data:", newComment);
+                                return;
+                            }
+
+                            // Skip if it's the current user's comment
+                            if (newComment.userId === auth.currentUser?.uid) return;
+
+                            // Get parent discussion
+                            getDoc(change.doc.ref.parent.parent).then(discussionDoc => {
+                                if (!discussionDoc.exists()) {
+                                    console.error("Parent discussion not found");
+                                    return;
+                                }
+
+                                const discussionData = discussionDoc.data();
+                                if (!discussionData.authorId) {
+                                    console.error("Discussion author not found");
+                                    return;
+                                }
+
+                                createActivityNotification('comment', {
+                                    contentType: 'discussions',
+                                    contentId: discussionDoc.id,
+                                    commentId: change.doc.id,
+                                    recipientId: discussionData.authorId,
+                                    timestamp: newComment.timestamp || new Date()
+                                });
+                            }).catch(error => {
+                                console.error("Error getting discussion:", error);
                             });
+                        } catch (error) {
+                            console.error("Error processing comment:", error);
                         }
-                    });
-                }
+                    }
+                });
+            },
+            (error) => {
+                console.error("Discussion comment listener error:", error);
             }
-        });
-    });
+        );
+    } catch (error) {
+        console.error("Failed to setup discussion comment listener:", error);
+        return () => {};
+    }
 }
+
+
 
 
 function setupAnnouncementListeners() {
-    const announcementsRef = collection(db, "announcements");
-    return onSnapshot(announcementsRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                // Kirim notifikasi ke semua pengguna tentang pengumuman baru
-                // Ini akan membutuhkan logika tambahan untuk mendapatkan daftar semua user
-                // Contoh sederhana:
-                createActivityNotification('announcement', {
-                    contentType: 'announcements',
-                    contentId: change.doc.id,
-                    message: `Pengumuman baru: ${change.doc.data().title}`
+    try {
+        const announcementsRef = collection(db, "announcements");
+        return onSnapshot(announcementsRef, 
+            (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        try {
+                            const announcementData = change.doc.data();
+                            
+                            // Validate announcement data
+                            if (!change.doc.id || !announcementData.title) {
+                                console.error("Invalid announcement data:", announcementData);
+                                return;
+                            }
+
+                            createActivityNotification('announcement', {
+                                contentType: 'announcements',
+                                contentId: change.doc.id,
+                                message: `Pengumuman baru: ${announcementData.title}`,
+                                title: announcementData.title,
+                                timestamp: announcementData.createdAt || new Date()
+                            });
+                        } catch (error) {
+                            console.error("Error processing announcement:", error);
+                        }
+                    }
                 });
+            },
+            (error) => {
+                console.error("Announcement listener error:", error);
             }
-        });
-    });
+        );
+    } catch (error) {
+        console.error("Failed to setup announcement listener:", error);
+        return () => {};
+    }
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Perbaikan di setupReactionListeners()
 function setupReactionListeners() {
-    const reactionsRef = collection(db, "reactions");
+    const reactionsRef = collection(db, "userReactions");
     return onSnapshot(reactionsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
-                const newReaction = change.doc.data();
-                if (newReaction.userId !== auth.currentUser?.uid) {
-                    createActivityNotification('reaction', {
-                        contentType: newReaction.contentType,
-                        contentId: newReaction.contentId,
-                        recipientId: newReaction.contentAuthorId,
-                        emoji: newReaction.emoji
+                const reaction = change.doc.data();
+                
+                // Validasi data reaksi
+                if (!reaction.contentType || !reaction.contentId) {
+                    console.error("Data reaksi tidak lengkap:", {
+                        id: change.doc.id,
+                        data: reaction,
+                        error: "contentType atau contentId tidak ditemukan"
                     });
+                    return;
                 }
+
+                if (reaction.userId === auth.currentUser?.uid) {
+                    return;
+                }
+
+                // Buat notifikasi dengan data lengkap
+                createActivityNotification('reaction', {
+                    contentType: reaction.contentType,
+                    contentId: reaction.contentId,
+                    recipientId: reaction.targetUserId,
+                    emoji: reaction.emoji,
+                    timestamp: reaction.timestamp || new Date()
+                });
             }
         });
+    }, (error) => {
+        console.error("Error dalam reaction listener:", error);
     });
 }
 
 
 
 
-
-
+// Perbaikan di setupCommentListeners()
 function setupCommentListeners() {
     const commentsRef = collection(db, "arduinoHistoryComments");
     return onSnapshot(commentsRef, (snapshot) => {
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
-                const newComment = change.doc.data();
+                const commentData = change.doc.data();
                 
-                // Validasi data komentar
-                if (!newComment.userId || newComment.userId === auth.currentUser?.uid) {
+                // Validasi data penting
+                if (!commentData.historyId) {
+                    console.error("Dokumen komentar tidak valid:", {
+                        id: change.doc.id,
+                        data: commentData,
+                        error: "historyId tidak ditemukan"
+                    });
                     return;
                 }
 
-                // Pastikan historyId ada
-                if (!newComment.historyId) {
-                    console.error("Komentar tidak memiliki historyId:", change.doc.id);
+                if (!commentData.userId || commentData.userId === auth.currentUser?.uid) {
                     return;
                 }
 
-                // Dapatkan recipientId (pemilik konten atau komentar yang dibalas)
-                const recipientId = newComment.replyTo || newComment.contentAuthorId;
+                // Dapatkan penerima notifikasi
+                const recipientId = commentData.replyTo || commentData.contentAuthorId;
                 if (!recipientId) {
-                    console.error("Tidak dapat menentukan penerima notifikasi untuk komentar:", change.doc.id);
+                    console.error("Tidak dapat menentukan penerima notifikasi");
                     return;
                 }
 
-                // Buat notifikasi
+                // Buat notifikasi dengan data lengkap
                 createActivityNotification('comment', {
                     contentType: 'arduinoHistory',
-                    contentId: newComment.historyId,
+                    contentId: commentData.historyId,
                     commentId: change.doc.id,
-                    recipientId: recipientId
+                    recipientId: recipientId,
+                    timestamp: commentData.timestamp || new Date()
                 });
             }
         });
@@ -7155,6 +7462,11 @@ function setupCommentListeners() {
         console.error("Error dalam comment listener:", error);
     });
 }
+
+
+
+
+
 
 
 
