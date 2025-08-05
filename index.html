@@ -5283,6 +5283,209 @@ a.footnote-link:hover {
 
 
 
+
+
+
+    
+    // DOM Elements
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const greeting = document.getElementById("greeting");
+    const likeBtn = document.getElementById("likeBtn");
+    const followBtn = document.getElementById("followBtn");
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+    // Authentication Functions
+    if (loginBtn) {
+        loginBtn.addEventListener("click", () => {
+            signInWithPopup(auth, provider).catch(console.error);
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            signOut(auth).catch(console.error);
+        });
+    }
+
+    // Auth State Listener
+    onAuthStateChanged(auth, (user) => {
+        const greeting = document.getElementById("greeting");
+        const loginBtn = document.getElementById("loginBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (user) {
+            document.getElementById("page1").style.display = "block";
+            document.getElementById("page2").style.display = "none";
+            document.getElementById("page3").style.display = "none";
+			
+
+            const hours = new Date().getHours();
+            let greet = "Selamat malam";
+            if (hours >= 5 && hours < 11) greet = "Selamat pagi";
+            else if (hours >= 11 && hours < 15) greet = "Selamat siang";
+            else if (hours >= 15 && hours < 18) greet = "Selamat sore";
+
+            if (greeting) greeting.textContent = `${greet}, ${user.displayName}`;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) {
+                const phrases = [
+                    `Ada apa kamu di sini, ${user.displayName}?`,
+                    `Lagi nyari inspirasi ya, ${user.displayName}?`,
+                    `Selamat datang kembali, ${user.displayName}!`,
+                    `Semangat belajar, ${user.displayName}!`,
+                    `Mau ngoprek Arduino lagi, ${user.displayName}?`
+                ];
+                let index = 0;
+                function changePhrase() {
+                    dynamicText.textContent = phrases[index];
+                    index = (index + 1) % phrases.length;
+                }
+                changePhrase();
+                setInterval(changePhrase, 20000);
+            }
+
+            if (loginBtn) loginBtn.style.display = "none";
+            if (logoutBtn) logoutBtn.style.display = "inline-block";
+            if (likeBtn) likeBtn.disabled = false;
+            if (followBtn) followBtn.disabled = false;
+			
+			    setupEmojiReactions(user);
+			
+
+
+        } else {
+            if (greeting) greeting.textContent = "";
+            if (loginBtn) loginBtn.style.display = "inline-block";
+            if (logoutBtn) logoutBtn.style.display = "none";
+            if (likeBtn) likeBtn.disabled = true;
+            if (followBtn) followBtn.disabled = true;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) dynamicText.textContent = "";
+			    setupEmojiReactions(null);
+
+        }
+    });
+
+    // Page Management
+    window.onload = function() {
+        const page1 = document.getElementById("page1");
+        const page2 = document.getElementById("page2");
+        const page3 = document.getElementById("page3");
+        const page4 = document.getElementById("page4");
+        const page5 = document.getElementById("page5");
+        const page6 = document.getElementById("page6");
+        const page7 = document.getElementById("page7");
+		  const page8 = document.getElementById("page8");
+		    const page9 = document.getElementById("page9");
+			const page10 = document.getElementById("page10");
+
+
+        // Format waktu lengkap
+        function formatTanggalLengkap(date) {
+            const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return `${hari[date.getDay()]}, ${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        // Waktu terakhir update disimpan di localStorage
+        let lastUpdatedTentang = localStorage.getItem("tentangLastUpdated");
+
+        if (!lastUpdatedTentang) {
+            lastUpdatedTentang = new Date("2025-07-14T00:00:00Z").toISOString();
+            localStorage.setItem("tentangLastUpdated", lastUpdatedTentang);
+        }
+
+        function updateTentangRelativeTime() {
+            const now = new Date();
+            const updatedDate = new Date(localStorage.getItem("tentangLastUpdated"));
+            const diffSec = Math.floor((now - updatedDate) / 1000);
+            let waktu = "baru saja";
+
+            if (diffSec >= 60 && diffSec < 3600)
+                waktu = `${Math.floor(diffSec / 60)} menit yang lalu`;
+            else if (diffSec >= 3600 && diffSec < 86400)
+                waktu = `${Math.floor(diffSec / 3600)} jam yang lalu`;
+            else if (diffSec >= 86400)
+                waktu = `${Math.floor(diffSec / 86400)} hari yang lalu`;
+
+            const lengkap = formatTanggalLengkap(updatedDate);
+            const span = document.getElementById("tentangKamiTime");
+            if (span) span.innerHTML = `${waktu} • ${lengkap}`;
+        }
+
+        // Update terus setiap 10 detik
+        setInterval(updateTentangRelativeTime, 10000);
+        updateTentangRelativeTime();
+		
+		
+		
+		
+	 
+	 // Fungsi utama untuk menampilkan halaman
+function showPageContent(pageElement) {
+  const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9, page10"];
+  
+  // Sembunyikan semua halaman
+  pageIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+
+  // Tampilkan halaman yang dipilih
+  if (pageElement) {
+    pageElement.style.display = "block";
+    
+    // Jika page7, muat pengumuman dan masukan
+    if (pageElement.id === "page7") {
+      loadPinnedAnnouncements();
+      loadFeedback().catch(console.error);
+    }
+  }
+  
+  window.scrollTo(0, 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 document.addEventListener("DOMContentLoaded", function () {
     // Variabel state
     let userProfile = {};
@@ -8520,194 +8723,6 @@ function setupActivitiesListener(query, filterType = 'all') {
 
 
 
-
-
-
-
-
-
-
-
-
-    
-    // DOM Elements
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const greeting = document.getElementById("greeting");
-    const likeBtn = document.getElementById("likeBtn");
-    const followBtn = document.getElementById("followBtn");
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-
-
-    // Authentication Functions
-    if (loginBtn) {
-        loginBtn.addEventListener("click", () => {
-            signInWithPopup(auth, provider).catch(console.error);
-        });
-    }
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
-            signOut(auth).catch(console.error);
-        });
-    }
-
-    // Auth State Listener
-    onAuthStateChanged(auth, (user) => {
-        const greeting = document.getElementById("greeting");
-        const loginBtn = document.getElementById("loginBtn");
-        const logoutBtn = document.getElementById("logoutBtn");
-
-        if (user) {
-            document.getElementById("page1").style.display = "block";
-            document.getElementById("page2").style.display = "none";
-            document.getElementById("page3").style.display = "none";
-			
-
-            const hours = new Date().getHours();
-            let greet = "Selamat malam";
-            if (hours >= 5 && hours < 11) greet = "Selamat pagi";
-            else if (hours >= 11 && hours < 15) greet = "Selamat siang";
-            else if (hours >= 15 && hours < 18) greet = "Selamat sore";
-
-            if (greeting) greeting.textContent = `${greet}, ${user.displayName}`;
-
-            const dynamicText = document.getElementById("dynamicText");
-            if (dynamicText) {
-                const phrases = [
-                    `Ada apa kamu di sini, ${user.displayName}?`,
-                    `Lagi nyari inspirasi ya, ${user.displayName}?`,
-                    `Selamat datang kembali, ${user.displayName}!`,
-                    `Semangat belajar, ${user.displayName}!`,
-                    `Mau ngoprek Arduino lagi, ${user.displayName}?`
-                ];
-                let index = 0;
-                function changePhrase() {
-                    dynamicText.textContent = phrases[index];
-                    index = (index + 1) % phrases.length;
-                }
-                changePhrase();
-                setInterval(changePhrase, 20000);
-            }
-
-            if (loginBtn) loginBtn.style.display = "none";
-            if (logoutBtn) logoutBtn.style.display = "inline-block";
-            if (likeBtn) likeBtn.disabled = false;
-            if (followBtn) followBtn.disabled = false;
-			
-			    setupEmojiReactions(user);
-			
-
-
-        } else {
-            if (greeting) greeting.textContent = "";
-            if (loginBtn) loginBtn.style.display = "inline-block";
-            if (logoutBtn) logoutBtn.style.display = "none";
-            if (likeBtn) likeBtn.disabled = true;
-            if (followBtn) followBtn.disabled = true;
-
-            const dynamicText = document.getElementById("dynamicText");
-            if (dynamicText) dynamicText.textContent = "";
-			    setupEmojiReactions(null);
-
-        }
-    });
-
-    // Page Management
-    window.onload = function() {
-        const page1 = document.getElementById("page1");
-        const page2 = document.getElementById("page2");
-        const page3 = document.getElementById("page3");
-        const page4 = document.getElementById("page4");
-        const page5 = document.getElementById("page5");
-        const page6 = document.getElementById("page6");
-        const page7 = document.getElementById("page7");
-		  const page8 = document.getElementById("page8");
-		    const page9 = document.getElementById("page9");
-			const page10 = document.getElementById("page10");
-
-
-        // Format waktu lengkap
-        function formatTanggalLengkap(date) {
-            const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            return `${hari[date.getDay()]}, ${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
-        }
-
-        // Waktu terakhir update disimpan di localStorage
-        let lastUpdatedTentang = localStorage.getItem("tentangLastUpdated");
-
-        if (!lastUpdatedTentang) {
-            lastUpdatedTentang = new Date("2025-07-14T00:00:00Z").toISOString();
-            localStorage.setItem("tentangLastUpdated", lastUpdatedTentang);
-        }
-
-        function updateTentangRelativeTime() {
-            const now = new Date();
-            const updatedDate = new Date(localStorage.getItem("tentangLastUpdated"));
-            const diffSec = Math.floor((now - updatedDate) / 1000);
-            let waktu = "baru saja";
-
-            if (diffSec >= 60 && diffSec < 3600)
-                waktu = `${Math.floor(diffSec / 60)} menit yang lalu`;
-            else if (diffSec >= 3600 && diffSec < 86400)
-                waktu = `${Math.floor(diffSec / 3600)} jam yang lalu`;
-            else if (diffSec >= 86400)
-                waktu = `${Math.floor(diffSec / 86400)} hari yang lalu`;
-
-            const lengkap = formatTanggalLengkap(updatedDate);
-            const span = document.getElementById("tentangKamiTime");
-            if (span) span.innerHTML = `${waktu} • ${lengkap}`;
-        }
-
-        // Update terus setiap 10 detik
-        setInterval(updateTentangRelativeTime, 10000);
-        updateTentangRelativeTime();
-		
-		
-		
-		
-	 
-	 // Fungsi utama untuk menampilkan halaman
-function showPageContent(pageElement) {
-  const pageIds = ["page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9, page10"];
-  
-  // Sembunyikan semua halaman
-  pageIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-
-  // Tampilkan halaman yang dipilih
-  if (pageElement) {
-    pageElement.style.display = "block";
-    
-    // Jika page7, muat pengumuman dan masukan
-    if (pageElement.id === "page7") {
-      loadPinnedAnnouncements();
-      loadFeedback().catch(console.error);
-    }
-  }
-  
-  window.scrollTo(0, 0);
-}
 
 
 
