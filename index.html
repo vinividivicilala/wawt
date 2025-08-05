@@ -5418,66 +5418,84 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
-
-// Fungsi untuk membuat notifikasi
+	
+	
+	
+	
+// Enhanced Notification System
 async function createActivityNotification(activityType, activityData) {
   try {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
 
-    // Validasi data
-    if (!activityType || !activityData) {
-      console.error("Data tidak lengkap untuk membuat notifikasi");
-      return;
-    }
+    // Skip if already processed
+    const activityKey = `${activityType}_${activityData.contentId}_${activityData.commentId || ''}`;
+    if (processedNotificationIds.has(activityKey)) return;
+    processedNotificationIds.add(activityKey);
 
-    // Skip jika sudah diproses
-    if (processedNotificationIds.has(activityData.contentId + activityType)) {
-      return;
-    }
-    processedNotificationIds.add(activityData.contentId + activityType);
-
-    // Handle pengumuman untuk semua user
-    if (activityType === 'announcement' && !activityData.recipientId) {
+    // Handle announcements separately (send to all users)
+    if (activityType === 'announcement') {
       await sendAnnouncementToAllUsers(activityData, currentUser.uid);
       return;
     }
 
-    // Dapatkan penerima notifikasi
-    let recipientId = activityData.recipientId;
-    if (!recipientId && activityData.contentType && activityData.contentId) {
-      recipientId = await getContentAuthorId(activityData);
+    // Determine recipient(s)
+    let recipientIds = [];
+    if (activityData.recipientId) {
+      recipientIds = [activityData.recipientId];
+    } else {
+      const contentAuthorId = await getContentAuthorId(activityData);
+      if (contentAuthorId) recipientIds = [contentAuthorId];
     }
 
-    if (!recipientId) return;
+    // Create notifications for each recipient
+    for (const recipientId of recipientIds) {
+      if (recipientId === currentUser.uid) continue; // Skip self-notifications
 
-    // Buat notifikasi
-    const notificationRef = doc(collection(db, "notifications"));
-    const notificationData = {
-      id: notificationRef.id,
-      userId: recipientId,
-      type: activityType,
-      read: false,
-      timestamp: new Date(),
-      fromUserId: currentUser.uid,
-      fromUserName: currentUser.displayName || 'Pengguna',
-      ...generateNotificationContent(activityType, activityData, currentUser.displayName || 'Pengguna')
-    };
+      const notificationRef = doc(collection(db, "notifications"));
+      const notificationContent = generateNotificationContent(
+        activityType, 
+        activityData, 
+        currentUser.displayName || 'Pengguna'
+      );
 
-    await setDoc(notificationRef, notificationData);
+      await setDoc(notificationRef, {
+        id: notificationRef.id,
+        userId: recipientId,
+        type: activityType,
+        read: false,
+        timestamp: serverTimestamp(),
+        fromUserId: currentUser.uid,
+        fromUserName: currentUser.displayName || 'Pengguna',
+        ...notificationContent
+      });
 
-    // Juga simpan sebagai aktivitas
-    await logActivity({
-      type: activityType,
-      contentId: activityData.contentId,
-      contentType: activityData.contentType,
-      description: notificationData.message
-    });
-
+      // Also log as activity
+      await logActivity({
+        userId: recipientId,
+        type: activityType,
+        contentId: activityData.contentId,
+        contentType: activityData.contentType,
+        description: notificationContent.message,
+        ...(activityData.emoji && { emoji: activityData.emoji })
+      });
+    }
   } catch (error) {
-    console.error("Error dalam createActivityNotification:", error);
+    console.error("Error in createActivityNotification:", error);
   }
-}
+}	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -5692,50 +5710,97 @@ function setupContentUploadListeners(userId) {
 	
 	
 	
+	
+
+// Improved Activity Feed Setup
 function setupActivityTabs(userId) {
-    document.querySelectorAll('.activity-tab').forEach(tab => {
-        tab.addEventListener('click', function () {
-            const filter = this.getAttribute('data-tab');
+  document.querySelectorAll('.activity-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      const filter = this.dataset.tab;
+      
+      // Update UI
+      document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      document.querySelectorAll('.activity-tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`${filter}Activity`).classList.add('active');
 
-            // Hapus class aktif dari semua tab
-            document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-
-            // Tampilkan hanya konten yang sesuai
-            document.querySelectorAll('.activity-tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(filter + 'Activity').classList.add('active');
-
-            // Hentikan listener lama
-            if (currentUnsubscribe) currentUnsubscribe();
-
-            // Muat data sesuai filter
-            switch (filter) {
-                case 'comments':
-                    currentUnsubscribe = loadCommentsActivities(userId);
-                    break;
-                case 'reactions':
-                    currentUnsubscribe = loadReactionActivities(userId);
-                    break;
-                case 'posts':
-                    currentUnsubscribe = loadPostActivities(userId);
-                    break;
-                default:
-                    currentUnsubscribe = loadAllActivities(userId);
-            }
-        });
+      // Load appropriate data
+      if (currentUnsubscribe) currentUnsubscribe();
+      
+      switch(filter) {
+        case 'comments':
+          currentUnsubscribe = setupActivitiesListener(
+            query(
+              collection(db, "activities"),
+              where("type", "in", ["comment", "reply"]),
+              orderBy("timestamp", "desc"),
+              limit(15)
+            ),
+            'comments'
+          );
+          break;
+          
+        case 'reactions':
+          currentUnsubscribe = setupActivitiesListener(
+            query(
+              collection(db, "activities"),
+              where("type", "in", ["like", "reaction"]),
+              orderBy("timestamp", "desc"),
+              limit(15)
+            ),
+            'reactions'
+          );
+          break;
+          
+        case 'posts':
+          currentUnsubscribe = setupActivitiesListener(
+            query(
+              collection(db, "activities"),
+              where("type", "in", ["post", "feedback", "discussion", "announcement", "content"]),
+              orderBy("timestamp", "desc"),
+              limit(15)
+            ),
+            'posts'
+          );
+          break;
+          
+        default:
+          currentUnsubscribe = setupActivitiesListener(
+            query(
+              collection(db, "activities"),
+              orderBy("timestamp", "desc"),
+              limit(15)
+            ),
+            'all'
+          );
+      }
     });
+  });
 
-    // Load default
-    currentUnsubscribe = loadAllActivities(userId);
-    document.getElementById('allActivity').classList.add('active');
+  // Load initial data
+  currentUnsubscribe = setupActivitiesListener(
+    query(
+      collection(db, "activities"),
+      orderBy("timestamp", "desc"),
+      limit(15)
+    ),
+    'all'
+  );
 }
 	
 	
 	
 	
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 
@@ -7322,28 +7387,39 @@ function getTargetName(targetType) {
 
 
 
-// Fungsi untuk log aktivitas
+
+
+
+
+
+
+// Enhanced Activity Tracking
 async function logActivity(activityData) {
   try {
-    const user = auth.currentUser;
-    if (!user) return;
-
     const activityRef = doc(collection(db, "activities"));
-    await setDoc(activityRef, {
-      userId: user.uid,
-      userName: user.displayName,
-      userPhoto: user.photoURL || "",
-      type: activityData.type,
-      contentId: activityData.contentId,
-      contentType: activityData.contentType,
-      description: activityData.description,
-      timestamp: new Date()
-    });
+    const activityKey = `${activityData.type}_${activityData.contentId}_${activityData.userId}`;
+    
+    if (processedActivityIds.has(activityKey)) return;
+    processedActivityIds.add(activityKey);
 
+    await setDoc(activityRef, {
+      ...activityData,
+      timestamp: serverTimestamp()
+    });
   } catch (error) {
     console.error("Error logging activity:", error);
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7623,27 +7699,24 @@ function getContentTypeName(type) {
   return typeMap[type] || type;
 }
 
-// Fungsi untuk mendapatkan icon aktivitas
+
+
+
+// Helper Functions
 function getActivityIcon(type) {
-  switch (type) {
-    case 'comment':
-    case 'reply':
-      return '<i class="fas fa-comment-dots"></i>';
-    case 'like':
-    case 'reaction':
-      return '<i class="fas fa-heart"></i>';
-    case 'post':
-    case 'feedback':
-    case 'discussion':
-    case 'content':
-    case 'announcement':
-      return '<i class="fas fa-pen"></i>';
-    default:
-      return '<i class="fas fa-bell"></i>';
-  }
+  const icons = {
+    'comment': '💬',
+    'reply': '↩️',
+    'like': '👍',
+    'reaction': '😀',
+    'post': '📝',
+    'feedback': '📣',
+    'discussion': '💬',
+    'announcement': '📢',
+    'content': '📄'
+  };
+  return icons[type] || '🔔';
 }
-
-
 
 
 
@@ -7734,24 +7807,18 @@ function getActiveTab() {
 
 
 
-
-
-
-// Fungsi untuk merender aktivitas dengan filter
+// Enhanced Activity Rendering
 function renderActivities(activities, filterType = 'all') {
-  let containerId = `${filterType}Activity`;
-  const container = document.getElementById(containerId);
+  const container = document.getElementById(`${filterType}Activity`);
   if (!container) return;
 
-  // Filter aktivitas berdasarkan jenis
+  // Filter activities based on tab
   const filteredActivities = activities.filter(activity => {
-    if (!activity || !activity.type) return false;
-    
     switch(filterType) {
-      case 'comments':
-        return activity.type === 'comment' || activity.type === 'reply';
+      case 'comments': 
+        return ['comment', 'reply'].includes(activity.type);
       case 'reactions':
-        return activity.type === 'like' || activity.type === 'reaction';
+        return ['like', 'reaction'].includes(activity.type);
       case 'posts':
         return ['post', 'feedback', 'discussion', 'announcement', 'content'].includes(activity.type);
       default:
@@ -7759,36 +7826,26 @@ function renderActivities(activities, filterType = 'all') {
     }
   });
 
-  // Handle empty state
   if (filteredActivities.length === 0) {
-    container.innerHTML = `
-      <div class="empty-activities">
-        <p>Tidak ada aktivitas ${getFilterName(filterType)}</p>
-      </div>
-    `;
+    container.innerHTML = `<div class="empty-state">Tidak ada aktivitas ${getFilterName(filterType)}</div>`;
     return;
   }
 
-  // Render activities
-  container.innerHTML = filteredActivities.map(activity => {
-    return `
-      <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
-        <div class="activity-icon">
-          ${getActivityIcon(activity.type)}
-        </div>
-        <div class="activity-content">
-          <p>${formatActivityContent(activity)}</p>
-          <small>${formatTimeAgo(activity.timestamp)}</small>
-        </div>
+  container.innerHTML = filteredActivities.map(activity => `
+    <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
+      <div class="activity-icon">${getActivityIcon(activity.type)}</div>
+      <div class="activity-content">
+        <p>${formatActivityContent(activity)}</p>
+        <small>${formatTimeAgo(activity.timestamp)}</small>
       </div>
-    `;
-  }).join('');
+    </div>
+  `).join('');
 
-  // Add event listeners
-  document.querySelectorAll('.activity-item').forEach(item => {
-    item.addEventListener('click', function() {
-      const type = this.getAttribute('data-type');
-      const id = this.getAttribute('data-id');
+  // Add click handlers
+  container.querySelectorAll('.activity-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const type = item.dataset.type;
+      const id = item.dataset.id;
       navigateToActivity(type, id);
     });
   });
@@ -7863,38 +7920,35 @@ function getFilterName(filterType) {
 
 
 
-
-
-
-// Fungsi untuk format konten aktivitas
 function formatActivityContent(activity) {
-  switch(activity.type) {
-    case 'comment':
-      return `Anda mengomentari ${activity.targetType || 'konten'}: "${activity.description.substring(0, 50)}..."`;
-    case 'reply':
-      return `Anda membalas komentar pada ${activity.targetType || 'konten'}: "${activity.description.substring(0, 50)}..."`;
-    case 'like':
-      return `Anda menyukai ${activity.targetType || 'konten'}`;
-    case 'reaction':
-      return `Anda memberikan reaksi ${activity.emoji || ''} pada ${activity.targetType || 'konten'}`;
-    case 'feedback':
-      return `Anda memberikan feedback: "${activity.description.substring(0, 50)}..."`;
-    case 'discussion':
-      return `Anda memulai diskusi: "${activity.description.substring(0, 50)}..."`;
-    case 'announcement':
-      return `Anda membuat pengumuman: "${activity.description.substring(0, 50)}..."`;
-    case 'content':
-      return `Anda mengupload ${activity.targetType || 'konten'}: "${activity.description.substring(0, 50)}..."`;
-    default:
-      return activity.description || 'Aktivitas baru';
-  }
+  const baseText = activity.fromUserName ? 
+    `${activity.fromUserName} ${getActivityVerb(activity.type)}` : 
+    `Anda ${getActivityVerb(activity.type)}`;
+    
+  const contentInfo = activity.contentType ? 
+    ` ${getContentTypeName(activity.contentType)}` : '';
+    
+  const emojiInfo = activity.emoji ? ` ${activity.emoji}` : '';
+  
+  return `${baseText}${contentInfo}${emojiInfo}`;
 }
 
 
 
-
-
-
+function getActivityVerb(type) {
+  const verbs = {
+    'comment': 'mengomentari',
+    'reply': 'membalas',
+    'like': 'menyukai',
+    'reaction': 'memberi reaksi pada',
+    'post': 'memposting',
+    'feedback': 'memberi feedback',
+    'discussion': 'memulai diskusi',
+    'announcement': 'membuat pengumuman',
+    'content': 'mengupload'
+  };
+  return verbs[type] || 'melakukan aktivitas pada';
+}
 
 
 
@@ -8037,6 +8091,36 @@ function setupActivitiesListener(query, filterType = 'all') {
         }
     );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
