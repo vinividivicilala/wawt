@@ -6319,58 +6319,6 @@ await createActivityNotification(
 	
 	
 	
-
-
-function setupActivitiesListener(query, filterType = 'all') {
-    return onSnapshot(
-        query,
-        (snapshot) => {
-            const activities = [];
-
-            snapshot.forEach(doc => {
-                const data = doc.data();
-
-                // Deteksi timestamp (bisa Timestamp Firestore atau milisecond number)
-                let finalTimestamp = new Date();
-                if (data.timestamp && typeof data.timestamp.toDate === 'function') {
-                    finalTimestamp = data.timestamp.toDate();
-                } else if (typeof data.timestamp === 'number') {
-                    finalTimestamp = new Date(data.timestamp);
-                }
-
-                activities.push({
-                    id: doc.id,
-                    ...data,
-                    timestamp: finalTimestamp
-                });
-            });
-
-            renderActivities(activities, filterType);
-        },
-        (error) => {
-            console.error("Activities listener error:", error);
-
-            // Tentukan kontainer berdasarkan filter
-            let errorContainerId = '';
-            switch (filterType) {
-                case 'comments': errorContainerId = 'commentsActivity'; break;
-                case 'reactions': errorContainerId = 'reactionsActivity'; break;
-                case 'posts': errorContainerId = 'postsActivity'; break;
-                default: errorContainerId = 'allActivity';
-            }
-
-            const container = document.getElementById(errorContainerId);
-            if (container) {
-                container.innerHTML = `
-                    <div class="error-message">
-                        Gagal memuat aktivitas. Coba lagi nanti.
-                    </div>
-                `;
-            }
-        }
-    );
-}
-
 	
 	
 	
@@ -8139,6 +8087,57 @@ async function markAllNotificationsAsRead() {
 
 
 
+function setupActivitiesListener(query, filterType = 'all') {
+    return onSnapshot(
+        query,
+        (snapshot) => {
+            const activities = [];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+
+                // Deteksi timestamp (bisa Timestamp Firestore atau milisecond number)
+                let finalTimestamp = new Date();
+                if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+                    finalTimestamp = data.timestamp.toDate();
+                } else if (typeof data.timestamp === 'number') {
+                    finalTimestamp = new Date(data.timestamp);
+                }
+
+                activities.push({
+                    id: doc.id,
+                    ...data,
+                    timestamp: finalTimestamp
+                });
+            });
+
+            renderActivities(activities, filterType);
+        },
+        (error) => {
+            console.error("Activities listener error:", error);
+
+            // Tentukan kontainer berdasarkan filter
+            let errorContainerId = '';
+            switch (filterType) {
+                case 'comments': errorContainerId = 'commentsActivity'; break;
+                case 'reactions': errorContainerId = 'reactionsActivity'; break;
+                case 'posts': errorContainerId = 'postsActivity'; break;
+                default: errorContainerId = 'allActivity';
+            }
+
+            const container = document.getElementById(errorContainerId);
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        Gagal memuat aktivitas. Coba lagi nanti.
+                    </div>
+                `;
+            }
+        }
+    );
+}
+
+
 
 
 
@@ -8481,6 +8480,7 @@ async function markAllNotificationsAsRead() {
         // Load metadata
         loadMetadata();
     });
+
 
 
 
