@@ -8142,6 +8142,108 @@ function setupActivitiesListener(query, filterType = 'all') {
 
 
 
+    
+    // DOM Elements
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const greeting = document.getElementById("greeting");
+    const likeBtn = document.getElementById("likeBtn");
+    const followBtn = document.getElementById("followBtn");
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+    // Authentication Functions
+    if (loginBtn) {
+        loginBtn.addEventListener("click", () => {
+            signInWithPopup(auth, provider).catch(console.error);
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            signOut(auth).catch(console.error);
+        });
+    }
+
+    // Auth State Listener
+    onAuthStateChanged(auth, (user) => {
+        const greeting = document.getElementById("greeting");
+        const loginBtn = document.getElementById("loginBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (user) {
+            document.getElementById("page1").style.display = "block";
+            document.getElementById("page2").style.display = "none";
+            document.getElementById("page3").style.display = "none";
+			
+
+            const hours = new Date().getHours();
+            let greet = "Selamat malam";
+            if (hours >= 5 && hours < 11) greet = "Selamat pagi";
+            else if (hours >= 11 && hours < 15) greet = "Selamat siang";
+            else if (hours >= 15 && hours < 18) greet = "Selamat sore";
+
+            if (greeting) greeting.textContent = `${greet}, ${user.displayName}`;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) {
+                const phrases = [
+                    `Ada apa kamu di sini, ${user.displayName}?`,
+                    `Lagi nyari inspirasi ya, ${user.displayName}?`,
+                    `Selamat datang kembali, ${user.displayName}!`,
+                    `Semangat belajar, ${user.displayName}!`,
+                    `Mau ngoprek Arduino lagi, ${user.displayName}?`
+                ];
+                let index = 0;
+                function changePhrase() {
+                    dynamicText.textContent = phrases[index];
+                    index = (index + 1) % phrases.length;
+                }
+                changePhrase();
+                setInterval(changePhrase, 20000);
+            }
+
+            if (loginBtn) loginBtn.style.display = "none";
+            if (logoutBtn) logoutBtn.style.display = "inline-block";
+            if (likeBtn) likeBtn.disabled = false;
+            if (followBtn) followBtn.disabled = false;
+			
+			    setupEmojiReactions(user);
+			
+
+
+        } else {
+            if (greeting) greeting.textContent = "";
+            if (loginBtn) loginBtn.style.display = "inline-block";
+            if (logoutBtn) logoutBtn.style.display = "none";
+            if (likeBtn) likeBtn.disabled = true;
+            if (followBtn) followBtn.disabled = true;
+
+            const dynamicText = document.getElementById("dynamicText");
+            if (dynamicText) dynamicText.textContent = "";
+			    setupEmojiReactions(null);
+
+        }
+    });
+
+
+
 
 
 
@@ -8526,108 +8628,6 @@ function setupActivitiesListener(query, filterType = 'all') {
 
 
 
-
-
-
-    
-    // DOM Elements
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const greeting = document.getElementById("greeting");
-    const likeBtn = document.getElementById("likeBtn");
-    const followBtn = document.getElementById("followBtn");
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-
-
-    // Authentication Functions
-    if (loginBtn) {
-        loginBtn.addEventListener("click", () => {
-            signInWithPopup(auth, provider).catch(console.error);
-        });
-    }
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
-            signOut(auth).catch(console.error);
-        });
-    }
-
-    // Auth State Listener
-    onAuthStateChanged(auth, (user) => {
-        const greeting = document.getElementById("greeting");
-        const loginBtn = document.getElementById("loginBtn");
-        const logoutBtn = document.getElementById("logoutBtn");
-
-        if (user) {
-            document.getElementById("page1").style.display = "block";
-            document.getElementById("page2").style.display = "none";
-            document.getElementById("page3").style.display = "none";
-			
-
-            const hours = new Date().getHours();
-            let greet = "Selamat malam";
-            if (hours >= 5 && hours < 11) greet = "Selamat pagi";
-            else if (hours >= 11 && hours < 15) greet = "Selamat siang";
-            else if (hours >= 15 && hours < 18) greet = "Selamat sore";
-
-            if (greeting) greeting.textContent = `${greet}, ${user.displayName}`;
-
-            const dynamicText = document.getElementById("dynamicText");
-            if (dynamicText) {
-                const phrases = [
-                    `Ada apa kamu di sini, ${user.displayName}?`,
-                    `Lagi nyari inspirasi ya, ${user.displayName}?`,
-                    `Selamat datang kembali, ${user.displayName}!`,
-                    `Semangat belajar, ${user.displayName}!`,
-                    `Mau ngoprek Arduino lagi, ${user.displayName}?`
-                ];
-                let index = 0;
-                function changePhrase() {
-                    dynamicText.textContent = phrases[index];
-                    index = (index + 1) % phrases.length;
-                }
-                changePhrase();
-                setInterval(changePhrase, 20000);
-            }
-
-            if (loginBtn) loginBtn.style.display = "none";
-            if (logoutBtn) logoutBtn.style.display = "inline-block";
-            if (likeBtn) likeBtn.disabled = false;
-            if (followBtn) followBtn.disabled = false;
-			
-			    setupEmojiReactions(user);
-			
-
-
-        } else {
-            if (greeting) greeting.textContent = "";
-            if (loginBtn) loginBtn.style.display = "inline-block";
-            if (logoutBtn) logoutBtn.style.display = "none";
-            if (likeBtn) likeBtn.disabled = true;
-            if (followBtn) followBtn.disabled = true;
-
-            const dynamicText = document.getElementById("dynamicText");
-            if (dynamicText) dynamicText.textContent = "";
-			    setupEmojiReactions(null);
-
-        }
-    });
 
     // Page Management
     window.onload = function() {
