@@ -5283,7 +5283,6 @@ a.footnote-link:hover {
 
 
 
-
 document.addEventListener("DOMContentLoaded", function () {
     // Variabel state
     let userProfile = {};
@@ -8520,6 +8519,16 @@ function setupActivitiesListener(query, filterType = 'all') {
 
 
 
+
+
+
+
+
+
+
+
+
+
     
     // DOM Elements
     const loginBtn = document.getElementById("loginBtn");
@@ -8602,7 +8611,7 @@ function setupActivitiesListener(query, filterType = 'all') {
             if (likeBtn) likeBtn.disabled = false;
             if (followBtn) followBtn.disabled = false;
 			
-			    
+			    setupEmojiReactions(user);
 			
 
 
@@ -8699,15 +8708,6 @@ function showPageContent(pageElement) {
   
   window.scrollTo(0, 0);
 }
-
-
-
-
-
-
-
-
-
 
 
 
