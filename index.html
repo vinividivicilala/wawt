@@ -7626,38 +7626,26 @@ async function sendAnnouncementToAllUsers(activityData, senderId) {
 
 
 
-// Fungsi untuk mendapatkan author content
-async function getContentAuthorId(activityData) {
+
+async function getContentAuthorId(contentType, contentId) {
   try {
-    // Coba ambil dari konten utama
-    const contentRef = doc(db, activityData.contentType, activityData.contentId);
-    const contentDoc = await getDoc(contentRef);
-    
-    if (contentDoc.exists()) {
-      return contentDoc.data().userId || contentDoc.data().authorId;
+    // Guard: hindari empty path
+    if (!contentType || !contentId || typeof contentType !== 'string' || typeof contentId !== 'string') {
+      console.warn('getContentAuthorId: invalid args', { contentType, contentId });
+      return null;
     }
 
-    // Jika tidak ditemukan, coba ambil dari komentar
-    if (activityData.commentId) {
-      const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
-      const commentDoc = await getDoc(commentRef);
-      if (commentDoc.exists()) {
-        return commentDoc.data().userId || commentDoc.data().replyTo;
-      }
-    }
+    const ref = doc(db, contentType, contentId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return null;
 
-    return null;
-  } catch (error) {
-    console.error("Error mendapatkan author ID:", error);
+    const d = snap.data();
+    return d.userId || d.authorId || d.createdBy || null;
+  } catch (e) {
+    console.error('Error mendapatkan author ID:', e);
     return null;
   }
 }
-
-
-
-
-
-
 
 
 
@@ -8263,19 +8251,26 @@ function setupUniversalCommentListeners() {
   return onSnapshot(cg, (snap) => {
     snap.docChanges().forEach(async (change) => {
       if (change.type !== 'added') return;
+
       const c = change.doc.data();
       const current = auth.currentUser?.uid;
-      if (!c || c.userId === current) return;
 
-      const parent = change.doc.ref.parent.parent;
-      if (!parent) return;
+      // Data minimal & hindari self
+      if (!c || !c.userId || c.userId === current) return;
 
-      const contentType = parent.parent.id; // 'discussions' | 'feedback' | 'announcements' | 'arduinoHistory'
-      const contentId = parent.id;
+      // Induk komentar -> dokumen konten
+      const commentDoc = change.doc.ref;                 // .../comments/{commentId}
+      const contentDoc = commentDoc.parent.parent;       // .../{contentCollection}/{contentId}
+      if (!contentDoc || !contentDoc.parent) return;
 
-      const ownerId = await getContentAuthorId(contentType, contentId);
+      const contentType = contentDoc.parent.id;          // announcements|discussions|feedback|arduinoHistory
+      const contentId   = contentDoc.id;
+      if (!contentType || !contentId) return;
+
+      // Tentukan penerima
+      const ownerId   = await getContentAuthorId(contentType, contentId);
       const recipient = (c.replyTo && c.replyTo !== c.userId) ? c.replyTo
-                       : (ownerId && ownerId !== c.userId) ? ownerId
+                       : (ownerId && ownerId !== c.userId)     ? ownerId
                        : null;
 
       const type = c.replyTo ? 'reply' : 'comment';
@@ -8306,83 +8301,85 @@ function setupUniversalCommentListeners() {
 
 
 
-
 function setupUniversalLikeListeners() {
   const cg = collectionGroup(db, 'likes');
   return onSnapshot(cg, (snap) => {
     snap.docChanges().forEach(async (change) => {
       if (change.type !== 'added') return;
+
       const like = change.doc.data();
       const current = auth.currentUser?.uid;
-      if (!like || like.userId === current) return;
+      if (!like || !like.userId || like.userId === current) return;
 
-      const parent = change.doc.ref.parent.parent;
-      if (!parent) return;
+      const likeDoc  = change.doc.ref;              // .../likes/{likeId}
+      const likedRef = likeDoc.parent.parent;       // bisa post atau comment
+      if (!likedRef || !likedRef.parent) return;
 
-      const parentCollection = parent.parent.id;
+      const parentCollection = likedRef.parent.id;
 
+      // ----- Like pada komentar -----
       if (parentCollection === 'comments') {
-        // Like pada komentar
-        const commentSnap = await getDoc(parent);
-        const comment = commentSnap.data();
-        const grand = parent.parent.parent;
-        if (!grand) return;
-        const contentType = grand.parent.id;
-        const contentId = grand.id;
+        // konten induk dari komentar
+        const commentRef = likedRef;                               // .../comments/{commentId}
+        const contentRef = commentRef.parent.parent;               // .../{contentCollection}/{contentId}
+        if (!contentRef || !contentRef.parent) return;
 
-        const recipient = comment?.userId && comment.userId !== like.userId ? comment.userId : null;
+        const contentType = contentRef.parent.id;
+        const contentId   = contentRef.id;
+        if (!contentType || !contentId) return;
+
+        const commentSnap = await getDoc(commentRef);
+        const comment     = commentSnap.exists() ? commentSnap.data() : null;
+        const recipient   = comment?.userId && comment.userId !== like.userId ? comment.userId : null;
 
         await logActivity({
           userId: like.userId,
           type: 'like',
           contentType,
           contentId,
-          commentId: parent.id
+          commentId: commentRef.id
         });
 
         if (recipient) {
           await createActivityNotification('like', {
             contentType,
             contentId,
-            commentId: parent.id,
+            commentId: commentRef.id,
             recipientId: recipient,
             senderId: like.userId,
             senderName: like.userName || 'Pengguna'
           });
         }
-      } else {
-        // Like pada post
-        const contentType = parentCollection;
-        const contentId = parent.id;
+        return;
+      }
 
-        const ownerId = await getContentAuthorId(contentType, contentId);
-        const recipient = ownerId && ownerId !== like.userId ? ownerId : null;
+      // ----- Like pada post -----
+      const contentType = parentCollection;         // announcements|discussions|feedback|arduinoHistory
+      const contentId   = likedRef.id;
+      if (!contentType || !contentId) return;
 
-        await logActivity({
-          userId: like.userId,
-          type: 'like',
+      const ownerId   = await getContentAuthorId(contentType, contentId);
+      const recipient = ownerId && ownerId !== like.userId ? ownerId : null;
+
+      await logActivity({
+        userId: like.userId,
+        type: 'like',
+        contentType,
+        contentId
+      });
+
+      if (recipient) {
+        await createActivityNotification('like', {
           contentType,
-          contentId
+          contentId,
+          recipientId: recipient,
+          senderId: like.userId,
+          senderName: like.userName || 'Pengguna'
         });
-
-        if (recipient) {
-          await createActivityNotification('like', {
-            contentType,
-            contentId,
-            recipientId: recipient,
-            senderId: like.userId,
-            senderName: like.userName || 'Pengguna'
-          });
-        }
       }
     });
   });
 }
-
-
-
-
-
 
 
 
@@ -8395,33 +8392,38 @@ function setupUniversalReactionListeners() {
   return onSnapshot(cg, (snap) => {
     snap.docChanges().forEach(async (change) => {
       if (change.type !== 'added') return;
+
       const r = change.doc.data();
       const current = auth.currentUser?.uid;
-      if (!r || r.userId === current) return;
+      if (!r || !r.userId || r.userId === current) return;
 
-      const parent = change.doc.ref.parent.parent;
-      if (!parent) return;
+      const reactDoc  = change.doc.ref;
+      const targetRef = reactDoc.parent.parent;             // post atau comment
+      if (!targetRef || !targetRef.parent) return;
 
       let contentType, contentId, commentId = null;
-      const parentCollection = parent.parent.id;
+      const parentCollection = targetRef.parent.id;
 
       if (parentCollection === 'comments') {
-        const grand = parent.parent.parent;
-        if (!grand) return;
-        contentType = grand.parent.id;
-        contentId = grand.id;
-        commentId = parent.id;
+        const contentRef = targetRef.parent.parent;         // .../{contentCollection}/{contentId}
+        if (!contentRef || !contentRef.parent) return;
+        contentType = contentRef.parent.id;
+        contentId   = contentRef.id;
+        commentId   = targetRef.id;
       } else {
         contentType = parentCollection;
-        contentId = parent.id;
+        contentId   = targetRef.id;
       }
 
+      if (!contentType || !contentId) return;
+
+      // Tentukan penerima
       const ownerId = await getContentAuthorId(contentType, contentId);
       let recipient = ownerId && ownerId !== r.userId ? ownerId : null;
 
       if (commentId) {
-        const cSnap = await getDoc(parent);
-        const c = cSnap.data();
+        const cSnap = await getDoc(targetRef);
+        const c     = cSnap.exists() ? cSnap.data() : null;
         if (c?.userId && c.userId !== r.userId) recipient = c.userId;
       }
 
@@ -8452,43 +8454,39 @@ function setupUniversalReactionListeners() {
 
 
 
-
-
-
-
-
-function setupContentUploadListeners(userId) {
+function setupContentUploadListeners() {
   const contentTypes = ['arduinoHistory', 'announcements', 'feedback', 'discussions'];
   const unsubs = [];
 
-  contentTypes.forEach(type => {
-    const ref = collection(db, type);
-    const unsub = onSnapshot(ref, (snapshot) => {
+  contentTypes.forEach((type) => {
+    const qRef = collection(db, type);
+    const unsub = onSnapshot(qRef, (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
-        if (change.type !== "added") return;
-        const d = change.doc.data();
-        const actor = d.userId || d.authorId || d.createdBy || 'unknown';
-        // Tetap catat aktivitas posting (terlihat di tab "Postingan")
+        if (change.type !== 'added') return;
+
+        const d      = change.doc.data();
+        const actor  = d?.userId || d?.authorId || d?.createdBy || 'unknown';
         const mapType = (type === 'announcements') ? 'announcement'
-                      : (type === 'discussions') ? 'discussion'
-                      : (type === 'feedback') ? 'feedback' : 'content';
+                     : (type === 'discussions')   ? 'discussion'
+                     : (type === 'feedback')      ? 'feedback'
+                     : 'content';
 
         await logActivity({
           userId: actor,
           type: mapType,
           contentType: type,
           contentId: change.doc.id,
-          description: d.title || d.subject || 'Konten baru'
+          description: d?.title || d?.subject || 'Konten baru'
         });
 
-        // Jika ingin broadcast notifikasi khusus untuk announcements:
+        // Broadcast announcement → notifikasi ke semua user
         if (type === 'announcements') {
           await createActivityNotification('announcement', {
             contentType: 'announcements',
             contentId: change.doc.id,
-            title: d.title || 'Pengumuman',
+            title: d?.title || 'Pengumuman',
             senderId: actor,
-            senderName: d.userName || d.authorName || 'Admin'
+            senderName: d?.userName || d?.authorName || 'Admin'
           });
         }
       });
@@ -8498,8 +8496,6 @@ function setupContentUploadListeners(userId) {
 
   return () => unsubs.forEach(fn => fn && fn());
 }
-
-
 
 
 
