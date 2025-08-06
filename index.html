@@ -5511,31 +5511,6 @@ function setupPage11Listeners(userId) {
     return () => unsubscribes.forEach(fn => fn && fn());
 }
 
-// Contoh implementasi listener untuk komentar
-function setupCommentListener(userId) {
-    const q = query(
-        collection(db, `${contentType}Comments`),
-        where("contentId", "in", getAllPublicContentIds()), // Fungsi untuk mendapatkan semua ID konten publik
-        orderBy("timestamp", "desc")
-    );
-    
-    return onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach(async (change) => {
-            if (change.type === "added") {
-                const commentData = change.doc.data();
-                await handleCommentOrReply('comment', {
-                    contentType: commentData.contentType,
-                    contentId: commentData.contentId,
-                    commentId: change.doc.id,
-                    commentText: commentData.text
-                }, {
-                    uid: commentData.userId,
-                    displayName: commentData.userName
-                });
-            }
-        });
-    });
-}
 	
 	
 	
@@ -5585,6 +5560,31 @@ function formatNotificationMessage(notification) {
 
 
 
+// Contoh implementasi listener untuk komentar
+function setupCommentListener(userId) {
+    const q = query(
+        collection(db, `${contentType}Comments`),
+        where("contentId", "in", getAllPublicContentIds()), // Fungsi untuk mendapatkan semua ID konten publik
+        orderBy("timestamp", "desc")
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === "added") {
+                const commentData = change.doc.data();
+                await handleCommentOrReply('comment', {
+                    contentType: commentData.contentType,
+                    contentId: commentData.contentId,
+                    commentId: change.doc.id,
+                    commentText: commentData.text
+                }, {
+                    uid: commentData.userId,
+                    displayName: commentData.userName
+                });
+            }
+        });
+    });
+}
 
 
 
