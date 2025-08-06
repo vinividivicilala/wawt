@@ -5493,47 +5493,104 @@ async function createActivityNotification(activityType, activityData) {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-
-
-
-
-// Setup listener untuk komentar
-function setupCommentListeners(userId) {
-  const commentsRef = collection(db, "arduinoHistoryComments");
-  return onSnapshot(commentsRef, (snapshot) => {
-    snapshot.docChanges().forEach(change => {
-      if (change.type === "added") {
-        const newComment = change.doc.data();
-        
-        // Validasi data komentar
-        if (!newComment.userId || newComment.userId === userId || !newComment.historyId) {
-          return;
-        }
-
-        // Dapatkan recipientId (pemilik konten atau komentar yang dibalas)
-        const recipientId = newComment.replyTo || newComment.contentAuthorId;
-        if (!recipientId) return;
-
-        // Buat notifikasi
-        createActivityNotification(newComment.replyTo ? 'reply' : 'comment', {
-          contentType: 'arduinoHistory',
-          contentId: newComment.historyId,
-          commentId: change.doc.id,
-          recipientId: recipientId,
-          senderId: newComment.userId,
-          senderName: newComment.userName || 'Pengguna'
-        });
-      }
-    });
-  });
+	// Di bagian setup listeners untuk halaman 11
+function setupPage11Listeners(userId) {
+    const unsubscribes = [
+        // Listener untuk komentar
+        setupCommentListener(userId),
+        // Listener untuk like
+        setupLikeListener(userId),
+        // Listener untuk reaksi emoji
+        setupReactionListener(userId),
+        // Listener untuk konten baru
+        setupContentUploadListener(userId),
+        // Listener untuk aktivitas user
+        setupUserActivitiesListener(userId)
+    ];
+    
+    return () => unsubscribes.forEach(fn => fn && fn());
 }
+
+// Contoh implementasi listener untuk komentar
+function setupCommentListener(userId) {
+    const q = query(
+        collection(db, `${contentType}Comments`),
+        where("contentId", "in", getAllPublicContentIds()), // Fungsi untuk mendapatkan semua ID konten publik
+        orderBy("timestamp", "desc")
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === "added") {
+                const commentData = change.doc.data();
+                await handleCommentOrReply('comment', {
+                    contentType: commentData.contentType,
+                    contentId: commentData.contentId,
+                    commentId: change.doc.id,
+                    commentText: commentData.text
+                }, {
+                    uid: commentData.userId,
+                    displayName: commentData.userName
+                });
+            }
+        });
+    });
+}
+	
+	
+	
+	
+	
+	
+
+// Fungsi untuk mendapatkan semua ID konten publik
+async function getAllPublicContentIds() {
+    const contentTypes = ['announcements', 'discussions', 'feedback', 'arduino-history'];
+    let allIds = [];
+    
+    for (const type of contentTypes) {
+        const snapshot = await getDocs(collection(db, type));
+        allIds = allIds.concat(snapshot.docs.map(doc => doc.id));
+    }
+    
+    return allIds;
+}
+
+// Fungsi untuk memformat notifikasi
+function formatNotificationMessage(notification) {
+    const base = `${notification.fromUserName} `;
+    
+    switch(notification.type) {
+        case 'comment':
+            return base + `mengomentari ${getContentTypeName(notification.contentType)} Anda`;
+        case 'reply':
+            return base + `membalas komentar Anda`;
+        case 'like':
+            return base + `menyukai ${getContentTypeName(notification.contentType)} Anda`;
+        case 'reaction':
+            return base + `memberi reaksi ${notification.emoji} pada ${getContentTypeName(notification.contentType)} Anda`;
+        case 'announcement':
+            return `Pengumuman baru: ${notification.title || 'Tanpa judul'}`;
+        default:
+            return base + `melakukan aktivitas baru`;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Setup listener untuk like
 function setupLikeListeners(userId) {
@@ -8269,7 +8326,183 @@ async function addComment(contentType, contentId, commentText, parentId = null) 
 
 
 
+// Fungsi utama untuk menangani notifikasi dan aktivitas
+async function handleActivityAndNotification(activityType, activityData, currentUser) {
+    try {
+        // 1. Dapatkan recipientId (penerima notifikasi)
+        const recipientId = await determineRecipientId(activityData);
+        
+        // 2. Jika ini pengumuman, kirim ke semua user
+        if (activityType === 'announcement') {
+            await handleAnnouncementNotification(activityData, currentUser.uid);
+            await recordActivityForAllUsers(activityType, activityData, currentUser);
+            return;
+        }
+        
+        // 3. Jika ada penerima dan bukan diri sendiri, buat notifikasi
+        if (recipientId && recipientId !== currentUser.uid) {
+            await createNotificationDocument(activityType, activityData, recipientId, currentUser);
+        }
+        
+        // 4. Rekam aktivitas untuk user yang melakukan aksi
+        await recordUserActivity(activityType, activityData, currentUser);
+        
+        // 5. Untuk komentar/reply di konten publik, rekam aktivitas untuk pemilik konten
+        if (['comment', 'reply'].includes(activityType) && activityData.contentId) {
+            const contentOwnerId = await getContentAuthorId(activityData);
+            if (contentOwnerId && contentOwnerId !== currentUser.uid) {
+                await recordUserActivity(`${activityType}-received`, activityData, currentUser, contentOwnerId);
+            }
+        }
+        
+    } catch (error) {
+        console.error("Error handling activity and notification:", error);
+    }
+}
 
+
+
+
+
+
+
+
+async function handleEmojiReaction(user, emojiType, contentType, contentId) {
+    try {
+        // 1. Dapatkan pemilik konten
+        const contentOwnerId = await getContentAuthorId({
+            contentType,
+            contentId
+        });
+        
+        // 2. Jika bukan reaksi ke konten sendiri, buat notifikasi
+        if (contentOwnerId && contentOwnerId !== user.uid) {
+            await createNotificationDocument('reaction', {
+                emoji: emojiType,
+                contentType,
+                contentId
+            }, contentOwnerId, user);
+        }
+        
+        // 3. Rekam aktivitas
+        await recordUserActivity('reaction', {
+            emoji: emojiType,
+            contentType,
+            contentId,
+            timestamp: new Date()
+        }, user);
+        
+    } catch (error) {
+        console.error("Error handling emoji reaction:", error);
+    }
+}
+
+
+
+
+
+async function recordUserActivity(activityType, activityData, currentUser, specificUserId = null) {
+    try {
+        const userId = specificUserId || currentUser.uid;
+        const activityRef = collection(db, "userActivities");
+        
+        const activityDoc = {
+            userId,
+            type: activityType,
+            timestamp: new Date(),
+            fromUserId: currentUser.uid,
+            fromUserName: currentUser.displayName || 'Pengguna',
+            ...activityData
+        };
+        
+        // Cek duplikasi aktivitas
+        const duplicateQuery = query(
+            collection(db, "userActivities"),
+            where("userId", "==", userId),
+            where("type", "==", activityType),
+            where("contentId", "==", activityData.contentId || null),
+            where("commentId", "==", activityData.commentId || null),
+            orderBy("timestamp", "desc"),
+            limit(1)
+        );
+        
+        const snapshot = await getDocs(duplicateQuery);
+        if (snapshot.empty || 
+            (snapshot.docs[0].data().timestamp.toDate().getTime() < Date.now() - 60000)) {
+            // Tidak ada duplikat atau lebih dari 1 menit yang lalu
+            await addDoc(activityRef, activityDoc);
+        }
+        
+    } catch (error) {
+        console.error("Error recording user activity:", error);
+    }
+}
+
+
+
+
+async function handleNewContentUpload(contentType, contentData, currentUser) {
+    try {
+        // 1. Rekam aktivitas upload untuk user
+        await recordUserActivity('content-upload', {
+            contentType,
+            contentId: contentData.id,
+            title: contentData.title,
+            description: contentData.description
+        }, currentUser);
+        
+        // 2. Jika ini pengumuman, kirim notifikasi ke semua user
+        if (contentType === 'announcements') {
+            await sendAnnouncementToAllUsers({
+                contentId: contentData.id,
+                title: contentData.title,
+                message: contentData.description
+            }, currentUser.uid);
+        }
+        
+    } catch (error) {
+        console.error("Error handling new content upload:", error);
+    }
+}
+
+
+
+
+async function handleCommentOrReply(activityType, activityData, currentUser) {
+    try {
+        // 1. Tentukan penerima notifikasi
+        let recipientId;
+        
+        if (activityType === 'comment') {
+            // Untuk komentar baru, notifikasi ke pemilik konten
+            recipientId = await getContentAuthorId(activityData);
+        } else if (activityType === 'reply') {
+            // Untuk reply, notifikasi ke penulis komentar asli
+            const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
+            const commentDoc = await getDoc(commentRef);
+            if (commentDoc.exists()) {
+                recipientId = commentDoc.data().userId;
+            }
+        }
+        
+        // 2. Jika ada penerima dan bukan diri sendiri, buat notifikasi
+        if (recipientId && recipientId !== currentUser.uid) {
+            await createNotificationDocument(activityType, activityData, recipientId, currentUser);
+        }
+        
+        // 3. Rekam aktivitas untuk user yang berkomentar
+        await recordUserActivity(activityType, activityData, currentUser);
+        
+        // 4. Rekam aktivitas untuk pemilik konten (jika berbeda)
+        const contentOwnerId = await getContentAuthorId(activityData);
+        if (contentOwnerId && contentOwnerId !== currentUser.uid && contentOwnerId !== recipientId) {
+            await recordUserActivity(`${activityType}-received`, activityData, currentUser, contentOwnerId);
+        }
+        
+    } catch (error) {
+        console.error("Error handling comment/reply:", error);
+    }
+}
 
 
 
@@ -13710,5 +13943,3 @@ async function loadAnnouncementById(id) {
 
 
 
-
-	
