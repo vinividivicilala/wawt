@@ -7574,7 +7574,18 @@ async function handleAnnouncementNotification(activityData, currentUserId) {
 
 
 
+
+
+
+
 async function createNotificationDocument(activityType, activityData, recipientId, currentUser) {
+    if (!activityData || !activityData.contentType || !activityData.contentId) {
+        console.warn("❌ Notification skipped: Invalid activityData", {
+            activityType, activityData, recipientId, currentUser
+        });
+        return;
+    }
+
     const notificationData = {
         userId: recipientId,
         type: activityType,
@@ -7588,16 +7599,11 @@ async function createNotificationDocument(activityType, activityData, recipientI
         case 'comment':
             notificationData.message = `${notificationData.fromUserName} mengomentari ${getContentTypeName(activityData.contentType)} Anda`;
             notificationData.link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
-            notificationData.contentType = activityData.contentType;
-            notificationData.contentId = activityData.contentId;
             notificationData.commentId = activityData.commentId;
             break;
 
         case 'like':
             notificationData.message = `${notificationData.fromUserName} menyukai ${getContentTypeName(activityData.contentType)} Anda`;
-            notificationData.link = `/${activityData.contentType}/${activityData.contentId}`;
-            notificationData.contentType = activityData.contentType;
-            notificationData.contentId = activityData.contentId;
             break;
 
         case 'reaction':
@@ -7608,9 +7614,6 @@ async function createNotificationDocument(activityType, activityData, recipientI
                 ? `Kamu memberikan reaksi ${activityData.emoji} pada ${contentName}`
                 : `${notificationData.fromUserName} memberikan reaksi ${activityData.emoji} pada ${contentName} Anda`;
 
-            notificationData.link = `/${activityData.contentType}/${activityData.contentId}`;
-            notificationData.contentType = activityData.contentType;
-            notificationData.contentId = activityData.contentId;
             notificationData.emoji = activityData.emoji;
             break;
 
@@ -7619,8 +7622,21 @@ async function createNotificationDocument(activityType, activityData, recipientI
             notificationData.link = '/';
     }
 
+    notificationData.contentType = activityData.contentType;
+    notificationData.contentId = activityData.contentId;
+
     await addDoc(collection(db, "notifications"), notificationData);
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
