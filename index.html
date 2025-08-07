@@ -7421,23 +7421,24 @@ function setupNotificationListeners(userId) {
         limit(50)
     );
     
-    return onSnapshot(q, (snapshot) => {
-        notifications = [];
-        let unreadCount = 0;
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            notifications.push({
-                id: doc.id,
-                ...data,
-                timestamp: data.timestamp?.toDate() || new Date()
-            });
-            
-            if (!data.read) unreadCount++;
+   return onSnapshot(q, (snapshot) => {
+    let notifications = [];
+    let unreadCount = 0;
+    
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        notifications.push({
+            id: doc.id,
+            ...data,
+            timestamp: data.timestamp?.toDate() || new Date()
         });
 
-        updateNotificationUI(notifications, unreadCount);
+        if (!data.read) unreadCount++;
     });
+
+    updateNotificationUI(notifications, unreadCount);
+});
+
 }
 
   
@@ -7656,18 +7657,22 @@ async function sendAnnouncementToAllUsers(activityData, senderId) {
 }
 
 
-// Get content author ID
+
+
 async function getContentAuthorId(activityData) {
     try {
-        // Try to get from main content
+        if (!activityData.contentType || !activityData.contentId) {
+            console.warn("Invalid contentType or contentId", activityData);
+            return null;
+        }
+
         const contentRef = doc(db, activityData.contentType, activityData.contentId);
         const contentDoc = await getDoc(contentRef);
-        
+
         if (contentDoc.exists()) {
             return contentDoc.data().userId || contentDoc.data().authorId;
         }
 
-        // If not found, try to get from comment
         if (activityData.commentId) {
             const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
             const commentDoc = await getDoc(commentRef);
@@ -7682,6 +7687,7 @@ async function getContentAuthorId(activityData) {
         return null;
     }
 }
+
 
 
 
