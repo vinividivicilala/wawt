@@ -8297,16 +8297,17 @@ function setupActivitiesListener(query, filterType = 'all') {
 
             userReaction = emojiType;
 
-          // Di dalam fungsi setupEmojiReactions, ganti bagian createNotification dengan:
-await createActivityNotification(
-    '9k1G7CiLZWNCkadVn3m8ZZRaQwg1', // Ganti dengan ID pemilik konten yang sebenarnya
-    'reaction',
-    user.uid,
-    user.displayName || 'Pengguna',
-    emojiType,
-    contentId.includes('arduino') ? 'arduino-history' : 'content',
-    contentId
-);
+         
+
+await createActivityNotification("reaction", {
+  contentType: contentId.includes("arduino") ? "arduinoHistory" : "content",
+  contentId: contentId,
+  recipientId: "9k1G7CiLZWNCkadVn3m8ZZRaQwg1", // ID pemilik konten (hardcoded atau dinamis)
+  emoji: emojiType,
+  senderId: user.uid,
+  senderName: user.displayName || "Pengguna"
+});
+
 
             // ✅ Aktivitas pengguna
             await addDoc(collection(db, "activities"), {
