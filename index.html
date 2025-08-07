@@ -7305,20 +7305,6 @@ function navigateToActivity(type, id) {
 	
 	
 	
-    
-    // Fungsi pembantu untuk mendapatkan ikon notifikasi
-    function getNotificationIcon(type) {
-        const icons = {
-            'comment': '💬',
-            'like': '👍',
-            'announcement': '📢',
-            'message': '✉️',
-            'system': '⚙️'
-        };
-        
-        return icons[type] || '🔔';
-    }
-    
     // Fungsi pembantu untuk memformat waktu
     function formatTimeAgo(date) {
         if (!date) return '';
