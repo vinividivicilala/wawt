@@ -5466,6 +5466,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const closeModal = document.querySelector('.close-modal');
     const saveNotificationSettingsBtn = document.getElementById('saveNotificationSettings');
     const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
+	
+	const processedNotificationIds = new Set(); // ✅ Melacak notifikasi yang sudah diproses
+const processedActivityIds = new Set();
     
     // Event Listeners
     backFromDashboard?.addEventListener('click', function() {
@@ -5631,6 +5634,18 @@ async function createActivityNotification(activityType, activityData) {
 	
 	
 	
+// 🔧 Fungsi untuk mengubah tipe aktivitas menjadi nama yang lebih ramah
+function getContentTypeName(type) {
+  const typeMap = {
+    'arduinoHistory': 'Sejarah Arduino',
+    'discussions': 'Diskusi',
+    'feedback': 'Feedback',
+    'announcements': 'Pengumuman',
+    'unknown': 'Konten'
+  };
+  return typeMap[type] || type;
+}
+
 	
 	
 	// Setup listeners for all content types
