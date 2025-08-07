@@ -5790,6 +5790,80 @@ function setupActivityTabs(userId) {
 }
 	
 	
+// Listener untuk chat baru
+function setupChatListeners(userId) {
+  const chatTypes = [
+    'discussionChats', 
+    'feedbackChats', 
+    'announcementChats', 
+    'arduinoChats'
+  ];
+  
+  const unsubscribes = chatTypes.map(type => {
+    const q = query(
+      collection(db, type),
+      where("userId", "!=", userId),
+      orderBy("timestamp", "desc")
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === "added") {
+          const chatData = change.doc.data();
+          const activityData = {
+            contentType: type.replace('Chats', ''),
+            contentId: chatData.contentId,
+            chatId: change.doc.id
+          };
+          
+          createActivityDocument('chat', activityData, userId);
+        }
+      });
+    });
+  });
+  
+  return () => unsubscribes.forEach(unsubscribe => unsubscribe());
+}
+
+// Listener untuk balasan chat
+function setupChatReplyListeners(userId) {
+  const chatReplyTypes = [
+    'discussionChatReplies', 
+    'feedbackChatReplies', 
+    'announcementChatReplies', 
+    'arduinoChatReplies'
+  ];
+  
+  const unsubscribes = chatReplyTypes.map(type => {
+    const q = query(
+      collection(db, type),
+      where("userId", "!=", userId),
+      orderBy("timestamp", "desc")
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === "added") {
+          const replyData = change.doc.data();
+          const activityData = {
+            contentType: type.replace('ChatReplies', ''),
+            contentId: replyData.contentId,
+            replyId: change.doc.id,
+            replyTo: replyData.replyTo
+          };
+          
+          createActivityDocument('reply', activityData, userId);
+        }
+      });
+    });
+  });
+  
+  return () => unsubscribes.forEach(unsubscribe => unsubscribe());
+}
+
+
+
+
 	
 	
 	
@@ -6317,6 +6391,66 @@ document.querySelectorAll('.activity-tab').forEach(tab => {
   });
 });
 
+
+
+
+
+
+
+
+// Fungsi untuk menangani notifikasi chat dan balasan
+async function handleChatNotification(activityData, currentUser) {
+    try {
+        // Tentukan penerima notifikasi
+        let recipientId = null;
+        
+        // Jika ini adalah balasan chat, dapatkan ID pengguna yang dikomentari
+        if (activityData.replyTo) {
+            const replyToRef = doc(db, "users", activityData.replyTo);
+            const replyToDoc = await getDoc(replyToRef);
+            if (replyToDoc.exists()) {
+                recipientId = replyToDoc.id;
+            }
+        } 
+        // Jika ini adalah chat baru di konten, dapatkan pembuat konten
+        else if (activityData.contentId) {
+            recipientId = await getContentAuthorId(activityData);
+        }
+
+        // Jika ada penerima dan bukan diri sendiri, buat notifikasi
+        if (recipientId && recipientId !== currentUser.uid) {
+            await createNotificationDocument('chat', activityData, recipientId, currentUser);
+        }
+    } catch (error) {
+        console.error("Error handling chat notification:", error);
+    }
+}
+
+
+
+
+
+
+
+// Fungsi untuk menangani like pada chat
+async function handleChatLikeNotification(activityData, currentUser) {
+    try {
+        // Dapatkan ID pengguna yang membuat chat yang dilike
+        const chatRef = doc(db, `${activityData.contentType}Chats`, activityData.contentId);
+        const chatDoc = await getDoc(chatRef);
+        
+        if (chatDoc.exists()) {
+            const recipientId = chatDoc.data().userId;
+            
+            // Jika ada penerima dan bukan diri sendiri, buat notifikasi
+            if (recipientId && recipientId !== currentUser.uid) {
+                await createNotificationDocument('like', activityData, recipientId, currentUser);
+            }
+        }
+    } catch (error) {
+        console.error("Error handling chat like notification:", error);
+    }
+}
 
 
 
@@ -7631,9 +7765,6 @@ async function createSingleNotification(activityType, activityData, recipientId,
 
 
 
-
-
-// Fungsi untuk generate konten notifikasi
 function generateNotificationContent(activityType, activityData, senderName) {
   let message = '';
   let link = '';
@@ -7645,38 +7776,67 @@ function generateNotificationContent(activityType, activityData, senderName) {
       message = `${senderName} mengomentari ${targetType} Anda`;
       link = `/${activityData.contentType}/${activityData.contentId}#comment-${activityData.commentId}`;
       break;
+      
     case 'reply':
-      targetType = getContentTypeName(activityData.contentType);
-      message = `${senderName} membalas komentar Anda`;
-      link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
+      if (activityData.isChatReply) {
+        targetType = getContentTypeName(activityData.contentType);
+        message = `${senderName} membalas chat Anda di ${targetType}`;
+        link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
+      } else {
+        targetType = getContentTypeName(activityData.contentType);
+        message = `${senderName} membalas komentar Anda`;
+        link = `/${activityData.contentType}/${activityData.contentId}#reply-${activityData.replyId}`;
+      }
       break;
+      
     case 'like':
-      targetType = getContentTypeName(activityData.contentType);
-      message = `${senderName} menyukai ${targetType} Anda`;
-      link = `/${activityData.contentType}/${activityData.contentId}`;
+      if (activityData.isChatLike) {
+        targetType = getContentTypeName(activityData.contentType);
+        message = `${senderName} menyukai chat Anda di ${targetType}`;
+        link = `/${activityData.contentType}/${activityData.contentId}#chat-${activityData.chatId}`;
+      } else {
+        targetType = getContentTypeName(activityData.contentType);
+        message = `${senderName} menyukai ${targetType} Anda`;
+        link = `/${activityData.contentType}/${activityData.contentId}`;
+      }
       break;
+      
     case 'reaction':
+      const isSelf = activityData.recipientId === activityData.senderId;
       targetType = getContentTypeName(activityData.contentType);
-      message = `${senderName} memberikan reaksi ${activityData.emoji} pada ${targetType} Anda`;
+      message = isSelf
+        ? `Anda memberikan reaksi ${activityData.emoji} pada ${targetType} Anda sendiri`
+        : `${senderName} memberikan reaksi ${activityData.emoji} pada ${targetType} Anda`;
       link = `/${activityData.contentType}/${activityData.contentId}`;
       break;
+      
+    case 'chat':
+      targetType = getContentTypeName(activityData.contentType);
+      message = `${senderName} mengirim chat di ${targetType}`;
+      link = `/${activityData.contentType}/${activityData.contentId}#chat-${activityData.chatId}`;
+      break;
+      
     case 'feedback':
       message = `${senderName} memberikan feedback baru`;
       link = `/feedback/${activityData.contentId}`;
       break;
+      
     case 'discussion':
       message = `${senderName} memulai diskusi baru`;
       link = `/discussions/${activityData.contentId}`;
       break;
+      
     case 'announcement':
       message = activityData.message || `Pengumuman baru: ${activityData.title}`;
       link = `/announcements/${activityData.contentId}`;
       break;
+      
     case 'content':
       targetType = getContentTypeName(activityData.contentType);
       message = `${senderName} mengupload ${targetType} baru: ${activityData.title}`;
       link = `/${activityData.contentType}/${activityData.contentId}`;
       break;
+      
     default:
       message = `${senderName} melakukan aktivitas baru`;
       link = '/';
@@ -7687,14 +7847,102 @@ function generateNotificationContent(activityType, activityData, senderName) {
 
 
 
-// Fungsi untuk mendapatkan nama content type
+
+
+
+
+
+function renderActivities(activities, filterType = 'all') {
+  const container = document.getElementById(`${filterType}Activity`);
+  if (!container) return;
+
+  // Filter activities based on tab
+  const filteredActivities = activities.filter(activity => {
+    switch(filterType) {
+      case 'comments': 
+        return ['comment', 'reply', 'chat'].includes(activity.type);
+      case 'reactions':
+        return ['like', 'reaction'].includes(activity.type);
+      case 'posts':
+        return ['post', 'feedback', 'discussion', 'announcement', 'content'].includes(activity.type);
+      default:
+        return true;
+    }
+  });
+
+  if (filteredActivities.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="far fa-comment-dots"></i>
+        <p>Tidak ada aktivitas ${getFilterName(filterType)}</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filteredActivities.map(activity => {
+    const icon = getActivityIcon(activity.type);
+    const content = formatActivityContent(activity);
+    const timeAgo = formatTimeAgo(activity.timestamp);
+    const isUnread = activity.read === false ? 'unread' : '';
+    
+    return `
+      <div class="activity-item ${isUnread}" data-type="${activity.type}" data-id="${activity.id}">
+        <div class="activity-icon">${icon}</div>
+        <div class="activity-content">
+          <p>${content}</p>
+          <div class="activity-meta">
+            <small class="time-ago">${timeAgo}</small>
+            ${activity.contentType ? `<span class="content-type">${getContentTypeName(activity.contentType)}</span>` : ''}
+          </div>
+        </div>
+        ${isUnread ? '<div class="unread-dot"></div>' : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Add click handlers
+  container.querySelectorAll('.activity-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const type = item.dataset.type;
+      const id = item.dataset.id;
+      
+      // Mark as read when clicked
+      if (item.classList.contains('unread')) {
+        await markNotificationAsRead(id);
+        item.classList.remove('unread');
+        item.querySelector('.unread-dot')?.remove();
+      }
+      
+      navigateToActivity(type, id);
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getContentTypeName(type) {
   const typeMap = {
     'arduino-history': 'sejarah Arduino',
     'discussions': 'diskusi',
     'feedback': 'feedback',
     'announcements': 'pengumuman',
-    'content': 'konten'
+    'content': 'konten',
+    'discussionChats': 'diskusi',
+    'feedbackChats': 'feedback',
+    'announcementChats': 'pengumuman',
+    'arduinoChats': 'sejarah Arduino'
   };
   return typeMap[type] || type;
 }
@@ -7702,7 +7950,8 @@ function getContentTypeName(type) {
 
 
 
-// Helper Functions
+
+
 function getActivityIcon(type) {
   const icons = {
     'comment': '💬',
@@ -7713,11 +7962,12 @@ function getActivityIcon(type) {
     'feedback': '📣',
     'discussion': '💬',
     'announcement': '📢',
-    'content': '📄'
+    'content': '📄',
+    'chat': '💬',
+    'reply': '↩️'
   };
   return icons[type] || '🔔';
 }
-
 
 
 
@@ -7741,7 +7991,8 @@ function validateActivityData(data) {
 
 
 
-// Fungsi utama untuk memuat semua listener
+
+
 function setupAllListeners(userId) {
   const unsubscribes = [
     setupCommentListeners(userId),
@@ -7751,11 +8002,21 @@ function setupAllListeners(userId) {
     setupDiscussionCommentListeners(userId),
     setupAnnouncementListeners(userId),
     setupReactionListeners(userId),
-    setupContentUploadListeners(userId)
+    setupContentUploadListeners(userId),
+    setupChatListeners(userId), // Tambahkan ini
+    setupChatReplyListeners(userId) // Tambahkan ini
   ];
   
   return () => unsubscribes.forEach(fn => fn && fn());
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -7801,57 +8062,6 @@ function getActiveTab() {
   const activeTab = document.querySelector('.activity-tab.active');
   return activeTab ? activeTab.dataset.tab : 'all';
 }
-
-
-
-
-
-
-// Enhanced Activity Rendering
-function renderActivities(activities, filterType = 'all') {
-  const container = document.getElementById(`${filterType}Activity`);
-  if (!container) return;
-
-  // Filter activities based on tab
-  const filteredActivities = activities.filter(activity => {
-    switch(filterType) {
-      case 'comments': 
-        return ['comment', 'reply'].includes(activity.type);
-      case 'reactions':
-        return ['like', 'reaction'].includes(activity.type);
-      case 'posts':
-        return ['post', 'feedback', 'discussion', 'announcement', 'content'].includes(activity.type);
-      default:
-        return true;
-    }
-  });
-
-  if (filteredActivities.length === 0) {
-    container.innerHTML = `<div class="empty-state">Tidak ada aktivitas ${getFilterName(filterType)}</div>`;
-    return;
-  }
-
-  container.innerHTML = filteredActivities.map(activity => `
-    <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
-      <div class="activity-icon">${getActivityIcon(activity.type)}</div>
-      <div class="activity-content">
-        <p>${formatActivityContent(activity)}</p>
-        <small>${formatTimeAgo(activity.timestamp)}</small>
-      </div>
-    </div>
-  `).join('');
-
-  // Add click handlers
-  container.querySelectorAll('.activity-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const type = item.dataset.type;
-      const id = item.dataset.id;
-      navigateToActivity(type, id);
-    });
-  });
-}
-
-
 
 
 
@@ -7916,10 +8126,7 @@ function getFilterName(filterType) {
 
 
 
-
-
-
-
+// Fungsi untuk memformat konten aktivitas
 function formatActivityContent(activity) {
   const baseText = activity.fromUserName ? 
     `${activity.fromUserName} ${getActivityVerb(activity.type)}` : 
@@ -7928,10 +8135,14 @@ function formatActivityContent(activity) {
   const contentInfo = activity.contentType ? 
     ` ${getContentTypeName(activity.contentType)}` : '';
     
+  const titleInfo = activity.title ? ` "${activity.title}"` : '';
   const emojiInfo = activity.emoji ? ` ${activity.emoji}` : '';
   
-  return `${baseText}${contentInfo}${emojiInfo}`;
+  return `${baseText}${contentInfo}${titleInfo}${emojiInfo}`;
 }
+
+
+
 
 
 
@@ -7945,11 +8156,12 @@ function getActivityVerb(type) {
     'feedback': 'memberi feedback',
     'discussion': 'memulai diskusi',
     'announcement': 'membuat pengumuman',
-    'content': 'mengupload'
+    'content': 'mengupload',
+    'chat': 'mengirim chat di',
+    'reply': 'membalas chat di'
   };
   return verbs[type] || 'melakukan aktivitas pada';
 }
-
 
 
 
