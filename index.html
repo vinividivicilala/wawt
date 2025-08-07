@@ -5368,62 +5368,61 @@ const processedNotificationIds = new Set();
 
     
 
-
-
-
-
-
-
-
-// Update onAuthStateChanged to include new listeners
 onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // Reset variables
-    activities = [];
-    notifications = [];
-    unsubscribeFunctions = [];
-    processedActivityIds.clear();
-    processedNotificationIds.clear();
+    if (user) {
+	
+	  // Reset variabel saat user berubah
+            activities = [];
+            notifications = [];
+            unsubscribeFunctions = [];
     
-    // Load user profile
-    loadUserProfile(user);
-    
-    // Setup activity tabs
-    setupActivityTabs(user.uid);
-    
-    // Setup all listeners
-    unsubscribeFunctions.push(setupUniversalCommentListeners());
-    unsubscribeFunctions.push(setupLikeListeners(user.uid));
-    unsubscribeFunctions.push(setupNotificationListeners(user.uid));
-    unsubscribeFunctions.push(setupActivityListeners(user.uid));
-    
-    // Cleanup function
-    return () => {
-      unsubscribeFunctions.forEach(unsub => {
-        if (unsub && typeof unsub === 'function') {
-          unsub();
-        }
-      });
-    };
-  } else {
-    // Clear UI when logged out
-    notifications = [];
-    updateNotificationUI([], 0);
-    activities = [];
-    renderActivities([]);
-  }
-});
+        
+        // Load data awal
+        loadUserProfile(user);
+		
+		
+		        setupActivityTabs(user.uid);
 
-
-
-
-
-
-
+        
+        // Setup listeners
+        unsubscribeFunctions.push(setupNotificationListeners(user.uid));
+        unsubscribeFunctions.push(setupActivityListeners(user.uid));
+        
+        // Setup listeners untuk semua jenis aktivitas
+        unsubscribeFunctions.push(loadNotifications(user.uid));
+        unsubscribeFunctions.push(setupCommentListeners());
+        unsubscribeFunctions.push(setupLikeListeners());
+        unsubscribeFunctions.push(setupFeedbackListeners());
+        unsubscribeFunctions.push(setupDiscussionListeners());
+        unsubscribeFunctions.push(setupDiscussionCommentListeners());
+        unsubscribeFunctions.push(setupAnnouncementListeners());
+        unsubscribeFunctions.push(setupReactionListeners());
+        
+        // Cleanup saat komponen unmount
+        return () => {
+            unsubscribeFunctions.forEach(unsub => {
+                if (unsub && typeof unsub === 'function') {
+                    unsub();
+                }
+            });
+        };
+    } else {
+        // Handle case ketika user logout
+        notifications = [];
+        updateNotificationUI([], 0);
+		 activities = [];
+		  renderActivities([]);
+    }
+});	
 	
 	
 	
-	// Enhanced Activity Notification System
+	
+	
+	
+	
+	
+// Enhanced Notification System
 async function createActivityNotification(activityType, activityData) {
   try {
     const currentUser = auth.currentUser;
@@ -5447,14 +5446,6 @@ async function createActivityNotification(activityType, activityData) {
     } else {
       const contentAuthorId = await getContentAuthorId(activityData);
       if (contentAuthorId) recipientIds = [contentAuthorId];
-      
-      // For replies, also notify the original comment author
-      if (activityType === 'reply' && activityData.commentId) {
-        const commentAuthorId = await getCommentAuthorId(activityData);
-        if (commentAuthorId && commentAuthorId !== contentAuthorId) {
-          recipientIds.push(commentAuthorId);
-        }
-      }
     }
 
     // Create notifications for each recipient
@@ -5492,72 +5483,19 @@ async function createActivityNotification(activityType, activityData) {
   } catch (error) {
     console.error("Error in createActivityNotification:", error);
   }
-}
+}	
 	
 	
 	
 	
 	
 	
-// Get comment author ID
-async function getCommentAuthorId(activityData) {
-  try {
-    if (!activityData.commentId) return null;
-    
-    const commentRef = doc(db, `${activityData.contentType}Comments`, activityData.commentId);
-    const commentDoc = await getDoc(commentRef);
-    
-    if (commentDoc.exists()) {
-      return commentDoc.data().userId;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting comment author:", error);
-    return null;
-  }
-}
-
-// Setup listener untuk komentar di semua tipe konten
-function setupUniversalCommentListeners() {
-  const contentTypes = ['arduinoHistory', 'announcements', 'feedback', 'discussions'];
-  const unsubscribeFunctions = [];
-  
-  contentTypes.forEach(type => {
-    const commentsRef = collection(db, `${type}Comments`);
-    const unsubscribe = onSnapshot(commentsRef, (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type === "added") {
-          const newComment = change.doc.data();
-          const currentUser = auth.currentUser;
-          
-          if (!currentUser || newComment.userId === currentUser.uid) return;
-
-          // Determine notification type
-          const notificationType = newComment.replyTo ? 'reply' : 'comment';
-          
-          // Prepare activity data
-          const activityData = {
-            contentType: type,
-            contentId: newComment[`${type}Id`] || newComment.contentId,
-            commentId: change.doc.id,
-            senderId: newComment.userId,
-            senderName: newComment.userName || 'Pengguna'
-          };
-
-          // For replies, include the parent comment ID
-          if (notificationType === 'reply') {
-            activityData.parentCommentId = newComment.replyTo;
-          }
-
-          createActivityNotification(notificationType, activityData);
-        }
-      });
-    });
-    unsubscribeFunctions.push(unsubscribe);
-  });
-  
-  return () => unsubscribeFunctions.forEach(fn => fn());
-}
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -5771,7 +5709,10 @@ function setupContentUploadListeners(userId) {
 
 	
 	
-	// Enhanced Activity Feed Setup
+	
+	
+
+// Improved Activity Feed Setup
 function setupActivityTabs(userId) {
   document.querySelectorAll('.activity-tab').forEach(tab => {
     tab.addEventListener('click', function() {
@@ -5847,7 +5788,7 @@ function setupActivityTabs(userId) {
     'all'
   );
 }
-
+	
 	
 	
 	
@@ -7866,8 +7807,6 @@ function getActiveTab() {
 
 
 
-
-
 // Enhanced Activity Rendering
 function renderActivities(activities, filterType = 'all') {
   const container = document.getElementById(`${filterType}Activity`);
@@ -7892,52 +7831,31 @@ function renderActivities(activities, filterType = 'all') {
     return;
   }
 
-  container.innerHTML = filteredActivities.map(activity => {
-    // Customize display based on activity type
-    let content = '';
-    if (activity.type === 'comment') {
-      content = `mengomentari ${getContentTypeName(activity.contentType)}`;
-    } else if (activity.type === 'reply') {
-      content = `membalas komentar di ${getContentTypeName(activity.contentType)}`;
-    } else if (activity.type === 'like') {
-      content = `menyukai ${getContentTypeName(activity.contentType)}`;
-    } else if (activity.type === 'reaction') {
-      content = `memberi reaksi ${activity.emoji} pada ${getContentTypeName(activity.contentType)}`;
-    } else {
-      content = activity.description || `melakukan aktivitas di ${getContentTypeName(activity.contentType)}`;
-    }
-
-    return `
-      <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}" 
-           data-content-type="${activity.contentType}" data-content-id="${activity.contentId}">
-        <div class="activity-icon">${getActivityIcon(activity.type)}</div>
-        <div class="activity-content">
-          <p>${content}</p>
-          <small>${formatTimeAgo(activity.timestamp)}</small>
-        </div>
+  container.innerHTML = filteredActivities.map(activity => `
+    <div class="activity-item" data-type="${activity.type}" data-id="${activity.id}">
+      <div class="activity-icon">${getActivityIcon(activity.type)}</div>
+      <div class="activity-content">
+        <p>${formatActivityContent(activity)}</p>
+        <small>${formatTimeAgo(activity.timestamp)}</small>
       </div>
-    `;
-  }).join('');
+    </div>
+  `).join('');
 
   // Add click handlers
   container.querySelectorAll('.activity-item').forEach(item => {
     item.addEventListener('click', () => {
       const type = item.dataset.type;
       const id = item.dataset.id;
-      const contentType = item.dataset.contentType;
-      const contentId = item.dataset.contentId;
-      
-      // Navigate based on content type
-      if (contentType && contentId) {
-        if (type === 'comment' || type === 'reply') {
-          window.location.href = `/${contentType}/${contentId}#comment-${id}`;
-        } else {
-          window.location.href = `/${contentType}/${contentId}`;
-        }
-      }
+      navigateToActivity(type, id);
     });
   });
 }
+
+
+
+
+
+
 
 
 
