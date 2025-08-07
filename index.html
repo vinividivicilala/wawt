@@ -5634,20 +5634,6 @@ async function createActivityNotification(activityType, activityData) {
 	
 	
 	
-// 🔧 Fungsi untuk mengubah tipe aktivitas menjadi nama yang lebih ramah
-function getContentTypeName(type) {
-  const typeMap = {
-    'arduinoHistory': 'Sejarah Arduino',
-    'discussions': 'Diskusi',
-    'feedback': 'Feedback',
-    'announcements': 'Pengumuman',
-    'unknown': 'Konten'
-  };
-  return typeMap[type] || type;
-}
-
-	
-	
 	// Setup listeners for all content types
 function setupCommentListeners(userId) {
     const commentsRef = collection(db, "arduinoHistoryComments");
@@ -8004,6 +7990,31 @@ function getActivityVerb(type) {
     };
     return verbs[type] || 'melakukan aktivitas pada';
 }
+
+
+
+	
+	
+// 🔧 Fungsi untuk mengubah tipe aktivitas menjadi nama yang lebih ramah
+function getContentTypeName(type) {
+  const typeMap = {
+    'arduinoHistory': 'Sejarah Arduino',
+    'discussions': 'Diskusi',
+    'feedback': 'Feedback',
+    'announcements': 'Pengumuman',
+    'unknown': 'Konten'
+  };
+  return typeMap[type] || type;
+}
+
+
+
+
+
+
+
+
+
 
 
 
