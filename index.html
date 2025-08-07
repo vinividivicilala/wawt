@@ -5565,26 +5565,27 @@ const processedActivityIds = new Set();
 	
 	
 	
-	
-	
-// Enhanced Notification System
-async function createActivityNotification(activityType, activityData) {
+	async function createActivityNotification(activityType, activityData) {
     try {
         const currentUser = auth.currentUser;
         if (!currentUser) return;
 
-        // Skip if already processed
         const activityKey = `${activityType}_${activityData.contentId}_${activityData.commentId || ''}`;
         if (processedNotificationIds.has(activityKey)) return;
         processedNotificationIds.add(activityKey);
 
-        // Handle announcements separately (send to all users)
+        // 💥 VALIDASI AWAL
+        if (!activityData || !activityData.contentType || !activityData.contentId) {
+            console.warn("❌ [SKIP] Tidak valid: contentType atau contentId kosong", activityData);
+            return;
+        }
+
+        // Pengumuman? Kirim massal
         if (activityType === 'announcement') {
             await sendAnnouncementToAllUsers(activityData, currentUser.uid);
             return;
         }
 
-        // Determine recipient(s)
         let recipientIds = [];
         if (activityData.recipientId) {
             recipientIds = [activityData.recipientId];
@@ -5593,9 +5594,8 @@ async function createActivityNotification(activityType, activityData) {
             if (contentAuthorId) recipientIds = [contentAuthorId];
         }
 
-        // Create notifications for each recipient
         for (const recipientId of recipientIds) {
-            if (recipientId === currentUser.uid) continue; // Skip self-notifications
+            if (recipientId === currentUser.uid) continue;
 
             const notificationRef = doc(collection(db, "notifications"));
             const notificationContent = generateNotificationContent(
@@ -5615,7 +5615,6 @@ async function createActivityNotification(activityType, activityData) {
                 ...notificationContent
             });
 
-            // Also log as activity
             await logActivity({
                 userId: recipientId,
                 type: activityType,
@@ -5629,8 +5628,7 @@ async function createActivityNotification(activityType, activityData) {
         console.error("Error in createActivityNotification:", error);
     }
 }
-	
-	
+
 	
 	
 	
