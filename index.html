@@ -7025,18 +7025,6 @@ function setupActivityListeners(userId) {
 	
 	
 	
-// Mark notification as read
-async function markNotificationAsRead(notifId) {
-    try {
-        await updateDoc(doc(db, "notifications", notifId), {
-            read: true
-        });
-    } catch (error) {
-        console.error("Error marking notification as read:", error);
-    }
-}
-	
-	
 	
 	
 	
