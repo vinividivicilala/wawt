@@ -7475,18 +7475,14 @@ function setupNotificationListeners(userId) {
    
    
    
-   
-   
-    
-    // Event listener untuk tab aktivitas
-    document.querySelectorAll('.activity-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            const tabId = this.getAttribute('data-tab');
-            // Implementasi untuk memuat konten tab yang sesuai
-        });
+   // Event listener untuk tab aktivitas
+document.querySelectorAll('.activity-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+
+        const tabId = this.getAttribute('data-tab');
+        // Implementasi untuk memuat konten tab yang sesuai
     });
 });
 
