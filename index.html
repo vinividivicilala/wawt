@@ -5964,6 +5964,90 @@ function showActivityPopup(type, id) {
 
 
 
+// Fungsi untuk memuat aktivitas reaksi emoji
+function loadReactionActivities() {
+    const q = query(
+        collection(db, "activities"),
+        where("type", "==", "reaction"),
+        orderBy("timestamp", "desc"),
+        limit(15)
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        const activities = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            activities.push({
+                id: doc.id,
+                ...data,
+                timestamp: data.timestamp?.toDate() || new Date()
+            });
+        });
+        
+        renderReactionActivities(activities);
+    });
+}
+
+
+// Fungsi untuk menampilkan aktivitas reaksi emoji
+function renderReactionActivities(activities) {
+    const container = document.getElementById("reactionsActivity");
+    if (!container) return;
+
+    if (activities.length === 0) {
+        container.innerHTML = `<div class="empty-state">Tidak ada aktivitas reaksi</div>`;
+        return;
+    }
+
+    container.innerHTML = activities.map(activity => {
+        const contentLink = `/${activity.contentType}/${activity.contentId}`;
+        
+        return `
+        <div class="activity-item" data-type="${activity.type}" 
+             data-id="${activity.id}" data-content-id="${activity.contentId}">
+            <div class="activity-icon">${activity.emoji || '😀'}</div>
+            <div class="activity-content">
+                <div class="activity-header">
+                    <span class="activity-user">${activity.userName || 'Pengguna'}</span>
+                    <span class="activity-action">memberi reaksi</span>
+                </div>
+                <p class="activity-preview">${activity.emoji || 'Klik untuk melihat detail...'}</p>
+                <div class="activity-footer">
+                    <small>${formatTimeAgo(activity.timestamp)}</small>
+                    <button class="view-detail-btn" data-id="${activity.id}">Detail</button>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    // Tambahkan event listener untuk tombol detail
+    container.querySelectorAll('.activity-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (e.target.classList.contains('view-detail-btn')) {
+                e.stopPropagation();
+                const activityId = e.target.dataset.id;
+                showActivityDetail(activityId);
+            } else {
+                const contentId = item.dataset.contentId;
+                showActivityPopup('reactions', contentId);
+            }
+        });
+    });
+}
+
+function loadPostActivities(userId) {
+    const q = query(
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        where("type", "in", ["content", "post", "feedback", "discussion"]),
+        orderBy("timestamp", "desc"),
+        limit(15)
+    );
+    return setupActivitiesListener(q, 'posts'); // ✅
+}
+
+
 
 
 
@@ -8654,90 +8738,6 @@ function loadCommentsActivities() {
     });
     renderActivities(activities, 'comments');
   });
-}
-
-
-// Fungsi untuk memuat aktivitas reaksi emoji
-function loadReactionActivities() {
-    const q = query(
-        collection(db, "activities"),
-        where("type", "==", "reaction"),
-        orderBy("timestamp", "desc"),
-        limit(15)
-    );
-    
-    return onSnapshot(q, (snapshot) => {
-        const activities = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            activities.push({
-                id: doc.id,
-                ...data,
-                timestamp: data.timestamp?.toDate() || new Date()
-            });
-        });
-        
-        renderReactionActivities(activities);
-    });
-}
-
-
-// Fungsi untuk menampilkan aktivitas reaksi emoji
-function renderReactionActivities(activities) {
-    const container = document.getElementById("reactionsActivity");
-    if (!container) return;
-
-    if (activities.length === 0) {
-        container.innerHTML = `<div class="empty-state">Tidak ada aktivitas reaksi</div>`;
-        return;
-    }
-
-    container.innerHTML = activities.map(activity => {
-        const contentLink = `/${activity.contentType}/${activity.contentId}`;
-        
-        return `
-        <div class="activity-item" data-type="${activity.type}" 
-             data-id="${activity.id}" data-content-id="${activity.contentId}">
-            <div class="activity-icon">${activity.emoji || '😀'}</div>
-            <div class="activity-content">
-                <div class="activity-header">
-                    <span class="activity-user">${activity.userName || 'Pengguna'}</span>
-                    <span class="activity-action">memberi reaksi</span>
-                </div>
-                <p class="activity-preview">${activity.emoji || 'Klik untuk melihat detail...'}</p>
-                <div class="activity-footer">
-                    <small>${formatTimeAgo(activity.timestamp)}</small>
-                    <button class="view-detail-btn" data-id="${activity.id}">Detail</button>
-                </div>
-            </div>
-        </div>
-        `;
-    }).join('');
-
-    // Tambahkan event listener untuk tombol detail
-    container.querySelectorAll('.activity-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            if (e.target.classList.contains('view-detail-btn')) {
-                e.stopPropagation();
-                const activityId = e.target.dataset.id;
-                showActivityDetail(activityId);
-            } else {
-                const contentId = item.dataset.contentId;
-                showActivityPopup('reactions', contentId);
-            }
-        });
-    });
-}
-
-function loadPostActivities(userId) {
-    const q = query(
-        collection(db, "activities"),
-        where("userId", "==", userId),
-        where("type", "in", ["content", "post", "feedback", "discussion"]),
-        orderBy("timestamp", "desc"),
-        limit(15)
-    );
-    return setupActivitiesListener(q, 'posts'); // ✅
 }
 
 
