@@ -6690,26 +6690,27 @@ function switchActivityTab(tabName) {
 
 
 	
-	
-	
 	async function logActivity({ type, contentId, contentType, description }) {
   const user = auth.currentUser;
   if (!user) return;
+
+  // Gunakan fallback kalau contentType tidak ada
+  const safeContentType = contentType || "unknown";
 
   const activity = {
     userId: user.uid,
     userName: user.displayName,
     userPhoto: user.photoURL || "",
     type, // e.g. "comment", "reply", "like", "emoji", "upload"
-    contentId,
-    contentType, // e.g. "announcement", "arduinoHistory", "discussion", "feedback"
-    description,
+    contentId: contentId || null,
+    contentType: safeContentType, // sudah aman, tidak undefined
+    description: description || "",
     timestamp: serverTimestamp()
   };
 
   await addDoc(collection(db, "activities"), activity);
 }
-	
+
 	
 	
 	
