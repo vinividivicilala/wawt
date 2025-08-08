@@ -5295,6 +5295,7 @@ function showActivityPopup(type, id) {
 
 
 
+
 // Fungsi untuk memuat aktivitas reaksi emoji
 function loadReactionActivities() {
     const q = query(
@@ -5318,6 +5319,10 @@ function loadReactionActivities() {
         renderReactionActivities(activities);
     });
 }
+
+
+
+
 
 
 // Fungsi untuk menampilkan aktivitas reaksi emoji
@@ -5367,7 +5372,15 @@ function renderReactionActivities(activities) {
     });
 }
 
+
+
+
+// ✅ Tambah pengecekan userId
 function loadPostActivities(userId) {
+    if (!userId) {
+        console.warn("loadPostActivities dipanggil tanpa userId");
+        return;
+    }
     const q = query(
         collection(db, "activities"),
         where("userId", "==", userId),
@@ -5375,7 +5388,7 @@ function loadPostActivities(userId) {
         orderBy("timestamp", "desc"),
         limit(15)
     );
-    return setupActivitiesListener(q, 'posts'); // ✅
+    return setupActivitiesListener(q, 'posts');
 }
 
 
@@ -5384,10 +5397,12 @@ function loadPostActivities(userId) {
 
 
 
-
-
-  // Fungsi untuk memuat detail komentar
-  async function loadCommentDetail(contentId, commentId) {
+// ✅ Tambah pengecekan contentId
+async function loadCommentDetail(contentId, commentId) {
+    if (!contentId) {
+        console.warn("loadCommentDetail dipanggil tanpa contentId");
+        return '<p>Komentar tidak ditemukan</p>';
+    }
     let commentDoc;
     
     if (commentId) {
@@ -5434,7 +5449,8 @@ function loadPostActivities(userId) {
         </div>
       </div>
     `;
-  }
+}
+
 
 
 
@@ -5771,33 +5787,21 @@ function setupContentUploadListeners(userId) {
 
 
 	
-	
-	
-	// Fungsi untuk memuat semua aktivitas
-  function loadAllActivities() {
+	// ✅ Tambah pengecekan userId
+function loadAllActivities(userId) {
+    if (!userId) {
+        console.warn("loadAllActivities dipanggil tanpa userId");
+        return;
+    }
     const q = query(
-      collection(db, "activities"),
-      orderBy("timestamp", "desc"),
-      limit(15)
+        collection(db, "activities"),
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(15)
     );
-    
-    return onSnapshot(q, (snapshot) => {
-      const activities = [];
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        activities.push({
-          id: doc.id,
-          ...data,
-          timestamp: data.timestamp?.toDate() || new Date()
-        });
-      });
-      renderActivities(activities, 'all');
-    });
-  }
-	
-	
-	
-	
+    return setupActivitiesListener(q, 'all');
+}
+
 	
 	
 	
@@ -6595,9 +6599,15 @@ document.querySelectorAll('.activity-tab').forEach(tab => {
 	
 	
 	
-	function loadNotifications(userId) {
-    if (!userId) return;
-    
+	
+	
+	
+	// ✅ Tambah pengecekan userId
+function loadNotifications(userId) {
+    if (!userId) {
+        console.warn("loadNotifications dipanggil tanpa userId");
+        return;
+    }
     const notificationsRef = collection(db, "notifications");
     const q = query(notificationsRef, 
         where("userId", "==", userId),
@@ -6632,6 +6642,11 @@ document.querySelectorAll('.activity-tab').forEach(tab => {
     
     return unsubscribe;
 }
+	
+	
+	
+	
+	
 	
 	
 	
@@ -6872,13 +6887,19 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
 	
 	
 	
-	function loadRecentActivity(userId) {
-    if (!userId) return;
+	
+	
+	
+	
+	// ✅ Tambah pengecekan userId
+function loadRecentActivity(userId) {
+    if (!userId) {
+        console.warn("loadRecentActivity dipanggil tanpa userId");
+        return;
+    }
     
-    // Gabungkan data dari berbagai koleksi
     const activities = [];
     
-    // 1. Ambil aktivitas feedback
     const feedbackQuery = query(
         collection(db, "feedback"),
         where("userId", "==", userId),
@@ -6886,7 +6907,6 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
         limit(5)
     );
     
-    // 2. Ambil aktivitas diskusi
     const discussionsQuery = query(
         collection(db, "discussions"),
         where("authorId", "==", userId),
@@ -6894,7 +6914,6 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
         limit(5)
     );
     
-    // 3. Ambil aktivitas komentar
     const commentsQuery = query(
         collection(db, "arduinoHistoryComments"),
         where("userId", "==", userId),
@@ -6907,7 +6926,6 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
         getDocs(discussionsQuery),
         getDocs(commentsQuery)
     ]).then(([feedbackSnap, discussionsSnap, commentsSnap]) => {
-        // Proses feedback
         feedbackSnap.forEach(doc => {
             activities.push({
                 type: 'feedback',
@@ -6918,7 +6936,6 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
             });
         });
         
-        // Proses diskusi
         discussionsSnap.forEach(doc => {
             activities.push({
                 type: 'discussion',
@@ -6929,7 +6946,6 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
             });
         });
         
-        // Proses komentar
         commentsSnap.forEach(doc => {
             activities.push({
                 type: 'comment',
@@ -6939,16 +6955,29 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
             });
         });
         
-        // Urutkan berdasarkan timestamp
         activities.sort((a, b) => b.timestamp - a.timestamp);
         
-        // Render aktivitas
         renderRecentActivity(activities.slice(0, 5));
     }).catch(error => {
         console.error("Error loading activities:", error);
     });
 }
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 function renderRecentActivity(activities) {
     const activityList = document.getElementById('recentActivity');
     
@@ -7302,41 +7331,41 @@ function scrollToContent(contentId) {
    
    
    
-   
-   
-   
-   
-  // Fungsi untuk mengatur listener notifikasi
-  function setupNotificationListeners(userId) {
+   // ✅ Tambah pengecekan userId
+function setupNotificationListeners(userId) {
+    if (!userId) {
+        console.warn("setupNotificationListeners dipanggil tanpa userId");
+        return;
+    }
     const notificationsRef = collection(db, "notifications");
     const q = query(
-      notificationsRef, 
-      where("userId", "==", userId),
-      orderBy("timestamp", "desc"),
-      limit(50)
+        notificationsRef, 
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(50)
     );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      notifications = [];
-      let unreadCount = 0;
-      
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        notifications.push({
-          id: doc.id,
-          ...data,
-          timestamp: data.timestamp?.toDate() || new Date()
+        notifications = [];
+        let unreadCount = 0;
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const notification = {
+                id: doc.id,
+                ...data,
+                timestamp: data.timestamp?.toDate() || new Date()
+            };
+            
+            notifications.push(notification);
+            if (!notification.read) unreadCount++;
         });
         
-        if (!data.read) unreadCount++;
-      });
-      
-      updateNotificationUI(notifications, unreadCount);
+        updateNotificationUI(notifications, unreadCount);
     });
     
     unsubscribeFunctions.push(unsubscribe);
-    return unsubscribe;
-  }
+}
 
   
    
@@ -7794,37 +7823,40 @@ function setupAllListeners(userId) {
 
 
 
-
-// Fungsi untuk memuat dan menampilkan aktivitas terkini
+// ✅ Tambah pengecekan userId
 function loadRecentActivities(userId) {
-  const q = query(
-    collection(db, "activities"), 
-    where("userId", "==", userId),
-    orderBy("timestamp", "desc"),
-    limit(50)
-  );
-
-  return onSnapshot(q, (snapshot) => {
-    const newActivities = [];
-    
-    snapshot.docChanges().forEach(change => {
-      if (change.type === "added" && !processedActivityIds.has(change.doc.id)) {
-        processedActivityIds.add(change.doc.id);
-        const data = change.doc.data();
-        
-        newActivities.push({
-          id: change.doc.id,
-          ...data,
-          timestamp: data.timestamp?.toDate() || new Date()
-        });
-      }
-    });
-
-    if (newActivities.length > 0) {
-      currentActivities = [...newActivities, ...currentActivities].slice(0, 50);
-      renderActivities(currentActivities, getActiveTab());
+    if (!userId) {
+        console.warn("loadRecentActivities dipanggil tanpa userId");
+        return;
     }
-  });
+    const q = query(
+        collection(db, "activities"), 
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(50)
+    );
+
+    return onSnapshot(q, (snapshot) => {
+        const newActivities = [];
+        
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "added" && !processedActivityIds.has(change.doc.id)) {
+                processedActivityIds.add(change.doc.id);
+                const data = change.doc.data();
+                
+                newActivities.push({
+                    id: change.doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate() || new Date()
+                });
+            }
+        });
+
+        if (newActivities.length > 0) {
+            currentActivities = [...newActivities, ...currentActivities].slice(0, 50);
+            renderActivities(currentActivities, getActiveTab());
+        }
+    });
 }
 
 
@@ -8158,28 +8190,40 @@ function loadAllActivities(userId) {
     return setupActivitiesListener(q, 'all'); // ✅
 }
 
-// Fungsi untuk memuat aktivitas komentar dan balasan
-function loadCommentsActivities() {
-  const q = query(
-    collection(db, "activities"),
-    where("type", "in", ["comment", "reply"]),
-    orderBy("timestamp", "desc"),
-    limit(15)
-  );
 
-  return onSnapshot(q, (snapshot) => {
-    const activities = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      activities.push({
-        id: doc.id,
-        ...data,
-        timestamp: data.timestamp?.toDate() || new Date()
-      });
+
+
+
+
+function loadCommentsActivities() {
+    const q = query(
+        collection(db, "activities"),
+        where("type", "in", ["comment", "reply"]),
+        orderBy("timestamp", "desc"),
+        limit(15)
+    );
+
+    return onSnapshot(q, (snapshot) => {
+        const activities = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            activities.push({
+                id: doc.id,
+                ...data,
+                timestamp: data.timestamp?.toDate() || new Date()
+            });
+        });
+        renderActivities(activities, 'comments');
     });
-    renderActivities(activities, 'comments');
-  });
 }
+
+
+
+
+
+
+
+
 
 
 
