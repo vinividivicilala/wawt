@@ -5042,31 +5042,101 @@ const processedNotificationIds = new Set();
   }
   
 
-	
-	  // Setup saat auth state berubah
-  onAuthStateChanged(auth, (user) => {
+	onAuthStateChanged(auth, (user) => {
     if (user) {
-      // Reset state
-      activities = [];
-      notifications = [];
-      unsubscribeFunctions = [];
-      processedActivityIds.clear();
-      processedNotificationIds.clear();
-      
-      // Load data awal
-      loadUserProfile(user);
-      setupNotificationListeners(user.uid);
-      setupActivityListeners(user.uid);
-      
-      // Setup tabs
-      switchActivityTab('all');
-    } else {
-      // Clear data jika logout
-      clearDashboardData();
-    }
-  });
+        // Reset variabel saat user berubah
+        activities = [];
+        notifications = [];
+        unsubscribeFunctions = [];
+        processedActivityIds.clear();
+        processedNotificationIds.clear();
+    
+        // Load data awal
+        loadUserProfile(user);
+        
+        // Setup tabs aktivitas
+        setupActivityTabs();
+        
+        // Setup listeners
+        unsubscribeFunctions.push(setupNotificationListeners(user.uid));
+        unsubscribeFunctions.push(loadCommentsActivities());
+        unsubscribeFunctions.push(loadReactionActivities());
+        unsubscribeFunctions.push(setupCommentListeners());
+        unsubscribeFunctions.push(setupLikeListeners());
+        unsubscribeFunctions.push(setupReactionListeners());
 
-	
+        // =======================
+        // Query Feedback
+        // =======================
+        const feedbackQuery = query(
+            collection(db, "feedback"),
+            where("userId", "==", user.uid)
+        );
+        unsubscribeFunctions.push(
+            onSnapshot(feedbackQuery, (snapshot) => {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    console.log("Feedback:", data);
+                    // TODO: render feedback
+                });
+            })
+        );
+
+        // =======================
+        // Query Notifications
+        // =======================
+        const notificationsQuery = query(
+            collection(db, "notifications"),
+            where("userId", "==", user.uid),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        );
+        unsubscribeFunctions.push(
+            onSnapshot(notificationsQuery, (snapshot) => {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    console.log("Notifikasi:", data);
+                    // TODO: render notifikasi
+                });
+            })
+        );
+
+        // =======================
+        // Query Activities
+        // =======================
+        const activitiesQuery = query(
+            collection(db, "activities"),
+            where("userId", "==", user.uid),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        );
+        unsubscribeFunctions.push(
+            onSnapshot(activitiesQuery, (snapshot) => {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    console.log("Aktivitas:", data);
+                    // TODO: render aktivitas
+                });
+            })
+        );
+
+        // Cleanup saat komponen unmount
+        return () => {
+            unsubscribeFunctions.forEach(unsub => {
+                if (unsub && typeof unsub === 'function') {
+                    unsub();
+                }
+            });
+        };
+    } else {
+        // Handle case ketika user logout
+        notifications = [];
+        activities = [];
+        updateNotificationUI([], 0);
+        renderActivities([]);
+    }
+});
+
 	
 	
 	
