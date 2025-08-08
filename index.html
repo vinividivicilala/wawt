@@ -5785,24 +5785,34 @@ function setupContentUploadListeners(userId) {
 
 
 
+// Fungsi untuk memuat semua aktivitas milik user tertentu
+function loadAllActivities(userId = auth.currentUser?.uid) {
+  if (!userId) {
+    console.error("loadAllActivities dipanggil tanpa userId");
+    return;
+  }
 
-	
-	// ✅ Tambah pengecekan userId
-function loadAllActivities(userId) {
-    if (!userId) {
-        console.warn("loadAllActivities dipanggil tanpa userId");
-        return;
-    }
-    const q = query(
-        collection(db, "activities"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(15)
-    );
-    return setupActivitiesListener(q, 'all');
+  const q = query(
+    collection(db, "activities"),
+    where("userId", "==", userId), // filter sesuai UID user
+    orderBy("timestamp", "desc"),
+    limit(15)
+  );
+  
+  return onSnapshot(q, (snapshot) => {
+    const activities = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      activities.push({
+        id: doc.id,
+        ...data,
+        timestamp: data.timestamp?.toDate() || new Date()
+      });
+    });
+    renderActivities(activities, 'all');
+  });
 }
 
-	
 	
 	
 	
@@ -8176,19 +8186,6 @@ function renderCommentActivities(activities) {
 
 
 
-
-
-
-
-function loadAllActivities(userId) {
-    const q = query(
-        collection(db, "activities"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(15)
-    );
-    return setupActivitiesListener(q, 'all'); // ✅
-}
 
 
 
