@@ -5396,20 +5396,20 @@ async function createActivityNotification(type, activityData) {
 // With this (pass the actual content ID):
 createNotification(contentAuthorId, 'comment', {
     contentType: 'arduinoHistory',
-   contentId: historyId,
+   contentId: arduino-history,
     commentId: newCommentRef.id
 });
 // - Untuk like
 createNotification(commentAuthorId, 'like', {
     contentType: 'arduinoHistory',
-    contentId: historyId,
+   contentId: arduino-history,
     commentId: commentId
 });
 
 // - Untuk reaksi emoji
 createNotification(contentAuthorId, 'reaction', {
     contentType: 'arduinoHistory',
-    contentId: historyId,
+     contentId: arduino-history,
     emoji: emojiType
 });
 
