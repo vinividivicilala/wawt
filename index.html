@@ -5125,6 +5125,8 @@ const processedActivityIds = new Set();
 const processedNotificationIds = new Set();
   const activityTabs = document.querySelectorAll('.activity-tab');
   const activityDetailModal = document.getElementById('activityDetailModal');
+  const newCommentRef = await addDoc(collection(db, "comments"), {
+
 
 	
 	
@@ -5356,14 +5358,48 @@ async function createNotification(recipientId, type, activityData) {
     }
 }
 
-// Contoh pemanggilan createNotification untuk berbagai jenis aktivitas:
-// - Untuk komentar
+
+
+
+// Add this function definition
+async function createActivityNotification(type, activityData) {
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        // Determine recipient ID
+        const recipientId = await determineRecipientId(activityData);
+        if (!recipientId || recipientId === user.uid) return;
+        
+        // Generate notification content
+        const { message, link } = generateNotificationContent(type, activityData, user.displayName || user.email);
+        
+        // Create notification
+        await addDoc(collection(db, "notifications"), {
+            userId: recipientId,
+            type,
+            message,
+            link,
+            read: false,
+            timestamp: serverTimestamp(),
+            fromUserId: user.uid,
+            fromUserName: user.displayName || user.email,
+            ...activityData
+        });
+    } catch (error) {
+        console.error("Error creating activity notification:", error);
+    }
+}
+
+
+
+
+// With this (pass the actual content ID):
 createNotification(contentAuthorId, 'comment', {
     contentType: 'arduinoHistory',
-    contentId: historyId,
+    contentId: actualContentId,  // ✅ Pass the real content ID
     commentId: newCommentRef.id
 });
-
 // - Untuk like
 createNotification(commentAuthorId, 'like', {
     contentType: 'arduinoHistory',
@@ -7725,8 +7761,8 @@ async function logActivity(activityData) {
 logActivity({
     type: 'comment',
     contentType: 'arduinoHistory',
-    contentId: historyId,
-    commentId: newCommentRef.id,
+    contentId: actualContentId,
+    commentId: newCommentRef.id,  // ✅ Now defined
     content: commentContent
 });
 
