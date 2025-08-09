@@ -5396,7 +5396,7 @@ async function createActivityNotification(type, activityData) {
 // With this (pass the actual content ID):
 createNotification(contentAuthorId, 'comment', {
     contentType: 'arduinoHistory',
-    contentId: actualContentId,  // ✅ Pass the real content ID
+   contentId: historyId,
     commentId: newCommentRef.id
 });
 // - Untuk like
@@ -7760,7 +7760,7 @@ async function logActivity(activityData) {
 logActivity({
     type: 'comment',
     contentType: 'arduinoHistory',
-    contentId: actualContentId,
+   contentId: historyId,
     commentId: newCommentRef.id,  // ✅ Now defined
     content: commentContent
 });
