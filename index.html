@@ -3005,6 +3005,27 @@ a.footnote-link:hover {
 
 
 
+/* Efek hover untuk video TikTok */
+iframe {
+  transition: transform 0.3s ease;
+}
+
+iframe:hover {
+  transform: scale(1.02);
+}
+
+/* Style untuk tombol hubungi sponsor */
+#contactSponsorBtn {
+  transition: all 0.3s ease;
+}
+
+#contactSponsorBtn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,102,255,0.3);
+}
+
+
+
 
 
 
@@ -3122,7 +3143,7 @@ a.footnote-link:hover {
     </a>
   </div>
 </div>
-	
+</div>	
  
 
 
@@ -5456,8 +5477,6 @@ a.footnote-link:hover {
 
 
 
-
-
 <!-- Halaman 12 - Sponsor -->
 <div id="page12" style="display:none;">
   <div id="dynamicText" style="margin-top: 50px; font-size: 40px; font-weight: bold; color: #ffffff; text-align: center;"></div>
@@ -5465,57 +5484,26 @@ a.footnote-link:hover {
   <h1 style="color: white; font-size: 28px; margin-bottom: 20px; margin-left: 180px;">Sponsor Kami</h1>
   
   <div class="line-box" style="flex-direction: column; align-items: center; gap: 40px; padding: 40px;">
-    <div style="text-align: center; max-width: 800px;">
-      <h2 style="color: white; font-size: 24px; margin-bottom: 15px;">Dukung Kami dengan Menjadi Sponsor</h2>
-      <p style="color: #ccc; font-size: 16px; line-height: 1.6;">
-        Sponsor membantu kami terus mengembangkan konten berkualitas. Berikut beberapa sponsor yang telah mendukung kami.
-      </p>
-    </div>
-    
-    <!-- Container Video Sponsor -->
-    <div id="sponsorVideosContainer" style="width: 100%; max-width: 350px; position: relative;">
-      <!-- Video 1 -->
-      <div class="sponsor-video-item" style="margin-bottom: 40px;">
-        <div class="video-container" style="position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
-          <video class="sponsor-video" controls style="width: 100%; border-radius: 15px; display: block;">
-            <source src="https://www.tiktok.com/@a_rifa_i/video/7533829578503179526?is_from_webapp=1&sender_device=pc&web_id=7276699041899349505" type="video/mp4">
-            Browser Anda tidak mendukung tag video.
-          </video>
-          <div class="video-caption" style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px; color: white; font-size: 16px; display: none;">
-            <div class="caption-text" style="margin-bottom: 10px;">Terima kasih kepada sponsor kami!</div>
-            <div class="sponsor-name" style="font-weight: bold; color: #4ea1ff;">Nama Sponsor</div>
-          </div>
-        </div>
-        <div class="video-info" style="margin-top: 15px;">
-          <h3 style="color: white; font-size: 18px; margin-bottom: 5px;">Judul Sponsor 1</h3>
-          <p style="color: #ccc; font-size: 14px;">Deskripsi singkat tentang sponsor ini</p>
-        </div>
-      </div>
-      
-      <!-- Video 2 -->
-      <div class="sponsor-video-item" style="margin-bottom: 40px;">
-        <div class="video-container" style="position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
-          <video class="sponsor-video" controls style="width: 100%; border-radius: 15px; display: block;">
-            <source src="https://example.com/video2.mp4" type="video/mp4">
-            Browser Anda tidak mendukung tag video.
-          </video>
-          <div class="video-caption" style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px; color: white; font-size: 16px; display: none;">
-            <div class="caption-text" style="margin-bottom: 10px;">Sponsor premium kami!</div>
-            <div class="sponsor-name" style="font-weight: bold; color: #4ea1ff;">Sponsor Kedua</div>
-          </div>
-        </div>
-        <div class="video-info" style="margin-top: 15px;">
-          <h3 style="color: white; font-size: 18px; margin-bottom: 5px;">Judul Sponsor 2</h3>
-          <p style="color: #ccc; font-size: 14px;">Deskripsi singkat tentang sponsor ini</p>
-        </div>
+    <!-- Video TikTok Utama (Besar) -->
+    <div style="width: 100%; max-width: 500px; margin: 0 auto;">
+      <h2 style="color: white; font-size: 24px; margin-bottom: 20px; text-align: center;">Video Sponsor Utama</h2>
+      <div style="width: 100%;">
+        <iframe 
+          src="https://www.tiktok.com/embed/v2/7533829578503179526" 
+          style="width: 100%; height: 700px; border: none; border-radius: 15px; overflow: hidden;"
+          allowfullscreen
+          scrolling="no"
+          allow="encrypted-media;"
+        ></iframe>
       </div>
     </div>
     
+  
     <!-- Info Menjadi Sponsor -->
-    <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px; max-width: 800px; text-align: center;">
+    <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px; max-width: 800px; text-align: center; margin-top: 50px;">
       <h2 style="color: white; font-size: 24px; margin-bottom: 15px;">Ingin Menjadi Sponsor?</h2>
       <p style="color: #ccc; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-        Dukung pengembangan konten kami dengan menjadi sponsor. Dapatkan eksposur untuk brand Anda di platform kami.
+        Dukung pengembangan konten kami dengan menjadi sponsor.
       </p>
       <button id="contactSponsorBtn" style="
         padding: 12px 25px;
@@ -5554,12 +5542,12 @@ a.footnote-link:hover {
       </a>
     </div>
     <div>
-      <a href="#">
+      <a href="#" class="sponsorLink">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
           <line x1="5" y1="12" x2="19" y2="12"></line>
           <polyline points="12 5 19 12 12 19"></polyline>
         </svg>
-        Saran
+        Sponsor
       </a>
     </div>
   </div>
@@ -5573,30 +5561,7 @@ a.footnote-link:hover {
       Kembali
     </a>
   </div>
-  
-  <a href="https://faridardiansyah.netlify.app/#" target="_blank" style="
-    position: fixed;
-    bottom: 20px;
-    right: 30px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    padding: 10px 20px;
-    color: white;
-    font-size: 16px;
-    font-weight: 500;
-    text-decoration: none;
-    z-index: 999;
-  ">
-    Powered by: Manusia
-  </a>
 </div>
-</div>
-
-
-
-
-
 
 
 
