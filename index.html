@@ -5737,10 +5737,7 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
-	
-	
-	
-	// Enhanced Notification System
+	// Enhanced createActivityNotification function
 async function createActivityNotification(activityType, activityData) {
   try {
     const currentUser = auth.currentUser;
@@ -5788,7 +5785,7 @@ async function createActivityNotification(activityType, activityData) {
         ...notificationContent
       });
 
-      // Also log as activity
+      // Also log as activity for the recipient
       await logActivity({
         userId: recipientId,
         type: activityType,
@@ -5809,8 +5806,11 @@ async function createActivityNotification(activityType, activityData) {
 	
 	
 	
-
-// Setup listener untuk komentar
+	
+	
+	
+	
+	// Enhanced setupCommentListeners function
 function setupCommentListeners(userId) {
   const commentsRef = collection(db, "arduinoHistoryComments");
   return onSnapshot(commentsRef, (snapshot) => {
@@ -5818,16 +5818,16 @@ function setupCommentListeners(userId) {
       if (change.type === "added") {
         const newComment = change.doc.data();
         
-        // Validasi data komentar
+        // Skip if comment is from current user
         if (!newComment.userId || newComment.userId === userId || !newComment.historyId) {
           return;
         }
 
-        // Dapatkan recipientId (pemilik konten atau komentar yang dibalas)
+        // Determine recipient (content owner or comment being replied to)
         const recipientId = newComment.replyTo || newComment.contentAuthorId;
         if (!recipientId) return;
 
-        // Buat notifikasi
+        // Create notification
         createActivityNotification(newComment.replyTo ? 'reply' : 'comment', {
           contentType: 'arduinoHistory',
           contentId: newComment.historyId,
@@ -5836,10 +5836,40 @@ function setupCommentListeners(userId) {
           senderId: newComment.userId,
           senderName: newComment.userName || 'Pengguna'
         });
+
+        // Log activity
+        logActivity({
+          userId: newComment.userId,
+          type: newComment.replyTo ? 'reply' : 'comment',
+          contentId: newComment.historyId,
+          contentType: 'arduinoHistory',
+          description: newComment.replyTo 
+            ? `Membalas komentar pada sejarah Arduino` 
+            : `Mengomentari sejarah Arduino`,
+          commentId: change.doc.id
+        });
       }
     });
   });
 }
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 // Setup listener untuk like komentar
 function setupCommentLikeListeners(userId) {
@@ -5880,18 +5910,7 @@ function setupCommentLikeListeners(userId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// Setup listener untuk like
+// Enhanced setupLikeListeners function
 function setupLikeListeners(userId) {
   const likesRef = collectionGroup(db, "likes");
   return onSnapshot(likesRef, (snapshot) => {
@@ -5900,24 +5919,67 @@ function setupLikeListeners(userId) {
         const newLike = change.doc.data();
         if (newLike.userId === userId) return;
 
-        // Dapatkan path lengkap untuk menentukan contentType
-        const pathParts = change.doc.ref.parent.parent?.path.split('/');
-        if (!pathParts || pathParts.length < 2) return;
+        // Determine content type from path
+        const pathParts = change.doc.ref.path.split('/');
+        let contentType = '';
+        let contentId = '';
         
-        const contentType = pathParts[0];
-        const contentId = pathParts[1];
+        if (pathParts.includes('arduinoHistoryComments')) {
+          contentType = 'arduinoHistoryComment';
+          contentId = pathParts[pathParts.indexOf('arduinoHistoryComments') + 1];
+        } else if (pathParts.includes('comments')) {
+          contentType = pathParts[pathParts.indexOf('comments') - 2]; // e.g. 'discussions'
+          contentId = pathParts[pathParts.indexOf('comments') - 1];
+        }
 
-        createActivityNotification('like', {
-          contentType: contentType,
-          contentId: contentId,
-          recipientId: newLike.targetUserId,
-          senderId: newLike.userId,
-          senderName: newLike.userName || 'Pengguna'
+        // Only proceed if we have valid content type
+        if (!contentType || !contentId) return;
+
+        // Get the comment being liked
+        getDoc(change.doc.ref.parent.parent).then(commentDoc => {
+          if (commentDoc.exists()) {
+            const commentData = commentDoc.data();
+            
+            // Create notification
+            createActivityNotification('like_comment', {
+              contentType: contentType,
+              contentId: contentId,
+              commentId: commentDoc.id,
+              recipientId: commentData.userId,
+              senderId: newLike.userId,
+              senderName: newLike.userName || 'Pengguna'
+            });
+
+            // Log activity
+            logActivity({
+              userId: newLike.userId,
+              type: 'like_comment',
+              contentId: contentId,
+              contentType: contentType,
+              description: `Menyukai komentar pada ${getContentTypeName(contentType)}`,
+              commentId: commentDoc.id
+            });
+          }
         });
       }
     });
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Setup listener untuk feedback
 function setupFeedbackListeners() {
@@ -6008,27 +6070,121 @@ function setupAnnouncementListeners() {
 
 
 
-// Setup listener untuk reaksi emoji
-function setupReactionListeners(userId) {
-  const reactionsRef = collection(db, "reactions");
-  return onSnapshot(reactionsRef, (snapshot) => {
-    snapshot.docChanges().forEach(change => {
-      if (change.type === "added") {
-        const newReaction = change.doc.data();
-        if (newReaction.userId === userId) return;
 
-        createActivityNotification('reaction', {
-          contentType: newReaction.contentType,
-          contentId: newReaction.contentId,
-          recipientId: newReaction.targetUserId,
-          emoji: newReaction.emoji,
-          senderId: newReaction.userId,
-          senderName: newReaction.userName || 'Pengguna'
-        });
+
+// Enhanced setupEmojiReactions function
+async function setupEmojiReactions(user, contentId = 'arduino-history') {
+  const emojiOptions = document.querySelectorAll('.emoji-option');
+  const reactionMessage = document.querySelector('.reaction-message');
+  const loginMessage = document.querySelector('.login-message');
+
+  reactionMessage.style.display = 'none';
+  loginMessage.style.display = 'none';
+
+  if (!user) {
+    loginMessage.style.display = 'block';
+    emojiOptions.forEach(option => {
+      option.style.opacity = '0.5';
+      option.style.cursor = 'not-allowed';
+      option.addEventListener('click', e => {
+        e.preventDefault();
+        loginMessage.style.opacity = 1;
+        setTimeout(() => loginMessage.style.opacity = 0.7, 2000);
+      });
+    });
+    return;
+  }
+
+  const reactionDocRef = doc(db, 'reactions', contentId);
+  const userReactionRef = doc(db, 'userReactions', `${user.uid}_${contentId}`);
+
+  // Realtime listener for reaction counts
+  onSnapshot(reactionDocRef, (snapshot) => {
+    const data = snapshot.data() || {};
+    emojiOptions.forEach(option => {
+      const emojiType = option.dataset.emoji;
+      const countEl = document.getElementById(`${emojiType}-count`);
+      if (countEl) {
+        countEl.textContent = data[emojiType] || 0;
       }
     });
   });
+
+  // Check user's existing reaction
+  let userReaction = null;
+  const userReactionSnap = await getDoc(userReactionRef);
+  if (userReactionSnap.exists()) {
+    userReaction = userReactionSnap.data().emojiType;
+    const selected = document.querySelector(`.emoji-option[data-emoji="${userReaction}"]`);
+    if (selected) selected.classList.add('selected');
+  }
+
+  emojiOptions.forEach(option => {
+    option.addEventListener('click', async function() {
+      const emojiType = this.dataset.emoji;
+      if (userReaction === emojiType) return;
+
+      emojiOptions.forEach(opt => opt.classList.remove('selected'));
+      this.classList.add('selected');
+
+      const updates = {};
+      if (userReaction) updates[userReaction] = increment(-1);
+      updates[emojiType] = increment(1);
+
+      // Update reaction counts
+      await updateDoc(reactionDocRef, updates).catch(async () => {
+        await setDoc(reactionDocRef, updates, { merge: true });
+      });
+
+      // Update user's reaction
+      await setDoc(userReactionRef, {
+        userId: user.uid,
+        contentId: contentId,
+        emojiType: emojiType,
+        timestamp: serverTimestamp()
+      });
+
+      userReaction = emojiType;
+
+      // Create notification for content owner
+      const contentDoc = await getDoc(doc(db, 'arduinoHistory', contentId));
+      if (contentDoc.exists()) {
+        const contentOwnerId = contentDoc.data().userId;
+        if (contentOwnerId !== user.uid) {
+          await createActivityNotification('reaction', {
+            contentType: 'arduinoHistory',
+            contentId: contentId,
+            recipientId: contentOwnerId,
+            emoji: emojiType,
+            senderId: user.uid,
+            senderName: user.displayName || 'Pengguna'
+          });
+        }
+      }
+
+      // Log activity
+      await logActivity({
+        userId: user.uid,
+        type: 'reaction',
+        contentId: contentId,
+        contentType: 'arduinoHistory',
+        description: `Memberikan reaksi ${emojiType} pada sejarah Arduino`,
+        emoji: emojiType
+      });
+
+      // Show success message
+      reactionMessage.style.display = 'block';
+      reactionMessage.style.opacity = 1;
+      setTimeout(() => reactionMessage.style.opacity = 0.7, 2000);
+    });
+  });
 }
+
+
+
+
+
+
 
 
 
@@ -6079,11 +6235,7 @@ function setupContentUploadListeners(userId) {
 	
 	
 	
-	
-	
-	
-	
-	// Improved Activity Feed Setup
+	// Enhanced setupActivityTabs function
 function setupActivityTabs(userId) {
   document.querySelectorAll('.activity-tab').forEach(tab => {
     tab.addEventListener('click', function() {
@@ -6159,11 +6311,6 @@ function setupActivityTabs(userId) {
     'all'
   );
 }
-
-	
-	
-	
-	
 	
 	
 	
@@ -7832,100 +7979,128 @@ function scrollToContent(contentId) {
 		
 		
 		
-		     // Fungsi untuk memuat detail komentar
-        async function loadCommentDetail(contentId, commentId) {
-            let commentDoc;
-            
-            if (commentId) {
-                commentDoc = await getDoc(doc(db, 'arduinoHistoryComments', commentId));
-            } else {
-                const q = query(
-                    collection(db, 'arduinoHistoryComments'),
-                    where('historyId', '==', contentId),
-                    orderBy('timestamp', 'desc'),
-                    limit(1)
-                );
-                const snapshot = await getDocs(q);
-                commentDoc = snapshot.docs[0];
-            }
-            
-            if (!commentDoc || !commentDoc.exists()) {
-                return '<p>Komentar tidak ditemukan</p>';
-            }
-            
-            const commentData = commentDoc.data();
-            const userDoc = await getDoc(doc(db, 'users', commentData.userId));
-            const userData = userDoc.exists() ? userDoc.data() : {};
-            
-            return `
-                <div class="comment-detail">
-                    <div class="comment-header">
-                        <div class="user-avatar">${userData.displayName?.charAt(0) || 'P'}</div>
-                        <div class="user-info">
-                            <h4>${userData.displayName || 'Pengguna'}</h4>
-                            <small>${formatTimeAgo(commentData.timestamp?.toDate())}</small>
-                        </div>
-                    </div>
-                    <div class="comment-content">
-                        <p>${commentData.content}</p>
-                    </div>
-                    <div class="comment-actions">
-                        <button class="like-btn" data-id="${commentDoc.id}">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                            </svg>
-                            <span class="like-count">${commentData.likes || 0}</span>
-                        </button>
-                        <a href="/arduino-history/${contentId}#comment-${commentDoc.id}" class="view-original-btn">Lihat di halaman asli</a>
-                    </div>
-                </div>
-            `;
-        }
 		
 		
 		
-		      // Fungsi untuk menampilkan detail aktivitas
-        async function showActivityDetail(type, contentId, commentId = null) {
-            const modal = document.getElementById('activityDetailModal');
-            const modalTitle = document.getElementById('activityModalTitle');
-            const modalContent = document.getElementById('activityModalContent');
-            
-            modal.style.display = 'block';
-            modalTitle.textContent = 'Detail Aktivitas';
-            modalContent.innerHTML = '<div class="loader"></div>';
-            
-            try {
-                let content = '';
-                
-                switch(type) {
-                    case 'comment':
-                    case 'reply':
-                    case 'like_comment':
-                        content = await loadCommentDetail(contentId, commentId);
-                        break;
-                    case 'reaction':
-                        content = await loadReactionDetail(contentId);
-                        break;
-                    case 'post':
-                    case 'feedback':
-                    case 'discussion':
-                    case 'announcement':
-                    case 'content':
-                        content = await loadPostDetail(contentId, type);
-                        break;
-                    default:
-                        content = '<p>Detail aktivitas tidak tersedia</p>';
-                }
-                
-                modalContent.innerHTML = content;
-            } catch (error) {
-                console.error('Error loading activity detail:', error);
-                modalContent.innerHTML = '<p>Gagal memuat detail aktivitas</p>';
-            }
-        }
-   
-   
-   
+		
+		// Helper function to load comment details
+async function loadCommentDetail(contentId, commentId) {
+  let commentDoc;
+  
+  if (commentId) {
+    commentDoc = await getDoc(doc(db, 'arduinoHistoryComments', commentId));
+  } else {
+    const q = query(
+      collection(db, 'arduinoHistoryComments'),
+      where('historyId', '==', contentId),
+      orderBy('timestamp', 'desc'),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+    commentDoc = snapshot.docs[0];
+  }
+  
+  if (!commentDoc || !commentDoc.exists()) {
+    return '<p>Komentar tidak ditemukan</p>';
+  }
+  
+  const commentData = commentDoc.data();
+  const userDoc = await getDoc(doc(db, 'users', commentData.userId));
+  const userData = userDoc.exists() ? userDoc.data() : {};
+  
+  return `
+    <div class="comment-detail">
+      <div class="comment-header">
+        <div class="user-avatar">${userData.displayName?.charAt(0) || 'P'}</div>
+        <div class="user-info">
+          <h4>${userData.displayName || 'Pengguna'}</h4>
+          <small>${formatTimeAgo(commentData.timestamp?.toDate())}</small>
+        </div>
+      </div>
+      <div class="comment-content">
+        <p>${commentData.content}</p>
+      </div>
+      <div class="comment-actions">
+        <button class="like-btn" data-id="${commentDoc.id}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+          </svg>
+          <span class="like-count">${commentData.likes || 0}</span>
+        </button>
+        <a href="/arduino-history/${contentId}#comment-${commentDoc.id}" class="view-original-btn">Lihat di halaman asli</a>
+      </div>
+    </div>
+  `;
+}
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		// Enhanced showActivityDetail function
+async function showActivityDetail(type, contentId, commentId = null) {
+  const modal = document.getElementById('activityDetailModal');
+  const modalTitle = document.getElementById('activityModalTitle');
+  const modalContent = document.getElementById('activityModalContent');
+  
+  modal.style.display = 'block';
+  modalTitle.textContent = 'Detail Aktivitas';
+  modalContent.innerHTML = '<div class="loader"></div>';
+  
+  try {
+    let content = '';
+    
+    switch(type) {
+      case 'comment':
+      case 'reply':
+      case 'like_comment':
+        content = await loadCommentDetail(contentId, commentId);
+        break;
+      case 'reaction':
+        content = await loadReactionDetail(contentId);
+        break;
+      case 'feedback':
+        content = await loadFeedbackDetail(contentId);
+        break;
+      case 'discussion':
+        content = await loadDiscussionDetail(contentId);
+        break;
+      case 'announcement':
+        content = await loadAnnouncementDetail(contentId);
+        break;
+      case 'content':
+        content = await loadArduinoHistoryDetail(contentId);
+        break;
+      default:
+        content = '<p>Detail aktivitas tidak tersedia</p>';
+    }
+    
+    modalContent.innerHTML = content;
+    
+    // Setup any interactive elements in the modal
+    if (type === 'comment' || type === 'reply') {
+      setupCommentInteractions(modalContent);
+    }
+    
+  } catch (error) {
+    console.error('Error loading activity detail:', error);
+    modalContent.innerHTML = '<p>Gagal memuat detail aktivitas</p>';
+  }
+}
+		
+		
+		
+		
+		
+		
+		
    
    
    
@@ -8382,52 +8557,92 @@ function getActiveTab() {
 
 
 
-// Enhanced Activity Rendering
-function renderActivities(activities, filterType = 'all') {
-    const container = document.getElementById(`${filterType}Activity`);
-    if (!container) return;
 
-    if (activities.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p style="color: rgba(255,255,255,0.7); text-align: center;">
-                    Tidak ada aktivitas ${getFilterName(filterType)}
-                </p>
-            </div>
-        `;
-        return;
+
+// Enhanced renderActivities function
+function renderActivities(activities, filterType = 'all') {
+  const container = document.getElementById(`${filterType}Activity`);
+  if (!container) return;
+
+  // Filter activities based on tab
+  const filteredActivities = activities.filter(activity => {
+    if (filterType === 'all') return true;
+    if (filterType === 'comments') {
+      return ['comment', 'reply', 'like_comment'].includes(activity.type);
+    }
+    if (filterType === 'reactions') {
+      return activity.type === 'reaction';
+    }
+    if (filterType === 'posts') {
+      return ['post', 'feedback', 'discussion', 'announcement', 'content'].includes(activity.type);
+    }
+    return false;
+  });
+
+  if (filteredActivities.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <p style="color: rgba(255,255,255,0.7); text-align: center;">
+          Tidak ada aktivitas ${getFilterName(filterType)}
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filteredActivities.map(activity => {
+    // Format activity content based on type
+    let content = '';
+    let icon = getActivityIcon(activity.type);
+    
+    switch(activity.type) {
+      case 'comment':
+        content = `${activity.userName || 'Pengguna'} mengomentari ${getContentTypeName(activity.contentType)}`;
+        break;
+      case 'reply':
+        content = `${activity.userName || 'Pengguna'} membalas komentar pada ${getContentTypeName(activity.contentType)}`;
+        break;
+      case 'like_comment':
+        content = `${activity.userName || 'Pengguna'} menyukai komentar pada ${getContentTypeName(activity.contentType)}`;
+        break;
+      case 'reaction':
+        content = `${activity.userName || 'Pengguna'} memberikan reaksi ${activity.emoji || ''} pada ${getContentTypeName(activity.contentType)}`;
+        break;
+      case 'feedback':
+        content = `${activity.userName || 'Pengguna'} memberikan feedback: ${activity.description || ''}`;
+        break;
+      case 'announcement':
+        content = `${activity.userName || 'Pengguna'} membuat pengumuman baru`;
+        break;
+      default:
+        content = activity.description || `Aktivitas baru dari ${activity.userName || 'Pengguna'}`;
     }
 
-    container.innerHTML = activities.map(activity => `
-        <div class="activity-item" 
-             data-type="${activity.type}" 
-             data-id="${activity.id}"
-             data-content-id="${activity.contentId || ''}"
-             data-comment-id="${activity.commentId || ''}">
-            <div class="activity-icon">${getActivityIcon(activity.type)}</div>
-            <div class="activity-content">
-                <p>${formatActivityContent(activity)}</p>
-                <small>${formatTimeAgo(activity.timestamp)}</small>
-            </div>
+    return `
+      <div class="activity-item" 
+           data-type="${activity.type}" 
+           data-id="${activity.id}"
+           data-content-id="${activity.contentId || ''}"
+           data-comment-id="${activity.commentId || ''}">
+        <div class="activity-icon">${icon}</div>
+        <div class="activity-content">
+          <p>${content}</p>
+          <small>${formatTimeAgo(activity.timestamp)}</small>
         </div>
-    `).join('');
+      </div>
+    `;
+  }).join('');
 
-    container.querySelectorAll('.activity-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const type = this.dataset.type;
-            const contentId = this.dataset.contentId;
-            const commentId = this.dataset.commentId;
-            showActivityDetail(type, contentId, commentId);
-        });
+  // Add click handlers
+  container.querySelectorAll('.activity-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const type = this.dataset.type;
+      const contentId = this.dataset.contentId;
+      const commentId = this.dataset.commentId;
+      showActivityDetail(type, contentId, commentId);
     });
+  });
 }
-
-
-
-
-
-
-
 
 
 
