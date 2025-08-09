@@ -5712,7 +5712,7 @@ onAuthStateChanged(auth, (user) => {
         unsubscribeFunctions.push(setupDiscussionListeners());
         unsubscribeFunctions.push(setupDiscussionCommentListeners());
         unsubscribeFunctions.push(setupAnnouncementListeners());
-        unsubscribeFunctions.push(setup());
+        unsubscribeFunctions.push(setupEmojiReactions());
         
         // Cleanup saat komponen unmount
         return () => {
