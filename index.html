@@ -8189,38 +8189,6 @@ function getActivityVerb(type) {
 
 
 
-function loadAllActivities(userId) {
-    const q = query(
-        collection(db, "activities"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc"),
-        limit(15)
-    );
-    return setupActivitiesListener(q, 'all'); // ✅
-}
-
-function loadCommentsActivities(userId) {
-    const q = query(
-        collection(db, "activities"),
-        where("userId", "==", userId),
-        where("type", "in", ["comment", "reply"]),
-        orderBy("timestamp", "desc"),
-        limit(15)
-    );
-    return setupActivitiesListener(q, 'comments'); // ✅
-}
-
-function loadReactionActivities(userId) {
-    const q = query(
-        collection(db, "activities"),
-        where("userId", "==", userId),
-        where("type", "in", ["like", "reaction"]),
-        orderBy("timestamp", "desc"),
-        limit(15)
-    );
-    return setupActivitiesListener(q, 'reactions'); // ✅
-}
-
 
 
 
