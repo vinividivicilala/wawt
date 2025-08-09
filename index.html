@@ -2793,7 +2793,176 @@ a.footnote-link:hover {
 
 
 
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+}
 
+.modal-content {
+    background-color: #2a2a2a;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 600px;
+    color: white;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.close-modal {
+    font-size: 28px;
+    cursor: pointer;
+}
+
+/* Activity Items */
+.activity-item {
+    display: flex;
+    padding: 12px;
+    margin-bottom: 10px;
+    background-color: #333;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.activity-item:hover {
+    background-color: #444;
+}
+
+.activity-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-content p {
+    margin: 5px 0;
+}
+
+.activity-content small {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+}
+
+.view-detail-btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Detail Content */
+.comment-detail, .reaction-detail, .post-detail {
+    padding: 15px;
+    background-color: #333;
+    border-radius: 6px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #4CAF50;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-info h4 {
+    margin: 0;
+}
+
+.user-info small {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+}
+
+.comment-header, .reaction-header, .post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.view-original-btn {
+    display: inline-block;
+    background-color: #2196F3;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.like-btn {
+    background-color: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.like-btn svg {
+    margin-right: 5px;
+}
+
+/* Empty State */
+.empty-state, .empty-notifications {
+    padding: 20px;
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+}
+
+/* Notification Badge */
+.notification-badge {
+    background-color: #f44336;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    display: none;
+}
+
+.unread {
+    background-color: rgba(74, 144, 226, 0.1);
+}
 
 
 
