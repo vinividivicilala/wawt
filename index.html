@@ -5363,6 +5363,9 @@ iframe:hover {
     </div>
 </div>
 
+
+
+
 <div class="dashboard-activity linebox">
     <h2 class="title-box-white">Aktivitas Terkini</h2>
     
@@ -5400,8 +5403,6 @@ iframe:hover {
         </div>
     </div>
 </div>
-  
-  
   
   
   
@@ -5737,7 +5738,9 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
-// Enhanced Notification System
+	
+	
+	// Enhanced Notification System
 async function createActivityNotification(activityType, activityData) {
   try {
     const currentUser = auth.currentUser;
@@ -5798,7 +5801,7 @@ async function createActivityNotification(activityType, activityData) {
   } catch (error) {
     console.error("Error in createActivityNotification:", error);
   }
-}	
+}
 	
 	
 	
@@ -5806,18 +5809,6 @@ async function createActivityNotification(activityType, activityData) {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-
-
 
 // Setup listener untuk komentar
 function setupCommentListeners(userId) {
@@ -5849,6 +5840,56 @@ function setupCommentListeners(userId) {
     });
   });
 }
+
+// Setup listener untuk like komentar
+function setupCommentLikeListeners(userId) {
+  const likesRef = collectionGroup(db, "likes");
+  return onSnapshot(likesRef, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        const newLike = change.doc.data();
+        if (newLike.userId === userId) return;
+
+        // Dapatkan path lengkap untuk menentukan contentType
+        const pathParts = change.doc.ref.path.split('/');
+        if (pathParts.includes('arduinoHistoryComments')) {
+          const commentId = pathParts[pathParts.length - 3];
+          
+          // Dapatkan data komentar
+          getDoc(doc(db, "arduinoHistoryComments", commentId)).then(commentDoc => {
+            if (commentDoc.exists()) {
+              const commentData = commentDoc.data();
+              createActivityNotification('like_comment', {
+                contentType: 'arduinoHistory',
+                contentId: commentData.historyId,
+                commentId: commentId,
+                recipientId: commentData.userId,
+                senderId: newLike.userId,
+                senderName: newLike.userName || 'Pengguna'
+              });
+            }
+          });
+        }
+      }
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Setup listener untuk like
 function setupLikeListeners(userId) {
@@ -5964,6 +6005,9 @@ function setupAnnouncementListeners() {
   });
 }
 
+
+
+
 // Setup listener untuk reaksi emoji
 function setupReactionListeners(userId) {
   const reactionsRef = collection(db, "reactions");
@@ -5985,6 +6029,13 @@ function setupReactionListeners(userId) {
     });
   });
 }
+
+
+
+
+
+
+
 
 // Setup listener untuk upload konten
 function setupContentUploadListeners(userId) {
@@ -6026,8 +6077,13 @@ function setupContentUploadListeners(userId) {
 	
 	
 	
-
-// Improved Activity Feed Setup
+	
+	
+	
+	
+	
+	
+	// Improved Activity Feed Setup
 function setupActivityTabs(userId) {
   document.querySelectorAll('.activity-tab').forEach(tab => {
     tab.addEventListener('click', function() {
@@ -6048,7 +6104,7 @@ function setupActivityTabs(userId) {
           currentUnsubscribe = setupActivitiesListener(
             query(
               collection(db, "activities"),
-              where("type", "in", ["comment", "reply"]),
+              where("type", "in", ["comment", "reply", "like_comment"]),
               orderBy("timestamp", "desc"),
               limit(15)
             ),
@@ -6060,7 +6116,7 @@ function setupActivityTabs(userId) {
           currentUnsubscribe = setupActivitiesListener(
             query(
               collection(db, "activities"),
-              where("type", "in", ["like", "reaction"]),
+              where("type", "==", "reaction"),
               orderBy("timestamp", "desc"),
               limit(15)
             ),
@@ -6103,13 +6159,7 @@ function setupActivityTabs(userId) {
     'all'
   );
 }
-	
-	
-	
-	
-	
-	
-	
+
 	
 	
 	
@@ -8332,53 +8382,45 @@ function getActiveTab() {
 
 
 
+// Enhanced Activity Rendering
+function renderActivities(activities, filterType = 'all') {
+    const container = document.getElementById(`${filterType}Activity`);
+    if (!container) return;
 
+    if (activities.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p style="color: rgba(255,255,255,0.7); text-align: center;">
+                    Tidak ada aktivitas ${getFilterName(filterType)}
+                </p>
+            </div>
+        `;
+        return;
+    }
 
+    container.innerHTML = activities.map(activity => `
+        <div class="activity-item" 
+             data-type="${activity.type}" 
+             data-id="${activity.id}"
+             data-content-id="${activity.contentId || ''}"
+             data-comment-id="${activity.commentId || ''}">
+            <div class="activity-icon">${getActivityIcon(activity.type)}</div>
+            <div class="activity-content">
+                <p>${formatActivityContent(activity)}</p>
+                <small>${formatTimeAgo(activity.timestamp)}</small>
+            </div>
+        </div>
+    `).join('');
 
-
-    // Fungsi untuk menampilkan aktivitas
-        function renderActivities(activities, filterType = 'all') {
-            const container = document.getElementById(`${filterType}Activity`);
-            if (!container) return;
-
-            if (activities.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p style="color: rgba(255,255,255,0.7); text-align: center;">
-                            Tidak ada aktivitas ${getFilterName(filterType)}
-                        </p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = activities.map(activity => `
-                <div class="activity-item" 
-                     data-type="${activity.type}" 
-                     data-id="${activity.id}"
-                     data-content-id="${activity.contentId || ''}"
-                     data-comment-id="${activity.commentId || ''}">
-                    <div class="activity-icon">${getActivityIcon(activity.type)}</div>
-                    <div class="activity-content">
-                        <p>${formatActivityContent(activity)}</p>
-                        <small>${formatTimeAgo(activity.timestamp)}</small>
-                    </div>
-                </div>
-            `).join('');
-
-            container.querySelectorAll('.activity-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const type = this.dataset.type;
-                    const contentId = this.dataset.contentId;
-                    const commentId = this.dataset.commentId;
-                    showActivityDetail(type, contentId, commentId);
-                });
-            });
-        }
-
-
-
-
+    container.querySelectorAll('.activity-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const type = this.dataset.type;
+            const contentId = this.dataset.contentId;
+            const commentId = this.dataset.commentId;
+            showActivityDetail(type, contentId, commentId);
+        });
+    });
+}
 
 
 
@@ -8439,48 +8481,61 @@ function formatTimeAgo(date) {
 
 
 
-  // Fungsi untuk memformat konten aktivitas
-        function formatActivityContent(activity) {
-            let actionText = '';
-            let contentInfo = '';
-            
-            switch(activity.type) {
-                case 'comment':
-                    actionText = 'mengomentari';
-                    contentInfo = activity.contentType === 'arduinoHistory' ? 'sejarah Arduino' : activity.contentType;
-                    break;
-                case 'reply':
-                    actionText = 'membalas komentar di';
-                    contentInfo = activity.contentType === 'arduinoHistory' ? 'sejarah Arduino' : activity.contentType;
-                    break;
-                case 'like_comment':
-                    actionText = 'menyukai komentar di';
-                    contentInfo = activity.contentType === 'arduinoHistory' ? 'sejarah Arduino' : activity.contentType;
-                    break;
-                case 'reaction':
-                    actionText = 'memberi reaksi';
-                    contentInfo = activity.emoji ? activity.emoji : '';
-                    break;
-                case 'post':
-                case 'content':
-                    actionText = 'memposting';
-                    contentInfo = activity.contentType === 'arduinoHistory' ? 'sejarah Arduino' : activity.contentType;
-                    break;
-                case 'feedback':
-                    actionText = 'memberi feedback';
-                    break;
-                case 'discussion':
-                    actionText = 'memulai diskusi';
-                    break;
-                case 'announcement':
-                    actionText = 'membuat pengumuman';
-                    break;
-                default:
-                    actionText = 'melakukan aktivitas';
-            }
-            
-            return `${activity.userName || 'Pengguna'} ${actionText} ${contentInfo}`;
-        }
+
+// Format activity content
+function formatActivityContent(activity) {
+    let actionText = '';
+    let contentInfo = '';
+    
+    switch(activity.type) {
+        case 'comment':
+            actionText = 'mengomentari';
+            contentInfo = activity.contentType === 'arduinoHistory' ? 'sejarah Arduino' : 
+                         activity.contentType === 'feedback' ? 'feedback' : 
+                         activity.contentType === 'announcement' ? 'pengumuman' : 
+                         activity.contentType;
+            break;
+        case 'reply':
+            actionText = 'membalas komentar di';
+            contentInfo = activity.contentType === 'arduinoHistory' ? 'sejarah Arduino' : 
+                         activity.contentType === 'feedback' ? 'feedback' : 
+                         activity.contentType === 'announcement' ? 'pengumuman' : 
+                         activity.contentType;
+            break;
+        case 'like_comment':
+            actionText = 'menyukai komentar di';
+            contentInfo = activity.contentType === 'arduinoHistory' ? 'sejarah Arduino' : 
+                         activity.contentType === 'feedback' ? 'feedback' : 
+                         activity.contentType === 'announcement' ? 'pengumuman' : 
+                         activity.contentType;
+            break;
+        case 'reaction':
+            actionText = 'memberi reaksi';
+            contentInfo = activity.emoji ? activity.emoji : '';
+            break;
+        case 'feedback':
+            actionText = 'memberi feedback';
+            break;
+        case 'announcement':
+            actionText = 'membuat pengumuman';
+            break;
+        case 'content':
+            actionText = 'memposting sejarah Arduino';
+            break;
+        default:
+            actionText = 'melakukan aktivitas';
+    }
+    
+    return `${activity.userName || 'Pengguna'} ${actionText} ${contentInfo}`;
+}
+
+
+
+
+
+
+
+
 
 
 
