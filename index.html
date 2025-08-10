@@ -5596,11 +5596,7 @@ iframe:hover {
 
 
 
-
-
-
-document.addEventListener("DOMContentLoaded", function () {
-    // State variables
+// State variables
     let userProfile = {};
     let notifications = [];
     let activities = [];
@@ -5610,10 +5606,10 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentUnsubscribe = null;
     const processedActivityIds = new Set();
     const processedNotificationIds = new Set();
+	
 
 
-
- 
+document.addEventListener("DOMContentLoaded", function () {
     
     // DOM Elements
     const backFromDashboard = document.getElementById('backFromDashboard');
