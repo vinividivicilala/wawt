@@ -6357,86 +6357,34 @@ async function setupEmojiReactions(user, contentId = 'arduino-history') {
 
 
 
-	
-	
-	
-	  function setupActivityTabs(userId) {
-        document.querySelectorAll('.activity-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                const filter = this.dataset.tab;
-                
-                // Update UI
-                document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                document.querySelectorAll('.activity-tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(`${filter}Activity`).classList.add('active');
+	// Fix the activity tab switching
+function setupActivityTabs(userId) {
+    const tabs = {
+        'all': query(
+            collection(db, "activities"),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        ),
+        'comments': query(
+            collection(db, "activities"),
+            where("type", "in", ["comment", "reply", "like_comment"]),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        ),
+        'reactions': query(
+            collection(db, "activities"),
+            where("type", "==", "reaction"),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        ),
+        'posts': query(
+            collection(db, "activities"),
+            where("type", "in", ["post", "feedback", "discussion", "announcement", "content"]),
+            orderBy("timestamp", "desc"),
+            limit(50)
+        )
+    };
 
-                // Load appropriate data
-                if (currentUnsubscribe) currentUnsubscribe();
-                
-                switch(filter) {
-                    case 'comments':
-                        currentUnsubscribe = setupActivitiesListener(
-                            query(
-                                collection(db, "activities"),
-                                where("type", "in", ["comment", "reply", "like_comment"]),
-                                where("contentType", "in", ["announcements", "feedback", "arduinoHistory", "discussions"]),
-                                orderBy("timestamp", "desc"),
-                                limit(15)
-                            ),
-                            'comments'
-                        );
-                        break;
-                        
-                    case 'reactions':
-                        currentUnsubscribe = setupActivitiesListener(
-                            query(
-                                collection(db, "activities"),
-                                where("type", "==", "reaction"),
-                                where("contentType", "==", "arduinoHistory"),
-                                orderBy("timestamp", "desc"),
-                                limit(15)
-                            ),
-                            'reactions'
-                        );
-                        break;
-                        
-                    case 'posts':
-                        currentUnsubscribe = setupActivitiesListener(
-                            query(
-                                collection(db, "activities"),
-                                where("type", "in", ["post", "feedback", "discussion", "announcement", "content"]),
-                                orderBy("timestamp", "desc"),
-                                limit(15)
-                            ),
-                            'posts'
-                        );
-                        break;
-                        
-                    default:
-                        currentUnsubscribe = setupActivitiesListener(
-                            query(
-                                collection(db, "activities"),
-                                orderBy("timestamp", "desc"),
-                                limit(15)
-                            ),
-                            'all'
-                        );
-                }
-            });
-        });
-
-        // Load initial data
-        currentUnsubscribe = setupActivitiesListener(
-            query(
-                collection(db, "activities"),
-                orderBy("timestamp", "desc"),
-                limit(15)
-            ),
-            'all'
-        );
-    }
 
 	
 	
@@ -6929,32 +6877,35 @@ onAuthStateChanged(auth, (user) => {
 
 	
 	
+
 	
 	
 	
-	    // Event Listeners for Activity Tabs
-    document.querySelectorAll('.activity-tab').forEach(tab => {
+	
+	
+	
+	
+	
+	  document.querySelectorAll('.activity-tab').forEach(tab => {
         tab.addEventListener('click', function() {
+            const filter = this.dataset.tab;
+            
+            // Update UI
             document.querySelectorAll('.activity-tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             
-            const tabId = this.getAttribute('data-tab');
             document.querySelectorAll('.activity-tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(`${tabId}Activity`).classList.add('active');
+            document.getElementById(`${filter}Activity`).classList.add('active');
+
+            // Load appropriate data
+            if (currentUnsubscribe) currentUnsubscribe();
+            currentUnsubscribe = setupActivitiesListener(tabs[filter], filter);
         });
     });
-});
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+    // Load initial data
+    currentUnsubscribe = setupActivitiesListener(tabs['all'], 'all');
+}
 	
 	
 	
@@ -6962,7 +6913,66 @@ onAuthStateChanged(auth, (user) => {
 
 
 
+// Ensure all actions trigger notifications
+async function handleContentAction(actionType, contentData) {
+    const user = auth.currentUser;
+    if (!user) return;
 
+    // Determine recipient (content owner or comment author)
+    let recipientId = contentData.authorId;
+    if (contentData.commentId) {
+        const commentRef = doc(db, `${contentData.contentType}Comments`, contentData.commentId);
+        const commentDoc = await getDoc(commentRef);
+        if (commentDoc.exists()) {
+            recipientId = commentDoc.data().userId;
+        }
+    }
+
+    // Skip if acting on own content
+    if (recipientId === user.uid) return;
+
+    // Create notification
+    const notificationRef = doc(collection(db, "notifications"));
+    await setDoc(notificationRef, {
+        id: notificationRef.id,
+        userId: recipientId,
+        type: actionType,
+        read: false,
+        timestamp: serverTimestamp(),
+        fromUserId: user.uid,
+        fromUserName: user.displayName || 'Pengguna',
+        contentType: contentData.contentType,
+        contentId: contentData.contentId,
+        commentId: contentData.commentId || null,
+        message: generateNotificationMessage(actionType, contentData.contentType, user.displayName)
+    });
+
+    // Also log as activity
+    await logActivity({
+        type: actionType,
+        contentId: contentData.contentId,
+        contentType: contentData.contentType,
+        description: generateActivityDescription(actionType, contentData.contentType)
+    });
+}
+
+function generateNotificationMessage(actionType, contentType, userName) {
+    const contentNames = {
+        'arduinoHistory': 'sejarah Arduino',
+        'discussions': 'diskusi',
+        'feedback': 'feedback',
+        'announcements': 'pengumuman'
+    };
+    
+    const actions = {
+        'comment': 'mengomentari',
+        'reply': 'membalas komentar di',
+        'like': 'menyukai',
+        'reaction': 'memberi reaksi pada'
+    };
+    
+    return `${userName || 'Pengguna'} ${actions[actionType]} ${contentNames[contentType] || 'konten'}`;
+}
 
 
 
@@ -6989,28 +6999,24 @@ function switchActivityTab(tabName) {
 }
 
 
-	
-	async function logActivity({ type, contentId, contentType, description, userId, userName, userPhoto }) {
+	// Improve the activity logging function
+async function logActivity(activityData) {
     try {
         const user = auth.currentUser;
         if (!user) return;
 
-        const uid = userId || user.uid;
-        const name = userName || user.displayName;
-        const photo = userPhoto || user.photoURL || "";
+        // Ensure required fields
+        if (!activityData.type || !activityData.contentType) {
+            console.error("Missing required activity fields");
+            return;
+        }
 
-        const activityKey = `${type}_${contentId}_${uid}`;
-        if (processedActivityIds.has(activityKey)) return;
-        processedActivityIds.add(activityKey);
-
-        await setDoc(doc(collection(db, "activities")), {
-            userId: uid,
-            userName: name,
-            userPhoto: photo,
-            type,
-            contentId,
-            contentType,
-            description,
+        const activityRef = doc(collection(db, "activities"));
+        await setDoc(activityRef, {
+            userId: user.uid,
+            userName: user.displayName || user.email,
+            userPhoto: user.photoURL || "",
+            ...activityData,
             timestamp: serverTimestamp()
         });
     } catch (error) {
@@ -7956,47 +7962,48 @@ function scrollToContent(contentId) {
 
 
 
-
-
-
-
-
-
-
-   
-   // Notification Functions
-    function setupNotificationListeners(userId) {
-        if (!userId) return;
+// Fix the notification listener setup
+function setupNotificationListeners(userId) {
+    if (!userId) return () => {};
+    
+    const notificationsRef = collection(db, "notifications");
+    const q = query(
+        notificationsRef, 
+        where("userId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(50)
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        const newNotifications = [];
+        let unreadCount = 0;
         
-        const notificationsRef = collection(db, "notifications");
-        const q = query(
-            notificationsRef, 
-            where("userId", "==", userId),
-            orderBy("timestamp", "desc"),
-            limit(50)
-        );
-        
-        return onSnapshot(q, (snapshot) => {
-            notifications = [];
-            let unreadCount = 0;
-            
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (!processedNotificationIds.has(doc.id)) {
-                    processedNotificationIds.add(doc.id);
-                    notifications.push({
-                        id: doc.id,
-                        ...data,
-                        timestamp: data.timestamp?.toDate() || new Date()
-                    });
-                    
-                    if (!data.read) unreadCount++;
-                }
-            });
-
-            updateNotificationUI(notifications, unreadCount);
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "added" && !processedNotificationIds.has(change.doc.id)) {
+                processedNotificationIds.add(change.doc.id);
+                const data = change.doc.data();
+                newNotifications.push({
+                    id: change.doc.id,
+                    ...data,
+                    timestamp: data.timestamp?.toDate() || new Date()
+                });
+                
+                if (!data.read) unreadCount++;
+            }
         });
-    }
+
+        if (newNotifications.length > 0) {
+            notifications = [...newNotifications, ...notifications].slice(0, 50);
+            updateNotificationUI(notifications, unreadCount);
+        }
+    });
+}
+
+
+
+
+
+
 
   
   
