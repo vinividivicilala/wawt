@@ -7840,24 +7840,7 @@ function navigateToActivity(type, id) {
         });
     }
     
-    // Fungsi untuk menandai semua notifikasi sebagai sudah dibaca
-    function markAllNotificationsAsRead() {
-        const batch = writeBatch(db);
-        
-        notifications.forEach(notification => {
-            if (!notification.read) {
-                const notificationRef = doc(db, "notifications", notification.id);
-                batch.update(notificationRef, { read: true });
-            }
-        });
-        
-        batch.commit().then(() => {
-            showToast('Semua notifikasi ditandai sudah dibaca');
-        }).catch(error => {
-            console.error('Error marking notifications as read:', error);
-            showToast('Gagal menandai notifikasi');
-        });
-    }
+   
     
 
 
