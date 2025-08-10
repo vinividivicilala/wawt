@@ -6968,27 +6968,34 @@ function switchActivityTab(tabName) {
 
 
 	
-	
-	
-	async function logActivity({ type, contentId, contentType, description }) {
-  const user = auth.currentUser;
-  if (!user) return;
+	async function logActivity({ type, contentId, contentType, description, userId, userName, userPhoto }) {
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
 
-  const activity = {
-    userId: user.uid,
-    userName: user.displayName,
-    userPhoto: user.photoURL || "",
-    type, // e.g. "comment", "reply", "like", "emoji", "upload"
-    contentId,
-    contentType, // e.g. "announcement", "arduinoHistory", "discussion", "feedback"
-    description,
-    timestamp: serverTimestamp()
-  };
+        const uid = userId || user.uid;
+        const name = userName || user.displayName;
+        const photo = userPhoto || user.photoURL || "";
 
-  await addDoc(collection(db, "activities"), activity);
+        const activityKey = `${type}_${contentId}_${uid}`;
+        if (processedActivityIds.has(activityKey)) return;
+        processedActivityIds.add(activityKey);
+
+        await setDoc(doc(collection(db, "activities")), {
+            userId: uid,
+            userName: name,
+            userPhoto: photo,
+            type,
+            contentId,
+            contentType,
+            description,
+            timestamp: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error logging activity:", error);
+    }
 }
-	
-	
+
 	
 	
 	
@@ -8232,25 +8239,6 @@ function getTargetName(targetType) {
 
 
 
-
-
-
-async function logActivity(activityData) {
-    try {
-        const activityRef = doc(collection(db, "activities"));
-        const activityKey = `${activityData.type}_${activityData.contentId}_${activityData.userId}`;
-        
-        if (processedActivityIds.has(activityKey)) return;
-        processedActivityIds.add(activityKey);
-
-        await setDoc(activityRef, {
-            ...activityData,
-            timestamp: serverTimestamp()
-        });
-    } catch (error) {
-        console.error("Error logging activity:", error);
-    }
-}
 
 
 
