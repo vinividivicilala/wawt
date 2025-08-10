@@ -3026,7 +3026,95 @@ iframe:hover {
 
 
 
+/* User List Styles */
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #333;
+}
 
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #555;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  font-weight: bold;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-info h4 {
+  margin: 0;
+  color: white;
+}
+
+.user-info p, .user-info small {
+  margin: 2px 0;
+  color: #aaa;
+}
+
+.follow-btn, .message-btn {
+  padding: 5px 10px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.follow-btn {
+  background: #4285f4;
+  color: white;
+}
+
+.message-btn {
+  background: #34a853;
+  color: white;
+}
+
+/* Activity/Notification Detail Styles */
+.activity-item, .notification-item {
+  display: flex;
+  padding: 10px;
+  border-bottom: 1px solid #333;
+}
+
+.activity-icon, .notification-icon {
+  font-size: 20px;
+  margin-right: 15px;
+}
+
+.activity-content, .notification-content {
+  flex: 1;
+}
+
+.activity-content p, .notification-content p {
+  margin: 0;
+  color: white;
+}
+
+.activity-content small, .notification-content small {
+  color: #aaa;
+}
+
+.notification-item.unread {
+  background: rgba(66, 133, 244, 0.1);
+}
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  background: #4285f4;
+  border-radius: 50%;
+  margin-left: 10px;
+}
 
 
 
@@ -6078,59 +6166,342 @@ async function setupActivityFeed() {
   });
 }
 
-// User Following System
-async function setupUserFollowing() {
-  // This would require additional UI elements for following users
-  // and a messaging system between users
-  
-  // Basic follow functionality example:
-  async function followUser(currentUserId, targetUserId) {
-    try {
-      // Add to current user's following list
-      await updateDoc(doc(db, 'users', currentUserId), {
-        following: arrayUnion(targetUserId)
-      }, { merge: true });
-      
-      // Add to target user's followers list
-      await updateDoc(doc(db, 'users', targetUserId), {
-        followers: arrayUnion(currentUserId)
-      }, { merge: true });
-      
-      // Create notification for target user
-      const currentUserDoc = await getDoc(doc(db, 'users', currentUserId));
-      const currentUserName = currentUserDoc.data()?.displayName || 'Pengguna';
-      
-      await createActivityNotification(
-        targetUserId,
-        'follow',
-        currentUserId,
-        currentUserName,
-        '',
-        'user',
-        currentUserId
-      );
-      
-      // Create activity for current user
-      const targetUserDoc = await getDoc(doc(db, 'users', targetUserId));
-      const targetUserName = targetUserDoc.data()?.displayName || 'Pengguna';
-      
-      await addDoc(collection(db, 'activities'), {
-        userId: currentUserId,
-        type: 'follow',
-        targetUserId,
-        targetUserName,
-        timestamp: serverTimestamp()
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Error following user:', error);
-      return false;
-    }
+
+
+
+
+async function followUser(currentUserId, targetUserId) {
+  try {
+    // Add to following/followers lists
+    await updateDoc(doc(db, 'users', currentUserId), {
+      following: arrayUnion(targetUserId)
+    });
+    
+    await updateDoc(doc(db, 'users', targetUserId), {
+      followers: arrayUnion(currentUserId)
+    });
+
+    // Create notification
+    const currentUserDoc = await getDoc(doc(db, 'users', currentUserId));
+    const currentUserName = currentUserDoc.data().displayName || currentUserDoc.data().email;
+
+    await createActivityNotification(
+      targetUserId,
+      'follow',
+      currentUserId,
+      currentUserName,
+      '',
+      'user',
+      currentUserId
+    );
+
+    // Add to activity feed
+    const targetUserDoc = await getDoc(doc(db, 'users', targetUserId));
+    const targetUserName = targetUserDoc.data().displayName || targetUserDoc.data().email;
+
+    await addDoc(collection(db, 'activities'), {
+      userId: currentUserId,
+      type: 'follow',
+      targetUserId,
+      targetUserName,
+      timestamp: serverTimestamp(),
+      details: `${currentUserName} mulai mengikuti ${targetUserName}`
+    });
+
+    alert('Berhasil mengikuti pengguna');
+  } catch (error) {
+    console.error('Error following user:', error);
+    alert('Gagal mengikuti pengguna');
   }
-  
-  // Similar functions would be needed for unfollow and messaging
 }
+
+
+
+
+
+// 2. ENHANCED ACTIVITY FEED WITH DETAILS
+async function setupEnhancedActivityFeed() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  // Realtime listener for activities
+  onSnapshot(
+    query(
+      collection(db, 'activities'),
+      where('userId', '==', currentUser.uid),
+      orderBy('timestamp', 'desc')
+    ),
+    (snapshot) => {
+      const allActivities = document.getElementById('allActivity');
+      const commentActivities = document.getElementById('commentsActivity');
+      const reactionActivities = document.getElementById('reactionsActivity');
+      const postActivities = document.getElementById('postsActivity');
+
+      // Clear existing content but keep headers
+      [allActivities, commentActivities, reactionActivities, postActivities].forEach(container => {
+        container.innerHTML = container.querySelector('h3')?.outerHTML || '';
+      });
+
+      snapshot.forEach(doc => {
+        const activity = doc.data();
+        const activityItem = createActivityItem(activity);
+        
+        // Add to all activities
+        allActivities.appendChild(activityItem.cloneNode(true));
+        
+        // Categorize
+        if (activity.type === 'comment' || activity.type === 'reply' || activity.type === 'like') {
+          commentActivities.appendChild(activityItem.cloneNode(true));
+        } else if (activity.type === 'reaction') {
+          reactionActivities.appendChild(activityItem.cloneNode(true));
+        } else if (activity.type === 'post' || activity.type === 'upload') {
+          postActivities.appendChild(activityItem.cloneNode(true));
+        }
+      });
+
+      // Handle empty states
+      if (allActivities.children.length === 0) {
+        allActivities.innerHTML = '<p>Tidak ada aktivitas</p>';
+      }
+      if (commentActivities.children.length === 0) {
+        commentActivities.innerHTML = '<p>Tidak ada aktivitas komentar</p>';
+      }
+      if (reactionActivities.children.length === 0) {
+        reactionActivities.innerHTML = '<p>Tidak ada aktivitas reaksi</p>';
+      }
+      if (postActivities.children.length === 0) {
+        postActivities.innerHTML = '<p>Tidak ada aktivitas postingan</p>';
+      }
+    }
+  );
+}
+
+
+
+
+function createActivityItem(activity) {
+  const activityElement = document.createElement('div');
+  activityElement.className = 'activity-item';
+  
+  let details = '';
+  let icon = '🔔';
+  
+  switch (activity.type) {
+    case 'comment':
+      icon = '💬';
+      details = `Anda mengomentari "${activity.content.substring(0, 30)}..." pada ${activity.contentType}`;
+      break;
+    case 'reply':
+      icon = '↩️';
+      details = `Anda membalas komentar "${activity.content.substring(0, 30)}..." pada ${activity.contentType}`;
+      break;
+    case 'like':
+      icon = '❤️';
+      details = `Anda menyukai ${activity.contentType} oleh ${activity.targetUserName}`;
+      break;
+    case 'reaction':
+      icon = activity.emojiType;
+      details = `Anda bereaksi ${activity.emojiType} pada ${activity.contentType} oleh ${activity.targetUserName}`;
+      break;
+    case 'post':
+      icon = '📝';
+      details = `Anda membuat postingan baru di ${activity.contentType}: "${activity.title}"`;
+      break;
+    case 'upload':
+      icon = '📤';
+      details = `Anda mengupload ${activity.contentType}: "${activity.title}"`;
+      break;
+    case 'follow':
+      icon = '👥';
+      details = `Anda mulai mengikuti ${activity.targetUserName}`;
+      break;
+    case 'message':
+      icon = '✉️';
+      details = `Anda mengirim pesan ke ${activity.targetUserName}: "${activity.content.substring(0, 30)}..."`;
+      break;
+  }
+
+  activityElement.innerHTML = `
+    <div class="activity-icon">${icon}</div>
+    <div class="activity-content">
+      <p>${details}</p>
+      <small>${formatTime(activity.timestamp)}</small>
+    </div>
+  `;
+
+  return activityElement;
+}
+
+
+
+
+
+
+
+
+// 3. DETAILED NOTIFICATION SYSTEM
+async function setupDetailedNotifications() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  onSnapshot(
+    query(
+      collection(db, 'notifications'),
+      where('userId', '==', currentUser.uid),
+      orderBy('timestamp', 'desc')
+    ),
+    (snapshot) => {
+      const notificationsList = document.getElementById('notificationsList');
+      notificationsList.innerHTML = '';
+
+      snapshot.forEach(doc => {
+        const notification = doc.data();
+        const notificationItem = document.createElement('div');
+        notificationItem.className = `notification-item ${notification.read ? '' : 'unread'}`;
+        
+        let details = '';
+        let icon = '🔔';
+        
+        switch (notification.type) {
+          case 'comment':
+            icon = '💬';
+            details = `${notification.senderName} mengomentari ${notification.contentType} Anda: "${notification.content.substring(0, 30)}..."`;
+            break;
+          case 'reply':
+            icon = '↩️';
+            details = `${notification.senderName} membalas komentar Anda: "${notification.content.substring(0, 30)}..."`;
+            break;
+          case 'like':
+            icon = '❤️';
+            details = `${notification.senderName} menyukai ${notification.contentType} Anda`;
+            break;
+          case 'reaction':
+            icon = notification.content;
+            details = `${notification.senderName} bereaksi ${notification.content} pada ${notification.contentType} Anda`;
+            break;
+          case 'follow':
+            icon = '👥';
+            details = `${notification.senderName} mulai mengikuti Anda`;
+            break;
+          case 'message':
+            icon = '✉️';
+            details = `${notification.senderName} mengirim pesan: "${notification.content.substring(0, 30)}..."`;
+            break;
+        }
+
+        notificationItem.innerHTML = `
+          <div class="notification-icon">${icon}</div>
+          <div class="notification-content">
+            <p>${details}</p>
+            <small>${formatTime(notification.timestamp)}</small>
+          </div>
+          ${!notification.read ? '<div class="notification-dot"></div>' : ''}
+        `;
+
+        notificationItem.addEventListener('click', async () => {
+          if (!notification.read) {
+            await updateDoc(doc.ref, { read: true });
+          }
+          // Handle navigation based on notification type
+        });
+
+        notificationsList.appendChild(notificationItem);
+      });
+
+      if (snapshot.empty) {
+        notificationsList.innerHTML = '<p>Tidak ada notifikasi</p>';
+      }
+    }
+  );
+}
+
+
+
+// 4. LAST LOGIN TRACKING
+async function trackUserPresence() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  // Update last login on initial load
+  await updateDoc(doc(db, 'users', currentUser.uid), {
+    lastLogin: serverTimestamp(),
+    isOnline: true
+  });
+
+  // Update status when user goes offline
+  window.addEventListener('beforeunload', async () => {
+    await updateDoc(doc(db, 'users', currentUser.uid), {
+      isOnline: false,
+      lastLogin: serverTimestamp()
+    });
+  });
+}
+
+
+
+
+ 
+
+
+
+
+// 1. USER FOLLOWING & MESSAGING SYSTEM
+async function setupUserFollowingAndMessaging() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  // Fetch all users except current user
+  const usersSnapshot = await getDocs(
+    query(collection(db, 'users'), where('uid', '!=', currentUser.uid))
+  );
+
+  // Display users list with follow buttons
+  const usersListHTML = usersSnapshot.docs.map(doc => {
+    const user = doc.data();
+    return `
+      <div class="user-item" data-uid="${user.uid}">
+        <div class="user-avatar">${user.displayName?.charAt(0) || 'U'}</div>
+        <div class="user-info">
+          <h4>${user.displayName || user.email}</h4>
+          <p>${user.email}</p>
+          <small>Terakhir online: ${user.lastLogin ? formatTime(user.lastLogin) : 'Tidak diketahui'}</small>
+        </div>
+        <button class="follow-btn" data-uid="${user.uid}">Ikuti</button>
+        <button class="message-btn" data-uid="${user.uid}">Pesan</button>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('usersListContainer').innerHTML = usersListHTML;
+
+  // Follow button functionality
+  document.querySelectorAll('.follow-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetUserId = btn.dataset.uid;
+      await followUser(currentUser.uid, targetUserId);
+    });
+  });
+
+  // Message button functionality
+  document.querySelectorAll('.message-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetUserId = btn.dataset.uid;
+      openMessageDialog(currentUser.uid, targetUserId);
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Helper function to format time
 function formatTime(timestamp) {
@@ -6151,13 +6522,22 @@ function formatTime(timestamp) {
   });
 }
 
+
+
+
+
+
 // Initialize all dashboard components
-function initializeDashboard() {
+function initializeEnhancedDashboard() {
   setupUserProfileVisibility();
   setupNotificationSettings();
   setupNotifications();
   setupActivityFeed();
-  setupUserFollowing();
+  setupDetailedNotifications();
+  setupEnhancedActivityFeed();
+  setupUserFollowingAndMessaging();
+  trackUserPresence();
+
   
   // Load user profile data on auth state change
   onAuthStateChanged(auth, async (user) => {
@@ -6214,8 +6594,9 @@ function initializeDashboard() {
   });
 }
 
+
 // Call this when page11 is loaded
-initializeDashboard();
+initializeEnhancedDashboard();
 
 
 
