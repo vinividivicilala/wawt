@@ -5741,7 +5741,8 @@ document.addEventListener("DOMContentLoaded", function () {
             };
         } else {
             // Handle logout case
-            clearDashboardData();
+                    updateNotificationUI([], 0);
+
         }
     });
 	
@@ -7349,62 +7350,60 @@ async function logActivity(activityData) {
 }
 	
 	
-	    function updateNotificationUI(notifications, unreadCount) {
-        const notificationList = document.getElementById('notificationsList');
-        const badge = document.getElementById('notificationBadge');
-        
-        badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-        badge.style.display = unreadCount > 0 ? 'flex' : 'none';
-        
-        if (notifications.length === 0) {
-            notificationList.innerHTML = `
-                <div class="empty-notifications">
-                    <p style="color: rgba(255,255,255,0.7); text-align: center;">Tidak ada notifikasi</p>
-                </div>
-            `;
-            return;
-        }
-        
-        notificationList.innerHTML = notifications.map(notif => `
-            <div class="notification-item ${notif.read ? '' : 'unread'}" 
-                 data-id="${notif.id}" 
-                 data-type="${notif.type}"
-                 data-content-type="${notif.contentType || ''}"
-                 data-content-id="${notif.contentId || ''}"
-                 data-comment-id="${notif.commentId || ''}">
-                <div class="notification-icon">
-                    ${getNotificationIcon(notif.type)}
-                </div>
-                <div class="notification-content">
-                    <p>${notif.message || 'Notifikasi baru'}</p>
-                    <small>${formatTimeAgo(notif.timestamp)}</small>
-                </div>
+	
+	
+	function updateNotificationUI(notifications, unreadCount) {
+    const notificationsList = document.getElementById('notificationsList');
+    const badge = document.getElementById('notificationBadge');
+    
+    // Update badge
+    badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    
+    if (notifications.length === 0) {
+        notificationsList.innerHTML = `
+            <div class="empty-notifications">
+                <p style="color: rgba(255,255,255,0.7); text-align: center;">
+                    Tidak ada notifikasi
+                </p>
             </div>
-        `).join('');
-        
-        // Add click handlers
-        document.querySelectorAll('.notification-item').forEach(item => {
-            item.addEventListener('click', async function() {
-                const notifId = this.getAttribute('data-id');
-                const type = this.getAttribute('data-type');
-                const contentType = this.getAttribute('data-content-type');
-                const contentId = this.getAttribute('data-content-id');
-                const commentId = this.getAttribute('data-comment-id');
-                
-                // Mark as read if unread
-                if (this.classList.contains('unread')) {
-                    await markNotificationAsRead(notifId);
-                }
-                
-                // Show activity detail
-                await showActivityDetail(type, contentId, commentId);
-            });
-        });
+        `;
+        return;
     }
-	
-	
-	
-	
+    
+    notificationsList.innerHTML = notifications.map(notif => `
+        <div class="notification-item ${notif.read ? '' : 'unread'}" 
+             data-id="${notif.id}" 
+             data-type="${notif.type}"
+             data-content-type="${notif.contentType || ''}"
+             data-content-id="${notif.contentId || ''}"
+             data-comment-id="${notif.commentId || ''}">
+            <div class="notification-icon">
+                ${getNotificationIcon(notif.type)}
+            </div>
+            <div class="notification-content">
+                <p>${notif.message || 'Notifikasi baru'}</p>
+                <small>${formatTimeAgo(notif.timestamp)}</small>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add click handlers
+    document.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', async function() {
+            const notifId = this.getAttribute('data-id');
+            
+            // Mark as read if unread
+            if (this.classList.contains('unread')) {
+                await markNotificationAsRead(notifId);
+            }
+            
+            // Handle navigation based on notification type
+            handleNotificationAction(this);
+        });
+    });
+}
+
 	
 	
 	
@@ -7962,45 +7961,73 @@ function scrollToContent(contentId) {
 
 
 
-// Fix the notification listener setup
+
+
+
+
+
+
+
 function setupNotificationListeners(userId) {
-    if (!userId) return () => {};
-    
+    if (!userId) {
+        updateNotificationUI([], 0); // Show empty state if no user
+        return () => {};
+    }
+
     const notificationsRef = collection(db, "notifications");
     const q = query(
         notificationsRef, 
         where("userId", "==", userId),
         orderBy("timestamp", "desc"),
-        limit(50)
+        limit(20)
     );
-    
-    return onSnapshot(q, (snapshot) => {
-        const newNotifications = [];
-        let unreadCount = 0;
-        
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added" && !processedNotificationIds.has(change.doc.id)) {
-                processedNotificationIds.add(change.doc.id);
-                const data = change.doc.data();
-                newNotifications.push({
-                    id: change.doc.id,
+
+    return onSnapshot(q, 
+        (snapshot) => {
+            const notificationsList = document.getElementById('notificationsList');
+            let unreadCount = 0;
+            const notifications = [];
+
+            // Remove loader first
+            notificationsList.innerHTML = '';
+
+            if (snapshot.empty) {
+                notificationsList.innerHTML = `
+                    <div class="empty-notifications">
+                        <p style="color: rgba(255,255,255,0.7); text-align: center;">
+                            Tidak ada notifikasi
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                notifications.push({
+                    id: doc.id,
                     ...data,
                     timestamp: data.timestamp?.toDate() || new Date()
                 });
                 
                 if (!data.read) unreadCount++;
-            }
-        });
+            });
 
-        if (newNotifications.length > 0) {
-            notifications = [...newNotifications, ...notifications].slice(0, 50);
             updateNotificationUI(notifications, unreadCount);
+        },
+        (error) => {
+            console.error("Notification listener error:", error);
+            const notificationsList = document.getElementById('notificationsList');
+            notificationsList.innerHTML = `
+                <div class="error-state">
+                    <p style="color: #ff6b6b; text-align: center;">
+                        Gagal memuat notifikasi. Coba refresh halaman.
+                    </p>
+                </div>
+            `;
         }
-    });
+    );
 }
-
-
-
 
 
 
