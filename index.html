@@ -5625,6 +5625,48 @@ iframe:hover {
 
 
 
+
+
+
+
+async function createActivityNotification(
+  recipientId,
+  type,
+  senderId,
+  senderName,
+  content,
+  contentType,
+  contentId
+) {
+  try {
+    await addDoc(collection(db, "notifications"), {
+      userId: recipientId,
+      type,
+      senderId,
+      senderName,
+      content,
+      contentType,
+      contentId,
+      read: false,
+      timestamp: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Gagal membuat notifikasi:", error);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Fungsi untuk mengelola komentar dengan notifikasi terintegrasi
 function setupComments() {
   const commentsCollection = collection(db, "arduinoHistoryComments");
