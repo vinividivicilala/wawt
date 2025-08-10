@@ -2805,6 +2805,72 @@ a.footnote-link:hover {
 	
   </style>
 </head>
+// CSS untuk popup (tambahkan di bagian head)
+const popupCSS = `
+  <style>
+    .notification-popup, .activity-popup {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #2c3e50;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      max-width: 300px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .activity-popup {
+      background: #3498db;
+    }
+    
+    .popup-content {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .popup-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .popup-icon {
+      font-size: 20px;
+      margin-right: 10px;
+    }
+    
+    .fade-out {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  </style>
+`;
+
+// Tambahkan CSS ke head
+document.head.insertAdjacentHTML('beforeend', popupCSS);
+
+// Inisialisasi listeners saat user login
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Setup semua listener
+    const unsubscribeFunctions = [
+      setupCommentListeners(),
+      setupCommentLikeListeners(),
+      setupReactionListeners(),
+      setupContentUploadListeners()
+    ];
+    
+    // Setup activity tabs
+    setupActivityTabs(user.uid);
+    
+    // Cleanup saat logout
+    return () => unsubscribeFunctions.forEach(unsub => unsub && unsub());
+  }
+});
 <body>
   <div class="header">
     <img src="images/5.jpg" alt="Logo" class="logo" />
@@ -5422,7 +5488,7 @@ onAuthStateChanged(auth, (user) => {
 	
 	
 	
-// Enhanced Notification System
+	// Enhanced Notification System
 async function createActivityNotification(activityType, activityData) {
   try {
     const currentUser = auth.currentUser;
@@ -5470,6 +5536,11 @@ async function createActivityNotification(activityType, activityData) {
         ...notificationContent
       });
 
+      // Show popup notification if user is not on notifications page
+      if (!window.location.pathname.includes('notifications')) {
+        showPopupNotification(notificationContent.message, notificationContent.link);
+      }
+
       // Also log as activity
       await logActivity({
         userId: recipientId,
@@ -5483,11 +5554,31 @@ async function createActivityNotification(activityType, activityData) {
   } catch (error) {
     console.error("Error in createActivityNotification:", error);
   }
-}	
-	
-	
-	
-	
+}
+
+// Fungsi untuk menampilkan popup notifikasi
+function showPopupNotification(message, link) {
+  const popup = document.createElement('div');
+  popup.className = 'notification-popup';
+  popup.innerHTML = `
+    <div class="popup-content">
+      <p>${message}</p>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Hilangkan popup setelah 5 detik
+  setTimeout(() => {
+    popup.classList.add('fade-out');
+    setTimeout(() => popup.remove(), 500);
+  }, 5000);
+  
+  // Klik untuk membuka link
+  popup.addEventListener('click', () => {
+    if (link) window.location.href = link;
+  });
+}
 	
 	
 	
@@ -5708,11 +5799,7 @@ function setupContentUploadListeners(userId) {
 
 
 	
-	
-	
-	
-
-// Improved Activity Feed Setup
+	// Enhanced Activity Feed Setup
 function setupActivityTabs(userId) {
   document.querySelectorAll('.activity-tab').forEach(tab => {
     tab.addEventListener('click', function() {
@@ -7807,7 +7894,13 @@ function getActiveTab() {
 
 
 
-// Enhanced Activity Rendering
+
+
+
+
+
+
+// Enhanced Activity Rendering with Popup
 function renderActivities(activities, filterType = 'all') {
   const container = document.getElementById(`${filterType}Activity`);
   if (!container) return;
@@ -7847,8 +7940,57 @@ function renderActivities(activities, filterType = 'all') {
       const type = item.dataset.type;
       const id = item.dataset.id;
       navigateToActivity(type, id);
+      
+      // Show activity popup
+      const activity = filteredActivities.find(a => a.id === id);
+      if (activity) {
+        showActivityPopup(activity);
+      }
     });
   });
+}
+
+// Fungsi untuk menampilkan popup aktivitas
+function showActivityPopup(activity) {
+  const popup = document.createElement('div');
+  popup.className = 'activity-popup';
+  
+  let content = '';
+  switch(activity.type) {
+    case 'comment':
+      content = `${activity.fromUserName || 'Pengguna'} mengomentari ${activity.contentType || 'konten'}`;
+      break;
+    case 'reply':
+      content = `${activity.fromUserName || 'Pengguna'} membalas komentar Anda`;
+      break;
+    case 'like':
+      content = `${activity.fromUserName || 'Pengguna'} menyukai ${activity.contentType || 'konten'}`;
+      break;
+    case 'reaction':
+      content = `${activity.fromUserName || 'Pengguna'} memberikan reaksi ${activity.emoji || ''}`;
+      break;
+    default:
+      content = activity.description || 'Aktivitas baru';
+  }
+  
+  popup.innerHTML = `
+    <div class="popup-content">
+      <div class="popup-header">
+        <span class="popup-icon">${getActivityIcon(activity.type)}</span>
+        <h4>${getActivityTitle(activity.type)}</h4>
+      </div>
+      <p>${content}</p>
+      <small>${formatTimeAgo(activity.timestamp)}</small>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Hilangkan popup setelah 5 detik
+  setTimeout(() => {
+    popup.classList.add('fade-out');
+    setTimeout(() => popup.remove(), 500);
+  }, 5000);
 }
 
 
@@ -7856,6 +7998,134 @@ function renderActivities(activities, filterType = 'all') {
 
 
 
+// Setup listener untuk komentar
+function setupCommentListeners() {
+  const commentsRef = collectionGroup(db, "comments");
+  return onSnapshot(commentsRef, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        const newComment = change.doc.data();
+        if (newComment.userId === auth.currentUser?.uid) return;
+
+        // Dapatkan path untuk menentukan content type
+        const pathParts = change.doc.ref.parent.parent?.path.split('/');
+        if (!pathParts || pathParts.length < 2) return;
+        
+        const contentType = pathParts[0];
+        const contentId = pathParts[1];
+
+        createActivityNotification(newComment.replyTo ? 'reply' : 'comment', {
+          contentType: contentType,
+          contentId: contentId,
+          commentId: change.doc.id,
+          senderId: newComment.userId,
+          senderName: newComment.userName || 'Pengguna'
+        });
+      }
+    });
+  });
+}
+
+// Setup listener untuk like komentar
+function setupCommentLikeListeners() {
+  const likesRef = collectionGroup(db, "commentLikes");
+  return onSnapshot(likesRef, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        const newLike = change.doc.data();
+        if (newLike.userId === auth.currentUser?.uid) return;
+
+        // Dapatkan path untuk menentukan content type
+        const pathParts = change.doc.ref.parent.parent?.path.split('/');
+        if (!pathParts || pathParts.length < 4) return;
+        
+        const contentType = pathParts[0];
+        const contentId = pathParts[1];
+        const commentId = pathParts[3];
+
+        createActivityNotification('like', {
+          contentType: contentType,
+          contentId: contentId,
+          commentId: commentId,
+          senderId: newLike.userId,
+          senderName: newLike.userName || 'Pengguna'
+        });
+      }
+    });
+  });
+}
+
+// Setup listener untuk reaksi emoji
+function setupReactionListeners() {
+  const reactionsRef = collection(db, "reactions");
+  return onSnapshot(reactionsRef, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "added") {
+        const newReaction = change.doc.data();
+        if (newReaction.userId === auth.currentUser?.uid) return;
+
+        createActivityNotification('reaction', {
+          contentType: newReaction.contentType,
+          contentId: newReaction.contentId,
+          emoji: newReaction.emoji,
+          senderId: newReaction.userId,
+          senderName: newReaction.userName || 'Pengguna'
+        });
+      }
+    });
+  });
+}
+
+// Setup listener untuk upload konten
+function setupContentUploadListeners() {
+  const contentTypes = ['arduinoHistory', 'announcements', 'feedback', 'discussions'];
+  const unsubscribeFunctions = [];
+  
+  contentTypes.forEach(type => {
+    const ref = collection(db, type);
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === "added") {
+          const newContent = change.doc.data();
+          if (newContent.userId === auth.currentUser?.uid) return;
+
+          // Untuk admin saja jika bukan pengumuman
+          if (type !== 'announcements') {
+            createActivityNotification('content', {
+              contentType: type,
+              contentId: change.doc.id,
+              title: newContent.title || 'Konten Baru',
+              senderId: newContent.userId,
+              senderName: newContent.userName || 'Pengguna'
+            });
+          }
+        }
+      });
+    });
+    unsubscribeFunctions.push(unsubscribe);
+  });
+  
+  return () => unsubscribeFunctions.forEach(fn => fn());
+}
+
+
+
+
+
+
+
+// Fungsi untuk mendapatkan judul aktivitas
+function getActivityTitle(type) {
+  const titles = {
+    'comment': 'Komentar Baru',
+    'reply': 'Balasan Komentar',
+    'like': 'Suka',
+    'reaction': 'Reaksi Emoji',
+    'content': 'Konten Baru',
+    'announcement': 'Pengumuman'
+  };
+  return titles[type] || 'Aktivitas';
+}
 
 
 
@@ -8092,11 +8362,27 @@ function setupActivitiesListener(query, filterType = 'all') {
     );
 }
 
+function updateNotificationBadge(count) {
+  const badge = document.getElementById('notificationBadge');
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
 
 
 
-
-
+function filterActivities(activities, filter) {
+  return activities.filter(activity => {
+    if (filter === 'all') return true;
+    if (filter === 'comments') return ['comment', 'reply'].includes(activity.type);
+    if (filter === 'reactions') return ['like', 'reaction'].includes(activity.type);
+    if (filter === 'posts') return ['post', 'content', 'announcement'].includes(activity.type);
+    return false;
+  });
+}
 
 
 
