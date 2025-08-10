@@ -5404,7 +5404,33 @@ iframe:hover {
     </div>
 </div>
   
-  
+  <!-- Modal Detail Aktivitas -->
+<div id="activityDetailModal" class="modal" style="display:none;">
+  <div class="modal-content linebox" style="max-width: 700px; margin: auto; background: #1e1e1e; color: white; border-radius: 12px;">
+    
+    <!-- Header Modal -->
+    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 15px;">
+      <h3 id="activityModalTitle" style="margin: 0; font-size: 20px;">Detail Aktivitas</h3>
+      <button onclick="document.getElementById('activityDetailModal').style.display='none'" 
+              style="background: none; border: none; color: white; font-size: 22px; cursor: pointer;">
+        &times;
+      </button>
+    </div>
+
+    <!-- Konten Modal -->
+    <div id="activityModalContent" style="padding: 20px;">
+      <div class="loader"></div>
+      <p>Memuat detail...</p>
+    </div>
+
+    <!-- Footer Modal -->
+    <div class="modal-footer" style="border-top: 1px solid #333; padding: 10px; text-align: right;">
+      <button class="cancel-btn" onclick="document.getElementById('activityDetailModal').style.display='none'">Tutup</button>
+    </div>
+
+  </div>
+</div>
+
   
     
     <!-- Tombol Kembali -->
