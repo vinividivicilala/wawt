@@ -5628,6 +5628,601 @@ iframe:hover {
 
 
 
+// Add this to your page11 script section
+
+// Dashboard User Profile Visibility
+async function setupUserProfileVisibility() {
+  const editProfileBtn = document.getElementById('editProfileBtn');
+  const editProfileForm = document.getElementById('editProfileForm');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  const saveProfileBtn = document.getElementById('saveProfileBtn');
+  const profileInfo = document.getElementById('profileInfo');
+  const displayNameInput = document.getElementById('displayNameInput');
+  const twitterInput = document.getElementById('twitterInput');
+  const instagramInput = document.getElementById('instagramInput');
+  const githubInput = document.getElementById('githubInput');
+  
+  // Toggle edit profile form
+  editProfileBtn.addEventListener('click', () => {
+    profileInfo.style.display = 'none';
+    editProfileForm.style.display = 'block';
+    
+    // Load current values
+    const user = auth.currentUser;
+    if (user) {
+      getDoc(doc(db, 'users', user.uid)).then((docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          displayNameInput.value = data.displayName || '';
+          twitterInput.value = data.socialLinks?.twitter || '';
+          instagramInput.value = data.socialLinks?.instagram || '';
+          githubInput.value = data.socialLinks?.github || '';
+        }
+      });
+    }
+  });
+  
+  cancelEditBtn.addEventListener('click', () => {
+    profileInfo.style.display = 'block';
+    editProfileForm.style.display = 'none';
+  });
+  
+  // Save profile
+  saveProfileBtn.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const displayName = displayNameInput.value.trim();
+    const twitter = twitterInput.value.trim();
+    const instagram = instagramInput.value.trim();
+    const github = githubInput.value.trim();
+    
+    if (!displayName) {
+      alert('Nama tampilan tidak boleh kosong');
+      return;
+    }
+    
+    try {
+      // Update user profile in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        displayName,
+        socialLinks: {
+          twitter: twitter || null,
+          instagram: instagram || null,
+          github: github || null
+        },
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+      
+      // Update UI
+      document.getElementById('userDisplayName').textContent = displayName;
+      
+      if (twitter || instagram || github) {
+        let socialLinksHTML = '';
+        if (twitter) socialLinksHTML += `<a href="${twitter}" target="_blank">Twitter</a> `;
+        if (instagram) socialLinksHTML += `<a href="${instagram}" target="_blank">Instagram</a> `;
+        if (github) socialLinksHTML += `<a href="${github}" target="_blank">GitHub</a>`;
+        document.getElementById('socialLinks').innerHTML = socialLinksHTML;
+      } else {
+        document.getElementById('socialLinks').innerHTML = '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
+      }
+      
+      profileInfo.style.display = 'block';
+      editProfileForm.style.display = 'none';
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Gagal menyimpan profil');
+    }
+  });
+}
+
+// Notification Settings
+async function setupNotificationSettings() {
+  const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
+  const notificationSettingsModal = document.getElementById('notificationSettingsModal');
+  const closeModal = document.querySelector('.close-modal');
+  const saveNotificationSettings = document.getElementById('saveNotificationSettings');
+  const cancelNotificationSettings = document.getElementById('cancelNotificationSettings');
+  
+  // Open modal
+  notificationSettingsBtn.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    // Load current settings
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists() && userDoc.data().notificationSettings) {
+      const settings = userDoc.data().notificationSettings;
+      document.getElementById('emailNotifications').checked = settings.email ?? true;
+      document.getElementById('pushNotifications').checked = settings.push ?? true;
+      document.getElementById('activityNotifications').checked = settings.activity ?? true;
+      document.getElementById('announcementNotifications').checked = settings.announcement ?? true;
+      document.getElementById('messageNotifications').checked = settings.message ?? true;
+    }
+    
+    notificationSettingsModal.style.display = 'block';
+  });
+  
+  // Close modal
+  closeModal.addEventListener('click', () => {
+    notificationSettingsModal.style.display = 'none';
+  });
+  
+  cancelNotificationSettings.addEventListener('click', () => {
+    notificationSettingsModal.style.display = 'none';
+  });
+  
+  // Save settings
+  saveNotificationSettings.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        notificationSettings: {
+          email: document.getElementById('emailNotifications').checked,
+          push: document.getElementById('pushNotifications').checked,
+          activity: document.getElementById('activityNotifications').checked,
+          announcement: document.getElementById('announcementNotifications').checked,
+          message: document.getElementById('messageNotifications').checked
+        }
+      });
+      
+      notificationSettingsModal.style.display = 'none';
+      alert('Pengaturan notifikasi berhasil disimpan');
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
+      alert('Gagal menyimpan pengaturan notifikasi');
+    }
+  });
+}
+
+// Enhanced Notification System
+async function setupNotifications() {
+  const notificationsList = document.getElementById('notificationsList');
+  const notificationBadge = document.getElementById('notificationBadge');
+  const markAllReadBtn = document.getElementById('markAllReadBtn');
+  
+  let unsubscribeNotifications = null;
+  
+  onAuthStateChanged(auth, async (user) => {
+    if (unsubscribeNotifications) {
+      unsubscribeNotifications();
+    }
+    
+    if (!user) {
+      notificationsList.innerHTML = `
+        <div class="notification-empty">
+          <p>Silakan login untuk melihat notifikasi</p>
+        </div>
+      `;
+      notificationBadge.textContent = '0';
+      return;
+    }
+    
+    // Load notifications
+    unsubscribeNotifications = onSnapshot(
+      query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.uid),
+        orderBy('timestamp', 'desc'),
+        limit(50)
+      ),
+      async (snapshot) => {
+        // Update badge count
+        const unreadCount = snapshot.docs.filter(doc => !doc.data().read).length;
+        notificationBadge.textContent = unreadCount.toString();
+        
+        if (snapshot.empty) {
+          notificationsList.innerHTML = `
+            <div class="notification-empty">
+              <p>Tidak ada notifikasi</p>
+            </div>
+          `;
+          return;
+        }
+        
+        notificationsList.innerHTML = '';
+        
+        for (const doc of snapshot.docs) {
+          const notification = doc.data();
+          const notificationElement = document.createElement('div');
+          notificationElement.className = `notification-item ${notification.read ? '' : 'unread'}`;
+          notificationElement.dataset.id = doc.id;
+          
+          // Format notification message based on type
+          let message = '';
+          let icon = '';
+          
+          switch (notification.type) {
+            case 'comment':
+              message = `${notification.senderName} mengomentari ${notification.contentType === 'arduino-history' ? 'sejarah Arduino' : notification.contentType}`;
+              icon = '💬';
+              break;
+            case 'reply':
+              message = `${notification.senderName} membalas komentar Anda`;
+              icon = '↩️';
+              break;
+            case 'like':
+              message = `${notification.senderName} menyukai ${notification.contentType === 'arduino-history' ? 'sejarah Arduino Anda' : 'komen Anda'}`;
+              icon = '❤️';
+              break;
+            case 'reaction':
+              message = `${notification.senderName} bereaksi ${notification.content} pada ${notification.contentType === 'arduino-history' ? 'sejarah Arduino' : 'konten'}`;
+              icon = notification.content;
+              break;
+            case 'follow':
+              message = `${notification.senderName} mulai mengikuti Anda`;
+              icon = '👤';
+              break;
+            case 'message':
+              message = `${notification.senderName} mengirim pesan`;
+              icon = '✉️';
+              break;
+            case 'announcement':
+              message = `Pengumuman baru: ${notification.content}`;
+              icon = '📢';
+              break;
+            default:
+              message = notification.content;
+              icon = '🔔';
+          }
+          
+          notificationElement.innerHTML = `
+            <div class="notification-icon">${icon}</div>
+            <div class="notification-content">
+              <p>${message}</p>
+              <small>${formatTime(notification.timestamp)}</small>
+            </div>
+            ${!notification.read ? '<div class="notification-dot"></div>' : ''}
+          `;
+          
+          // Mark as read when clicked
+          notificationElement.addEventListener('click', async () => {
+            if (!notification.read) {
+              await updateDoc(doc.ref, { read: true });
+            }
+            
+            // Handle navigation based on notification type
+            if (notification.contentId) {
+              switch (notification.contentType) {
+                case 'arduino-history':
+                  // Navigate to Arduino history with focus on the commented item
+                  break;
+                case 'discussion':
+                  // Navigate to discussion
+                  break;
+                case 'feedback':
+                  // Navigate to feedback
+                  break;
+              }
+            }
+          });
+          
+          notificationsList.appendChild(notificationElement);
+        }
+      }
+    );
+  });
+  
+  // Mark all as read
+  markAllReadBtn.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    try {
+      // Get all unread notifications
+      const q = query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.uid),
+        where('read', '==', false)
+      );
+      
+      const snapshot = await getDocs(q);
+      const batch = writeBatch(db);
+      
+      snapshot.forEach((doc) => {
+        batch.update(doc.ref, { read: true });
+      });
+      
+      await batch.commit();
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+    }
+  });
+}
+
+// Enhanced Activity Feed
+async function setupActivityFeed() {
+  const activityTabs = document.querySelectorAll('.activity-tab');
+  const allActivityTab = document.getElementById('allActivity');
+  const commentsActivityTab = document.getElementById('commentsActivity');
+  const reactionsActivityTab = document.getElementById('reactionsActivity');
+  const postsActivityTab = document.getElementById('postsActivity');
+  
+  let unsubscribeActivities = null;
+  
+  // Tab switching
+  activityTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      activityTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      document.querySelectorAll('.activity-tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      document.getElementById(`${tab.dataset.tab}Activity`).classList.add('active');
+    });
+  });
+  
+  onAuthStateChanged(auth, async (user) => {
+    if (unsubscribeActivities) {
+      unsubscribeActivities();
+    }
+    
+    if (!user) {
+      allActivityTab.innerHTML = `
+        <div class="activity-empty">
+          <p>Silakan login untuk melihat aktivitas</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Load activities
+    unsubscribeActivities = onSnapshot(
+      query(
+        collection(db, 'activities'),
+        where('userId', '==', user.uid),
+        orderBy('timestamp', 'desc'),
+        limit(50)
+      ),
+      async (snapshot) => {
+        if (snapshot.empty) {
+          allActivityTab.innerHTML = commentsActivityTab.innerHTML = 
+            reactionsActivityTab.innerHTML = postsActivityTab.innerHTML = `
+            <div class="activity-empty">
+              <p>Tidak ada aktivitas</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Clear loaders
+        allActivityTab.innerHTML = '';
+        commentsActivityTab.innerHTML = '';
+        reactionsActivityTab.innerHTML = '';
+        postsActivityTab.innerHTML = '';
+        
+        // Categorize activities
+        const allActivities = [];
+        const commentActivities = [];
+        const reactionActivities = [];
+        const postActivities = [];
+        
+        for (const doc of snapshot.docs) {
+          const activity = doc.data();
+          allActivities.push(activity);
+          
+          // Format activity message
+          let message = '';
+          let icon = '';
+          let category = '';
+          
+          switch (activity.type) {
+            case 'comment':
+              message = `Anda mengomentari ${activity.contentType === 'arduino-history' ? 'sejarah Arduino' : activity.contentType}`;
+              icon = '💬';
+              category = 'comments';
+              break;
+            case 'reply':
+              message = `Anda membalas komentar di ${activity.contentType}`;
+              icon = '↩️';
+              category = 'comments';
+              break;
+            case 'like':
+              message = `Anda menyukai ${activity.contentType === 'arduino-history' ? 'sejarah Arduino' : 'komentar'}`;
+              icon = '❤️';
+              category = 'comments';
+              break;
+            case 'reaction':
+              message = `Anda bereaksi ${activity.emojiType} pada ${activity.contentType}`;
+              icon = activity.emojiType;
+              category = 'reactions';
+              break;
+            case 'post':
+              message = `Anda membuat ${activity.contentType === 'arduino-history' ? 'sejarah Arduino baru' : 'postingan baru'}`;
+              icon = '📝';
+              category = 'posts';
+              break;
+            case 'follow':
+              message = `Anda mulai mengikuti ${activity.targetUserName}`;
+              icon = '👤';
+              category = 'all';
+              break;
+            case 'message':
+              message = `Anda mengirim pesan ke ${activity.targetUserName}`;
+              icon = '✉️';
+              category = 'all';
+              break;
+            default:
+              message = activity.content || 'Aktivitas baru';
+              icon = '🔔';
+              category = 'all';
+          }
+          
+          const activityElement = document.createElement('div');
+          activityElement.className = 'activity-item';
+          activityElement.innerHTML = `
+            <div class="activity-icon">${icon}</div>
+            <div class="activity-content">
+              <p>${message}</p>
+              <small>${formatTime(activity.timestamp)}</small>
+            </div>
+          `;
+          
+          // Add to appropriate tabs
+          allActivityTab.appendChild(activityElement.cloneNode(true));
+          
+          if (category === 'comments' || activity.type === 'like' || activity.type === 'reply') {
+            commentsActivityTab.appendChild(activityElement.cloneNode(true));
+          } else if (category === 'reactions') {
+            reactionsActivityTab.appendChild(activityElement.cloneNode(true));
+          } else if (category === 'posts') {
+            postsActivityTab.appendChild(activityElement.cloneNode(true));
+          }
+        }
+      }
+    );
+  });
+}
+
+// User Following System
+async function setupUserFollowing() {
+  // This would require additional UI elements for following users
+  // and a messaging system between users
+  
+  // Basic follow functionality example:
+  async function followUser(currentUserId, targetUserId) {
+    try {
+      // Add to current user's following list
+      await updateDoc(doc(db, 'users', currentUserId), {
+        following: arrayUnion(targetUserId)
+      }, { merge: true });
+      
+      // Add to target user's followers list
+      await updateDoc(doc(db, 'users', targetUserId), {
+        followers: arrayUnion(currentUserId)
+      }, { merge: true });
+      
+      // Create notification for target user
+      const currentUserDoc = await getDoc(doc(db, 'users', currentUserId));
+      const currentUserName = currentUserDoc.data()?.displayName || 'Pengguna';
+      
+      await createActivityNotification(
+        targetUserId,
+        'follow',
+        currentUserId,
+        currentUserName,
+        '',
+        'user',
+        currentUserId
+      );
+      
+      // Create activity for current user
+      const targetUserDoc = await getDoc(doc(db, 'users', targetUserId));
+      const targetUserName = targetUserDoc.data()?.displayName || 'Pengguna';
+      
+      await addDoc(collection(db, 'activities'), {
+        userId: currentUserId,
+        type: 'follow',
+        targetUserId,
+        targetUserName,
+        timestamp: serverTimestamp()
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error following user:', error);
+      return false;
+    }
+  }
+  
+  // Similar functions would be needed for unfollow and messaging
+}
+
+// Helper function to format time
+function formatTime(timestamp) {
+  if (!timestamp) return 'waktu tidak tersedia';
+  
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  if (diffInSeconds < 60) return 'baru saja';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+  
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+// Initialize all dashboard components
+function initializeDashboard() {
+  setupUserProfileVisibility();
+  setupNotificationSettings();
+  setupNotifications();
+  setupActivityFeed();
+  setupUserFollowing();
+  
+  // Load user profile data on auth state change
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Load user profile
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        // Update profile display
+        document.getElementById('userDisplayName').textContent = userData.displayName || user.displayName || 'Pengguna';
+        document.getElementById('userEmail').textContent = user.email;
+        
+        if (userData.photoURL) {
+          document.getElementById('userProfilePicture').src = userData.photoURL;
+        }
+        
+        // Format join date
+        if (userData.joinDate) {
+          const joinDate = userData.joinDate.toDate();
+          document.getElementById('joinDate').textContent = joinDate.toLocaleDateString('id-ID', {
+            month: 'long',
+            year: 'numeric'
+          });
+        }
+        
+        // Display social links
+        if (userData.socialLinks) {
+          let socialLinksHTML = '';
+          if (userData.socialLinks.twitter) {
+            socialLinksHTML += `<a href="${userData.socialLinks.twitter}" target="_blank">Twitter</a> `;
+          }
+          if (userData.socialLinks.instagram) {
+            socialLinksHTML += `<a href="${userData.socialLinks.instagram}" target="_blank">Instagram</a> `;
+          }
+          if (userData.socialLinks.github) {
+            socialLinksHTML += `<a href="${userData.socialLinks.github}" target="_blank">GitHub</a>`;
+          }
+          document.getElementById('socialLinks').innerHTML = socialLinksHTML || 
+            '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
+        }
+      }
+      
+      // Update last login time
+      await updateDoc(doc(db, 'users', user.uid), {
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+    }
+  });
+  
+  // Back button functionality
+  document.getElementById('backFromDashboard').addEventListener('click', () => {
+    // Implement navigation back to previous page
+  });
+}
+
+// Call this when page11 is loaded
+initializeDashboard();
+
+
+
+
+
+
+
 
 async function createActivityNotification(
   recipientId,
@@ -7960,13 +8555,14 @@ async function submitFeedback(e) {
         const docRef = await addDoc(feedbackRef, feedbackData);
         
         // Create notification for admin
-        await createNotification(
-            'admin-user-id', // Replace with actual admin ID
-            'feedback',
-            `Feedback baru: ${title}`,
-            docRef.id,
-            `/feedback/${docRef.id}`
-        );
+await createNotification(
+    '9k1G7CiLZWNCkadVn3m8ZZRaQwg1', // Admin ID
+    'feedback',
+    `Feedback baru: ${title}`,
+    docRef.id,
+    `/feedback/${docRef.id}`
+);
+
         
         // Update UI
         const feedbackWithId = { ...feedbackData, id: docRef.id };
