@@ -8001,6 +8001,89 @@ function scrollToContent(contentId) {
   
   
    
+		
+		
+		  // Notification Settings Functions
+    function showNotificationSettings() {
+        notificationSettingsModal.style.display = 'block';
+        loadNotificationSettings();
+    }
+
+    function closeModalHandler() {
+        notificationSettingsModal.style.display = 'none';
+    }
+		
+		
+		
+		
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+    // Activity Detail Modal
+    async function showActivityDetail(type, contentId, commentId = null) {
+        const modal = document.getElementById('activityDetailModal');
+        const modalTitle = document.getElementById('activityModalTitle');
+        const modalContent = document.getElementById('activityModalContent');
+        
+        modal.style.display = 'block';
+        modalTitle.textContent = 'Detail Aktivitas';
+        modalContent.innerHTML = '<div class="loader"></div>';
+        
+        try {
+            let content = '';
+            
+            switch(type) {
+                case 'comment':
+                case 'reply':
+                case 'like_comment':
+                    content = await loadCommentDetail(contentId, commentId);
+                    break;
+                case 'reaction':
+                    content = await loadReactionDetail(contentId);
+                    break;
+                case 'feedback':
+                    content = await loadFeedbackDetail(contentId);
+                    break;
+                case 'discussion':
+                    content = await loadDiscussionDetail(contentId);
+                    break;
+                case 'announcement':
+                    content = await loadAnnouncementDetail(contentId);
+                    break;
+                case 'content':
+                    content = await loadArduinoHistoryDetail(contentId);
+                    break;
+                default:
+                    content = '<p>Detail aktivitas tidak tersedia</p>';
+            }
+            
+            modalContent.innerHTML = content;
+            
+            // Setup any interactive elements in the modal
+            if (type === 'comment' || type === 'reply') {
+                setupCommentInteractions(modalContent);
+            }
+            
+        } catch (error) {
+            console.error('Error loading activity detail:', error);
+            modalContent.innerHTML = '<p>Gagal memuat detail aktivitas</p>';
+        }
+    }
+		
+		
+		
+		
+		
+		
+		
+
    
          // Fungsi untuk memuat detail postingan
         async function loadPostDetail(contentId, contentType) {
@@ -8092,121 +8175,6 @@ function scrollToContent(contentId) {
         `;
     }
 
-		
-		
-		  // Notification Settings Functions
-    function showNotificationSettings() {
-        notificationSettingsModal.style.display = 'block';
-        loadNotificationSettings();
-    }
-
-    function closeModalHandler() {
-        notificationSettingsModal.style.display = 'none';
-    }
-		
-		
-		
-		
-		
-
-		
-		
-		
-		
-		
-		
-		
-		
-    // Activity Detail Modal
-    async function showActivityDetail(type, contentId, commentId = null) {
-        const modal = document.getElementById('activityDetailModal');
-        const modalTitle = document.getElementById('activityModalTitle');
-        const modalContent = document.getElementById('activityModalContent');
-        
-        modal.style.display = 'block';
-        modalTitle.textContent = 'Detail Aktivitas';
-        modalContent.innerHTML = '<div class="loader"></div>';
-        
-        try {
-            let content = '';
-            
-            switch(type) {
-                case 'comment':
-                case 'reply':
-                case 'like_comment':
-                    content = await loadCommentDetail(contentId, commentId);
-                    break;
-                case 'reaction':
-                    content = await loadReactionDetail(contentId);
-                    break;
-                case 'feedback':
-                    content = await loadFeedbackDetail(contentId);
-                    break;
-                case 'discussion':
-                    content = await loadDiscussionDetail(contentId);
-                    break;
-                case 'announcement':
-                    content = await loadAnnouncementDetail(contentId);
-                    break;
-                case 'content':
-                    content = await loadArduinoHistoryDetail(contentId);
-                    break;
-                default:
-                    content = '<p>Detail aktivitas tidak tersedia</p>';
-            }
-            
-            modalContent.innerHTML = content;
-            
-            // Setup any interactive elements in the modal
-            if (type === 'comment' || type === 'reply') {
-                setupCommentInteractions(modalContent);
-            }
-            
-        } catch (error) {
-            console.error('Error loading activity detail:', error);
-            modalContent.innerHTML = '<p>Gagal memuat detail aktivitas</p>';
-        }
-    }
-		
-		
-		
-		
-		
-		
-		
-	
-		
-		 async function loadReactionDetail(contentId) {
-        const reactionDoc = await getDoc(doc(db, "userReactions", contentId));
-        
-        if (!reactionDoc.exists()) {
-            return '<p>Reaksi tidak ditemukan</p>';
-        }
-        
-        const reaction = reactionDoc.data();
-        const userDoc = await getDoc(doc(db, 'users', reaction.userId));
-        const userData = userDoc.exists() ? userDoc.data() : {};
-        
-        return `
-            <div class="reaction-detail">
-                <div class="reaction-header">
-                    <div class="user-avatar">${userData.displayName?.charAt(0) || 'P'}</div>
-                    <div class="user-info">
-                        <h4>${userData.displayName || 'Pengguna'}</h4>
-                        <small>${formatTimeAgo(reaction.timestamp?.toDate())}</small>
-                    </div>
-                </div>
-                <div class="reaction-content">
-                    <p>Memberikan reaksi: ${reaction.emojiType || ''}</p>
-                </div>
-                <div class="reaction-actions">
-                    <a href="/arduino-history/${contentId}" class="view-original-btn">Lihat di halaman asli</a>
-                </div>
-            </div>
-        `;
-    }	
-		
-		
 		
 		
 		
