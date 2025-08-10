@@ -7411,11 +7411,313 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
 
 
 
+async function getEmojiReactions(contentId) {
+  try {
+    const reactionRef = doc(db, 'reactions', contentId);
+    const reactionSnap = await getDoc(reactionRef);
+    
+    if (reactionSnap.exists()) {
+      return reactionSnap.data(); // {like: 5, love: 3, ...}
+    }
+    return {};
+  } catch (error) {
+    console.error("Error getting emoji reactions:", error);
+    return {};
+  }
+}
+
+async function getUserReaction(userId, contentId) {
+  try {
+    const userReactionRef = doc(db, 'userReactions', `${userId}_${contentId}`);
+    const userReactionSnap = await getDoc(userReactionRef);
+    
+    if (userReactionSnap.exists()) {
+      return userReactionSnap.data().emojiType; // 'like', 'love', etc.
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting user reaction:", error);
+    return null;
+  }
+}	
 	
 	
 	
 	
+	async function getCommentLikes(commentId, contentType) {
+  try {
+    let likesRef;
+    
+    // Tentukan path berdasarkan jenis konten
+    switch(contentType) {
+      case 'announcements':
+        likesRef = collection(db, `announcements/${commentId}/likes`);
+        break;
+      case 'feedback':
+        likesRef = collection(db, `feedback/${commentId}/likes`);
+        break;
+      case 'arduinoHistory':
+        likesRef = collection(db, `arduinoHistoryComments/${commentId}/likes`);
+        break;
+      case 'discussions':
+        likesRef = collection(db, `discussions/${commentId}/likes`);
+        break;
+      default:
+        return [];
+    }
+    
+    const querySnapshot = await getDocs(likesRef);
+    return querySnapshot.docs.map(doc => doc.data());
+  } catch (error) {
+    console.error("Error getting comment likes:", error);
+    return [];
+  }
+}
+
+async function checkUserLikedComment(userId, commentId, contentType) {
+  try {
+    let likeRef;
+    
+    switch(contentType) {
+      case 'announcements':
+        likeRef = doc(db, `announcements/${commentId}/likes/${userId}`);
+        break;
+      case 'feedback':
+        likeRef = doc(db, `feedback/${commentId}/likes/${userId}`);
+        break;
+      case 'arduinoHistory':
+        likeRef = doc(db, `arduinoHistoryComments/${commentId}/likes/${userId}`);
+        break;
+      case 'discussions':
+        likeRef = doc(db, `discussions/${commentId}/likes/${userId}`);
+        break;
+      default:
+        return false;
+    }
+    
+    const likeSnap = await getDoc(likeRef);
+    return likeSnap.exists();
+  } catch (error) {
+    console.error("Error checking user like:", error);
+    return false;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+async function getComments(contentType, contentId) {
+  try {
+    let commentsRef;
+    
+    switch(contentType) {
+      case 'announcements':
+        commentsRef = collection(db, `announcements/${contentId}/comments`);
+        break;
+      case 'feedback':
+        commentsRef = collection(db, `feedback/${contentId}/comments`);
+        break;
+      case 'arduinoHistory':
+        commentsRef = collection(db, 'arduinoHistoryComments');
+        break;
+      case 'discussions':
+        commentsRef = collection(db, `discussions/${contentId}/comments`);
+        break;
+      default:
+        return [];
+    }
+    
+    // Query dengan filter untuk arduinoHistory
+    let queryRef;
+    if (contentType === 'arduinoHistory') {
+      queryRef = query(commentsRef, where("historyId", "==", contentId));
+    } else {
+      queryRef = query(commentsRef, orderBy("timestamp", "desc"));
+    }
+    
+    const querySnapshot = await getDocs(queryRef);
+    const comments = [];
+    
+    for (const doc of querySnapshot.docs) {
+      const commentData = doc.data();
+      const userDoc = await getDoc(doc(db, 'users', commentData.userId));
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      
+      // Ambil balasan jika ada
+      let replies = [];
+      if (commentData.replies && commentData.replies.length > 0) {
+        replies = await Promise.all(commentData.replies.map(async reply => {
+          const replyUserDoc = await getDoc(doc(db, 'users', reply.userId));
+          const replyUserData = replyUserDoc.exists() ? replyUserDoc.data() : {};
+          return {
+            ...reply,
+            userData: replyUserData
+          };
+        }));
+      }
+      
+      comments.push({
+        id: doc.id,
+        ...commentData,
+        userData,
+        replies
+      });
+    }
+    
+    return comments;
+  } catch (error) {
+    console.error("Error getting comments:", error);
+    return [];
+  }
+}
 	
+	
+	
+async function getRecentActivities(limit = 10) {
+  try {
+    const activitiesRef = collection(db, 'activities');
+    const q = query(
+      activitiesRef,
+      orderBy('timestamp', 'desc'),
+      limit(limit)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const activities = [];
+    
+    for (const doc of querySnapshot.docs) {
+      const activity = doc.data();
+      const userDoc = await getDoc(doc(db, 'users', activity.userId));
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      
+      activities.push({
+        id: doc.id,
+        ...activity,
+        userData
+      });
+    }
+    
+    return activities;
+  } catch (error) {
+    console.error("Error getting activities:", error);
+    return [];
+  }
+}
+
+
+
+
+
+
+
+async function displayAllData(contentId) {
+  // Ambil data reaksi emoji
+  const emojiReactions = await getEmojiReactions(contentId);
+  const userReaction = await getUserReaction(auth.currentUser?.uid, contentId);
+  
+  // Update UI untuk reaksi emoji
+  updateEmojiReactionsUI(emojiReactions, userReaction);
+  
+  // Ambil dan tampilkan komentar untuk semua jenis konten
+  const contentTypes = ['announcements', 'feedback', 'arduinoHistory', 'discussions'];
+  
+  for (const contentType of contentTypes) {
+    const comments = await getComments(contentType, contentId);
+    
+    // Tampilkan komentar di UI
+    renderComments(comments, contentType);
+    
+    // Untuk setiap komentar, cek like
+    for (const comment of comments) {
+      const likes = await getCommentLikes(comment.id, contentType);
+      const userLiked = await checkUserLikedComment(
+        auth.currentUser?.uid, 
+        comment.id, 
+        contentType
+      );
+      
+      // Update UI like komentar
+      updateCommentLikeUI(comment.id, likes.length, userLiked);
+    }
+  }
+  
+  // Ambil dan tampilkan aktivitas terkini
+  const recentActivities = await getRecentActivities();
+  renderRecentActivities(recentActivities);
+}
+
+// Contoh fungsi update UI (implementasi tergantung framework Anda)
+function updateEmojiReactionsUI(reactions, userReaction) {
+  Object.keys(reactions).forEach(emoji => {
+    const countElement = document.getElementById(`${emoji}-count`);
+    if (countElement) {
+      countElement.textContent = reactions[emoji];
+    }
+    
+    const buttonElement = document.querySelector(`[data-emoji="${emoji}"]`);
+    if (buttonElement) {
+      buttonElement.classList.toggle('active', emoji === userReaction);
+    }
+  });
+}	
+	
+	
+	
+function setupRealtimeListeners(contentId) {
+  // Listener untuk reaksi emoji
+  const reactionRef = doc(db, 'reactions', contentId);
+  onSnapshot(reactionRef, (doc) => {
+    const reactions = doc.exists() ? doc.data() : {};
+    updateEmojiReactionsUI(reactions, userReaction);
+  });
+
+  // Listener untuk komentar baru
+  const contentTypes = ['announcements', 'feedback', 'arduinoHistory', 'discussions'];
+  
+  contentTypes.forEach(contentType => {
+    let commentsRef;
+    
+    if (contentType === 'arduinoHistory') {
+      commentsRef = query(
+        collection(db, 'arduinoHistoryComments'),
+        where("historyId", "==", contentId)
+      );
+    } else {
+      commentsRef = collection(db, `${contentType}/${contentId}/comments`);
+    }
+    
+    onSnapshot(commentsRef, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          // Tambahkan komentar baru ke UI
+          addNewCommentToUI(change.doc.data(), contentType);
+        }
+      });
+    });
+  });
+
+  // Listener untuk aktivitas baru
+  const activitiesRef = query(
+    collection(db, 'activities'),
+    orderBy('timestamp', 'desc'),
+    limit(10)
+  );
+  
+  onSnapshot(activitiesRef, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        // Tambahkan aktivitas baru ke UI
+        addNewActivityToUI(change.doc.data());
+      }
+    });
+  });
+}	
 	
 	
 	
