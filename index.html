@@ -7531,16 +7531,6 @@ setInterval(checkNotificationConsistency, 24 * 60 * 60 * 1000); // Setiap 24 jam
 	
 	
 	
-	  async function markNotificationAsRead(notifId) {
-        try {
-            await updateDoc(doc(db, "notifications", notifId), {
-                read: true
-            });
-        } catch (error) {
-            console.error("Error marking notification as read:", error);
-        }
-    }
-	
 	
 	
 	
