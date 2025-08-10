@@ -8019,63 +8019,62 @@ function scrollToContent(contentId) {
 		
 
 		
-		
-		
-		
-		
-		
-		
-		
-    // Activity Detail Modal
-    async function showActivityDetail(type, contentId, commentId = null) {
-        const modal = document.getElementById('activityDetailModal');
-        const modalTitle = document.getElementById('activityModalTitle');
-        const modalContent = document.getElementById('activityModalContent');
-        
-        modal.style.display = 'block';
-        modalTitle.textContent = 'Detail Aktivitas';
-        modalContent.innerHTML = '<div class="loader"></div>';
-        
-        try {
-            let content = '';
-            
-            switch(type) {
-                case 'comment':
-                case 'reply':
-                case 'like_comment':
-                    content = await loadCommentDetail(contentId, commentId);
-                    break;
-                case 'reaction':
-                    content = await loadReactionDetail(contentId);
-                    break;
-                case 'feedback':
-                    content = await loadFeedbackDetail(contentId);
-                    break;
-                case 'discussion':
-                    content = await loadDiscussionDetail(contentId);
-                    break;
-                case 'announcement':
-                    content = await loadAnnouncementDetail(contentId);
-                    break;
-                case 'content':
-                    content = await loadArduinoHistoryDetail(contentId);
-                    break;
-                default:
-                    content = '<p>Detail aktivitas tidak tersedia</p>';
-            }
-            
-            modalContent.innerHTML = content;
-            
-            // Setup any interactive elements in the modal
-            if (type === 'comment' || type === 'reply') {
-                setupCommentInteractions(modalContent);
-            }
-            
-        } catch (error) {
-            console.error('Error loading activity detail:', error);
-            modalContent.innerHTML = '<p>Gagal memuat detail aktivitas</p>';
-        }
+		async function showActivityDetail(type, contentId, commentId = null) {
+    if (!contentId && type !== 'reaction') { 
+        console.warn(`❌ showActivityDetail dipanggil tanpa contentId untuk type: ${type}`);
+        return;
     }
+    
+    const modal = document.getElementById('activityDetailModal');
+    const modalTitle = document.getElementById('activityModalTitle');
+    const modalContent = document.getElementById('activityModalContent');
+    
+    modal.style.display = 'block';
+    modalTitle.textContent = 'Detail Aktivitas';
+    modalContent.innerHTML = '<div class="loader"></div>';
+    
+    try {
+        let content = '';
+        
+        switch(type) {
+            case 'comment':
+            case 'reply':
+            case 'like_comment':
+                content = await loadCommentDetail(contentId, commentId);
+                break;
+            case 'reaction':
+                content = await loadReactionDetail(contentId);
+                break;
+            case 'feedback':
+                content = await loadFeedbackDetail(contentId);
+                break;
+            case 'discussion':
+                content = await loadDiscussionDetail(contentId);
+                break;
+            case 'announcement':
+                content = await loadAnnouncementDetail(contentId);
+                break;
+            case 'content':
+                content = await loadArduinoHistoryDetail(contentId);
+                break;
+            default:
+                content = '<p>Detail aktivitas tidak tersedia</p>';
+        }
+        
+        modalContent.innerHTML = content;
+        
+        if (type === 'comment' || type === 'reply') {
+            setupCommentInteractions(modalContent);
+        }
+        
+    } catch (error) {
+        console.error('Error loading activity detail:', error);
+        modalContent.innerHTML = '<p>Gagal memuat detail aktivitas</p>';
+    }
+}
+
+		
+		
 		
 		
 		
@@ -8286,8 +8285,16 @@ async function loadDiscussionDetail(contentId) {
     }
 }
 
+
+
+
 // Ambil data pengumuman
 async function loadAnnouncementDetail(contentId) {
+    if (!contentId) {
+        console.warn("❌ loadAnnouncementDetail dipanggil tanpa contentId");
+        return "<p>Pengumuman tidak ditemukan (ID kosong).</p>";
+    }
+
     try {
         const announcementRef = doc(db, "announcements", contentId);
         const announcementSnap = await getDoc(announcementRef);
@@ -8299,14 +8306,27 @@ async function loadAnnouncementDetail(contentId) {
             <div>
                 <h3>${data.title || 'Tanpa Judul'}</h3>
                 <p>${data.content || ''}</p>
-                <p style="font-size:12px; color:#999;">Oleh: ${data.userName || 'Admin'} pada ${data.createdAt?.toDate().toLocaleString() || ''}</p>
+                <p style="font-size:12px; color:#999;">
+                    Oleh: ${data.userName || 'Admin'} pada ${data.createdAt?.toDate().toLocaleString() || ''}
+                </p>
             </div>
         `;
     } catch (err) {
-        console.error(err);
+        console.error("⚠️ Error loadAnnouncementDetail:", err);
         return "<p>Gagal memuat detail pengumuman.</p>";
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 // Ambil data arduino history
 async function loadArduinoHistoryDetail(contentId) {
