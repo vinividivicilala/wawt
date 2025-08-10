@@ -7000,67 +7000,49 @@ function switchActivityTab(tabName) {
 	
 	
 	
-    // Fungsi untuk memuat profil pengguna
-    function loadUserProfile(user) {
-        if (!user) return;
-        
-        // Set user reference
-        userRef = doc(db, "users", user.uid);
-        
-        // Gunakan data dari Firebase Auth
-        const profilePicture = document.getElementById('userProfilePicture');
-        const displayName = document.getElementById('userDisplayName');
-        const userEmail = document.getElementById('userEmail');
-        
-        profilePicture.src = user.photoURL || 'https://via.placeholder.com/150';
-        displayName.textContent = user.displayName || 'Pengguna';
-        userEmail.textContent = user.email;
-        
-        // Ambil data tambahan dari Firestore
-        getDoc(userRef).then(docSnap => {
-            if (docSnap.exists()) {
-                userProfile = docSnap.data();
-                
-                // Format tanggal bergabung (gunakan metadata dari Firebase Auth jika tidak ada di Firestore)
-                const joinDate = userProfile.joinDate?.toDate() || new Date(user.metadata.creationTime);
-                const formattedDate = joinDate.toLocaleDateString('id-ID', {
-                    year: 'numeric',
-                    month: 'long'
-                });
-                
-                document.getElementById('joinDate').textContent = formattedDate;
-                
-                // Tampilkan link media sosial
-                updateSocialLinksUI();
-                
-            } else {
-                // Buat dokumen pengguna baru jika belum ada
-                const userData = {
-                    displayName: user.displayName || '',
-                    email: user.email,
-                    photoURL: user.photoURL || '',
-                    joinDate: new Date(user.metadata.creationTime),
-                    notificationSettings: {
-                        email: true,
-                        push: true,
-                        activity: true,
-                        announcements: true,
-                        messages: true
-                    },
-                    socialLinks: {}
-                };
-                
-                setDoc(userRef, userData).then(() => {
-                    userProfile = userData;
-                    updateSocialLinksUI();
-                }).catch(error => {
-                    console.error("Error creating user document:", error);
-                });
-            }
-        }).catch(error => {
-            console.error("Error loading user profile:", error);
-        });
+	
+	
+	
+	async function loadUserProfile(user) {
+    try {
+        if (!user) {
+            console.warn("Tidak ada user login");
+            return;
+        }
+
+        // 🔹 Pastikan userRef terdefinisi
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            console.log("User data:", userData);
+
+            // Contoh update UI
+            const nameEl = document.getElementById("profileName");
+            const emailEl = document.getElementById("profileEmail");
+            const photoEl = document.getElementById("profilePhoto");
+
+            if (nameEl) nameEl.textContent = userData.displayName || user.displayName || "Pengguna";
+            if (emailEl) emailEl.textContent = userData.email || user.email || "-";
+            if (photoEl) photoEl.src = userData.photoURL || user.photoURL || "default-avatar.png";
+        } else {
+            console.log("Dokumen user belum ada di Firestore");
+        }
+    } catch (error) {
+        console.error("Error loading user profile:", error);
     }
+}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
     
     // Fungsi untuk memperbarui tampilan link media sosial
     function updateSocialLinksUI() {
