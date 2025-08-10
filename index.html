@@ -8222,7 +8222,152 @@ function scrollToContent(contentId) {
    
    
    
-   
+// Ambil data komentar
+async function loadCommentDetail(contentId, commentId) {
+    try {
+        const commentRef = doc(db, "arduinoHistoryComments", commentId || contentId);
+        const commentSnap = await getDoc(commentRef);
+
+        if (!commentSnap.exists()) return "<p>Komentar tidak ditemukan.</p>";
+
+        const data = commentSnap.data();
+        return `
+            <div>
+                <p><strong>${data.userName || 'Anonim'}</strong></p>
+                <p>${data.text || ''}</p>
+                <p style="font-size:12px; color:#999;">${data.createdAt?.toDate().toLocaleString() || ''}</p>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        return "<p>Gagal memuat detail komentar.</p>";
+    }
+}
+
+// Ambil data reaksi
+async function loadReactionDetail(contentId) {
+    try {
+        const reactionRef = doc(db, "userReactions", contentId);
+        const reactionSnap = await getDoc(reactionRef);
+
+        if (!reactionSnap.exists()) return "<p>Reaksi tidak ditemukan.</p>";
+
+        const data = reactionSnap.data();
+        return `
+            <div>
+                <p>Reaksi oleh: <strong>${data.userName || 'Anonim'}</strong></p>
+                <p>Jenis: ${data.reactionType || '-'}</p>
+                <p style="font-size:12px; color:#999;">${data.createdAt?.toDate().toLocaleString() || ''}</p>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        return "<p>Gagal memuat detail reaksi.</p>";
+    }
+}
+
+// Ambil data feedback
+async function loadFeedbackDetail(contentId) {
+    try {
+        const feedbackRef = doc(db, "feedback", contentId);
+        const feedbackSnap = await getDoc(feedbackRef);
+
+        if (!feedbackSnap.exists()) return "<p>Masukan tidak ditemukan.</p>";
+
+        const data = feedbackSnap.data();
+        return `
+            <div>
+                <h3>${data.title || 'Tanpa Judul'}</h3>
+                <p>${data.content || ''}</p>
+                <p style="font-size:12px; color:#999;">Oleh: ${data.userName || 'Anonim'} pada ${data.createdAt?.toDate().toLocaleString() || ''}</p>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        return "<p>Gagal memuat detail masukan.</p>";
+    }
+}
+
+// Ambil data diskusi
+async function loadDiscussionDetail(contentId) {
+    try {
+        const discussionRef = doc(db, "discussions", contentId);
+        const discussionSnap = await getDoc(discussionRef);
+
+        if (!discussionSnap.exists()) return "<p>Diskusi tidak ditemukan.</p>";
+
+        const data = discussionSnap.data();
+        return `
+            <div>
+                <h3>${data.title || 'Tanpa Judul'}</h3>
+                <p>${data.content || ''}</p>
+                <p style="font-size:12px; color:#999;">Oleh: ${data.userName || 'Anonim'} pada ${data.createdAt?.toDate().toLocaleString() || ''}</p>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        return "<p>Gagal memuat detail diskusi.</p>";
+    }
+}
+
+// Ambil data pengumuman
+async function loadAnnouncementDetail(contentId) {
+    try {
+        const announcementRef = doc(db, "announcements", contentId);
+        const announcementSnap = await getDoc(announcementRef);
+
+        if (!announcementSnap.exists()) return "<p>Pengumuman tidak ditemukan.</p>";
+
+        const data = announcementSnap.data();
+        return `
+            <div>
+                <h3>${data.title || 'Tanpa Judul'}</h3>
+                <p>${data.content || ''}</p>
+                <p style="font-size:12px; color:#999;">Oleh: ${data.userName || 'Admin'} pada ${data.createdAt?.toDate().toLocaleString() || ''}</p>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        return "<p>Gagal memuat detail pengumuman.</p>";
+    }
+}
+
+// Ambil data arduino history
+async function loadArduinoHistoryDetail(contentId) {
+    try {
+        const historyRef = doc(db, "arduinoHistory", contentId);
+        const historySnap = await getDoc(historyRef);
+
+        if (!historySnap.exists()) return "<p>Konten tidak ditemukan.</p>";
+
+        const data = historySnap.data();
+        return `
+            <div>
+                <h3>${data.title || 'Tanpa Judul'}</h3>
+                <p>${data.content || ''}</p>
+                <p style="font-size:12px; color:#999;">Oleh: ${data.userName || 'Anonim'} pada ${data.createdAt?.toDate().toLocaleString() || ''}</p>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        return "<p>Gagal memuat detail konten.</p>";
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
