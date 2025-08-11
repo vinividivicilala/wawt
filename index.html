@@ -3117,7 +3117,110 @@ iframe:hover {
 }
 
 
+/* Users List Styles */
+.dashboard-users {
+    margin-top: 20px;
+    padding: 20px;
+    background: #1e1e1e;
+    border-radius: 8px;
+}
 
+.users-search {
+    margin-bottom: 15px;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 10px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #555;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-weight: bold;
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-info h4 {
+    margin: 0;
+    color: white;
+}
+
+.user-info p, .user-info small {
+    margin: 2px 0;
+    color: #aaa;
+    display: block;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.follow-btn, .message-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.follow-btn {
+    background: #4285f4;
+    color: white;
+}
+
+.follow-btn.following {
+    background: #34a853;
+}
+
+.message-btn {
+    background: #fbbc05;
+    color: white;
+}
+
+/* Message Modal Styles */
+.message {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    max-width: 70%;
+}
+
+.message.sent {
+    background: #4285f4;
+    margin-left: auto;
+    color: white;
+}
+
+.message.received {
+    background: #333;
+    margin-right: auto;
+}
+
+.message-content {
+    word-wrap: break-word;
+}
+
+.message-time {
+    font-size: 0.8em;
+    color: #aaa;
+    text-align: right;
+    margin-top: 5px;
+}
 
 
 
@@ -5519,6 +5622,41 @@ iframe:hover {
   </div>
 </div>
 
+
+
+<!-- Add this section to your dashboard HTML (before the back button) -->
+<div class="dashboard-users linebox">
+    <h2 class="title-box-white">Pengguna Lain</h2>
+    
+    <div class="users-search">
+        <input type="text" id="userSearchInput" placeholder="Cari pengguna..." style="width: 100%; padding: 8px; border-radius: 4px; background: #333; color: white; border: 1px solid #444;">
+    </div>
+    
+    <div class="users-list" id="usersList">
+        <div class="users-loader">
+            <div class="loader"></div>
+            <p>Memuat daftar pengguna...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add this modal for messaging (before the notification settings modal) -->
+<div id="messageModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="messageModalTitle">Kirim Pesan</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="messageHistory" style="height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #444; padding: 10px; border-radius: 4px;"></div>
+            <textarea id="messageInput" style="width: 100%; padding: 8px; border-radius: 4px; background: #333; color: white; border: 1px solid #444;" rows="3" placeholder="Tulis pesan Anda..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button id="sendMessageBtn" class="save-btn">Kirim</button>
+            <button class="cancel-btn close-message-modal">Batal</button>
+        </div>
+    </div>
+</div>
   
     
     <!-- Tombol Kembali -->
@@ -6495,7 +6633,246 @@ async function setupUserFollowingAndMessaging() {
 
 
 
+// User Following and Messaging System
+async function setupUserFollowingSystem() {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
+    // Load other users
+    const loadUsers = async (searchTerm = '') => {
+        const usersList = document.getElementById('usersList');
+        usersList.innerHTML = '<div class="users-loader"><div class="loader"></div><p>Memuat daftar pengguna...</p></div>';
+        
+        try {
+            let q = query(collection(db, 'users'), where('uid', '!=', currentUser.uid));
+            
+            if (searchTerm) {
+                q = query(
+                    collection(db, 'users'),
+                    where('uid', '!=', currentUser.uid),
+                    or(
+                        where('displayName', '>=', searchTerm),
+                        where('displayName', '<=', searchTerm + '\uf8ff'),
+                        where('email', '>=', searchTerm),
+                        where('email', '<=', searchTerm + '\uf8ff')
+                    )
+                );
+            }
+            
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+                usersList.innerHTML = '<p>Tidak ada pengguna yang ditemukan</p>';
+                return;
+            }
+            
+            usersList.innerHTML = '';
+            
+            // Get current user's following list
+            const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const followingList = currentUserDoc.data()?.following || [];
+            
+            snapshot.forEach(async (doc) => {
+                const user = doc.data();
+                const isFollowing = followingList.includes(user.uid);
+                
+                const userElement = document.createElement('div');
+                userElement.className = 'user-item';
+                userElement.innerHTML = `
+                    <div class="user-avatar">${user.displayName?.charAt(0) || user.email.charAt(0)}</div>
+                    <div class="user-info">
+                        <h4>${user.displayName || user.email}</h4>
+                        <p>${user.email}</p>
+                        <small>Status: ${user.isOnline ? 'Online' : 'Offline'}</small>
+                        <small>Terakhir online: ${user.lastLogin ? formatTime(user.lastLogin) : 'Tidak diketahui'}</small>
+                    </div>
+                    <div class="user-actions">
+                        <button class="follow-btn ${isFollowing ? 'following' : ''}" data-uid="${user.uid}">
+                            ${isFollowing ? 'Mengikuti' : 'Ikuti'}
+                        </button>
+                        <button class="message-btn" data-uid="${user.uid}" data-name="${user.displayName || user.email}">
+                            Pesan
+                        </button>
+                    </div>
+                `;
+                
+                usersList.appendChild(userElement);
+            });
+        } catch (error) {
+            console.error('Error loading users:', error);
+            usersList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
+        }
+    };
+    
+    // Initial load
+    await loadUsers();
+    
+	
+	   // Search functionality
+    document.getElementById('userSearchInput').addEventListener('input', (e) => {
+        loadUsers(e.target.value.trim());
+    });
+    
+    // Follow button functionality
+    document.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('follow-btn')) {
+            const targetUserId = e.target.dataset.uid;
+            const isFollowing = e.target.classList.contains('following');
+            
+            try {
+                if (isFollowing) {
+                    // Unfollow
+                    await updateDoc(doc(db, 'users', currentUser.uid), {
+                        following: arrayRemove(targetUserId)
+                    });
+                    
+                    await updateDoc(doc(db, 'users', targetUserId), {
+                        followers: arrayRemove(currentUser.uid)
+                    });
+                    
+                    e.target.classList.remove('following');
+                    e.target.textContent = 'Ikuti';
+                } else {
+                    // Follow
+                    await updateDoc(doc(db, 'users', currentUser.uid), {
+                        following: arrayUnion(targetUserId)
+                    });
+                    
+                    await updateDoc(doc(db, 'users', targetUserId), {
+                        followers: arrayUnion(currentUser.uid)
+                    });
+                    
+                    // Create notification
+                    const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    const currentUserName = currentUserDoc.data().displayName || currentUser.email;
+                    
+                    await createActivityNotification(
+                        targetUserId,
+                        'follow',
+                        currentUser.uid,
+                        currentUserName,
+                        '',
+                        'user',
+                        currentUser.uid
+                    );
+                    
+                    e.target.classList.add('following');
+                    e.target.textContent = 'Mengikuti';
+                }
+            } catch (error) {
+                console.error('Error updating follow status:', error);
+                alert('Gagal memperbarui status follow');
+            }
+        }
+    });
+    
+    // Message button functionality
+    let currentRecipient = null;
+    let unsubscribeMessages = null;
+    
+    document.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('message-btn')) {
+            const messageModal = document.getElementById('messageModal');
+            currentRecipient = {
+                uid: e.target.dataset.uid,
+                name: e.target.dataset.name
+            };
+            
+            document.getElementById('messageModalTitle').textContent = `Pesan ke ${currentRecipient.name}`;
+            messageModal.style.display = 'block';
+            
+            // Load message history
+            const messageHistory = document.getElementById('messageHistory');
+            messageHistory.innerHTML = '<div class="loader"></div>';
+            
+            if (unsubscribeMessages) unsubscribeMessages();
+            
+            unsubscribeMessages = onSnapshot(
+                query(
+                    collection(db, 'messages'),
+                    or(
+                        and(
+                            where('senderId', '==', currentUser.uid),
+                            where('receiverId', '==', currentRecipient.uid)
+                        ),
+                        and(
+                            where('senderId', '==', currentRecipient.uid),
+                            where('receiverId', '==', currentUser.uid)
+                        )
+                    ),
+                    orderBy('timestamp', 'asc')
+                ),
+                (snapshot) => {
+                    messageHistory.innerHTML = '';
+                    
+                    snapshot.forEach((doc) => {
+                        const message = doc.data();
+                        const isCurrentUser = message.senderId === currentUser.uid;
+                        
+                        const messageElement = document.createElement('div');
+                        messageElement.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
+                        messageElement.innerHTML = `
+                            <div class="message-content">${message.content}</div>
+                            <div class="message-time">${formatTime(message.timestamp)}</div>
+                        `;
+                        
+                        messageHistory.appendChild(messageElement);
+                    });
+                    
+                    // Scroll to bottom
+                    messageHistory.scrollTop = messageHistory.scrollHeight;
+                }
+            );
+        }
+    });
+    
+    // Send message functionality
+    document.getElementById('sendMessageBtn').addEventListener('click', async () => {
+        const messageInput = document.getElementById('messageInput');
+        const content = messageInput.value.trim();
+        
+        if (!content || !currentRecipient) return;
+        
+        try {
+            // Save message
+            await addDoc(collection(db, 'messages'), {
+                senderId: currentUser.uid,
+                receiverId: currentRecipient.uid,
+                content,
+                timestamp: serverTimestamp(),
+                read: false
+            });
+            
+            // Create notification
+            const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const currentUserName = currentUserDoc.data().displayName || currentUser.email;
+            
+            await createActivityNotification(
+                currentRecipient.uid,
+                'message',
+                currentUser.uid,
+                currentUserName,
+                content,
+                'message',
+                currentUser.uid
+            );
+            
+            messageInput.value = '';
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Gagal mengirim pesan');
+        }
+    });
+    
+    // Close modal
+    document.querySelectorAll('.close-modal, .close-message-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('messageModal').style.display = 'none';
+            if (unsubscribeMessages) unsubscribeMessages();
+            currentRecipient = null;
+        });
+    });
+}
 
 
 
@@ -6537,6 +6914,8 @@ function initializeEnhancedDashboard() {
   setupEnhancedActivityFeed();
   setupUserFollowingAndMessaging();
   trackUserPresence();
+      setupUserFollowingSystem();
+
 
   
   // Load user profile data on auth state change
