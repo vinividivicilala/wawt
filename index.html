@@ -6762,11 +6762,6 @@ async function setupUserFollowingAndMessaging() {
 
 
 
-
-
-
-
-
 async function loadUsers(searchTerm = "") {
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -6782,25 +6777,27 @@ async function loadUsers(searchTerm = "") {
         let usersQuery;
         
         if (searchTerm.trim() === "") {
-            // Query untuk menampilkan semua pengguna (kecuali diri sendiri)
+            // Basic query without search
             usersQuery = query(
                 collection(db, 'users'),
                 where('uid', '!=', currentUser.uid),
-                orderBy('uid'),
+                orderBy('displayName'),
                 limit(20)
             );
         } else {
-            // Query untuk pencarian dengan filter komposit yang benar
-            // Perhatikan perubahan di sini - kita tidak menggunakan and() secara eksplisit
+            // Query with search - properly nested with and()
             usersQuery = query(
                 collection(db, 'users'),
-                where('uid', '!=', currentUser.uid),
-                or(
-                    where('displayName', '>=', searchTerm),
-                    where('displayName', '<=', searchTerm + '\uf8ff'),
-                    where('email', '>=', searchTerm),
-                    where('email', '<=', searchTerm + '\uf8ff')
+                and(
+                    where('uid', '!=', currentUser.uid),
+                    or(
+                        where('displayName', '>=', searchTerm),
+                        where('displayName', '<=', searchTerm + '\uf8ff'),
+                        where('email', '>=', searchTerm),
+                        where('email', '<=', searchTerm + '\uf8ff')
+                    )
                 ),
+                orderBy('displayName'),
                 limit(20)
             );
         }
@@ -6813,11 +6810,10 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
-        // Dapatkan daftar pengguna yang sudah di-follow
+        // Process query results
         const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
         const followingList = currentUserDoc.data()?.following || [];
 
-        // Render setiap pengguna
         snapshot.forEach((doc) => {
             const user = doc.data();
             const isFollowing = followingList.includes(user.uid);
@@ -6847,7 +6843,6 @@ async function loadUsers(searchTerm = "") {
             usersList.appendChild(userElement);
         });
 
-        // Setup event listeners untuk tombol follow/message
         setupUserActions();
 
     } catch (error) {
@@ -6855,6 +6850,7 @@ async function loadUsers(searchTerm = "") {
         usersList.innerHTML = '<div class="no-users-found">Gagal memuat daftar pengguna</div>';
     }
 }
+
 
 
 
