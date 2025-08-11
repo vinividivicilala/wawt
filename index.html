@@ -6764,10 +6764,6 @@ async function setupUserFollowingAndMessaging() {
 
 
 
-
-
-
-// Fungsi untuk memuat daftar pengguna
 async function loadUsers(searchTerm = "") {
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -6780,9 +6776,10 @@ async function loadUsers(searchTerm = "") {
     usersList.innerHTML = '<div class="users-loader"><div class="loader"></div><p>Memuat daftar pengguna...</p></div>';
 
     try {
-        // Buat query berdasarkan search term
         let usersQuery;
+        
         if (searchTerm.trim() === "") {
+            // Query untuk menampilkan semua pengguna (kecuali diri sendiri)
             usersQuery = query(
                 collection(db, 'users'),
                 where('uid', '!=', currentUser.uid),
@@ -6790,14 +6787,17 @@ async function loadUsers(searchTerm = "") {
                 limit(20)
             );
         } else {
+            // Query untuk pencarian dengan filter komposit yang benar
             usersQuery = query(
                 collection(db, 'users'),
-                where('uid', '!=', currentUser.uid),
-                or(
-                    where('displayName', '>=', searchTerm),
-                    where('displayName', '<=', searchTerm + '\uf8ff'),
-                    where('email', '>=', searchTerm),
-                    where('email', '<=', searchTerm + '\uf8ff')
+                and(
+                    where('uid', '!=', currentUser.uid),
+                    or(
+                        where('displayName', '>=', searchTerm),
+                        where('displayName', '<=', searchTerm + '\uf8ff'),
+                        where('email', '>=', searchTerm),
+                        where('email', '<=', searchTerm + '\uf8ff')
+                    )
                 ),
                 limit(20)
             );
@@ -6853,6 +6853,11 @@ async function loadUsers(searchTerm = "") {
         usersList.innerHTML = '<div class="no-users-found">Gagal memuat daftar pengguna</div>';
     }
 }
+
+
+document.getElementById('userSearchInput').addEventListener('input', (e) => {
+    loadUsers(e.target.value.trim());
+});
 
 
 
