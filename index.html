@@ -6826,15 +6826,21 @@ async function setupUserFollowingAndMessaging() {
 
 
 
-
-
-
-
 async function loadUsers(searchTerm = "") {
-    const usersListEl = document.getElementById('usersList');
-    if (!usersListEl) return;
+    const usersList = document.getElementById('usersList');
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+        usersList.innerHTML = `
+            <div class="no-users-found">
+                <p>Silakan login untuk melihat pengguna lain</p>
+            </div>
+        `;
+        return;
+    }
 
-    usersListEl.innerHTML = `
+    // Tampilkan loading state
+    usersList.innerHTML = `
         <div class="users-loader">
             <div class="loader"></div>
             <p>Memuat daftar pengguna...</p>
@@ -6842,90 +6848,71 @@ async function loadUsers(searchTerm = "") {
     `;
 
     try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-            usersListEl.innerHTML = `<div class="no-users-found"><p>Silakan login untuk melihat pengguna lain</p></div>`;
-            return;
-        }
-
-        const searchLower = searchTerm.trim().toLowerCase();
-        let usersMap = new Map(); // untuk menghindari duplikat
-
-        if (searchLower) {
-            // 1️⃣ Cari berdasarkan displayName
-            const nameQuery = query(
+        let usersQuery;
+        const searchLower = searchTerm.toLowerCase();
+        
+        if (searchTerm.trim() === "") {
+            // Query dasar: semua pengguna kecuali yang sedang login
+            usersQuery = query(
                 collection(db, 'users'),
-                orderBy('displayNameLower'), // simpan field lowercase di Firestore
-                startAt(searchLower),
-                endAt(searchLower + '\uf8ff')
-            );
-            const nameSnap = await getDocs(nameQuery);
-            nameSnap.forEach(docSnap => {
-                const user = docSnap.data();
-                if (user.uid !== currentUser.uid) {
-                    usersMap.set(user.uid, user);
-                }
-            });
-
-            // 2️⃣ Cari berdasarkan email
-            const emailQuery = query(
-                collection(db, 'users'),
-                orderBy('emailLower'),
-                startAt(searchLower),
-                endAt(searchLower + '\uf8ff')
-            );
-            const emailSnap = await getDocs(emailQuery);
-            emailSnap.forEach(docSnap => {
-                const user = docSnap.data();
-                if (user.uid !== currentUser.uid) {
-                    usersMap.set(user.uid, user);
-                }
-            });
-
-        } else {
-            // Tanpa pencarian → ambil semua user kecuali yang login
-            const allUsersQuery = query(
-                collection(db, 'users'),
-                orderBy('displayNameLower'),
+                and(
+                    where('uid', '!=', currentUser.uid),
+                    orderBy('displayName')
+                ),
                 limit(20)
             );
-            const allSnap = await getDocs(allUsersQuery);
-            allSnap.forEach(docSnap => {
-                const user = docSnap.data();
-                if (user.uid !== currentUser.uid) {
-                    usersMap.set(user.uid, user);
-                }
-            });
+        } else {
+            // Query dengan pencarian: gabungkan filter dengan AND
+            usersQuery = query(
+                collection(db, 'users'),
+                and(
+                    where('uid', '!=', currentUser.uid),
+                    or(
+                        where('displayName', '>=', searchLower),
+                        where('displayName', '<=', searchLower + '\uf8ff'),
+                        where('email', '>=', searchLower),
+                        where('email', '<=', searchLower + '\uf8ff')
+                    )
+                ),
+                orderBy('displayName'),
+                limit(20)
+            );
         }
 
-        const users = Array.from(usersMap.values());
-
-        if (users.length === 0) {
-            usersListEl.innerHTML = `<div class="no-users-found"><p>Tidak ada pengguna ditemukan</p></div>`;
+        const snapshot = await getDocs(usersQuery);
+        usersList.innerHTML = '';
+        
+        if (snapshot.empty) {
+            usersList.innerHTML = `
+                <div class="no-users-found">
+                    <p>Tidak ada pengguna yang ditemukan</p>
+                </div>
+            `;
             return;
         }
 
-        // Ambil daftar following user saat ini
+        // Dapatkan daftar following user saat ini
         const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
         const followingList = currentUserDoc.data()?.following || [];
 
-        // Render daftar pengguna
-        usersListEl.innerHTML = '';
-        users.forEach(user => {
+        // Proses setiap user
+        snapshot.forEach((doc) => {
+            const user = doc.data();
             const isFollowing = followingList.includes(user.uid);
+            
             const userElement = createUserElement(user, isFollowing);
-            usersListEl.appendChild(userElement);
+            usersList.appendChild(userElement);
         });
 
     } catch (error) {
         console.error("Error loading users:", error);
-        usersListEl.innerHTML = `<div class="error-message"><p>Gagal memuat daftar pengguna</p></div>`;
+        usersList.innerHTML = `
+            <div class="error-message">
+                <p>Gagal memuat daftar pengguna</p>
+            </div>
+        `;
     }
 }
-
-
-
-
 
 
 
@@ -7045,10 +7032,14 @@ function setupUserActions() {
         }
     });
     
-  // Search input event listener
+  // Panggil saat search input berubah
 document.getElementById('userSearchInput').addEventListener('input', (e) => {
-    const searchTerm = e.target.value.trim();
-    loadUsers(searchTerm);
+    loadUsers(e.target.value);
+});
+
+// Panggil saat halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+    loadUsers();
 });
 
 
