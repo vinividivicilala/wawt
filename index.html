@@ -6928,51 +6928,49 @@ async function trackUserPresence() {
 
 
 
-    function createUserElement(user, isFollowing) {
-        const userElement = document.createElement('div');
-        userElement.className = 'user-item';
-        userElement.dataset.uid = user.uid;
-        
-        const displayName = user.displayName || user.email.split('@')[0] || 'Pengguna';
-        const email = user.email || 'Email tidak tersedia';
-        const lastActive = formatTime(user.lastLogin);
-        const joinDate = user.joinDate ? formatDate(user.joinDate) : 'Tanggal tidak tersedia';
 
-        userElement.innerHTML = `
-            <div class="user-avatar-container">
-                <div class="user-avatar">${displayName.charAt(0).toUpperCase()}</div>
-                <div class="user-status ${user.isOnline ? 'online' : 'offline'}"></div>
+
+
+function createUserElement(user, isFollowing) {
+    const userElement = document.createElement('div');
+    userElement.className = 'user-item';
+    userElement.dataset.uid = user.uid;
+    
+    const displayName = user.displayName || user.email.split('@')[0] || 'Pengguna';
+    const email = user.email || 'Email tidak tersedia';
+    const lastActive = formatTime(user.lastLogin);
+    const joinDate = user.joinDate ? formatDate(user.joinDate) : 'Tanggal tidak tersedia';
+
+    userElement.innerHTML = `
+        <div class="user-avatar-container">
+            <div class="user-avatar">${displayName.charAt(0).toUpperCase()}</div>
+            <div class="user-status ${user.isOnline ? 'online' : 'offline'}"></div>
+        </div>
+        <div class="user-details">
+            <h3>${displayName}</h3>
+            <p>${email}</p>
+            <div class="user-meta">
+                <small>Bergabung: ${joinDate}</small>
+                <small>Aktif: ${lastActive}</small>
             </div>
-            <div class="user-details">
-                <h3>${displayName}</h3>
-                <p>${email}</p>
-                <div class="user-meta">
-                    <small>Bergabung: ${joinDate}</small>
-                    <small>Aktif: ${lastActive}</small>
-                </div>
-            </div>
-            <div class="user-actions">
-                <button class="follow-btn ${isFollowing ? 'following' : ''}" 
-                        data-uid="${user.uid}">
-                    ${isFollowing ? 'Mengikuti' : 'Ikuti'}
-                </button>
-                <button class="message-btn" 
-                        data-uid="${user.uid}"
-                        data-name="${displayName}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
-        return userElement;
-    }
-
-
-
-
-
+        </div>
+        <div class="user-actions">
+            <button class="follow-btn ${isFollowing ? 'following' : ''}" 
+                    data-uid="${user.uid}">
+                ${isFollowing ? 'Mengikuti' : 'Ikuti'}
+            </button>
+            <button class="message-btn" 
+                    data-uid="${user.uid}"
+                    data-name="${displayName}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    return userElement;
+}
 
 
 
@@ -7165,17 +7163,20 @@ async function unfollowUser(currentUserId, targetUserId) {
 
 
 
-// Enhanced User System with Search Functionality
+
+
+// Enhanced User Following System
 async function setupUserFollowingSystem() {
     const usersList = document.getElementById('usersList');
     const userSearchInput = document.getElementById('userSearchInput');
     
+    let currentUser = null;
     let unsubscribeUsers = null;
     let unsubscribeMessages = null;
     let currentChat = null;
 
+    // Load users with search functionality
     const loadUsers = async (searchTerm = "") => {
-        const currentUser = auth.currentUser;
         if (!currentUser) {
             usersList.innerHTML = `
                 <div class="no-users-found">
@@ -7194,10 +7195,6 @@ async function setupUserFollowingSystem() {
         `;
 
         try {
-            // Get current user's following list first
-            const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            const followingList = currentUserDoc.data()?.following || [];
-            
             // Base query for all users except current user
             let usersQuery = query(
                 collection(db, 'users'),
@@ -7222,7 +7219,6 @@ async function setupUserFollowingSystem() {
             }
 
             const snapshot = await getDocs(usersQuery);
-            
             usersList.innerHTML = '';
             
             if (snapshot.empty) {
@@ -7234,11 +7230,14 @@ async function setupUserFollowingSystem() {
                 return;
             }
 
+            // Get current user's following list
+            const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const followingList = currentUserDoc.data()?.following || [];
+
             // Process each user
             snapshot.forEach((doc) => {
                 const user = doc.data();
                 const isFollowing = followingList.includes(user.uid);
-                
                 const userElement = createUserElement(user, isFollowing);
                 usersList.appendChild(userElement);
             });
@@ -7253,127 +7252,149 @@ async function setupUserFollowingSystem() {
         }
     };
 
-
-
-
-
-
-
-
-async function toggleFollow(targetUserId) {
-    if (!currentUser) {
-        console.error("User belum login");
-        return;
-    }
-
-    try {
-        const followerRef = doc(db, "users", targetUserId, "followers", currentUser.uid);
-        const followingRef = doc(db, "users", currentUser.uid, "following", targetUserId);
-
-        const isFollowingSnap = await getDoc(followerRef);
-
-        if (isFollowingSnap.exists()) {
-            // UNFOLLOW
-            await deleteDoc(followerRef);
-            await deleteDoc(followingRef);
-            console.log(`Berhenti mengikuti ${targetUserId}`);
-            return { action: "unfollow", success: true };
-        } else {
-            // FOLLOW
-            await setDoc(followerRef, {
-                userId: currentUser.uid,
-                createdAt: new Date()
-            });
-            await setDoc(followingRef, {
-                userId: targetUserId,
-                createdAt: new Date()
-            });
-            console.log(`Mulai mengikuti ${targetUserId}`);
-
-            // Notifikasi follow
-            await createActivityNotification(
-                targetUserId,
-                "follow",
-                currentUser.uid,
-                currentUser.displayName || currentUser.email,
-                "",
-                "user",
-                currentUser.uid
-            );
-
-            return { action: "follow", success: true };
+    // Follow/unfollow functionality
+    async function toggleFollow(targetUserId) {
+        if (!currentUser) return { success: false, error: "User not logged in" };
+        
+        try {
+            const currentUserRef = doc(db, 'users', currentUser.uid);
+            const targetUserRef = doc(db, 'users', targetUserId);
+            
+            // Check current follow status
+            const currentUserDoc = await getDoc(currentUserRef);
+            const isFollowing = (currentUserDoc.data()?.following || []).includes(targetUserId);
+            
+            if (isFollowing) {
+                // Unfollow
+                await updateDoc(currentUserRef, {
+                    following: arrayRemove(targetUserId)
+                });
+                
+                await updateDoc(targetUserRef, {
+                    followers: arrayRemove(currentUser.uid)
+                });
+                
+                return { action: 'unfollow', success: true };
+            } else {
+                // Follow
+                await updateDoc(currentUserRef, {
+                    following: arrayUnion(targetUserId)
+                });
+                
+                await updateDoc(targetUserRef, {
+                    followers: arrayUnion(currentUser.uid)
+                });
+                
+                // Create notification
+                const currentUserName = currentUserDoc.data().displayName || currentUser.email;
+                
+                await addDoc(collection(db, 'notifications'), {
+                    userId: targetUserId,
+                    type: 'follow',
+                    senderId: currentUser.uid,
+                    senderName: currentUserName,
+                    timestamp: serverTimestamp(),
+                    read: false
+                });
+                
+                return { action: 'follow', success: true };
+            }
+        } catch (error) {
+            console.error('Error toggling follow status:', error);
+            return { success: false, error };
         }
-    } catch (error) {
-        console.error("Error toggle follow status:", error);
-        return { success: false, error };
     }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 	
 	let currentUser = null;
-
-async function openChat(targetUserId, targetUserName) {
-    if (!currentUser) {
-        console.error("User belum login, tidak bisa buka chat");
-        return;
-    }
-
-    const messageModal = document.getElementById('messageModal');
-    const messageHistory = document.getElementById('messageHistory');
-
-    // Set current chat
-    const currentChat = {
-        userId: targetUserId,
-        name: targetUserName
-    };
-
-    // Update modal title
-    document.getElementById('messageModalTitle').textContent = `Pesan ke ${targetUserName}`;
-
-    // Clear previous messages
-    messageHistory.innerHTML = '<div class="loader"></div>';
-
-    // Unsubscribe previous listener
-    if (unsubscribeMessages) unsubscribeMessages();
-
-    // Subscribe ke pesan baru
-    unsubscribeMessages = onSnapshot(
-        query(
-            collection(db, 'messages'),
-            where('chatParticipants', 'array-contains', currentUser.uid),
-            orderBy('timestamp', 'asc')
-        ),
-        (snapshot) => {
-            messageHistory.innerHTML = '';
-
-            snapshot.forEach((docSnap) => {
-                const message = docSnap.data();
-                const isCurrentUser = message.senderId === currentUser.uid;
-
-                const messageElement = document.createElement('div');
-                messageElement.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
-                messageElement.innerHTML = `
-                    <div class="message-content">${message.content}</div>
-                    <div class="message-time">${formatTime(message.timestamp)}</div>
-                `;
-
-                messageHistory.appendChild(messageElement);
-            });
-
-            // Scroll ke bawah
-            messageHistory.scrollTop = messageHistory.scrollHeight;
+// Message functionality
+    async function openChat(targetUserId, targetUserName) {
+        if (!currentUser) {
+            alert("Silakan login untuk mengirim pesan");
+            return;
         }
-    );
 
-    // Tampilkan modal
-    messageModal.style.display = 'block';
-}
+        const messageModal = document.getElementById('messageModal');
+        const messageHistory = document.getElementById('messageHistory');
+        
+        // Set current chat
+        currentChat = {
+            userId: targetUserId,
+            name: targetUserName
+        };
+        
+        // Update modal title
+        document.getElementById('messageModalTitle').textContent = `Pesan ke ${targetUserName}`;
+        
+        // Clear previous messages
+        messageHistory.innerHTML = '<div class="loader"></div>';
+        
+        // Unsubscribe previous listener if exists
+        if (unsubscribeMessages) unsubscribeMessages();
+        
+        // Subscribe to new messages
+        unsubscribeMessages = onSnapshot(
+            query(
+                collection(db, 'messages'),
+                or(
+                    and(
+                        where('senderId', '==', currentUser.uid),
+                        where('receiverId', '==', targetUserId)
+                    ),
+                    and(
+                        where('senderId', '==', targetUserId),
+                        where('receiverId', '==', currentUser.uid)
+                    )
+                ),
+                orderBy('timestamp', 'asc')
+            ),
+            (snapshot) => {
+                messageHistory.innerHTML = '';
+                
+                snapshot.forEach((doc) => {
+                    const message = doc.data();
+                    const isCurrentUser = message.senderId === currentUser.uid;
+                    
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
+                    messageElement.innerHTML = `
+                        <div class="message-content">${message.content}</div>
+                        <div class="message-time">${formatTime(message.timestamp)}</div>
+                    `;
+                    
+                    messageHistory.appendChild(messageElement);
+                });
+                
+                // Scroll to bottom
+                messageHistory.scrollTop = messageHistory.scrollHeight;
+            }
+        );
+        
+        // Show modal
+        messageModal.style.display = 'block';
+    }
 
     // Send message functionality
     async function sendMessage(content) {
-        if (!content.trim() || !currentChat) return false;
+        if (!content.trim() || !currentChat || !currentUser) return false;
         
         try {
             // Save message
@@ -7389,15 +7410,15 @@ async function openChat(targetUserId, targetUserName) {
             const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
             const currentUserName = currentUserDoc.data().displayName || currentUser.email;
             
-            await createActivityNotification(
-                currentChat.userId,
-                'message',
-                currentUser.uid,
-                currentUserName,
-                content,
-                'message',
-                currentUser.uid
-            );
+            await addDoc(collection(db, 'notifications'), {
+                userId: currentChat.userId,
+                type: 'message',
+                senderId: currentUser.uid,
+                senderName: currentUserName,
+                content: content.substring(0, 30),
+                timestamp: serverTimestamp(),
+                read: false
+            });
             
             return true;
         } catch (error) {
@@ -7408,9 +7429,6 @@ async function openChat(targetUserId, targetUserName) {
 
     // Event listeners
     document.addEventListener('click', async (e) => {
-        const currentUser = auth.currentUser;
-        if (!currentUser) return;
-        
         // Follow button
         if (e.target.classList.contains('follow-btn')) {
             const btn = e.target;
@@ -7475,8 +7493,9 @@ async function openChat(targetUserId, targetUserName) {
         });
     });
 
-    // Initialize with current auth state
+    // Initialize with auth state
     onAuthStateChanged(auth, (user) => {
+        currentUser = user;
         if (user) {
             loadUsers();
         } else {
