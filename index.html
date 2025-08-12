@@ -7104,6 +7104,29 @@ async function setupUserFollowingSystem() {
 
 
 
+// 4. LAST LOGIN TRACKING
+async function trackUserPresence() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  // Update last login on initial load
+  await updateDoc(doc(db, 'users', currentUser.uid), {
+    lastLogin: serverTimestamp(),
+    isOnline: true
+  });
+
+  // Update status when user goes offline
+  window.addEventListener('beforeunload', async () => {
+    await updateDoc(doc(db, 'users', currentUser.uid), {
+      isOnline: false,
+      lastLogin: serverTimestamp()
+    });
+  });
+}
+
+
+
+
 
 
 
