@@ -7164,6 +7164,9 @@ async function setupUserFollowingSystem() {
             return { success: false, error };
         }
     }
+	
+	let currentUser = null;
+
 
     // Message functionality
     async function openChat(targetUserId, targetUserName) {
