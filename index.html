@@ -7107,6 +7107,88 @@ async function setupUserFollowingSystem() {
 
 
 
+// Initialize all dashboard components
+function initializeEnhancedDashboard() {
+  setupUserProfileVisibility();
+  setupNotificationSettings();
+  setupNotifications();
+  setupActivityFeed();
+  setupDetailedNotifications();
+  setupEnhancedActivityFeed();
+  trackUserPresence();
+      setupUserFollowingSystem();
+	  
+
+
+  
+  // Load user profile data on auth state change
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Load user profile
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        // Update profile display
+        document.getElementById('userDisplayName').textContent = userData.displayName || user.displayName || 'Pengguna';
+        document.getElementById('userEmail').textContent = user.email;
+        
+        if (userData.photoURL) {
+          document.getElementById('userProfilePicture').src = userData.photoURL;
+        }
+        
+        // Format join date
+        if (userData.joinDate) {
+          const joinDate = userData.joinDate.toDate();
+          document.getElementById('joinDate').textContent = joinDate.toLocaleDateString('id-ID', {
+            month: 'long',
+            year: 'numeric'
+          });
+        }
+        
+        // Display social links
+        if (userData.socialLinks) {
+          let socialLinksHTML = '';
+          if (userData.socialLinks.twitter) {
+            socialLinksHTML += `<a href="${userData.socialLinks.twitter}" target="_blank">Twitter</a> `;
+          }
+          if (userData.socialLinks.instagram) {
+            socialLinksHTML += `<a href="${userData.socialLinks.instagram}" target="_blank">Instagram</a> `;
+          }
+          if (userData.socialLinks.github) {
+            socialLinksHTML += `<a href="${userData.socialLinks.github}" target="_blank">GitHub</a>`;
+          }
+          document.getElementById('socialLinks').innerHTML = socialLinksHTML || 
+            '<span style="color: rgba(255,255,255,0.7);">Tidak ada link media sosial</span>';
+        }
+      }
+      
+      // Update last login time
+      await updateDoc(doc(db, 'users', user.uid), {
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+    }
+  });
+  
+  // Back button functionality
+  document.getElementById('backFromDashboard').addEventListener('click', () => {
+    // Implement navigation back to previous page
+  });
+}
+
+
+// Call this when page11 is loaded
+initializeEnhancedDashboard();
+
+
+
+
+
+
+
+
+
+
 
 
 
