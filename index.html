@@ -6774,6 +6774,56 @@ async function trackUserPresence() {
 
 
 
+    function createUserElement(user, isFollowing) {
+        const userElement = document.createElement('div');
+        userElement.className = 'user-item';
+        userElement.dataset.uid = user.uid;
+        
+        const displayName = user.displayName || user.email.split('@')[0] || 'Pengguna';
+        const email = user.email || 'Email tidak tersedia';
+        const lastActive = formatTime(user.lastLogin);
+        const joinDate = user.joinDate ? formatDate(user.joinDate) : 'Tanggal tidak tersedia';
+
+        userElement.innerHTML = `
+            <div class="user-avatar-container">
+                <div class="user-avatar">${displayName.charAt(0).toUpperCase()}</div>
+                <div class="user-status ${user.isOnline ? 'online' : 'offline'}"></div>
+            </div>
+            <div class="user-details">
+                <h3>${displayName}</h3>
+                <p>${email}</p>
+                <div class="user-meta">
+                    <small>Bergabung: ${joinDate}</small>
+                    <small>Aktif: ${lastActive}</small>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button class="follow-btn ${isFollowing ? 'following' : ''}" 
+                        data-uid="${user.uid}">
+                    ${isFollowing ? 'Mengikuti' : 'Ikuti'}
+                </button>
+                <button class="message-btn" 
+                        data-uid="${user.uid}"
+                        data-name="${displayName}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        return userElement;
+    }
+
+
+
+
+
+
+
+
+
+
 
 
 // Fungsi untuk memuat daftar pengguna
@@ -7049,46 +7099,6 @@ async function setupUserFollowingSystem() {
         }
     };
 
-    function createUserElement(user, isFollowing) {
-        const userElement = document.createElement('div');
-        userElement.className = 'user-item';
-        userElement.dataset.uid = user.uid;
-        
-        const displayName = user.displayName || user.email.split('@')[0] || 'Pengguna';
-        const email = user.email || 'Email tidak tersedia';
-        const lastActive = formatTime(user.lastLogin);
-        const joinDate = user.joinDate ? formatDate(user.joinDate) : 'Tanggal tidak tersedia';
-
-        userElement.innerHTML = `
-            <div class="user-avatar-container">
-                <div class="user-avatar">${displayName.charAt(0).toUpperCase()}</div>
-                <div class="user-status ${user.isOnline ? 'online' : 'offline'}"></div>
-            </div>
-            <div class="user-details">
-                <h3>${displayName}</h3>
-                <p>${email}</p>
-                <div class="user-meta">
-                    <small>Bergabung: ${joinDate}</small>
-                    <small>Aktif: ${lastActive}</small>
-                </div>
-            </div>
-            <div class="user-actions">
-                <button class="follow-btn ${isFollowing ? 'following' : ''}" 
-                        data-uid="${user.uid}">
-                    ${isFollowing ? 'Mengikuti' : 'Ikuti'}
-                </button>
-                <button class="message-btn" 
-                        data-uid="${user.uid}"
-                        data-name="${displayName}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
-        return userElement;
-    }
 
     // Follow/unfollow functionality
     async function toggleFollow(targetUserId) {
