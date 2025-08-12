@@ -6746,11 +6746,253 @@ onAuthStateChanged(auth, async (user) => {
 
 
 
-// Enhanced User Following and Messaging System
-async function setupUserFollowingSystem() {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
 
+
+// 4. LAST LOGIN TRACKING
+async function trackUserPresence() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  // Update last login on initial load
+  await updateDoc(doc(db, 'users', currentUser.uid), {
+    lastLogin: serverTimestamp(),
+    isOnline: true
+  });
+
+  // Update status when user goes offline
+  window.addEventListener('beforeunload', async () => {
+    await updateDoc(doc(db, 'users', currentUser.uid), {
+      isOnline: false,
+      lastLogin: serverTimestamp()
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+// Fungsi untuk memuat daftar pengguna
+async function loadUsers(searchTerm = "") {
+    const usersList = document.getElementById('usersList');
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+        usersList.innerHTML = `
+            <div class="no-users-found">
+                <p>Silakan login untuk melihat pengguna lain</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Tampilkan loading state singkat
+    usersList.innerHTML = `
+        <div class="users-loader">
+            <div class="loader"></div>
+            <p>Memuat daftar pengguna...</p>
+        </div>
+    `;
+
+    try {
+        // Dapatkan semua dokumen users sekaligus
+        const usersRef = collection(db, 'users');
+        const snapshot = await getDocs(usersRef);
+        
+        // Filter data
+        let usersData = [];
+        snapshot.forEach(doc => {
+            const userData = doc.data();
+            if (userData.uid !== currentUser.uid) { // Exclude current user
+                usersData.push({
+                    id: doc.id,
+                    ...userData,
+                    displayName: userData.displayName || userData.email.split('@')[0] || 'Pengguna'
+                });
+            }
+        });
+
+        // Filter berdasarkan search term
+        if (searchTerm.trim() !== "") {
+            const searchLower = searchTerm.toLowerCase();
+            usersData = usersData.filter(user => 
+                user.displayName.toLowerCase().includes(searchLower) || 
+                user.email.toLowerCase().includes(searchLower)
+            );
+        }
+
+        // Urutkan berdasarkan nama
+        usersData.sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        // Hapus loading state
+        usersList.innerHTML = '';
+        
+        if (usersData.length === 0) {
+            usersList.innerHTML = `
+                <div class="no-users-found">
+                    <p>Tidak ada pengguna yang ditemukan</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Dapatkan daftar following user saat ini
+        const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const followingList = currentUserDoc.data()?.following || [];
+
+        // Tampilkan pengguna
+        usersData.forEach(user => {
+            const isFollowing = followingList.includes(user.uid);
+            const userElement = createUserElement(user, isFollowing);
+            usersList.appendChild(userElement);
+        });
+
+    } catch (error) {
+        console.error("Error loading users:", error);
+        usersList.innerHTML = `
+            <div class="error-message">
+                <p>Gagal memuat daftar pengguna</p>
+            </div>
+        `;
+    }
+}
+
+
+// Helper functions
+function formatTime(timestamp) {
+    if (!timestamp) return 'Tidak diketahui';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Baru saja';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+    
+    return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+function formatDate(timestamp) {
+    if (!timestamp) return 'Tidak diketahui';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+}
+
+// Inisialisasi
+document.addEventListener('DOMContentLoaded', () => {
+    const userSearchInput = document.getElementById('userSearchInput');
+    
+    // Load users saat input berubah (dengan debounce)
+    let searchTimeout;
+    userSearchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadUsers(e.target.value.trim());
+        }, 300);
+    });
+
+    // Load data awal
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loadUsers();
+            setupUserActions();
+        }
+    });
+});
+
+// Setup follow/unfollow actions
+function setupUserActions() {
+    document.addEventListener('click', async (e) => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        
+        // Follow button
+        if (e.target.classList.contains('follow-btn')) {
+            const btn = e.target;
+            const targetUserId = btn.dataset.uid;
+            const isFollowing = btn.classList.contains('following');
+            
+            try {
+                if (isFollowing) {
+                    await unfollowUser(currentUser.uid, targetUserId);
+                    btn.classList.remove('following');
+                    btn.textContent = '+ Ikuti';
+                } else {
+                    await followUser(currentUser.uid, targetUserId);
+                    btn.classList.add('following');
+                    btn.textContent = '✓ Mengikuti';
+                    
+                    // Tambahkan notifikasi
+                    const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    const currentUserName = currentUserDoc.data()?.displayName || currentUser.email;
+                    
+                    await addDoc(collection(db, 'notifications'), {
+                        userId: targetUserId,
+                        type: 'follow',
+                        senderId: currentUser.uid,
+                        senderName: currentUserName,
+                        timestamp: serverTimestamp(),
+                        read: false
+                    });
+                }
+            } catch (error) {
+                console.error("Error updating follow status:", error);
+                alert('Gagal memperbarui status follow');
+            }
+        }
+    });
+}
+
+// Fungsi bantuan follow/unfollow
+async function followUser(currentUserId, targetUserId) {
+    const batch = writeBatch(db);
+    
+    batch.update(doc(db, 'users', currentUserId), {
+        following: arrayUnion(targetUserId)
+    });
+    
+    batch.update(doc(db, 'users', targetUserId), {
+        followers: arrayUnion(currentUserId)
+    });
+    
+    await batch.commit();
+}
+
+async function unfollowUser(currentUserId, targetUserId) {
+    const batch = writeBatch(db);
+    
+    batch.update(doc(db, 'users', currentUserId), {
+        following: arrayRemove(targetUserId)
+    });
+    
+    batch.update(doc(db, 'users', targetUserId), {
+        followers: arrayRemove(currentUserId)
+    });
+    
+    await batch.commit();
+}
+
+
+
+
+
+// Enhanced User System with Search Functionality
+async function setupUserFollowingSystem() {
     const usersList = document.getElementById('usersList');
     const userSearchInput = document.getElementById('userSearchInput');
     
@@ -6758,10 +7000,18 @@ async function setupUserFollowingSystem() {
     let unsubscribeMessages = null;
     let currentChat = null;
 
-    // Load users with real-time updates
-    const loadUsers = async (searchTerm = '') => {
-        if (unsubscribeUsers) unsubscribeUsers();
-        
+    const loadUsers = async (searchTerm = "") => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            usersList.innerHTML = `
+                <div class="no-users-found">
+                    <p>Silakan login untuk melihat pengguna lain</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Show loading state
         usersList.innerHTML = `
             <div class="users-loader">
                 <div class="loader"></div>
@@ -6770,53 +7020,57 @@ async function setupUserFollowingSystem() {
         `;
 
         try {
-            // Base query - exclude current user
+            // Get current user's following list first
+            const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const followingList = currentUserDoc.data()?.following || [];
+            
+            // Base query for all users except current user
             let usersQuery = query(
                 collection(db, 'users'),
-                where('uid', '!=', currentUser.uid)
+                where('uid', '!=', currentUser.uid),
+                orderBy('displayName', 'asc')
             );
 
             // Add search filter if term exists
-            if (searchTerm.trim() !== '') {
+            if (searchTerm.trim() !== "") {
                 const searchLower = searchTerm.toLowerCase();
                 usersQuery = query(
                     collection(db, 'users'),
                     where('uid', '!=', currentUser.uid),
                     or(
-                        where('displayName', '>=', searchLower),
-                        where('displayName', '<=', searchLower + '\uf8ff'),
+                        where('displayNameLowerCase', '>=', searchLower),
+                        where('displayNameLowerCase', '<=', searchLower + '\uf8ff'),
                         where('email', '>=', searchLower),
                         where('email', '<=', searchLower + '\uf8ff')
-                    )
+                    ),
+                    orderBy('displayNameLowerCase')
                 );
             }
 
-            unsubscribeUsers = onSnapshot(usersQuery, async (snapshot) => {
-                if (snapshot.empty) {
-                    usersList.innerHTML = `
-                        <div class="no-users-found">
-                            <p>Tidak ada pengguna yang ditemukan</p>
-                        </div>
-                    `;
-                    return;
-                }
+            const snapshot = await getDocs(usersQuery);
+            
+            usersList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                usersList.innerHTML = `
+                    <div class="no-users-found">
+                        <p>Tidak ada pengguna yang ditemukan</p>
+                    </div>
+                `;
+                return;
+            }
 
-                // Get current user's following list
-                const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                const followingList = currentUserDoc.data()?.following || [];
-
-                usersList.innerHTML = '';
+            // Process each user
+            snapshot.forEach((doc) => {
+                const user = doc.data();
+                const isFollowing = followingList.includes(user.uid);
                 
-                snapshot.forEach(async (doc) => {
-                    const user = doc.data();
-                    const isFollowing = followingList.includes(user.uid);
-                    
-                    const userElement = createUserElement(user, isFollowing);
-                    usersList.appendChild(userElement);
-                });
+                const userElement = createUserElement(user, isFollowing);
+                usersList.appendChild(userElement);
             });
+
         } catch (error) {
-            console.error('Error loading users:', error);
+            console.error("Error loading users:", error);
             usersList.innerHTML = `
                 <div class="error-message">
                     <p>Gagal memuat daftar pengguna</p>
@@ -6825,9 +7079,52 @@ async function setupUserFollowingSystem() {
         }
     };
 
+    function createUserElement(user, isFollowing) {
+        const userElement = document.createElement('div');
+        userElement.className = 'user-item';
+        userElement.dataset.uid = user.uid;
+        
+        const displayName = user.displayName || user.email.split('@')[0] || 'Pengguna';
+        const email = user.email || 'Email tidak tersedia';
+        const lastActive = formatTime(user.lastLogin);
+        const joinDate = user.joinDate ? formatDate(user.joinDate) : 'Tanggal tidak tersedia';
+
+        userElement.innerHTML = `
+            <div class="user-avatar-container">
+                <div class="user-avatar">${displayName.charAt(0).toUpperCase()}</div>
+                <div class="user-status ${user.isOnline ? 'online' : 'offline'}"></div>
+            </div>
+            <div class="user-details">
+                <h3>${displayName}</h3>
+                <p>${email}</p>
+                <div class="user-meta">
+                    <small>Bergabung: ${joinDate}</small>
+                    <small>Aktif: ${lastActive}</small>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button class="follow-btn ${isFollowing ? 'following' : ''}" 
+                        data-uid="${user.uid}">
+                    ${isFollowing ? 'Mengikuti' : 'Ikuti'}
+                </button>
+                <button class="message-btn" 
+                        data-uid="${user.uid}"
+                        data-name="${displayName}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        return userElement;
+    }
 
     // Follow/unfollow functionality
     async function toggleFollow(targetUserId) {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        
         try {
             const currentUserRef = doc(db, 'users', currentUser.uid);
             const targetUserRef = doc(db, 'users', targetUserId);
@@ -6870,19 +7167,6 @@ async function setupUserFollowingSystem() {
                     'user',
                     currentUser.uid
                 );
-                
-                // Add to activity feed
-                const targetUserDoc = await getDoc(targetUserRef);
-                const targetUserName = targetUserDoc.data().displayName || targetUserDoc.data().email;
-                
-                await addDoc(collection(db, 'activities'), {
-                    userId: currentUser.uid,
-                    type: 'follow',
-                    targetUserId,
-                    targetUserName,
-                    timestamp: serverTimestamp(),
-                    details: `${currentUserName} mulai mengikuti ${targetUserName}`
-                });
                 
                 return { action: 'follow', success: true };
             }
@@ -6991,6 +7275,9 @@ async function setupUserFollowingSystem() {
 
     // Event listeners
     document.addEventListener('click', async (e) => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        
         // Follow button
         if (e.target.classList.contains('follow-btn')) {
             const btn = e.target;
@@ -7023,9 +7310,13 @@ async function setupUserFollowingSystem() {
         }
     });
 
-    // Search functionality
+    // Search functionality with debounce
+    let searchTimeout;
     userSearchInput.addEventListener('input', (e) => {
-        loadUsers(e.target.value.trim());
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadUsers(e.target.value.trim());
+        }, 300);
     });
 
     // Send message button
@@ -7051,228 +7342,21 @@ async function setupUserFollowingSystem() {
         });
     });
 
-    // Initialize
-    loadUsers();
-}
-
-
-
-
-
-
-
-
-// 4. LAST LOGIN TRACKING
-async function trackUserPresence() {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
-
-  // Update last login on initial load
-  await updateDoc(doc(db, 'users', currentUser.uid), {
-    lastLogin: serverTimestamp(),
-    isOnline: true
-  });
-
-  // Update status when user goes offline
-  window.addEventListener('beforeunload', async () => {
-    await updateDoc(doc(db, 'users', currentUser.uid), {
-      isOnline: false,
-      lastLogin: serverTimestamp()
-    });
-  });
-}
-
-
-
-
-
-
-
-
-// Fungsi untuk memuat daftar pengguna
-async function loadUsers(searchTerm = "") {
-    const usersList = document.getElementById('usersList');
-    const currentUser = auth.currentUser;
-    
-    if (!currentUser) {
-        usersList.innerHTML = `
-            <div class="no-users-found">
-                <p>Silakan login untuk melihat pengguna lain</p>
-            </div>
-        `;
-        return;
-    }
-
-    // Tampilkan loading state singkat (1 detik)
-    usersList.innerHTML = `
-        <div class="users-loader">
-            <div class="loader"></div>
-            <p>Memuat daftar pengguna...</p>
-        </div>
-    `;
-
-    try {
-        // Buat query pencarian
-        let usersQuery;
-        if (searchTerm.trim() === "") {
-            usersQuery = query(
-                collection(db, 'users'),
-                where('uid', '!=', currentUser.uid), // Exclude current user
-                orderBy('displayName', 'asc'),
-                limit(20)
-            );
+    // Initialize with current auth state
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loadUsers();
         } else {
-            const searchLower = searchTerm.toLowerCase();
-            usersQuery = query(
-                collection(db, 'users'),
-                where('uid', '!=', currentUser.uid),
-                orderBy('displayName'),
-                startAt(searchLower),
-                endAt(searchLower + '\uf8ff'),
-                limit(20)
-            );
-        }
-
-        const snapshot = await getDocs(usersQuery);
-        
-        // Hapus loading state
-        usersList.innerHTML = '';
-        
-        if (snapshot.empty) {
             usersList.innerHTML = `
                 <div class="no-users-found">
-                    <p>Tidak ada pengguna yang ditemukan</p>
+                    <p>Silakan login untuk melihat pengguna lain</p>
                 </div>
             `;
-            return;
-        }
-
-        // Dapatkan daftar following user saat ini
-        const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const followingList = currentUserDoc.data()?.following || [];
-
-        // Tampilkan pengguna
-        snapshot.forEach((doc) => {
-            const user = doc.data();
-            const isFollowing = followingList.includes(user.uid);
-            
-            const userElement = createUserElement(user, isFollowing);
-            usersList.appendChild(userElement);
-        });
-
-    } catch (error) {
-        console.error("Error loading users:", error);
-        usersList.innerHTML = `
-            <div class="error-message">
-                <p>Gagal memuat daftar pengguna</p>
-            </div>
-        `;
-    }
-}
-
-// Fungsi untuk membuat elemen pengguna
-function createUserElement(user, isFollowing) {
-    const userElement = document.createElement('div');
-    userElement.className = 'user-item';
-    userElement.dataset.uid = user.uid;
-    
-    userElement.innerHTML = `
-        <div class="user-avatar-container">
-            <div class="user-avatar">
-                ${user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
-            </div>
-            <div class="user-status ${user.isOnline ? 'online' : 'offline'}"></div>
-        </div>
-        <div class="user-details">
-            <h3>${user.displayName || user.email.split('@')[0]}</h3>
-            <p>${user.email}</p>
-            <small>Terakhir online: ${formatTime(user.lastLogin)}</small>
-        </div>
-        <div class="user-actions">
-            <button class="follow-btn ${isFollowing ? 'following' : ''}" 
-                    data-uid="${user.uid}">
-                ${isFollowing ? 'Mengikuti' : 'Ikuti'}
-            </button>
-            <button class="message-btn" 
-                    data-uid="${user.uid}"
-                    data-name="${user.displayName || user.email}">
-                Pesan
-            </button>
-        </div>
-    `;
-    
-    return userElement;
-}
-
-
-// Setup event listeners
-function setupUserActions() {
-    // Search input
-    document.getElementById('userSearchInput').addEventListener('input', (e) => {
-        loadUsers(e.target.value.trim());
-    });
-
-    // Follow button
-    document.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('follow-btn')) {
-            const btn = e.target;
-            const targetUserId = btn.dataset.uid;
-            const isFollowing = btn.classList.contains('following');
-            
-            try {
-                if (isFollowing) {
-                    await unfollowUser(currentUser.uid, targetUserId);
-                    btn.classList.remove('following');
-                    btn.textContent = 'Ikuti';
-                } else {
-                    await followUser(currentUser.uid, targetUserId);
-                    btn.classList.add('following');
-                    btn.textContent = 'Mengikuti';
-                }
-            } catch (error) {
-                console.error("Error updating follow status:", error);
-                alert('Gagal memperbarui status follow');
-            }
         }
     });
 }
 
-// Fungsi follow/unfollow
-async function followUser(currentUserId, targetUserId) {
-    const batch = writeBatch(db);
-    
-    batch.update(doc(db, 'users', currentUserId), {
-        following: arrayUnion(targetUserId)
-    });
-    
-    batch.update(doc(db, 'users', targetUserId), {
-        followers: arrayUnion(currentUserId)
-    });
-    
-    await batch.commit();
-}
 
-async function unfollowUser(currentUserId, targetUserId) {
-    const batch = writeBatch(db);
-    
-    batch.update(doc(db, 'users', currentUserId), {
-        following: arrayRemove(targetUserId)
-    });
-    
-    batch.update(doc(db, 'users', targetUserId), {
-        followers: arrayRemove(currentUserId)
-    });
-    
-    await batch.commit();
-}
-
-// Initialize
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        loadUsers();
-        setupUserActions();
-    }
-});
 
 
 
