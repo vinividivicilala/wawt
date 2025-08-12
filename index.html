@@ -6822,11 +6822,6 @@ async function setupUserFollowingAndMessaging() {
 
 
 
-
-
-
-
-
 async function loadUsers(searchTerm = "") {
     const usersListEl = document.getElementById('usersList');
     if (!usersListEl) {
@@ -6852,35 +6847,33 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
-        let usersQuery;
+        const searchLower = searchTerm.trim().toLowerCase();
 
-        if (searchTerm.trim() === "") {
-            // Tanpa pencarian → urutkan berdasarkan nama
-            usersQuery = query(
-                collection(db, 'users'),
-                where('uid', '!=', currentUser.uid),
-                orderBy('displayName'),
-                limit(20)
-            );
-        } else {
-            const searchLower = searchTerm.toLowerCase();
+        // Query dasar: ambil user selain user yang login
+        const baseQuery = query(
+            collection(db, 'users'),
+            where('uid', '!=', currentUser.uid),
+            orderBy('displayName'),
+            limit(50) // ambil lebih banyak dulu, nanti filter di JS
+        );
 
-            // Pencarian hanya berdasarkan displayName (versi sederhana)
-            // NOTE: Firestore tidak mendukung pencarian OR di 2 field sekaligus tanpa index gabungan
-            usersQuery = query(
-                collection(db, 'users'),
-                where('uid', '!=', currentUser.uid),
-                orderBy('displayNameLower'), // buat field ini di Firestore untuk pencarian
-                startAt(searchLower),
-                endAt(searchLower + '\uf8ff'),
-                limit(20)
+        const snapshot = await getDocs(baseQuery);
+        let usersData = snapshot.docs.map(doc => doc.data());
+
+        // Filter manual di JavaScript untuk pencarian nama/email
+        if (searchLower) {
+            usersData = usersData.filter(user =>
+                user.displayName?.toLowerCase().includes(searchLower) ||
+                user.email?.toLowerCase().includes(searchLower)
             );
         }
 
-        const snapshot = await getDocs(usersQuery);
+        // Batasi hasil akhir agar maksimal 20
+        usersData = usersData.slice(0, 20);
+
         usersListEl.innerHTML = '';
 
-        if (snapshot.empty) {
+        if (usersData.length === 0) {
             usersListEl.innerHTML = `
                 <div class="no-users-found">
                     <p>Tidak ada pengguna yang ditemukan</p>
@@ -6889,12 +6882,12 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
-        // Ambil daftar following
+        // Ambil daftar following user saat ini
         const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
         const followingList = currentUserDoc.data()?.following || [];
 
-        snapshot.forEach((docSnap) => {
-            const user = docSnap.data();
+        // Render daftar pengguna
+        usersData.forEach(user => {
             const isFollowing = followingList.includes(user.uid);
             const userElement = createUserElement(user, isFollowing);
             usersListEl.appendChild(userElement);
@@ -6909,9 +6902,6 @@ async function loadUsers(searchTerm = "") {
         `;
     }
 }
-
-
-
 
 
 
