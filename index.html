@@ -6749,54 +6749,74 @@ async function trackUserPresence() {
 
 
  
-
-
-
-
-// 1. USER FOLLOWING & MESSAGING SYSTEM
 async function setupUserFollowingAndMessaging() {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
-  // Fetch all users except current user
-  const usersSnapshot = await getDocs(
-    query(collection(db, 'users'), where('uid', '!=', currentUser.uid))
-  );
+    const usersListEl = document.getElementById('usersList');
+    if (!usersListEl) {
+        console.warn("Elemen #usersList tidak ditemukan di halaman");
+        return;
+    }
 
-  // Display users list with follow buttons
-  const usersListHTML = usersSnapshot.docs.map(doc => {
-    const user = doc.data();
-    return `
-      <div class="user-item" data-uid="${user.uid}">
-        <div class="user-avatar">${user.displayName?.charAt(0) || 'U'}</div>
-        <div class="user-info">
-          <h4>${user.displayName || user.email}</h4>
-          <p>${user.email}</p>
-          <small>Terakhir online: ${user.lastLogin ? formatTime(user.lastLogin) : 'Tidak diketahui'}</small>
-        </div>
-        <button class="follow-btn" data-uid="${user.uid}">Ikuti</button>
-        <button class="message-btn" data-uid="${user.uid}">Pesan</button>
-      </div>
-    `;
-  }).join('');
+    try {
+        // Ambil semua user kecuali user saat ini
+        const usersSnapshot = await getDocs(
+            query(collection(db, 'users'), where('uid', '!=', currentUser.uid))
+        );
 
-  document.getElementById('usersListContainer').innerHTML = usersListHTML;
+        if (usersSnapshot.empty) {
+            usersListEl.innerHTML = `
+                <div class="no-users-found">
+                    <p>Tidak ada pengguna lain</p>
+                </div>
+            `;
+            return;
+        }
 
-  // Follow button functionality
-  document.querySelectorAll('.follow-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const targetUserId = btn.dataset.uid;
-      await followUser(currentUser.uid, targetUserId);
-    });
-  });
+        // Tampilkan daftar user
+        const usersListHTML = usersSnapshot.docs.map(docSnap => {
+            const user = docSnap.data();
+            return `
+                <div class="user-item" data-uid="${user.uid}">
+                    <div class="user-avatar">${user.displayName?.charAt(0) || 'U'}</div>
+                    <div class="user-info">
+                        <h4>${user.displayName || user.email}</h4>
+                        <p>${user.email}</p>
+                        <small>Terakhir online: ${user.lastLogin ? formatTime(user.lastLogin) : 'Tidak diketahui'}</small>
+                    </div>
+                    <button class="follow-btn" data-uid="${user.uid}">Ikuti</button>
+                    <button class="message-btn" data-uid="${user.uid}">Pesan</button>
+                </div>
+            `;
+        }).join('');
 
-  // Message button functionality
-  document.querySelectorAll('.message-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const targetUserId = btn.dataset.uid;
-      openMessageDialog(currentUser.uid, targetUserId);
-    });
-  });
+        usersListEl.innerHTML = usersListHTML;
+
+        // Event follow
+        usersListEl.querySelectorAll('.follow-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const targetUserId = btn.dataset.uid;
+                await followUser(currentUser.uid, targetUserId);
+            });
+        });
+
+        // Event kirim pesan
+        usersListEl.querySelectorAll('.message-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const targetUserId = btn.dataset.uid;
+                openMessageDialog(currentUser.uid, targetUserId);
+            });
+        });
+
+    } catch (error) {
+        console.error("Gagal memuat pengguna:", error);
+        usersListEl.innerHTML = `
+            <div class="error-message">
+                <p>Gagal memuat daftar pengguna</p>
+            </div>
+        `;
+    }
 }
 
 
@@ -6808,10 +6828,13 @@ async function setupUserFollowingAndMessaging() {
 
 
 async function loadUsers(searchTerm = "") {
-    const usersList = document.getElementById('usersList');
-    
-    // Tampilkan loading state
-    usersList.innerHTML = `
+    const usersListEl = document.getElementById('usersList');
+    if (!usersListEl) {
+        console.warn("Elemen #usersList tidak ditemukan di halaman");
+        return;
+    }
+
+    usersListEl.innerHTML = `
         <div class="users-loader">
             <div class="loader"></div>
             <p>Memuat daftar pengguna...</p>
@@ -6819,11 +6842,9 @@ async function loadUsers(searchTerm = "") {
     `;
 
     try {
-        let usersQuery;
         const currentUser = auth.currentUser;
-        
         if (!currentUser) {
-            usersList.innerHTML = `
+            usersListEl.innerHTML = `
                 <div class="no-users-found">
                     <p>Silakan login untuk melihat pengguna lain</p>
                 </div>
@@ -6831,8 +6852,10 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
+        let usersQuery;
+
         if (searchTerm.trim() === "") {
-            // Query semua pengguna kecuali yang sedang login
+            // Tanpa pencarian → urutkan berdasarkan nama
             usersQuery = query(
                 collection(db, 'users'),
                 where('uid', '!=', currentUser.uid),
@@ -6841,25 +6864,24 @@ async function loadUsers(searchTerm = "") {
             );
         } else {
             const searchLower = searchTerm.toLowerCase();
-            // Query dengan pencarian (nama atau email)
+
+            // Pencarian hanya berdasarkan displayName (versi sederhana)
+            // NOTE: Firestore tidak mendukung pencarian OR di 2 field sekaligus tanpa index gabungan
             usersQuery = query(
                 collection(db, 'users'),
                 where('uid', '!=', currentUser.uid),
-                or(
-                    where('displayName', '>=', searchLower),
-                    where('displayName', '<=', searchLower + '\uf8ff'),
-                    where('email', '>=', searchLower),
-                    where('email', '<=', searchLower + '\uf8ff')
-                ),
+                orderBy('displayNameLower'), // buat field ini di Firestore untuk pencarian
+                startAt(searchLower),
+                endAt(searchLower + '\uf8ff'),
                 limit(20)
             );
         }
 
         const snapshot = await getDocs(usersQuery);
-        usersList.innerHTML = '';
+        usersListEl.innerHTML = '';
 
         if (snapshot.empty) {
-            usersList.innerHTML = `
+            usersListEl.innerHTML = `
                 <div class="no-users-found">
                     <p>Tidak ada pengguna yang ditemukan</p>
                 </div>
@@ -6867,28 +6889,35 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
-        // Dapatkan daftar following user saat ini
+        // Ambil daftar following
         const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
         const followingList = currentUserDoc.data()?.following || [];
 
-        // Proses setiap user
-        snapshot.forEach((doc) => {
-            const user = doc.data();
+        snapshot.forEach((docSnap) => {
+            const user = docSnap.data();
             const isFollowing = followingList.includes(user.uid);
-            
             const userElement = createUserElement(user, isFollowing);
-            usersList.appendChild(userElement);
+            usersListEl.appendChild(userElement);
         });
 
     } catch (error) {
         console.error("Error loading users:", error);
-        usersList.innerHTML = `
+        usersListEl.innerHTML = `
             <div class="error-message">
                 <p>Gagal memuat daftar pengguna</p>
             </div>
         `;
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
