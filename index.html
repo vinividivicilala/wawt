@@ -6889,6 +6889,10 @@ function createUserElement(user, isFollowing) {
 }
 
 
+
+let currentUser = null;
+let unsubscribeUsers = null; // kalau ini juga dipakai
+
 // Inisialisasi saat auth state berubah
 onAuthStateChanged(auth, (user) => {
     currentUser = user;
