@@ -6826,10 +6826,9 @@ async function setupUserFollowingAndMessaging() {
 
 
 
+// Fungsi utama untuk memuat dan mencari pengguna
 async function loadUsers(searchTerm = "") {
     const usersList = document.getElementById('usersList');
-    const currentUser = auth.currentUser;
-    
     if (!currentUser) {
         usersList.innerHTML = `
             <div class="no-users-found">
@@ -6848,21 +6847,20 @@ async function loadUsers(searchTerm = "") {
     `;
 
     try {
+        // Hentikan listener sebelumnya jika ada
+        if (unsubscribeUsers) unsubscribeUsers();
+
+        // Buat query berdasarkan search term
         let usersQuery;
-        const searchLower = searchTerm.toLowerCase();
-        
         if (searchTerm.trim() === "") {
-            // Query dasar: semua pengguna kecuali yang sedang login
             usersQuery = query(
                 collection(db, 'users'),
-                and(
-                    where('uid', '!=', currentUser.uid),
-                    orderBy('displayName')
-                ),
+                where('uid', '!=', currentUser.uid),
+                orderBy('displayName'),
                 limit(20)
             );
         } else {
-            // Query dengan pencarian: gabungkan filter dengan AND
+            const searchLower = searchTerm.toLowerCase();
             usersQuery = query(
                 collection(db, 'users'),
                 and(
@@ -6879,29 +6877,31 @@ async function loadUsers(searchTerm = "") {
             );
         }
 
-        const snapshot = await getDocs(usersQuery);
-        usersList.innerHTML = '';
-        
-        if (snapshot.empty) {
-            usersList.innerHTML = `
-                <div class="no-users-found">
-                    <p>Tidak ada pengguna yang ditemukan</p>
-                </div>
-            `;
-            return;
-        }
-
-        // Dapatkan daftar following user saat ini
-        const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const followingList = currentUserDoc.data()?.following || [];
-
-        // Proses setiap user
-        snapshot.forEach((doc) => {
-            const user = doc.data();
-            const isFollowing = followingList.includes(user.uid);
+        // Gunakan realtime listener
+        unsubscribeUsers = onSnapshot(usersQuery, async (snapshot) => {
+            usersList.innerHTML = '';
             
-            const userElement = createUserElement(user, isFollowing);
-            usersList.appendChild(userElement);
+            if (snapshot.empty) {
+                usersList.innerHTML = `
+                    <div class="no-users-found">
+                        <p>Tidak ada pengguna yang ditemukan</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Dapatkan daftar following user saat ini
+            const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const followingList = currentUserDoc.data()?.following || [];
+
+            // Proses setiap user
+            snapshot.forEach((doc) => {
+                const user = doc.data();
+                const isFollowing = followingList.includes(user.uid);
+                
+                const userElement = createUserElement(user, isFollowing);
+                usersList.appendChild(userElement);
+            });
         });
 
     } catch (error) {
@@ -6914,34 +6914,23 @@ async function loadUsers(searchTerm = "") {
     }
 }
 
-
-
-
-
+// Fungsi pembuat elemen user dengan styling yang sesuai
 function createUserElement(user, isFollowing) {
     const userElement = document.createElement('div');
     userElement.className = 'user-item';
     userElement.dataset.uid = user.uid;
     
-    // Format avatar (gunakan inisial jika tidak ada foto)
-    const avatarContent = user.photoURL ? 
-        `<img src="${user.photoURL}" alt="${user.displayName}" class="user-avatar-img">` : 
-        `<div class="user-avatar-initial">${user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</div>`;
-    
-    // Format status online
-    const lastOnline = user.lastLogin ? formatTime(user.lastLogin) : 'Tidak diketahui';
-    
     userElement.innerHTML = `
         <div class="user-avatar-container">
             <div class="user-avatar">
-                ${avatarContent}
+                ${user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
             </div>
             <div class="user-status ${user.isOnline ? 'online' : 'offline'}"></div>
         </div>
         <div class="user-details">
             <h3>${user.displayName || user.email.split('@')[0]}</h3>
             <p>${user.email}</p>
-            <small>${user.isOnline ? 'Online' : `Terakhir online: ${lastOnline}`}</small>
+            <small>Terakhir online: ${formatTime(user.lastLogin)}</small>
         </div>
         <div class="user-actions">
             <button class="follow-btn ${isFollowing ? 'following' : ''}" 
@@ -6958,14 +6947,6 @@ function createUserElement(user, isFollowing) {
     
     return userElement;
 }
-
-
-
-
-
-
-
-
 
 
 
