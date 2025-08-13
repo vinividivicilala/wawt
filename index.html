@@ -3709,6 +3709,104 @@ iframe:hover {
 
 
 	
+/* Style untuk chat modal */
+#messageModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1e1e1e;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#messageHistory {
+  height: 300px;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.message {
+  margin-bottom: 15px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.message.sent {
+  margin-left: auto;
+  text-align: right;
+}
+
+.message.received {
+  margin-right: auto;
+  text-align: left;
+}
+
+.message-content {
+  padding: 10px 15px;
+  border-radius: 18px;
+  display: inline-block;
+}
+
+.message.sent .message-content {
+  background: #4a6fa5;
+  color: white;
+}
+
+.message.received .message-content {
+  background: #333;
+  color: white;
+}
+
+.message-time {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 5px;
+}
+
+#messageInput {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #333;
+  color: white;
+  resize: none;
+  margin: 10px 0;
+}
+
+.modal-footer {
+  padding: 15px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
   </style>
 </head>
@@ -7549,9 +7647,7 @@ setupUserFollowingSystem();
 	
 	
 	
-	
-	
-	// Ganti fungsi toggleFollow dengan ini
+// Fungsi toggleFollow yang diperbarui
 async function toggleFollow(targetUserId) {
   const currentUser = auth.currentUser;
   if (!currentUser) return { success: false, error: "User not logged in" };
@@ -7560,73 +7656,101 @@ async function toggleFollow(targetUserId) {
     const currentUserRef = doc(db, 'users', currentUser.uid);
     const targetUserRef = doc(db, 'users', targetUserId);
     
-    // Pastikan dokumen target user ada
+    // Pastikan dokumen user target ada
     const targetUserDoc = await getDoc(targetUserRef);
     if (!targetUserDoc.exists()) {
-      // Buat dokumen user target jika belum ada
       await setDoc(targetUserRef, {
         uid: targetUserId,
         followers: [],
         following: [],
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp()
       });
     }
+
+    // Gunakan transaction untuk konsistensi data
+    await runTransaction(db, async (transaction) => {
+      const currentUserDoc = await transaction.get(currentUserRef);
+      const targetUserDoc = await transaction.get(targetUserRef);
+      
+      if (!currentUserDoc.exists() || !targetUserDoc.exists()) {
+        throw "Dokumen pengguna tidak ditemukan";
+      }
+      
+      const currentFollowing = currentUserDoc.data().following || [];
+      const targetFollowers = targetUserDoc.data().followers || [];
+      const isFollowing = currentFollowing.includes(targetUserId);
+      
+      if (isFollowing) {
+        // Unfollow
+        transaction.update(currentUserRef, {
+          following: arrayRemove(targetUserId)
+        });
+        transaction.update(targetUserRef, {
+          followers: arrayRemove(currentUser.uid)
+        });
+      } else {
+        // Follow
+        transaction.update(currentUserRef, {
+          following: arrayUnion(targetUserId)
+        });
+        transaction.update(targetUserRef, {
+          followers: arrayUnion(currentUser.uid)
+        });
+        
+        // Buat notifikasi
+        const currentUserName = currentUserDoc.data().displayName || currentUser.email;
+        await addDoc(collection(db, 'notifications'), {
+          userId: targetUserId,
+          type: 'follow',
+          senderId: currentUser.uid,
+          senderName: currentUserName,
+          timestamp: serverTimestamp(),
+          read: false
+        });
+      }
+    });
     
-    // Check current follow status
-    const currentUserDoc = await getDoc(currentUserRef);
-    const isFollowing = (currentUserDoc.data()?.following || []).includes(targetUserId);
-    
-    if (isFollowing) {
-      // Unfollow
-      await updateDoc(currentUserRef, {
-        following: arrayRemove(targetUserId)
-      });
-      
-      await updateDoc(targetUserRef, {
-        followers: arrayRemove(currentUser.uid)
-      });
-      
-      return { action: 'unfollow', success: true };
-    } else {
-      // Follow
-      await updateDoc(currentUserRef, {
-        following: arrayUnion(targetUserId)
-      });
-      
-      await updateDoc(targetUserRef, {
-        followers: arrayUnion(currentUser.uid)
-      });
-      
-      // Buat notifikasi
-      const currentUserName = currentUserDoc.data()?.displayName || currentUser.email;
-      await addDoc(collection(db, 'notifications'), {
-        userId: targetUserId,
-        type: 'follow',
-        senderId: currentUser.uid,
-        senderName: currentUserName,
-        timestamp: serverTimestamp(),
-        read: false
-      });
-      
-      return { action: 'follow', success: true };
-    }
+    return { success: true, action: isFollowing ? 'unfollow' : 'follow' };
   } catch (error) {
     console.error('Error toggling follow status:', error);
     return { success: false, error };
   }
 }
+
+// Event listener untuk tombol follow
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('follow-btn')) {
+    const btn = e.target;
+    const targetUserId = btn.dataset.uid;
+    
+    try {
+      const result = await toggleFollow(targetUserId);
+      if (result.success) {
+        // Update UI
+        btn.classList.toggle('following');
+        btn.textContent = btn.classList.contains('following') ? '✓ Mengikuti' : '+ Ikuti';
+        
+        // Muat ulang daftar pengguna untuk update statistik
+        loadUsers(document.getElementById('userSearchInput').value.trim());
+      } else {
+        alert('Gagal memperbarui status follow');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Terjadi kesalahan');
+    }
+  }
+});	
 	
 	
-	
-	
-	
+
+
+
+ let currentUser = null;
+  let unsubscribeUsers = null;
+let currentChat = null;
 let unsubscribeMessages = null;
-  let currentChat = null;
-
-
-
-
-
 
 // Fungsi untuk membuka chat
 async function openChat(targetUserId, targetUserName) {
@@ -7636,30 +7760,47 @@ async function openChat(targetUserId, targetUserName) {
     return;
   }
 
-  // Generate chat ID yang konsisten (urutkan ID untuk konsistensi)
+  // Generate chat ID yang konsisten
   const chatId = [currentUser.uid, targetUserId].sort().join('_');
   
-  // Buat dokumen chat jika belum ada
-  const chatRef = doc(db, 'chats', chatId);
-  const chatDoc = await getDoc(chatRef);
-  
-  if (!chatDoc.exists()) {
-    await setDoc(chatRef, {
-      participants: [currentUser.uid, targetUserId],
-      createdAt: serverTimestamp(),
-      lastMessage: null
-    });
-  }
+  // Buat/update dokumen chat
+  await setDoc(doc(db, 'chats', chatId), {
+    participants: {
+      [currentUser.uid]: true,
+      [targetUserId]: true
+    },
+    participantNames: {
+      [currentUser.uid]: currentUser.displayName || currentUser.email,
+      [targetUserId]: targetUserName
+    },
+    lastUpdated: serverTimestamp()
+  }, { merge: true });
+
+  // Set current chat
+  currentChat = {
+    chatId,
+    userId: targetUserId,
+    name: targetUserName
+  };
 
   // Load messages
+  loadChatMessages(chatId);
+  
+  // Update UI
+  document.getElementById('messageModalTitle').textContent = `Pesan ke ${targetUserName}`;
+  document.getElementById('messageModal').style.display = 'block';
+}
+
+// Fungsi untuk memuat pesan
+function loadChatMessages(chatId) {
+  // Unsubscribe previous listener
+  if (unsubscribeMessages) unsubscribeMessages();
+  
   const messagesQuery = query(
     collection(db, 'chats', chatId, 'messages'),
     orderBy('timestamp', 'asc')
   );
 
-  // Unsubscribe previous listener
-  if (unsubscribeMessages) unsubscribeMessages();
-  
   // Subscribe to messages
   unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
     const messageHistory = document.getElementById('messageHistory');
@@ -7667,68 +7808,49 @@ async function openChat(targetUserId, targetUserName) {
     
     snapshot.forEach((doc) => {
       const message = doc.data();
-      const isCurrentUser = message.senderId === currentUser.uid;
-      
-      const messageElement = document.createElement('div');
-      messageElement.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
-      messageElement.innerHTML = `
-        <div class="message-content">${message.content}</div>
-        <div class="message-time">${formatTime(message.timestamp)}</div>
-      `;
-      
-      messageHistory.appendChild(messageElement);
+      displayMessage(message, message.senderId === auth.currentUser.uid);
     });
     
     // Scroll to bottom
     messageHistory.scrollTop = messageHistory.scrollHeight;
   });
-
-  // Update UI
-  document.getElementById('messageModalTitle').textContent = `Pesan ke ${targetUserName}`;
-  document.getElementById('messageModal').style.display = 'block';
 }
 
-
-
-
-
-
-
-
-
-
-
- let currentUser = null;
-  let unsubscribeUsers = null;
-
-
-
-
-
-
-
-
+// Fungsi untuk menampilkan pesan
+function displayMessage(message, isCurrentUser) {
+  const messageElement = document.createElement('div');
+  messageElement.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
+  messageElement.innerHTML = `
+    <div class="message-content">${message.content}</div>
+    <div class="message-time">${formatTime(message.timestamp)}</div>
+  `;
+  document.getElementById('messageHistory').appendChild(messageElement);
+}
 
 // Fungsi untuk mengirim pesan
-async function sendMessage(content) {
-  if (!content.trim() || !currentChat || !currentUser) return false;
+async function sendMessage() {
+  const messageInput = document.getElementById('messageInput');
+  const content = messageInput.value.trim();
+  
+  if (!content || !currentChat || !auth.currentUser) return false;
   
   try {
     const chatId = currentChat.chatId;
+    const currentUser = auth.currentUser;
     
     // Simpan pesan
     await addDoc(collection(db, 'chats', chatId, 'messages'), {
       senderId: currentUser.uid,
-      receiverId: currentChat.userId,
-      content: content.trim(),
+      content: content,
       timestamp: serverTimestamp(),
       read: false
     });
     
-    // Update last message in chat
+    // Update last message timestamp
     await updateDoc(doc(db, 'chats', chatId), {
+      lastUpdated: serverTimestamp(),
       lastMessage: {
-        content: content.trim(),
+        content: content,
         timestamp: serverTimestamp(),
         senderId: currentUser.uid
       }
@@ -7749,6 +7871,7 @@ async function sendMessage(content) {
       chatId: chatId
     });
     
+    messageInput.value = '';
     return true;
   } catch (error) {
     console.error('Error sending message:', error);
@@ -7756,68 +7879,8 @@ async function sendMessage(content) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-    // Event listeners
-    document.addEventListener('click', async (e) => {
-        // Follow button
-        if (e.target.classList.contains('follow-btn')) {
-            const btn = e.target;
-            const targetUserId = btn.dataset.uid;
-            
-            try {
-                const result = await toggleFollow(targetUserId);
-                if (result.success) {
-                    if (result.action === 'follow') {
-                        btn.classList.add('following');
-                        btn.textContent = 'Mengikuti';
-                    } else {
-                        btn.classList.remove('following');
-                        btn.textContent = 'Ikuti';
-                    }
-                } else {
-                    alert('Gagal memperbarui status follow');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan');
-            }
-        }
-        
-        // Message button
-        if (e.target.classList.contains('message-btn')) {
-            const targetUserId = e.target.dataset.uid;
-            const targetUserName = e.target.dataset.name;
-            openChat(targetUserId, targetUserName);
-        }
-    });
-
-    // Search functionality with debounce
-    let searchTimeout;
-    userSearchInput.addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            loadUsers(e.target.value.trim());
-        }, 300);
-    });
-
-  // Event listener untuk tombol kirim pesan
-document.getElementById('sendMessageBtn').addEventListener('click', async () => {
-  const messageInput = document.getElementById('messageInput');
-  const success = await sendMessage(messageInput.value);
-  if (success) {
-    messageInput.value = '';
-  } else {
-    alert('Gagal mengirim pesan');
-  }
-});
+// Event listener untuk tombol kirim pesan
+document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
 
 // Event listener untuk tombol close modal
 document.querySelectorAll('.close-modal, .close-message-modal').forEach(btn => {
@@ -7830,8 +7893,6 @@ document.querySelectorAll('.close-modal, .close-message-modal').forEach(btn => {
     currentChat = null;
   });
 });
-
-
 
 
 
