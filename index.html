@@ -7166,11 +7166,8 @@ async function unfollowUser(currentUserId, targetUserId) {
 async function setupUserFollowingSystem() {
   const usersList = document.getElementById('usersList');
   const userSearchInput = document.getElementById('userSearchInput');
-  
-  let currentUser = null;
-  let unsubscribeUsers = null;
-  
-
+ 
+ 
   // Fungsi untuk memuat daftar pengguna
   const loadUsers = async (searchTerm = "") => {
     if (!currentUser) {
@@ -7453,6 +7450,10 @@ async function openChat(targetUserId, targetUserName) {
   // Show modal
   messageModal.style.display = 'block';
 }
+
+
+ let currentUser = null;
+  let unsubscribeUsers = null;
 
 // Fungsi untuk mengirim pesan
 async function sendMessage(content) {
