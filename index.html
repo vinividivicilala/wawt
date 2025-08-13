@@ -7333,62 +7333,11 @@ async function setupUserFollowingSystem() {
 
 // Panggil fungsi setup saat halaman dimuat
 setupUserFollowingSystem();
-	
-	
-async function toggleFollow(targetUserId) {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return { success: false, error: "User not logged in" };
-  
-  try {
-    const currentUserRef = doc(db, 'users', currentUser.uid);
-    const targetUserRef = doc(db, 'users', targetUserId);
-    
-    // Check current follow status
-    const currentUserDoc = await getDoc(currentUserRef);
-    const isFollowing = (currentUserDoc.data()?.following || []).includes(targetUserId);
-    
-    if (isFollowing) {
-      // Unfollow - hapus dari following pengguna dan followers target
-      await updateDoc(currentUserRef, {
-        following: arrayRemove(targetUserId)
-      });
-      
-      await updateDoc(targetUserRef, {
-        followers: arrayRemove(currentUser.uid)
-      });
-      
-      return { action: 'unfollow', success: true };
-    } else {
-      // Follow - tambahkan ke following pengguna dan followers target
-      await updateDoc(currentUserRef, {
-        following: arrayUnion(targetUserId)
-      });
-      
-      await updateDoc(targetUserRef, {
-        followers: arrayUnion(currentUser.uid)
-      });
-      
-      // Buat notifikasi
-      const currentUserName = currentUserDoc.data().displayName || currentUser.email;
-      await addDoc(collection(db, 'notifications'), {
-        userId: targetUserId,
-        type: 'follow',
-        senderId: currentUser.uid,
-        senderName: currentUserName,
-        timestamp: serverTimestamp(),
-        read: false
-      });
-      
-      return { action: 'follow', success: true };
-    }
-  } catch (error) {
-    console.error('Error toggling follow status:', error);
-    return { success: false, error };
-  }
-}	
-	
-	
-	
+
+
+
+
+
 
 
 
@@ -7560,10 +7509,62 @@ async function sendMessage(content) {
     });
 
 
-
-
-
-
+	
+	
+async function toggleFollow(targetUserId) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return { success: false, error: "User not logged in" };
+  
+  try {
+    const currentUserRef = doc(db, 'users', currentUser.uid);
+    const targetUserRef = doc(db, 'users', targetUserId);
+    
+    // Check current follow status
+    const currentUserDoc = await getDoc(currentUserRef);
+    const isFollowing = (currentUserDoc.data()?.following || []).includes(targetUserId);
+    
+    if (isFollowing) {
+      // Unfollow - hapus dari following pengguna dan followers target
+      await updateDoc(currentUserRef, {
+        following: arrayRemove(targetUserId)
+      });
+      
+      await updateDoc(targetUserRef, {
+        followers: arrayRemove(currentUser.uid)
+      });
+      
+      return { action: 'unfollow', success: true };
+    } else {
+      // Follow - tambahkan ke following pengguna dan followers target
+      await updateDoc(currentUserRef, {
+        following: arrayUnion(targetUserId)
+      });
+      
+      await updateDoc(targetUserRef, {
+        followers: arrayUnion(currentUser.uid)
+      });
+      
+      // Buat notifikasi
+      const currentUserName = currentUserDoc.data().displayName || currentUser.email;
+      await addDoc(collection(db, 'notifications'), {
+        userId: targetUserId,
+        type: 'follow',
+        senderId: currentUser.uid,
+        senderName: currentUserName,
+        timestamp: serverTimestamp(),
+        read: false
+      });
+      
+      return { action: 'follow', success: true };
+    }
+  } catch (error) {
+    console.error('Error toggling follow status:', error);
+    return { success: false, error };
+  }
+}	
+	
+	
+	
 
 
 
