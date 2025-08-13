@@ -6983,17 +6983,6 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
-        // Dapatkan daftar following user saat ini
-        const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const followingList = currentUserDoc.data()?.following || [];
-
-        // Tampilkan pengguna
-        usersData.forEach(user => {
-            const isFollowing = followingList.includes(user.uid);
-            const userElement = createUserElement(user, isFollowing);
-            usersList.appendChild(userElement);
-        });
-
     } catch (error) {
         console.error("Error loading users:", error);
         usersList.innerHTML = `
@@ -7023,7 +7012,7 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loadUsers();
-            setupUserActions();
+            
         }
     });
 });
@@ -7049,8 +7038,7 @@ function initializeEnhancedDashboard() {
   setupDetailedNotifications();
   setupEnhancedActivityFeed();
   trackUserPresence();
-      setupUserFollowingSystem();
-	  
+  
 
 
   
