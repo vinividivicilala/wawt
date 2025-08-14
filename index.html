@@ -7099,7 +7099,11 @@ async function trackUserPresence() {
 
 
 
-// Fungsi untuk memuat daftar pengguna (tanpa fitur follow & pesan)
+
+
+
+
+// Fungsi untuk memuat daftar pengguna (tanpa follow & pesan, tapi ada info join & last active)
 async function loadUsers(searchTerm = "") {
     const usersList = document.getElementById('usersList');
     const currentUser = auth.currentUser;
@@ -7165,12 +7169,24 @@ async function loadUsers(searchTerm = "") {
 
         // Tampilkan daftar user tanpa tombol follow/pesan
         usersData.forEach(user => {
+            // Format tanggal bergabung
+            const joinDate = user.joinDate 
+                ? new Date(user.joinDate.seconds * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) 
+                : 'Tidak diketahui';
+
+            // Format terakhir aktif
+            const lastActive = user.lastActive 
+                ? new Date(user.lastActive.seconds * 1000).toLocaleString('id-ID') 
+                : 'Tidak diketahui';
+
             const userElement = document.createElement('div');
             userElement.classList.add('user-item');
             userElement.innerHTML = `
                 <div class="user-info">
                     <strong>${user.displayName}</strong><br>
-                    <small>${user.email || ''}</small>
+                    <small>${user.email || ''}</small><br>
+                    <span>Tanggal Bergabung: ${joinDate}</span><br>
+                    <span>Terakhir Aktif: ${lastActive}</span>
                 </div>
             `;
             usersList.appendChild(userElement);
@@ -7185,6 +7201,14 @@ async function loadUsers(searchTerm = "") {
         `;
     }
 }
+
+
+
+
+
+
+
+
 
 
 
