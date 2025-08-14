@@ -3061,24 +3061,6 @@ iframe:hover {
   color: #aaa;
 }
 
-.follow-btn, .message-btn {
-  padding: 5px 10px;
-  margin-left: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.follow-btn {
-  background: #4285f4;
-  color: white;
-}
-
-.message-btn {
-  background: #34a853;
-  color: white;
-}
-
 /* Activity/Notification Detail Styles */
 .activity-item, .notification-item {
   display: flex;
@@ -3173,7 +3155,102 @@ iframe:hover {
 
 
 
+/* Users Section */
+.dashboard-users {
+  margin-top: 20px;
+  padding: 20px;
+}
 
+.users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.users-search {
+  position: relative;
+  width: 300px;
+}
+
+.users-search input {
+  width: 100%;
+  padding: 10px 15px 10px 40px;
+  border-radius: 20px;
+  background: #333;
+  color: white;
+  border: 1px solid #444;
+  font-size: 14px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.7);
+}
+
+.users-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.user-card {
+  background: #252525;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.user-card:hover {
+  background: #333;
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  margin: 0;
+  color: white;
+  font-size: 16px;
+}
+
+.user-email {
+  margin: 5px 0;
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+}
+
+.user-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+}
+
+.user-actions {
+  display: flex;
+  gap: 10px;
+}
 
 
 
