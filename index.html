@@ -7099,9 +7099,7 @@ async function trackUserPresence() {
 
 
 
-
-
-// Fungsi untuk memuat daftar pengguna
+// Fungsi untuk memuat daftar pengguna (tanpa fitur follow & pesan)
 async function loadUsers(searchTerm = "") {
     const usersList = document.getElementById('usersList');
     const currentUser = auth.currentUser;
@@ -7124,36 +7122,36 @@ async function loadUsers(searchTerm = "") {
     `;
 
     try {
-        // Dapatkan semua dokumen users sekaligus
+        // Ambil semua dokumen user
         const usersRef = collection(db, 'users');
         const snapshot = await getDocs(usersRef);
         
-        // Filter data
+        // Kumpulkan data user (kecuali diri sendiri)
         let usersData = [];
-        snapshot.forEach(doc => {
-            const userData = doc.data();
-            if (userData.uid !== currentUser.uid) { // Exclude current user
+        snapshot.forEach(docSnap => {
+            const userData = docSnap.data();
+            if (userData.uid !== currentUser.uid) {
                 usersData.push({
-                    id: doc.id,
+                    id: docSnap.id,
                     ...userData,
-                    displayName: userData.displayName || userData.email.split('@')[0] || 'Pengguna'
+                    displayName: userData.displayName || userData.email?.split('@')[0] || 'Pengguna'
                 });
             }
         });
 
-        // Filter berdasarkan search term
+        // Filter berdasarkan pencarian
         if (searchTerm.trim() !== "") {
             const searchLower = searchTerm.toLowerCase();
             usersData = usersData.filter(user => 
                 user.displayName.toLowerCase().includes(searchLower) || 
-                user.email.toLowerCase().includes(searchLower)
+                user.email?.toLowerCase().includes(searchLower)
             );
         }
 
         // Urutkan berdasarkan nama
         usersData.sort((a, b) => a.displayName.localeCompare(b.displayName));
 
-        // Hapus loading state
+        // Bersihkan tampilan
         usersList.innerHTML = '';
         
         if (usersData.length === 0) {
@@ -7165,14 +7163,16 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
-        // Dapatkan daftar following user saat ini
-        const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const followingList = currentUserDoc.data()?.following || [];
-
-        // Tampilkan pengguna
+        // Tampilkan daftar user tanpa tombol follow/pesan
         usersData.forEach(user => {
-            const isFollowing = followingList.includes(user.uid);
-            const userElement = createUserElement(user, isFollowing);
+            const userElement = document.createElement('div');
+            userElement.classList.add('user-item');
+            userElement.innerHTML = `
+                <div class="user-info">
+                    <strong>${user.displayName}</strong><br>
+                    <small>${user.email || ''}</small>
+                </div>
+            `;
             usersList.appendChild(userElement);
         });
 
@@ -7229,7 +7229,7 @@ function initializeEnhancedDashboard() {
   setupDetailedNotifications();
   setupEnhancedActivityFeed();
   trackUserPresence();
-      setupUserFollowingSystem();
+      
 	  
 
 
