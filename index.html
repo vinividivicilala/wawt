@@ -7389,14 +7389,17 @@ function createUserCard(user) {
     return card;
 }
 
-// Check follow status
+
 function isFollowing(targetUserId) {
     const currentUser = auth.currentUser;
     if (!currentUser) return false;
     
-    const currentUserDoc = /* get from your state or Firestore */;
+    // Ambil data user dari state lokal atau Firestore
+    const currentUserDoc = window.currentUserData || null; 
+    
     return (currentUserDoc?.following || []).includes(targetUserId);
 }
+
 
 
 
