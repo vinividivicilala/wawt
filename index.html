@@ -7692,47 +7692,66 @@ async function setupMessagingSystem() {
       }
     );
     
-  
-  
-  
-  
-  
-  async function sendMessage(messageText) {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
-
-  // Cek kalau recipientId tidak kosong
-  if (!currentChat || !currentChat.userId) {
-    console.error("recipientId belum diisi, pilih penerima dulu.");
-    return;
-  }
-
-  const recipientId = currentChat.userId; // Pastikan di-set dari openChat()
-
-  const conversationId = [currentUser.uid, recipientId].sort().join('_');
-
-  try {
-    await addDoc(collection(db, 'conversations', conversationId, 'messages'), {
-      senderId: currentUser.uid,
-      recipientId: recipientId,
-      text: messageText,
-      createdAt: serverTimestamp()
+    // Send message
+    function sendMessage() {
+      const content = messageInput.value.trim();
+      if (!content) return;
+      
+      const message = {
+        content,
+        senderId: currentUser.uid,
+        recipientId: userId,
+        timestamp: serverTimestamp(),
+        delivered: false,
+        read: false
+      };
+      
+      // Add to messages collection
+      addDoc(collection(db, 'conversations', conversationId, 'messages'), message)
+        .then(() => {
+          messageInput.value = '';
+          
+          // Update last message in contacts
+          updateDoc(doc(db, 'userContacts', currentUser.uid), {
+            [`contacts.${userId}.lastMessage`]: content,
+            [`contacts.${userId}.lastMessageTime`]: serverTimestamp(),
+            [`contacts.${userId}.unreadCount`]: 0
+          }, { merge: true });
+          
+          updateDoc(doc(db, 'userContacts', userId), {
+            [`contacts.${currentUser.uid}.lastMessage`]: content,
+            [`contacts.${currentUser.uid}.lastMessageTime`]: serverTimestamp(),
+            [`contacts.${currentUser.uid}.unreadCount`]: increment(1)
+          }, { merge: true });
+          
+          // Send notification
+          createActivityNotification(
+            userId,
+            'message',
+            currentUser.uid,
+            currentUser.displayName || currentUser.email.split('@')[0],
+            content,
+            'message',
+            conversationId
+          );
+        })
+        .catch(error => {
+          console.error('Error sending message:', error);
+          alert('Gagal mengirim pesan');
+        });
+    }
+    
+    // Send on button click
+    sendMessageBtn.addEventListener('click', sendMessage);
+    
+    // Send on Enter key
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     });
-  } catch (error) {
-    console.error("Gagal mengirim pesan:", error);
   }
-}
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   // Mark messages as read
   function markMessagesAsRead(userId) {
@@ -14237,8 +14256,6 @@ async function loadAnnouncementById(id) {
     }
 }
 }
-}
-
   
 </script>
 </body>
