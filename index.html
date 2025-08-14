@@ -7325,7 +7325,39 @@ function setupUserActions() {
 
 
 
+// Follow a user
+async function followUser(currentUserId, targetUserId) {
+    const batch = writeBatch(db);
+    
+    // Add to current user's following list
+    batch.update(doc(db, 'users', currentUserId), {
+        following: arrayUnion(targetUserId)
+    });
+    
+    // Add to target user's followers list
+    batch.update(doc(db, 'users', targetUserId), {
+        followers: arrayUnion(currentUserId)
+    });
+    
+    await batch.commit();
+}
 
+// Unfollow a user
+async function unfollowUser(currentUserId, targetUserId) {
+    const batch = writeBatch(db);
+    
+    // Remove from current user's following list
+    batch.update(doc(db, 'users', currentUserId), {
+        following: arrayRemove(targetUserId)
+    });
+    
+    // Remove from target user's followers list
+    batch.update(doc(db, 'users', targetUserId), {
+        followers: arrayRemove(currentUserId)
+    });
+    
+    await batch.commit();
+}
 
 
 
