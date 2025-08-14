@@ -7547,60 +7547,101 @@ async function setupUserFollowingSystem() {
         }
     };
     
-   
-    
-    // Toggle follow status
-    async function toggleFollow(targetUserId) {
-        const currentUser = auth.currentUser;
-        if (!currentUser) return { success: false, error: "User not logged in" };
-        
-        try {
-            const currentUserRef = doc(db, 'users', currentUser.uid);
-            const targetUserRef = doc(db, 'users', targetUserId);
-            
-            // Check current follow status
-            const currentUserDoc = await getDoc(currentUserRef);
-            const isFollowing = (currentUserDoc.data()?.following || []).includes(targetUserId);
-            
-            if (isFollowing) {
-                // Unfollow - remove from user's following and target's followers
-                await updateDoc(currentUserRef, {
-                    following: arrayRemove(targetUserId)
-                });
-                
-                await updateDoc(targetUserRef, {
-                    followers: arrayRemove(currentUser.uid)
-                });
-                
-                return { action: 'unfollow', success: true };
-            } else {
-                // Follow - add to user's following and target's followers
-                await updateDoc(currentUserRef, {
-                    following: arrayUnion(targetUserId)
-                });
-                
-                await updateDoc(targetUserRef, {
-                    followers: arrayUnion(currentUser.uid)
-                });
-                
-                // Create notification
-                const currentUserName = currentUserDoc.data().displayName || currentUser.email;
-                await addDoc(collection(db, 'notifications'), {
-                    userId: targetUserId,
-                    type: 'follow',
-                    senderId: currentUser.uid,
-                    senderName: currentUserName,
-                    timestamp: serverTimestamp(),
-                    read: false
-                });
-                
-                return { action: 'follow', success: true };
-            }
-        } catch (error) {
-            console.error('Error toggling follow status:', error);
-            return { success: false, error };
-        }
-    }
+	
+	
+	
+	
+// Load daftar pengguna lain
+async function loadOtherUsers() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const currentUserId = user.uid;
+  const usersRef = collection(db, "users");
+  const q = query(usersRef, where("uid", "!=", currentUserId));
+  const snap = await getDocs(q);
+
+  const usersList = document.getElementById("usersList");
+  usersList.innerHTML = "";
+
+  // Ambil data user login untuk cek following list
+  const currentUserDoc = await getDoc(doc(db, "users", currentUserId));
+  const currentFollowing = currentUserDoc.exists() ? (currentUserDoc.data().following || []) : [];
+
+  snap.forEach((docSnap) => {
+    const u = docSnap.data();
+    const isFollowing = currentFollowing.includes(u.uid);
+    const followersCount = (u.followers || []).length;
+    const followingCount = (u.following || []).length;
+
+    const userItem = document.createElement("div");
+    userItem.classList.add("user-item");
+    userItem.style.display = "flex";
+    userItem.style.justifyContent = "space-between";
+    userItem.style.alignItems = "center";
+    userItem.style.padding = "10px";
+    userItem.style.borderBottom = "1px solid #444";
+
+    userItem.innerHTML = `
+      <div class="user-info" style="display:flex;align-items:center;gap:10px;">
+        <img src="${u.photoURL || 'default.jpg'}" style="width:40px;height:40px;border-radius:50%;">
+        <div>
+          <h4 style="margin:0;color:white;">${u.displayName || 'Tanpa Nama'}</h4>
+          <small style="color:gray;">Followers: <span id="followers-${u.uid}">${followersCount}</span> | Following: ${followingCount}</small>
+        </div>
+      </div>
+      <button class="follow-btn" id="follow-btn-${u.uid}" style="padding:5px 10px;border:none;border-radius:5px;cursor:pointer;">
+        ${isFollowing ? 'Unfollow' : 'Follow'}
+      </button>
+    `;
+    usersList.appendChild(userItem);
+
+    // Event follow/unfollow
+    document.getElementById(`follow-btn-${u.uid}`).addEventListener("click", () => {
+      toggleFollow(u.uid);
+    });
+  });
+}
+
+// Toggle follow/unfollow
+async function toggleFollow(targetUserId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  const currentUserId = user.uid;
+
+  const currentUserRef = doc(db, "users", currentUserId);
+  const targetUserRef = doc(db, "users", targetUserId);
+
+  // Pastikan dokumen ada
+  await setDoc(currentUserRef, { following: [] }, { merge: true });
+  await setDoc(targetUserRef, { followers: [] }, { merge: true });
+
+  const currentUserDoc = await getDoc(currentUserRef);
+  const isFollowing = currentUserDoc.data().following?.includes(targetUserId);
+
+  if (isFollowing) {
+    // Unfollow
+    await updateDoc(currentUserRef, { following: arrayRemove(targetUserId) });
+    await updateDoc(targetUserRef, { followers: arrayRemove(currentUserId) });
+  } else {
+    // Follow
+    await updateDoc(currentUserRef, { following: arrayUnion(targetUserId) });
+    await updateDoc(targetUserRef, { followers: arrayUnion(currentUserId) });
+  }
+
+  // Update UI tanpa reload
+  const btn = document.getElementById(`follow-btn-${targetUserId}`);
+  btn.textContent = isFollowing ? "Follow" : "Unfollow";
+
+  const followersCountElem = document.getElementById(`followers-${targetUserId}`);
+  let count = parseInt(followersCountElem.textContent);
+  followersCountElem.textContent = isFollowing ? count - 1 : count + 1;
+}
+
+	
+	
+	
+	
     
     // Open chat with user
     async function openChat(targetUserId, targetUserName) {
@@ -7772,6 +7813,8 @@ async function setupUserFollowingSystem() {
         if (user) {
             loadUsers();
 			        setupFollowSystem();
+					    loadOtherUsers();
+
 
         } else {
             usersList.innerHTML = `
