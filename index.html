@@ -7101,9 +7101,7 @@ async function trackUserPresence() {
 
 
 
-
-
-// Fungsi untuk memuat daftar pengguna (tanpa follow & pesan, tapi ada info join & last active)
+// Fungsi untuk memuat daftar pengguna
 async function loadUsers(searchTerm = "") {
     const usersList = document.getElementById('usersList');
     const currentUser = auth.currentUser;
@@ -7167,7 +7165,7 @@ async function loadUsers(searchTerm = "") {
             return;
         }
 
-        // Tampilkan daftar user tanpa tombol follow/pesan
+        // Tampilkan daftar user
         usersData.forEach(user => {
             // Format tanggal bergabung
             const joinDate = user.joinDate 
@@ -7204,14 +7202,6 @@ async function loadUsers(searchTerm = "") {
 
 
 
-
-
-
-
-
-
-
-
 // Inisialisasi
 document.addEventListener('DOMContentLoaded', () => {
     const userSearchInput = document.getElementById('userSearchInput');
@@ -7225,14 +7215,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300);
     });
 
-    // Load data awal
-    onAuthStateChanged(auth, (user) => {
+    // Load data awal & update lastActive
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
+            // ✅ Update lastActive setiap kali user login
+            try {
+                await updateDoc(doc(db, 'users', user.uid), {
+                    lastActive: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Gagal memperbarui lastActive:", error);
+            }
+
+            // ✅ Muat daftar pengguna
             loadUsers();
-            
         }
     });
 });
+
+
+
+
+
 
 
 
