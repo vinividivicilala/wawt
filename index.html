@@ -7758,83 +7758,94 @@ async function setupMessagingSystem() {
     });
   }
   
+  
+  
   // Load contacts list
-  function loadContacts() {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-    
-    if (unsubscribeContacts) unsubscribeContacts();
-    
-    unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (doc) => {
-      contactsList.innerHTML = '';
-      
-      if (!doc.exists()) {
-        contactsList.innerHTML = '<p>Tidak ada kontak</p>';
-        return;
-      }
-      
-      const contacts = doc.data().contacts || {};
-      const contactIds = Object.keys(contacts);
-      
-      if (contactIds.length === 0) {
-        contactsList.innerHTML = '<p>Tidak ada kontak</p>';
-        return;
-      }
-      
-      // Get user details for each contact
-      getDocs(query(
+function loadContacts() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  if (unsubscribeContacts) unsubscribeContacts();
+
+  unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (docSnap) => {
+    contactsList.innerHTML = '';
+
+    if (!docSnap.exists()) {
+      contactsList.innerHTML = '<p>Tidak ada kontak</p>';
+      return;
+    }
+
+    const contacts = docSnap.data().contacts || {};
+    const contactIds = Object.keys(contacts);
+
+    if (contactIds.length === 0) {
+      contactsList.innerHTML = '<p>Tidak ada kontak</p>';
+      return;
+    }
+
+    // Ambil detail user untuk setiap kontak
+    getDocs(
+      query(
         collection(db, 'users'),
         where('uid', 'in', contactIds)
-      ).then(snapshot => {
-        const users = {};
-        snapshot.forEach(userDoc => {
-          users[userDoc.id] = userDoc.data();
-        });
-        
-        // Sort contacts by last message time
-        const sortedContacts = contactIds.sort((a, b) => {
-          const timeA = contacts[a].lastMessageTime?.toDate?.()?.getTime() || 0;
-          const timeB = contacts[b].lastMessageTime?.toDate?.()?.getTime() || 0;
-          return timeB - timeA;
-        });
-        
-        // Display contacts
-        sortedContacts.forEach(contactId => {
-          const contact = contacts[contactId];
-          const user = users[contactId];
-          
-          if (!user) return;
-          
-          const contactItem = document.createElement('div');
-          contactItem.className = `contact-item ${currentConversation === contactId ? 'active' : ''}`;
-          contactItem.innerHTML = `
-            <div class="contact-info">
-              <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-              <div>
-                <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
-                <div class="contact-last-message">${contact.lastMessage || 'Belum ada pesan'}</div>
-              </div>
-              ${contact.unreadCount > 0 ? `<div class="unread-badge">${contact.unreadCount}</div>` : ''}
+      )
+    ).then(snapshot => {
+      const users = {};
+      snapshot.forEach(userDoc => {
+        users[userDoc.id] = userDoc.data();
+      });
+
+      // Urutkan berdasarkan waktu pesan terakhir
+      const sortedContacts = contactIds.sort((a, b) => {
+        const timeA = contacts[a].lastMessageTime?.toDate?.()?.getTime() || 0;
+        const timeB = contacts[b].lastMessageTime?.toDate?.()?.getTime() || 0;
+        return timeB - timeA;
+      });
+
+      // Tampilkan daftar kontak
+      sortedContacts.forEach(contactId => {
+        const contact = contacts[contactId];
+        const user = users[contactId];
+        if (!user) return;
+
+        const contactItem = document.createElement('div');
+        contactItem.className = `contact-item ${currentConversation === contactId ? 'active' : ''}`;
+        contactItem.innerHTML = `
+          <div class="contact-info">
+            <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+            <div>
+              <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
+              <div class="contact-last-message">${contact.lastMessage || 'Belum ada pesan'}</div>
             </div>
-          `;
-          
-          contactItem.addEventListener('click', () => {
-            currentConversation = contactId;
-            loadConversation(contactId, user.displayName || user.email.split('@')[0]);
-            markMessagesAsRead(contactId);
-            
-            // Update active state
-            document.querySelectorAll('.contact-item').forEach(item => {
-              item.classList.remove('active');
-            });
-            contactItem.classList.add('active');
+            ${contact.unreadCount > 0 ? `<div class="unread-badge">${contact.unreadCount}</div>` : ''}
+          </div>
+        `;
+
+        contactItem.addEventListener('click', () => {
+          currentConversation = contactId;
+          loadConversation(contactId, user.displayName || user.email.split('@')[0]);
+          markMessagesAsRead(contactId);
+
+          // Update active state
+          document.querySelectorAll('.contact-item').forEach(item => {
+            item.classList.remove('active');
           });
-          
-          contactsList.appendChild(contactItem);
+          contactItem.classList.add('active');
         });
+
+        contactsList.appendChild(contactItem);
       });
     });
-  }
+  });
+}
+
+  
+  
+  
+  
+  
+  
+  
   
   // Initialize messaging system when user logs in
   onAuthStateChanged(auth, (user) => {
