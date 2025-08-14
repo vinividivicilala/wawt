@@ -7323,8 +7323,6 @@ function setupUserActions() {
 
 
 
-
-
 // Follow a user
 async function followUser(currentUserId, targetUserId) {
     const batch = writeBatch(db);
@@ -7359,7 +7357,93 @@ async function unfollowUser(currentUserId, targetUserId) {
     await batch.commit();
 }
 
+// Enhanced user card creation
+function createUserCard(user) {
+    const card = document.createElement('div');
+    card.className = 'user-card';
+    
+    // Safely handle undefined values
+    const displayName = user.displayName || 'Pengguna';
+    const email = user.email || 'Email tidak tersedia';
+    const joinDate = user.joinDate ? formatDate(user.joinDate) : 'Tanggal tidak diketahui';
+    const followersCount = user.followers?.length || 0;
+    const followingCount = user.following?.length || 0;
+    
+    card.innerHTML = `
+        <div class="user-header">
+            <h3>${displayName}</h3>
+            <p>${email}</p>
+        </div>
+        <div class="user-meta">
+            <span>Bergabung: ${joinDate}</span>
+            <span>${followersCount} Pengikut</span>
+            <span>${followingCount} Mengikuti</span>
+        </div>
+        <div class="user-actions">
+            <button class="follow-btn" data-uid="${user.uid}">
+                ${isFollowing(user.uid) ? '✓ Mengikuti' : '+ Ikuti'}
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
 
+// Check follow status
+function isFollowing(targetUserId) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return false;
+    
+    const currentUserDoc = /* get from your state or Firestore */;
+    return (currentUserDoc?.following || []).includes(targetUserId);
+}
+
+
+
+// Setup follow actions
+function setupFollowSystem() {
+    document.addEventListener('click', async (e) => {
+        if (!e.target.classList.contains('follow-btn')) return;
+        
+        const btn = e.target;
+        const targetUserId = btn.dataset.uid;
+        const currentUser = auth.currentUser;
+        
+        if (!currentUser) {
+            alert('Silakan login untuk mengikuti pengguna');
+            return;
+        }
+        
+        try {
+            if (isFollowing(targetUserId)) {
+                await unfollowUser(currentUser.uid, targetUserId);
+                btn.textContent = '+ Ikuti';
+            } else {
+                await followUser(currentUser.uid, targetUserId);
+                btn.textContent = '✓ Mengikuti';
+                
+                // Send notification
+                const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                const currentUserName = currentUserDoc.data()?.displayName || currentUser.email;
+                
+                await addDoc(collection(db, 'notifications'), {
+                    userId: targetUserId,
+                    type: 'follow',
+                    senderId: currentUser.uid,
+                    senderName: currentUserName,
+                    timestamp: serverTimestamp(),
+                    read: false
+                });
+            }
+            
+            // Refresh user data
+            loadUserData(targetUserId);
+        } catch (error) {
+            console.error('Error updating follow status:', error);
+            alert('Gagal memperbarui status follow');
+        }
+    });
+}
 
 
 // Enhanced User Following System
@@ -7684,6 +7768,8 @@ async function setupUserFollowingSystem() {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loadUsers();
+			        setupFollowSystem();
+
         } else {
             usersList.innerHTML = `
                 <div class="no-users-found">
