@@ -6076,6 +6076,12 @@ iframe:hover {
 </div>
 
 
+
+
+
+
+
+<!-- Add to dashboard-users section -->
 <div class="dashboard-users linebox">
     <h2 class="title-box-white">Pengguna Lain</h2>
     
@@ -6099,8 +6105,6 @@ iframe:hover {
     </div>
 </div>
 
-
-
 <!-- Message Modal -->
 <div id="messageModal" class="modal" style="display: none;">
     <div class="modal-content linebox" style="max-width: 600px; background: #1e1e1e; border-radius: 12px;">
@@ -6120,8 +6124,17 @@ iframe:hover {
         </div>
     </div>
 </div>
-  
-    
+
+
+
+
+
+
+
+
+
+
+
     <!-- Tombol Kembali -->
     <div style="text-align: center; margin-top: 30px;">
       <button id="backFromDashboard" class="back-btn">
@@ -7118,8 +7131,6 @@ async function trackUserPresence() {
 
 
 
-
-
  // Create user element
     function createUserElement(user, isFollowing, followersCount, followingCount) {
         const userElement = document.createElement('div');
@@ -7165,6 +7176,9 @@ async function trackUserPresence() {
         
         return userElement;
     }
+    
+
+
 
 
 
@@ -7449,6 +7463,11 @@ function setupFollowSystem() {
 }
 
 
+
+
+
+
+
 // Enhanced User Following System
 let currentChat = null;
 let unsubscribeMessages = null;
@@ -7513,20 +7532,30 @@ async function setupUserFollowingSystem() {
                 return;
             }
             
-            // Get current user's following list
-            const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            const followingList = currentUserDoc.data()?.following || [];
-            
             // Process each user
             const userElements = [];
             
             for (const docSnap of snapshot.docs) {
                 const user = docSnap.data();
-                const isFollowing = followingList.includes(user.uid);
+                
+                // Check if current user is following this user
+                const followDoc = await getDoc(doc(db, 'follows', `${currentUser.uid}_${user.uid}`));
+                const isFollowing = followDoc.exists();
                 
                 // Get follower/following counts
-                const followersCount = user.followers?.length || 0;
-                const followingCount = user.following?.length || 0;
+                const followersQuery = query(
+                    collection(db, 'follows'),
+                    where('followedId', '==', user.uid)
+                );
+                const followersSnapshot = await getCountFromServer(followersQuery);
+                const followersCount = followersSnapshot.data().count;
+                
+                const followingQuery = query(
+                    collection(db, 'follows'),
+                    where('followerId', '==', user.uid)
+                );
+                const followingSnapshot = await getCountFromServer(followingQuery);
+                const followingCount = followingSnapshot.data().count;
                 
                 const userElement = createUserElement(user, isFollowing, followersCount, followingCount);
                 userElements.push(userElement);
@@ -7546,6 +7575,12 @@ async function setupUserFollowingSystem() {
             `;
         }
     };
+
+
+
+
+
+
     
 	
 	
@@ -7603,47 +7638,40 @@ async function loadOtherUsers() {
   });
 }
 
-// Toggle follow/unfollow
-async function toggleFollow(targetUserId) {
-  const user = auth.currentUser;
-  if (!user) return;
-  const currentUserId = user.uid;
 
-  const currentUserRef = doc(db, "users", currentUserId);
-  const targetUserRef = doc(db, "users", targetUserId);
 
-  // Pastikan dokumen ada
-  await setDoc(currentUserRef, { following: [] }, { merge: true });
-  await setDoc(targetUserRef, { followers: [] }, { merge: true });
 
-  const currentUserDoc = await getDoc(currentUserRef);
-  const isFollowing = currentUserDoc.data().following?.includes(targetUserId);
 
-  if (isFollowing) {
-    // Unfollow
-    await updateDoc(currentUserRef, { following: arrayRemove(targetUserId) });
-    await updateDoc(targetUserRef, { followers: arrayRemove(currentUserId) });
-  } else {
-    // Follow
-    await updateDoc(currentUserRef, { following: arrayUnion(targetUserId) });
-    await updateDoc(targetUserRef, { followers: arrayUnion(currentUserId) });
-  }
 
-  // Update UI tanpa reload
-  const btn = document.getElementById(`follow-btn-${targetUserId}`);
-  btn.textContent = isFollowing ? "Follow" : "Unfollow";
 
-  const followersCountElem = document.getElementById(`followers-${targetUserId}`);
-  let count = parseInt(followersCountElem.textContent);
-  followersCountElem.textContent = isFollowing ? count - 1 : count + 1;
-}
 
-	
-	
-	
-	
+
+
+   // Toggle follow/unfollow
+    async function toggleFollow(followerId, followedId) {
+        const followRef = doc(db, 'follows', `${followerId}_${followedId}`);
+        const followDoc = await getDoc(followRef);
+        
+        if (followDoc.exists()) {
+            // Unfollow
+            await deleteDoc(followRef);
+            return { action: 'unfollow', success: true };
+        } else {
+            // Follow
+            await setDoc(followRef, {
+                followerId,
+                followedId,
+                timestamp: serverTimestamp()
+            });
+            return { action: 'follow', success: true };
+        }
+    }
     
-    // Open chat with user
+
+	
+	
+	
+	 // Open chat with user
     async function openChat(targetUserId, targetUserName) {
         const currentUser = auth.currentUser;
         if (!currentUser) {
@@ -7676,7 +7704,7 @@ async function toggleFollow(targetUserId) {
         // Subscribe to new messages
         unsubscribeMessages = onSnapshot(
             query(
-                collection(db, 'chats', chatId, 'messages'),
+                collection(db, 'messages', chatId, 'messages'),
                 orderBy('timestamp', 'asc')
             ),
             (snapshot) => {
@@ -7705,13 +7733,21 @@ async function toggleFollow(targetUserId) {
         messageModal.style.display = 'block';
     }
     
-    // Send message
+	
+	
+	
+	
+	
+	
+	
+	
+	  // Send message
     async function sendMessage(content) {
         if (!content.trim() || !currentChat || !auth.currentUser) return false;
         
         try {
-            // Save message to subcollection chats/{chatId}/messages
-            await addDoc(collection(db, 'chats', currentChat.chatId, 'messages'), {
+            // Save message to subcollection messages/{chatId}/messages
+            await addDoc(collection(db, 'messages', currentChat.chatId, 'messages'), {
                 senderId: auth.currentUser.uid,
                 receiverId: currentChat.userId,
                 content: content.trim(),
@@ -7746,13 +7782,27 @@ async function toggleFollow(targetUserId) {
         if (e.target.classList.contains('follow-btn')) {
             const btn = e.target;
             const targetUserId = btn.dataset.uid;
+            const currentUser = auth.currentUser;
             
             try {
-                const result = await toggleFollow(targetUserId);
+                const result = await toggleFollow(currentUser.uid, targetUserId);
                 if (result.success) {
                     if (result.action === 'follow') {
                         btn.classList.add('following');
                         btn.textContent = 'Mengikuti';
+                        
+                        // Send notification
+                        const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                        const currentUserName = currentUserDoc.data().displayName || currentUser.email;
+                        
+                        await addDoc(collection(db, 'notifications'), {
+                            userId: targetUserId,
+                            type: 'follow',
+                            senderId: currentUser.uid,
+                            senderName: currentUserName,
+                            timestamp: serverTimestamp(),
+                            read: false
+                        });
                     } else {
                         btn.classList.remove('following');
                         btn.textContent = 'Ikuti';
@@ -7812,10 +7862,6 @@ async function toggleFollow(targetUserId) {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loadUsers();
-			        setupFollowSystem();
-					    loadOtherUsers();
-
-
         } else {
             usersList.innerHTML = `
                 <div class="no-users-found">
@@ -7828,6 +7874,12 @@ async function toggleFollow(targetUserId) {
 
 // Call this in your initialization
 setupUserFollowingSystem();
+	
+	
+	
+	
+	
+
 
 
 
