@@ -7536,6 +7536,8 @@ async function setupMessagingSystem() {
   
  
  
+ 
+ 
  async function loadMessageRecipients(searchTerm = '') {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
@@ -7543,88 +7545,68 @@ async function setupMessagingSystem() {
   messageRecipientList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Memuat pengguna...</p></div>';
   
   try {
-    let q = query(collection(db, 'users'), where('uid', '!=', currentUser.uid));
+    // Ambil semua pengguna kecuali yang sedang login
+    const usersSnapshot = await getDocs(collection(db, 'users'));
     
-    if (searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase();
-      const usersSnapshot = await getDocs(q);
-      
-      messageRecipientList.innerHTML = '';
-      
-      const filteredUsers = usersSnapshot.docs.filter(doc => {
-        const user = doc.data();
-        const userName = (user.displayName || user.email).toLowerCase();
-        return userName.includes(searchLower);
-      });
-      
-      if (filteredUsers.length === 0) {
-        messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
-        return;
-      }
-      
-      filteredUsers.forEach(doc => {
-        const user = doc.data();
-        const userItem = document.createElement('div');
-        userItem.className = 'user-item';
-        userItem.innerHTML = `
-          <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-          <div>
-            <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
-            <div class="user-email">${user.email}</div>
-          </div>
-        `;
-        
-        userItem.addEventListener('click', () => {
-          newMessageModal.style.display = 'none';
-          startConversation(user.uid, user.displayName || user.email.split('@')[0]);
-        });
-        
-        messageRecipientList.appendChild(userItem);
-      });
-      
-    } else {
-      // Jika tidak ada search term, tampilkan semua pengguna
-      const snapshot = await getDocs(q);
-      messageRecipientList.innerHTML = '';
-      
-      if (snapshot.empty) {
-        messageRecipientList.innerHTML = '<p>Tidak ada pengguna lain</p>';
-        return;
-      }
-      
-      // Urutkan berdasarkan nama
-      const sortedUsers = snapshot.docs.sort((a, b) => {
-        const nameA = (a.data().displayName || a.data().email).toLowerCase();
-        const nameB = (b.data().displayName || b.data().email).toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-      
-      sortedUsers.forEach(doc => {
-        const user = doc.data();
-        const userItem = document.createElement('div');
-        userItem.className = 'user-item';
-        userItem.innerHTML = `
-          <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-          <div>
-            <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
-            <div class="user-email">${user.email}</div>
-          </div>
-        `;
-        
-        userItem.addEventListener('click', () => {
-          newMessageModal.style.display = 'none';
-          startConversation(user.uid, user.displayName || user.email.split('@')[0]);
-        });
-        
-        messageRecipientList.appendChild(userItem);
-      });
+    messageRecipientList.innerHTML = '';
+    
+    if (usersSnapshot.empty) {
+      messageRecipientList.innerHTML = '<p>Tidak ada pengguna lain</p>';
+      return;
     }
+    
+    // Filter berdasarkan search term
+    const searchLower = searchTerm.toLowerCase();
+    const filteredUsers = usersSnapshot.docs.filter(doc => {
+      const user = doc.data();
+      if (user.uid === currentUser.uid) return false; // Skip current user
+      
+      const userName = (user.displayName || user.email.split('@')[0]).toLowerCase();
+      const userEmail = user.email.toLowerCase();
+      
+      return userName.includes(searchLower) || 
+             userEmail.includes(searchLower);
+    });
+    
+    if (filteredUsers.length === 0) {
+      messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
+      return;
+    }
+    
+    // Urutkan berdasarkan nama
+    filteredUsers.sort((a, b) => {
+      const nameA = (a.data().displayName || a.data().email).toLowerCase();
+      const nameB = (b.data().displayName || b.data().email).toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+    
+    // Tampilkan hasil
+    filteredUsers.forEach(doc => {
+      const user = doc.data();
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+      userItem.innerHTML = `
+        <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+        <div>
+          <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
+          <div class="user-email">${user.email}</div>
+        </div>
+      `;
+      
+      userItem.addEventListener('click', () => {
+        newMessageModal.style.display = 'none';
+        startConversation(user.uid, user.displayName || user.email.split('@')[0]);
+      });
+      
+      messageRecipientList.appendChild(userItem);
+    });
+    
   } catch (error) {
     console.error('Error loading recipients:', error);
     messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
   }
 }
- 
+}
  
  
  
@@ -8132,7 +8114,14 @@ async function setupFollowSystem() {
 
 
 
-
+// Ganti event listener input dengan debounce untuk performa lebih baik
+let searchTimeout;
+recipientSearch.addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    loadMessageRecipients(e.target.value.trim());
+  }, 300);
+});
 
 
 
