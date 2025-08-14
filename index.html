@@ -7534,38 +7534,35 @@ async function setupMessagingSystem() {
     loadMessageRecipients(e.target.value);
   });
   
-  // Load message recipients
-  async function loadMessageRecipients(searchTerm = '') {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
+ 
+ 
+ async function loadMessageRecipients(searchTerm = '') {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+  
+  messageRecipientList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Memuat pengguna...</p></div>';
+  
+  try {
+    let q = query(collection(db, 'users'), where('uid', '!=', currentUser.uid));
     
-    messageRecipientList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Memuat pengguna...</p></div>';
-    
-    try {
-      let q = query(collection(db, 'users'), where('uid', '!=', currentUser.uid));
+    if (searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase();
+      const usersSnapshot = await getDocs(q);
       
-      if (searchTerm.trim() !== '') {
-        q = query(
-          collection(db, 'users'),
-          where('uid', '!=', currentUser.uid),
-          or(
-            where('displayName', '>=', searchTerm),
-            where('displayName', '<=', searchTerm + '\uf8ff'),
-            where('email', '>=', searchTerm),
-            where('email', '<=', searchTerm + '\uf8ff')
-          )
-        );
-      }
-      
-      const snapshot = await getDocs(q);
       messageRecipientList.innerHTML = '';
       
-      if (snapshot.empty) {
+      const filteredUsers = usersSnapshot.docs.filter(doc => {
+        const user = doc.data();
+        const userName = (user.displayName || user.email).toLowerCase();
+        return userName.includes(searchLower);
+      });
+      
+      if (filteredUsers.length === 0) {
         messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
         return;
       }
       
-      snapshot.forEach(doc => {
+      filteredUsers.forEach(doc => {
         const user = doc.data();
         const userItem = document.createElement('div');
         userItem.className = 'user-item';
@@ -7584,12 +7581,58 @@ async function setupMessagingSystem() {
         
         messageRecipientList.appendChild(userItem);
       });
-    } catch (error) {
-      console.error('Error loading recipients:', error);
-      messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
+      
+    } else {
+      // Jika tidak ada search term, tampilkan semua pengguna
+      const snapshot = await getDocs(q);
+      messageRecipientList.innerHTML = '';
+      
+      if (snapshot.empty) {
+        messageRecipientList.innerHTML = '<p>Tidak ada pengguna lain</p>';
+        return;
+      }
+      
+      // Urutkan berdasarkan nama
+      const sortedUsers = snapshot.docs.sort((a, b) => {
+        const nameA = (a.data().displayName || a.data().email).toLowerCase();
+        const nameB = (b.data().displayName || b.data().email).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+      
+      sortedUsers.forEach(doc => {
+        const user = doc.data();
+        const userItem = document.createElement('div');
+        userItem.className = 'user-item';
+        userItem.innerHTML = `
+          <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+          <div>
+            <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
+            <div class="user-email">${user.email}</div>
+          </div>
+        `;
+        
+        userItem.addEventListener('click', () => {
+          newMessageModal.style.display = 'none';
+          startConversation(user.uid, user.displayName || user.email.split('@')[0]);
+        });
+        
+        messageRecipientList.appendChild(userItem);
+      });
     }
+  } catch (error) {
+    console.error('Error loading recipients:', error);
+    messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
   }
-  
+}
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
   // Start a new conversation
   function startConversation(userId, userName) {
     currentConversation = userId;
@@ -7760,85 +7803,107 @@ async function setupMessagingSystem() {
   
   
   
-  // Load contacts list
-function loadContacts() {
+async function loadContacts() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
 
   if (unsubscribeContacts) unsubscribeContacts();
 
-  unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (docSnap) => {
+  contactsList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Memuat kontak...</p></div>';
+
+  try {
+    // Ambil semua pengguna kecuali yang sedang login
+    const usersSnapshot = await getDocs(query(
+      collection(db, 'users'),
+      where('uid', '!=', currentUser.uid)
+    ));
+
+    // Ambil data kontak yang sudah ada (untuk pesan terakhir dan unread count)
+    const contactsDoc = await getDoc(doc(db, 'userContacts', currentUser.uid));
+    const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
+
     contactsList.innerHTML = '';
 
-    if (!docSnap.exists()) {
-      contactsList.innerHTML = '<p>Tidak ada kontak</p>';
+    if (usersSnapshot.empty) {
+      contactsList.innerHTML = '<p>Tidak ada pengguna lain</p>';
       return;
     }
 
-    const contacts = docSnap.data().contacts || {};
-    const contactIds = Object.keys(contacts);
+    // Urutkan berdasarkan nama
+    const sortedUsers = usersSnapshot.docs.sort((a, b) => {
+      const nameA = (a.data().displayName || a.data().email).toLowerCase();
+      const nameB = (b.data().displayName || b.data().email).toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
-    if (contactIds.length === 0) {
-      contactsList.innerHTML = '<p>Tidak ada kontak</p>';
-      return;
-    }
+    // Tampilkan semua pengguna sebagai kontak
+    sortedUsers.forEach(userDoc => {
+      const user = userDoc.data();
+      const userId = user.uid;
+      const contactInfo = contactsData[userId] || {
+        lastMessage: 'Belum ada pesan',
+        lastMessageTime: null,
+        unreadCount: 0
+      };
 
-    // Ambil detail user untuk setiap kontak
-    getDocs(
-      query(
-        collection(db, 'users'),
-        where('uid', 'in', contactIds)
-      )
-    ).then(snapshot => {
-      const users = {};
-      snapshot.forEach(userDoc => {
-        users[userDoc.id] = userDoc.data();
-      });
-
-      // Urutkan berdasarkan waktu pesan terakhir
-      const sortedContacts = contactIds.sort((a, b) => {
-        const timeA = contacts[a].lastMessageTime?.toDate?.()?.getTime() || 0;
-        const timeB = contacts[b].lastMessageTime?.toDate?.()?.getTime() || 0;
-        return timeB - timeA;
-      });
-
-      // Tampilkan daftar kontak
-      sortedContacts.forEach(contactId => {
-        const contact = contacts[contactId];
-        const user = users[contactId];
-        if (!user) return;
-
-        const contactItem = document.createElement('div');
-        contactItem.className = `contact-item ${currentConversation === contactId ? 'active' : ''}`;
-        contactItem.innerHTML = `
-          <div class="contact-info">
-            <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-            <div>
-              <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
-              <div class="contact-last-message">${contact.lastMessage || 'Belum ada pesan'}</div>
-            </div>
-            ${contact.unreadCount > 0 ? `<div class="unread-badge">${contact.unreadCount}</div>` : ''}
+      const contactItem = document.createElement('div');
+      contactItem.className = `contact-item ${currentConversation === userId ? 'active' : ''}`;
+      contactItem.innerHTML = `
+        <div class="contact-info">
+          <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+          <div>
+            <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
+            <div class="contact-last-message">${contactInfo.lastMessage}</div>
           </div>
-        `;
+          ${contactInfo.unreadCount > 0 ? `<div class="unread-badge">${contactInfo.unreadCount}</div>` : ''}
+        </div>
+      `;
 
-        contactItem.addEventListener('click', () => {
-          currentConversation = contactId;
-          loadConversation(contactId, user.displayName || user.email.split('@')[0]);
-          markMessagesAsRead(contactId);
-
-          // Update active state
-          document.querySelectorAll('.contact-item').forEach(item => {
-            item.classList.remove('active');
-          });
-          contactItem.classList.add('active');
+      contactItem.addEventListener('click', () => {
+        currentConversation = userId;
+        loadConversation(userId, user.displayName || user.email.split('@')[0]);
+        markMessagesAsRead(userId);
+        
+        // Update active state
+        document.querySelectorAll('.contact-item').forEach(item => {
+          item.classList.remove('active');
         });
+        contactItem.classList.add('active');
+      });
 
-        contactsList.appendChild(contactItem);
+      contactsList.appendChild(contactItem);
+    });
+
+    // Realtime listener untuk update pesan terakhir dan unread count
+    unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (doc) => {
+      const updatedContacts = doc.exists() ? doc.data().contacts || {} : {};
+      
+      document.querySelectorAll('.contact-item').forEach(item => {
+        const userId = item.dataset.userId;
+        if (updatedContacts[userId]) {
+          const lastMessageEl = item.querySelector('.contact-last-message');
+          const unreadBadgeEl = item.querySelector('.unread-badge');
+          
+          if (lastMessageEl) {
+            lastMessageEl.textContent = updatedContacts[userId].lastMessage || 'Belum ada pesan';
+          }
+          
+          if (unreadBadgeEl) {
+            unreadBadgeEl.textContent = updatedContacts[userId].unreadCount || '0';
+            unreadBadgeEl.style.display = updatedContacts[userId].unreadCount > 0 ? 'flex' : 'none';
+          } else if (updatedContacts[userId].unreadCount > 0) {
+            item.querySelector('.contact-info').insertAdjacentHTML('beforeend', 
+              `<div class="unread-badge">${updatedContacts[userId].unreadCount}</div>`);
+          }
+        }
       });
     });
-  });
-}
 
+  } catch (error) {
+    console.error('Error loading contacts:', error);
+    contactsList.innerHTML = '<p>Gagal memuat daftar kontak</p>';
+  }
+}
   
   
   
