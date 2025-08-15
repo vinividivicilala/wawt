@@ -7879,72 +7879,81 @@ async function setupMessagingSystem() {
  
  
  
-  // Load message recipients
-  async function loadMessageRecipients(searchTerm = '') {
+ // Load message recipients
+async function loadMessageRecipients(searchTerm = '') {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
-    
-    messageRecipientList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Memuat pengguna...</p></div>';
-    
+
+    messageRecipientList.innerHTML = `
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <p>Memuat pengguna...</p>
+        </div>
+    `;
+
     try {
-      // Get all users except current user
-      const usersSnapshot = await getDocs(query(
-        collection(db, 'users'),
-        where('uid', '!=', currentUser.uid)
-      ));
-      
-      messageRecipientList.innerHTML = '';
-      
-      if (usersSnapshot.empty) {
-        messageRecipientList.innerHTML = '<p>Tidak ada pengguna lain</p>';
-        return;
-      }
-      
-      // Filter and sort users
-      const searchLower = searchTerm.toLowerCase();
-      const filteredUsers = usersSnapshot.docs
-        .filter(doc => {
-          const user = doc.data();
-          const userName = (user.displayName || user.email.split('@')[0]).toLowerCase();
-          const userEmail = user.email.toLowerCase();
-          return userName.includes(searchLower) || userEmail.includes(searchLower);
-        })
-        .sort((a, b) => {
-          const nameA = (a.data().displayName || a.data().email).toLowerCase();
-          const nameB = (b.data().displayName || b.data().email).toLowerCase();
-          return nameA.localeCompare(nameB);
+        // Ambil semua user
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        messageRecipientList.innerHTML = '';
+
+        if (usersSnapshot.empty) {
+            messageRecipientList.innerHTML = '<p>Tidak ada pengguna lain</p>';
+            return;
+        }
+
+        const searchLower = searchTerm.toLowerCase();
+
+        // Filter di client
+        const filteredUsers = usersSnapshot.docs
+            .map(doc => doc.data())
+            .filter(user => {
+                if (user.uid === currentUser.uid) return false; // buang akun sendiri
+                const userName = (user.displayName || user.email.split('@')[0]).toLowerCase();
+                const userEmail = user.email.toLowerCase();
+                return userName.includes(searchLower) || userEmail.includes(searchLower);
+            })
+            .sort((a, b) => {
+                const nameA = (a.displayName || a.email).toLowerCase();
+                const nameB = (b.displayName || b.email).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+
+        if (filteredUsers.length === 0) {
+            messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
+            return;
+        }
+
+        // Tampilkan hasil
+        filteredUsers.forEach(user => {
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            userItem.innerHTML = `
+                <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+                <div>
+                    <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
+                    <div class="user-email">${user.email}</div>
+                </div>
+            `;
+            userItem.addEventListener('click', () => {
+                newMessageModal.style.display = 'none';
+                startConversation(user.uid, user.displayName || user.email.split('@')[0]);
+            });
+            messageRecipientList.appendChild(userItem);
         });
-      
-      if (filteredUsers.length === 0) {
-        messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
-        return;
-      }
-      
-      // Display users
-      filteredUsers.forEach(doc => {
-        const user = doc.data();
-        const userItem = document.createElement('div');
-        userItem.className = 'user-item';
-        userItem.innerHTML = `
-          <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-          <div>
-            <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
-            <div class="user-email">${user.email}</div>
-          </div>
-        `;
-        
-        userItem.addEventListener('click', () => {
-          newMessageModal.style.display = 'none';
-          startConversation(user.uid, user.displayName || user.email.split('@')[0]);
-        });
-        
-        messageRecipientList.appendChild(userItem);
-      });
+
     } catch (error) {
-      console.error('Error loading recipients:', error);
-      messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
+        console.error('Error loading recipients:', error);
+        messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
     }
-  }
+}
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
  
  
  
