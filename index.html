@@ -7951,370 +7951,6 @@ async function loadMessageRecipients(searchTerm = '') {
  
  
  
- 
- 
- 
- 
- 
- 
- 
- 
-  // Start a conversation
-  function startConversation(userId, userName) {
-    currentConversation = userId;
-    loadConversation(userId, userName);
-    markMessagesAsRead(userId);
-  }
-
-  // Load conversation messages
-  function loadConversation(userId, userName) {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-    
-    // Clear previous conversation
-    if (unsubscribeMessages) unsubscribeMessages();
-    
-    conversationContainer.innerHTML = `
-      <div class="conversation-header">
-        <div class="conversation-user">${userName}</div>
-        <button class="follow-btn" id="followUserBtn" data-userid="${userId}">Ikuti</button>
-      </div>
-      <div class="messages-list" id="messagesList"></div>
-      <div class="message-input-container">
-        <input type="text" class="message-input" id="messageInput" placeholder="Ketik pesan...">
-        <button class="send-message-btn" id="sendMessageBtn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-        </button>
-      </div>
-    `;
-    
-    const messagesList = document.getElementById('messagesList');
-    const messageInput = document.getElementById('messageInput');
-    const sendMessageBtn = document.getElementById('sendMessageBtn');
-    const followUserBtn = document.getElementById('followUserBtn');
-    
-    // Check follow status
-    checkFollowStatus(userId, followUserBtn);
-    
-    // Follow button event
-    followUserBtn.addEventListener('click', async () => {
-      const isFollowing = followUserBtn.textContent === 'Berhenti Mengikuti';
-      const userName = document.querySelector('.conversation-user').textContent;
-      
-      if (isFollowing) {
-        await unfollowUser(userId);
-        followUserBtn.textContent = 'Ikuti';
-      } else {
-        await followUser(userId, userName);
-        followUserBtn.textContent = 'Berhenti Mengikuti';
-      }
-    });
-    
-    // Get conversation ID (combination of both user IDs sorted)
-    const conversationId = [currentUser.uid, userId].sort().join('_');
-    
-    // Load messages
-    unsubscribeMessages = onSnapshot(
-      query(
-        collection(db, 'conversations', conversationId, 'messages'),
-        orderBy('timestamp', 'asc')
-      ),
-      (snapshot) => {
-        messagesList.innerHTML = '';
-        
-        snapshot.forEach(doc => {
-          const message = doc.data();
-          const messageElement = document.createElement('div');
-          messageElement.className = `message-item ${message.senderId === currentUser.uid ? 'message-sent' : 'message-received'}`;
-          
-          let statusIcon = '';
-          if (message.senderId === currentUser.uid) {
-            if (message.read) {
-              statusIcon = '<span class="message-status read">✓✓</span>';
-            } else if (message.delivered) {
-              statusIcon = '<span class="message-status delivered">✓✓</span>';
-            } else {
-              statusIcon = '<span class="message-status sent">✓</span>';
-            }
-          }
-          
-          messageElement.innerHTML = `
-            <div class="message-bubble">${message.content}</div>
-            <div class="message-time">
-              ${formatTime(message.timestamp)}
-              ${statusIcon}
-            </div>
-          `;
-          
-          messagesList.appendChild(messageElement);
-        });
-        
-        // Scroll to bottom
-        messagesList.scrollTop = messagesList.scrollHeight;
-      }
-    );
-    
-    // Send message
-    sendMessageBtn.addEventListener('click', async () => {
-      const content = messageInput.value.trim();
-      if (!content) return;
-      
-      try {
-        await sendMessage(conversationId, userId, content);
-        messageInput.value = '';
-      } catch (error) {
-        console.error('Error sending message:', error);
-        alert('Gagal mengirim pesan');
-      }
-    });
-    
-    // Send on Enter key
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessageBtn.click();
-      }
-    });
-  }
-
-  // Send message function
-  async function sendMessage(conversationId, recipientId, content) {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-    
-    const message = {
-      content: content,
-      senderId: currentUser.uid,
-      recipientId: recipientId,
-      timestamp: serverTimestamp(),
-      delivered: false,
-      read: false
-    };
-    
-    // Save message
-    await addDoc(
-      collection(db, 'conversations', conversationId, 'messages'),
-      message
-    );
-    
-    // Update contacts
-    const batch = writeBatch(db);
-    
-    // Update sender's contact
-    batch.set(doc(db, 'userContacts', currentUser.uid), {
-      [`contacts.${recipientId}.lastMessage`]: content,
-      [`contacts.${recipientId}.lastMessageTime`]: serverTimestamp(),
-      [`contacts.${recipientId}.unreadCount`]: 0
-    }, { merge: true });
-    
-    // Update recipient's contact
-    batch.set(doc(db, 'userContacts', recipientId), {
-      [`contacts.${currentUser.uid}.lastMessage`]: content,
-      [`contacts.${currentUser.uid}.lastMessageTime`]: serverTimestamp(),
-      [`contacts.${currentUser.uid}.unreadCount`]: increment(1)
-    }, { merge: true });
-    
-    await batch.commit();
-    
-    // Send notification
-    await createActivityNotification(
-      recipientId,
-      'message',
-      currentUser.uid,
-      currentUser.displayName || currentUser.email.split('@')[0],
-      content,
-      'message',
-      conversationId
-    );
-  }
-
- 
- 
- 
-  
-    // Check follow status
-  async function checkFollowStatus(userId, followBtn) {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-    
-    const followDoc = await getDoc(doc(db, 'userFollows', currentUser.uid));
-    if (followDoc.exists() && followDoc.data().following?.[userId]) {
-      followBtn.textContent = 'Berhenti Mengikuti';
-    } else {
-      followBtn.textContent = 'Ikuti';
-    }
-  }
-  
-  
-  
-  // Mark messages as read
-  async function markMessagesAsRead(userId) {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-    
-    const conversationId = [currentUser.uid, userId].sort().join('_');
-    
-    try {
-      // Get all unread messages
-      const q = query(
-        collection(db, 'conversations', conversationId, 'messages'),
-        where('recipientId', '==', currentUser.uid),
-        where('read', '==', false)
-      );
-      
-      const snapshot = await getDocs(q);
-      const batch = writeBatch(db);
-      
-      snapshot.forEach(doc => {
-        batch.update(doc.ref, { read: true });
-      });
-      
-      if (snapshot.size > 0) {
-        await batch.commit();
-        
-        // Update unread count in contacts
-        await updateDoc(doc(db, 'userContacts', currentUser.uid), {
-          [`contacts.${userId}.unreadCount`]: 0
-        }, { merge: true });
-      }
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
-  }
-  
-  
-  
-  
-  
-  // Load contacts
-  async function loadContacts() {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    if (unsubscribeContacts) unsubscribeContacts();
-
-    contactsList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Memuat kontak...</p></div>';
-
-    try {
-      // Get all users except current user
-      const usersSnapshot = await getDocs(query(
-        collection(db, 'users'),
-        where('uid', '!=', currentUser.uid)
-      ));
-
-      // Get existing contacts data
-      const contactsDoc = await getDoc(doc(db, 'userContacts', currentUser.uid));
-      const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
-
-      contactsList.innerHTML = '';
-
-      if (usersSnapshot.empty) {
-        contactsList.innerHTML = '<p>Tidak ada pengguna lain</p>';
-        return;
-      }
-
-      // Sort users by name
-      const sortedUsers = usersSnapshot.docs.sort((a, b) => {
-        const nameA = (a.data().displayName || a.data().email).toLowerCase();
-        const nameB = (b.data().displayName || b.data().email).toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-
-      // Display contacts
-      sortedUsers.forEach(userDoc => {
-        const user = userDoc.data();
-        const userId = user.uid;
-        const contactInfo = contactsData[userId] || {
-          lastMessage: 'Belum ada pesan',
-          lastMessageTime: null,
-          unreadCount: 0
-        };
-
-        const contactItem = document.createElement('div');
-        contactItem.className = `contact-item ${currentConversation === userId ? 'active' : ''}`;
-        contactItem.dataset.userId = userId;
-        contactItem.innerHTML = `
-          <div class="contact-info">
-            <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-            <div>
-              <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
-              <div class="contact-last-message">${contactInfo.lastMessage}</div>
-            </div>
-            ${contactInfo.unreadCount > 0 ? `<div class="unread-badge">${contactInfo.unreadCount}</div>` : ''}
-          </div>
-        `;
-
-        contactItem.addEventListener('click', () => {
-          currentConversation = userId;
-          loadConversation(userId, user.displayName || user.email.split('@')[0]);
-          markMessagesAsRead(userId);
-          
-          // Update active state
-          document.querySelectorAll('.contact-item').forEach(item => {
-            item.classList.remove('active');
-          });
-          contactItem.classList.add('active');
-        });
-
-        contactsList.appendChild(contactItem);
-      });
-
-      // Realtime listener for contact updates
-      unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (doc) => {
-        const updatedContacts = doc.exists() ? doc.data().contacts || {} : {};
-        
-        document.querySelectorAll('.contact-item').forEach(item => {
-          const userId = item.dataset.userId;
-          if (updatedContacts[userId]) {
-            const lastMessageEl = item.querySelector('.contact-last-message');
-            const unreadBadgeEl = item.querySelector('.unread-badge');
-            
-            if (lastMessageEl) {
-              lastMessageEl.textContent = updatedContacts[userId].lastMessage || 'Belum ada pesan';
-            }
-            
-            if (unreadBadgeEl) {
-              unreadBadgeEl.textContent = updatedContacts[userId].unreadCount || '0';
-              unreadBadgeEl.style.display = updatedContacts[userId].unreadCount > 0 ? 'flex' : 'none';
-            } else if (updatedContacts[userId].unreadCount > 0) {
-              item.querySelector('.contact-info').insertAdjacentHTML('beforeend', 
-                `<div class="unread-badge">${updatedContacts[userId].unreadCount}</div>`);
-            }
-          }
-        });
-      });
-
-    } catch (error) {
-      console.error('Error loading contacts:', error);
-      contactsList.innerHTML = '<p>Gagal memuat daftar kontak</p>';
-    }
-  }
-
-  
-
-  // Initialize messaging system
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      loadContacts();
-      
-      // Initialize user contacts if not exists
-      setDoc(doc(db, 'userContacts', user.uid), {
-        contacts: {}
-      }, { merge: true });
-    } else {
-      contactsList.innerHTML = '<p>Silakan login untuk melihat pesan</p>';
-      conversationContainer.innerHTML = '<div class="no-conversation-selected"><p>Silakan login untuk melihat percakapan</p></div>';
-      
-      if (unsubscribeContacts) unsubscribeContacts();
-      if (unsubscribeMessages) unsubscribeMessages();
-    }
-  });
-} 
-  
-  
  // Perbaikan fungsi setupFollowSystem()
 async function setupFollowSystem() {
   const followingCount = document.getElementById('followingCount');
@@ -8518,6 +8154,428 @@ async function setupFollowSystem() {
   
  
 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  // Start a conversation
+  function startConversation(userId, userName) {
+    currentConversation = userId;
+    loadConversation(userId, userName);
+    markMessagesAsRead(userId);
+  }
+
+  // Load conversation messages
+  function loadConversation(userId, userName) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    
+    // Clear previous conversation
+    if (unsubscribeMessages) unsubscribeMessages();
+    
+    conversationContainer.innerHTML = `
+      <div class="conversation-header">
+        <div class="conversation-user">${userName}</div>
+        <button class="follow-btn" id="followUserBtn" data-userid="${userId}">Ikuti</button>
+      </div>
+      <div class="messages-list" id="messagesList"></div>
+      <div class="message-input-container">
+        <input type="text" class="message-input" id="messageInput" placeholder="Ketik pesan...">
+        <button class="send-message-btn" id="sendMessageBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    `;
+    
+    const messagesList = document.getElementById('messagesList');
+    const messageInput = document.getElementById('messageInput');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const followUserBtn = document.getElementById('followUserBtn');
+    
+    // Check follow status
+    checkFollowStatus(userId, followUserBtn);
+    
+    // Follow button event
+    followUserBtn.addEventListener('click', async () => {
+      const isFollowing = followUserBtn.textContent === 'Berhenti Mengikuti';
+      const userName = document.querySelector('.conversation-user').textContent;
+      
+      if (isFollowing) {
+        await unfollowUser(userId);
+        followUserBtn.textContent = 'Ikuti';
+      } else {
+        await followUser(userId, userName);
+        followUserBtn.textContent = 'Berhenti Mengikuti';
+      }
+    });
+    
+    // Get conversation ID (combination of both user IDs sorted)
+    const conversationId = [currentUser.uid, userId].sort().join('_');
+    
+    // Load messages
+    unsubscribeMessages = onSnapshot(
+      query(
+        collection(db, 'conversations', conversationId, 'messages'),
+        orderBy('timestamp', 'asc')
+      ),
+      (snapshot) => {
+        messagesList.innerHTML = '';
+        
+        snapshot.forEach(doc => {
+          const message = doc.data();
+          const messageElement = document.createElement('div');
+          messageElement.className = `message-item ${message.senderId === currentUser.uid ? 'message-sent' : 'message-received'}`;
+          
+          let statusIcon = '';
+          if (message.senderId === currentUser.uid) {
+            if (message.read) {
+              statusIcon = '<span class="message-status read">✓✓</span>';
+            } else if (message.delivered) {
+              statusIcon = '<span class="message-status delivered">✓✓</span>';
+            } else {
+              statusIcon = '<span class="message-status sent">✓</span>';
+            }
+          }
+          
+          messageElement.innerHTML = `
+            <div class="message-bubble">${message.content}</div>
+            <div class="message-time">
+              ${formatTime(message.timestamp)}
+              ${statusIcon}
+            </div>
+          `;
+          
+          messagesList.appendChild(messageElement);
+        });
+        
+        // Scroll to bottom
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+    );
+    
+ // Di dalam fungsi loadConversation(), perbaiki bagian pengiriman pesan:
+sendMessageBtn.addEventListener('click', async () => {
+  const content = messageInput.value.trim();
+  if (!content) return;
+  
+  try {
+    // Pastikan currentConversation sudah terdefinisi dengan benar
+    if (!currentConversation) {
+      throw new Error('No conversation selected');
+    }
+    
+    // Pastikan conversationId dihitung dengan benar
+    const conversationId = [auth.currentUser.uid, currentConversation].sort().join('_');
+    
+    await sendMessage(conversationId, currentConversation, content);
+    messageInput.value = '';
+  } catch (error) {
+    console.error('Failed to send message:', error);
+    alert('Gagal mengirim pesan: ' + error.message);
+  }
+});
+    
+    // Send on Enter key
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessageBtn.click();
+      }
+    });
+  }
+
+
+
+
+
+
+async function sendMessage(conversationId, recipientId, content) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.error('User not authenticated');
+    return;
+  }
+
+  // Validasi recipientId
+  if (!recipientId || typeof recipientId !== 'string') {
+    console.error('Invalid recipientId:', recipientId);
+    throw new Error('Recipient ID is required');
+  }
+
+  try {
+    const messageData = {
+      content: content,
+      senderId: currentUser.uid,
+      recipientId: recipientId,
+      timestamp: serverTimestamp(),
+      delivered: false,
+      read: false
+    };
+
+    // Debug data sebelum dikirim
+    console.log('Sending message with data:', messageData);
+
+    // Simpan pesan ke Firestore
+    const messageRef = await addDoc(
+      collection(db, 'conversations', conversationId, 'messages'),
+      messageData
+    );
+
+    console.log('Message sent with ID:', messageRef.id);
+
+    // Update kontak pengguna
+    const batch = writeBatch(db);
+    
+    // Update kontak pengirim
+    batch.set(doc(db, 'userContacts', currentUser.uid), {
+      [`contacts.${recipientId}`]: {
+        lastMessage: content,
+        lastMessageTime: serverTimestamp(),
+        unreadCount: 0
+      }
+    }, { merge: true });
+    
+    // Update kontak penerima
+    batch.set(doc(db, 'userContacts', recipientId), {
+      [`contacts.${currentUser.uid}`]: {
+        lastMessage: content,
+        lastMessageTime: serverTimestamp(),
+        unreadCount: increment(1)
+      }
+    }, { merge: true });
+
+    await batch.commit();
+    console.log('Contacts updated successfully');
+
+    // Kirim notifikasi
+    await createActivityNotification(
+      recipientId,
+      'message',
+      currentUser.uid,
+      currentUser.displayName || currentUser.email.split('@')[0],
+      content,
+      'message',
+      conversationId
+    );
+
+    return messageRef.id;
+  } catch (error) {
+    console.error('Error in sendMessage:', error);
+    throw error;
+  }
+}
+
+
+
+
+
+
+
+ 
+ 
+ 
+  
+    // Check follow status
+  async function checkFollowStatus(userId, followBtn) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    
+    const followDoc = await getDoc(doc(db, 'userFollows', currentUser.uid));
+    if (followDoc.exists() && followDoc.data().following?.[userId]) {
+      followBtn.textContent = 'Berhenti Mengikuti';
+    } else {
+      followBtn.textContent = 'Ikuti';
+    }
+  }
+  
+  
+  
+  async function markMessagesAsRead(userId) {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.error('User not authenticated');
+    return;
+  }
+
+  // Validasi userId
+  if (!userId || typeof userId !== 'string') {
+    console.error('Invalid userId:', userId);
+    return;
+  }
+
+  const conversationId = [currentUser.uid, userId].sort().join('_');
+  
+  try {
+    // Dapatkan pesan yang belum dibaca
+    const q = query(
+      collection(db, 'conversations', conversationId, 'messages'),
+      where('recipientId', '==', currentUser.uid),
+      where('read', '==', false)
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      console.log('No unread messages to mark as read');
+      return;
+    }
+
+    // Buat batch update
+    const batch = writeBatch(db);
+    snapshot.forEach(doc => {
+      batch.update(doc.ref, { read: true });
+    });
+
+    await batch.commit();
+    console.log(`${snapshot.size} messages marked as read`);
+
+    // Update unread count
+    await updateDoc(doc(db, 'userContacts', currentUser.uid), {
+      [`contacts.${userId}.unreadCount`]: 0
+    }, { merge: true });
+
+  } catch (error) {
+    console.error('Error in markMessagesAsRead:', error);
+    // Jangan throw error agar tidak mengganggu UX
+  }
+}
+  
+  
+  
+  
+  // Load contacts
+  async function loadContacts() {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    if (unsubscribeContacts) unsubscribeContacts();
+
+    contactsList.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Memuat kontak...</p></div>';
+
+    try {
+      // Get all users except current user
+      const usersSnapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('uid', '!=', currentUser.uid)
+      ));
+
+      // Get existing contacts data
+      const contactsDoc = await getDoc(doc(db, 'userContacts', currentUser.uid));
+      const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
+
+      contactsList.innerHTML = '';
+
+      if (usersSnapshot.empty) {
+        contactsList.innerHTML = '<p>Tidak ada pengguna lain</p>';
+        return;
+      }
+
+      // Sort users by name
+      const sortedUsers = usersSnapshot.docs.sort((a, b) => {
+        const nameA = (a.data().displayName || a.data().email).toLowerCase();
+        const nameB = (b.data().displayName || b.data().email).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      // Display contacts
+      sortedUsers.forEach(userDoc => {
+        const user = userDoc.data();
+        const userId = user.uid;
+        const contactInfo = contactsData[userId] || {
+          lastMessage: 'Belum ada pesan',
+          lastMessageTime: null,
+          unreadCount: 0
+        };
+
+        const contactItem = document.createElement('div');
+        contactItem.className = `contact-item ${currentConversation === userId ? 'active' : ''}`;
+        contactItem.dataset.userId = userId;
+        contactItem.innerHTML = `
+          <div class="contact-info">
+            <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+            <div>
+              <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
+              <div class="contact-last-message">${contactInfo.lastMessage}</div>
+            </div>
+            ${contactInfo.unreadCount > 0 ? `<div class="unread-badge">${contactInfo.unreadCount}</div>` : ''}
+          </div>
+        `;
+
+        contactItem.addEventListener('click', () => {
+          currentConversation = userId;
+          loadConversation(userId, user.displayName || user.email.split('@')[0]);
+          markMessagesAsRead(userId);
+          
+          // Update active state
+          document.querySelectorAll('.contact-item').forEach(item => {
+            item.classList.remove('active');
+          });
+          contactItem.classList.add('active');
+        });
+
+        contactsList.appendChild(contactItem);
+      });
+
+      // Realtime listener for contact updates
+      unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (doc) => {
+        const updatedContacts = doc.exists() ? doc.data().contacts || {} : {};
+        
+        document.querySelectorAll('.contact-item').forEach(item => {
+          const userId = item.dataset.userId;
+          if (updatedContacts[userId]) {
+            const lastMessageEl = item.querySelector('.contact-last-message');
+            const unreadBadgeEl = item.querySelector('.unread-badge');
+            
+            if (lastMessageEl) {
+              lastMessageEl.textContent = updatedContacts[userId].lastMessage || 'Belum ada pesan';
+            }
+            
+            if (unreadBadgeEl) {
+              unreadBadgeEl.textContent = updatedContacts[userId].unreadCount || '0';
+              unreadBadgeEl.style.display = updatedContacts[userId].unreadCount > 0 ? 'flex' : 'none';
+            } else if (updatedContacts[userId].unreadCount > 0) {
+              item.querySelector('.contact-info').insertAdjacentHTML('beforeend', 
+                `<div class="unread-badge">${updatedContacts[userId].unreadCount}</div>`);
+            }
+          }
+        });
+      });
+
+    } catch (error) {
+      console.error('Error loading contacts:', error);
+      contactsList.innerHTML = '<p>Gagal memuat daftar kontak</p>';
+    }
+  }
+
+  
+
+  // Initialize messaging system
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loadContacts();
+      
+      // Initialize user contacts if not exists
+      setDoc(doc(db, 'userContacts', user.uid), {
+        contacts: {}
+      }, { merge: true });
+    } else {
+      contactsList.innerHTML = '<p>Silakan login untuk melihat pesan</p>';
+      conversationContainer.innerHTML = '<div class="no-conversation-selected"><p>Silakan login untuk melihat percakapan</p></div>';
+      
+      if (unsubscribeContacts) unsubscribeContacts();
+      if (unsubscribeMessages) unsubscribeMessages();
+    }
+  });
+} 
+  
+  
 
 
 
