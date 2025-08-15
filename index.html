@@ -8141,7 +8141,40 @@ async function setupMessagingSystem() {
   
   
   
-  
+  // Mark messages as read
+  async function markMessagesAsRead(userId) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    
+    const conversationId = [currentUser.uid, userId].sort().join('_');
+    
+    try {
+      // Get all unread messages
+      const q = query(
+        collection(db, 'conversations', conversationId, 'messages'),
+        where('recipientId', '==', currentUser.uid),
+        where('read', '==', false)
+      );
+      
+      const snapshot = await getDocs(q);
+      const batch = writeBatch(db);
+      
+      snapshot.forEach(doc => {
+        batch.update(doc.ref, { read: true });
+      });
+      
+      if (snapshot.size > 0) {
+        await batch.commit();
+        
+        // Update unread count in contacts
+        await updateDoc(doc(db, 'userContacts', currentUser.uid), {
+          [`contacts.${userId}.unreadCount`]: 0
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  }
   
   
   
@@ -8251,40 +8284,7 @@ async function setupMessagingSystem() {
     }
   }
 
-  // Mark messages as read
-  async function markMessagesAsRead(userId) {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-    
-    const conversationId = [currentUser.uid, userId].sort().join('_');
-    
-    try {
-      // Get all unread messages
-      const q = query(
-        collection(db, 'conversations', conversationId, 'messages'),
-        where('recipientId', '==', currentUser.uid),
-        where('read', '==', false)
-      );
-      
-      const snapshot = await getDocs(q);
-      const batch = writeBatch(db);
-      
-      snapshot.forEach(doc => {
-        batch.update(doc.ref, { read: true });
-      });
-      
-      if (snapshot.size > 0) {
-        await batch.commit();
-        
-        // Update unread count in contacts
-        await updateDoc(doc(db, 'userContacts', currentUser.uid), {
-          [`contacts.${userId}.unreadCount`]: 0
-        }, { merge: true });
-      }
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
-  }
+  
 
   // Initialize messaging system
   onAuthStateChanged(auth, (user) => {
