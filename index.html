@@ -8052,69 +8052,80 @@ async function setupMessagingSystem() {
     }
   });
 
-  // Fungsi untuk memuat daftar penerima pesan
-  async function loadMessageRecipients(searchTerm = '') {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-    
-    messageRecipientList.innerHTML = '<div class="loader">Memuat pengguna...</div>';
-    
-    try {
-      const usersSnapshot = await getDocs(query(
-        collection(db, 'users'),
-        where('uid', '!=', currentUser.uid)
-      ));
-      
-      messageRecipientList.innerHTML = '';
-      
-      if (usersSnapshot.empty) {
-        messageRecipientList.innerHTML = '<p>Tidak ada pengguna lain</p>';
-        return;
-      }
-      
-      const searchLower = searchTerm.toLowerCase();
-      const filteredUsers = usersSnapshot.docs
-        .filter(doc => {
-          const user = doc.data();
-          const userName = (user.displayName || user.email.split('@')[0]).toLowerCase();
-          const userEmail = user.email.toLowerCase();
-          return userName.includes(searchLower) || userEmail.includes(searchLower);
-        })
-        .sort((a, b) => {
-          const nameA = (a.data().displayName || a.data().email).toLowerCase();
-          const nameB = (b.data().displayName || b.data().email).toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-      
-      if (filteredUsers.length === 0) {
-        messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
-        return;
-      }
-      
-      filteredUsers.forEach(doc => {
+
+
+
+// Fungsi untuk memuat daftar penerima pesan
+async function loadMessageRecipients(searchTerm = '') {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+  
+  messageRecipientList.innerHTML = '<div class="loader">Memuat pengguna...</div>';
+
+  try {
+    // Ambil semua pengguna
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+
+    // Filter: hilangkan user yang sedang login
+    let allUsers = usersSnapshot.docs.filter(doc => doc.id !== currentUser.uid);
+
+    const searchLower = searchTerm.toLowerCase();
+    const filteredUsers = allUsers
+      .filter(doc => {
         const user = doc.data();
-        const userItem = document.createElement('div');
-        userItem.className = 'user-item';
-        userItem.innerHTML = `
-          <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-          <div>
-            <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
-            <div class="user-email">${user.email}</div>
-          </div>
-        `;
-        
-        userItem.addEventListener('click', () => {
-          newMessageModal.style.display = 'none';
-          startConversation(user.uid, user.displayName || user.email.split('@')[0]);
-        });
-        
-        messageRecipientList.appendChild(userItem);
+        const userName = (user.displayName || user.email.split('@')[0]).toLowerCase();
+        const userEmail = user.email.toLowerCase();
+        return userName.includes(searchLower) || userEmail.includes(searchLower);
+      })
+      .sort((a, b) => {
+        const nameA = (a.data().displayName || a.data().email).toLowerCase();
+        const nameB = (b.data().displayName || b.data().email).toLowerCase();
+        return nameA.localeCompare(nameB);
       });
-    } catch (error) {
-      console.error('Error loading recipients:', error);
-      messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
+
+    messageRecipientList.innerHTML = '';
+
+    if (filteredUsers.length === 0) {
+      messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
+      return;
     }
+
+    filteredUsers.forEach(doc => {
+      const user = doc.data();
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+      userItem.innerHTML = `
+        <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+        <div>
+          <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
+          <div class="user-email">${user.email}</div>
+        </div>
+      `;
+
+      userItem.addEventListener('click', () => {
+        newMessageModal.style.display = 'none';
+        startConversation(doc.id, user.displayName || user.email.split('@')[0]);
+      });
+
+      messageRecipientList.appendChild(userItem);
+    });
+  } catch (error) {
+    console.error('Error loading recipients:', error);
+    messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Mulai percakapan baru
   function startConversation(userId, userName) {
