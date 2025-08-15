@@ -7694,8 +7694,7 @@ async function setupMessagingSystem() {
     
     
 	
-	
-	async function sendMessage(conversationId, recipientId, content) {
+async function sendMessage(conversationId, recipientId, content) {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
 
@@ -7703,32 +7702,38 @@ async function setupMessagingSystem() {
     const message = {
       content: content,
       senderId: currentUser.uid,
-      recipientId: recipientId, // Make sure this is not undefined
+      recipientId: recipientId, // Pastikan ini tidak undefined
       timestamp: serverTimestamp(),
       delivered: false,
       read: false
     };
 
-    await addDoc(collection(db, 'conversations', conversationId, 'messages'), message);
-    
-    // Update last message in contacts
+    // Simpan pesan baru
+    await addDoc(
+      collection(db, 'conversations', conversationId, 'messages'),
+      message
+    );
+
+    // Update kontak pengirim
     await updateDoc(doc(db, 'userContacts', currentUser.uid), {
       [`contacts.${recipientId}.lastMessage`]: content,
       [`contacts.${recipientId}.lastMessageTime`]: serverTimestamp(),
       [`contacts.${recipientId}.unreadCount`]: 0
-    }, { merge: true });
+    });
 
+    // Update kontak penerima
     await updateDoc(doc(db, 'userContacts', recipientId), {
       [`contacts.${currentUser.uid}.lastMessage`]: content,
       [`contacts.${currentUser.uid}.lastMessageTime`]: serverTimestamp(),
       [`contacts.${currentUser.uid}.unreadCount`]: increment(1)
-    }, { merge: true });
+    });
+
   } catch (error) {
     console.error("Error sending message:", error);
     throw error;
   }
 }
-	
+
 	
 	
 	
