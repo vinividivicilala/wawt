@@ -8625,52 +8625,6 @@ async function checkFollowStatus(userId, followBtn) {
 }
 
 
-// Format waktu
-function formatTime(timestamp) {
-  if (!timestamp) return 'Baru saja';
-  
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now - date) / 1000);
-  
-  if (diffInSeconds < 60) return 'Baru saja';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
-  
-  return date.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-}
-
-// Buat notifikasi
-async function createActivityNotification(
-  recipientId,
-  type,
-  senderId,
-  senderName,
-  content,
-  contentType,
-  contentId
-) {
-  try {
-    await addDoc(collection(db, 'notifications'), {
-      userId: recipientId,
-      type,
-      senderId,
-      senderName,
-      content,
-      contentType,
-      contentId,
-      read: false,
-      timestamp: serverTimestamp()
-    });
-  } catch (error) {
-    console.error('Error creating notification:', error);
-  }
-}
 
 
 
