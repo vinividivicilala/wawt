@@ -7949,207 +7949,6 @@ async function loadMessageRecipients(searchTerm = '') {
 
  
  
- 
- 
- // Perbaikan fungsi setupFollowSystem()
-async function setupFollowSystem() {
-  const followingCount = document.getElementById('followingCount');
-  const followersCount = document.getElementById('followersCount');
-  const followingList = document.getElementById('followingList');
-  const followersList = document.getElementById('followersList');
-  
-  let unsubscribeFollowing = null;
-  let unsubscribeFollowers = null;
-  
-  // Load follow data
-  function loadFollowData(userId) {
-    // Load following count and list
-    if (unsubscribeFollowing) unsubscribeFollowing();
-    
-    unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), (doc) => {
-      const data = doc.data();
-      const following = data?.following || {};
-      const followingIds = Object.keys(following);
-      
-      followingCount.textContent = followingIds.length;
-      
-      // Load following list
-      if (followingIds.length === 0) {
-        followingList.innerHTML = '<p>Belum mengikuti siapapun</p>';
-      } else {
-        getDocs(query(
-          collection(db, 'users'),
-          where('uid', 'in', followingIds)
-        )).then(snapshot => {
-          followingList.innerHTML = '';
-          
-          snapshot.forEach(userDoc => {
-            const user = userDoc.data();
-            const followItem = document.createElement('div');
-            followItem.className = 'follow-user-item';
-            followItem.innerHTML = `
-              <div class="follow-user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-              <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
-              <button class="follow-btn unfollow-btn" data-userid="${user.uid}">Berhenti Mengikuti</button>
-            `;
-            
-            followItem.querySelector('button').addEventListener('click', () => {
-              unfollowUser(user.uid);
-            });
-            
-            followingList.appendChild(followItem);
-          });
-        });
-      }
-    });
-    
-    // Load followers count and list
-    if (unsubscribeFollowers) unsubscribeFollowers();
-    
-    unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), (doc) => {
-      const data = doc.data();
-      const followers = data?.followers || {};
-      const followerIds = Object.keys(followers);
-      
-      followersCount.textContent = followerIds.length;
-      
-      // Load followers list
-      if (followerIds.length === 0) {
-        followersList.innerHTML = '<p>Belum memiliki pengikut</p>';
-      } else {
-        getDocs(query(
-          collection(db, 'users'),
-          where('uid', 'in', followerIds)
-        )).then(snapshot => {
-          followersList.innerHTML = '';
-          
-          snapshot.forEach(userDoc => {
-            const user = userDoc.data();
-            const followItem = document.createElement('div');
-            followItem.className = 'follow-user-item';
-            
-            // Check if current user is following this follower
-            const isFollowing = data?.following?.[user.uid] || false;
-            
-            followItem.innerHTML = `
-              <div class="follow-user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-              <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
-              <button class="follow-btn ${isFollowing ? 'unfollow-btn' : ''}" data-userid="${user.uid}">
-                ${isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
-              </button>
-            `;
-            
-            followItem.querySelector('button').addEventListener('click', () => {
-              if (isFollowing) {
-                unfollowUser(user.uid);
-              } else {
-                followUser(user.uid, user.displayName || user.email.split('@')[0]);
-              }
-            });
-            
-            followersList.appendChild(followItem);
-          });
-        });
-      }
-    });
-  }
-  
-  // Follow a user
-  async function followUser(userId, userName) {
-    const currentUser = auth.currentUser;
-    if (!currentUser || currentUser.uid === userId) return;
-    
-    try {
-      const batch = writeBatch(db);
-      
-      // Add to current user's following
-      batch.set(doc(db, 'userFollows', currentUser.uid), {
-        following: {
-          [userId]: true
-        }
-      }, { merge: true });
-      
-      // Add to target user's followers
-      batch.set(doc(db, 'userFollows', userId), {
-        followers: {
-          [currentUser.uid]: true
-        }
-      }, { merge: true });
-      
-      await batch.commit();
-      
-      // Send notification
-      await createActivityNotification(
-        userId,
-        'follow',
-        currentUser.uid,
-        currentUser.displayName || currentUser.email.split('@')[0],
-        '',
-        'profile',
-        currentUser.uid
-      );
-      
-      // Add to activity feed
-      await addDoc(collection(db, 'activities'), {
-        userId: currentUser.uid,
-        type: 'follow',
-        targetUserId: userId,
-        targetUserName: userName,
-        timestamp: serverTimestamp()
-      });
-    } catch (error) {
-      console.error('Error following user:', error);
-      alert('Gagal mengikuti pengguna');
-    }
-  }
-  
-  // Unfollow a user
-  async function unfollowUser(userId) {
-    const currentUser = auth.currentUser;
-    if (!currentUser || currentUser.uid === userId) return;
-    
-    try {
-      const batch = writeBatch(db);
-      
-      // Remove from current user's following
-      batch.update(doc(db, 'userFollows', currentUser.uid), {
-        [`following.${userId}`]: deleteField()
-      });
-      
-      // Remove from target user's followers
-      batch.update(doc(db, 'userFollows', userId), {
-        [`followers.${currentUser.uid}`]: deleteField()
-      });
-      
-      await batch.commit();
-    } catch (error) {
-      console.error('Error unfollowing user:', error);
-      alert('Gagal berhenti mengikuti pengguna');
-    }
-  }
-  
-  // Initialize follow system
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      loadFollowData(user.uid);
-      
-      // Initialize user follows if not exists
-      setDoc(doc(db, 'userFollows', user.uid), {
-        following: {},
-        followers: {}
-      }, { merge: true });
-    } else {
-      followingCount.textContent = '0';
-      followersCount.textContent = '0';
-      followingList.innerHTML = '<p>Silakan login untuk melihat daftar</p>';
-      followersList.innerHTML = '<p>Silakan login untuk melihat daftar</p>';
-      
-      if (unsubscribeFollowing) unsubscribeFollowing();
-      if (unsubscribeFollowers) unsubscribeFollowers();
-    }
-  });
-} 
-  
   
   
  
@@ -8767,6 +8566,207 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+ 
+ 
+ // Perbaikan fungsi setupFollowSystem()
+async function setupFollowSystem() {
+  const followingCount = document.getElementById('followingCount');
+  const followersCount = document.getElementById('followersCount');
+  const followingList = document.getElementById('followingList');
+  const followersList = document.getElementById('followersList');
+  
+  let unsubscribeFollowing = null;
+  let unsubscribeFollowers = null;
+  
+  // Load follow data
+  function loadFollowData(userId) {
+    // Load following count and list
+    if (unsubscribeFollowing) unsubscribeFollowing();
+    
+    unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), (doc) => {
+      const data = doc.data();
+      const following = data?.following || {};
+      const followingIds = Object.keys(following);
+      
+      followingCount.textContent = followingIds.length;
+      
+      // Load following list
+      if (followingIds.length === 0) {
+        followingList.innerHTML = '<p>Belum mengikuti siapapun</p>';
+      } else {
+        getDocs(query(
+          collection(db, 'users'),
+          where('uid', 'in', followingIds)
+        )).then(snapshot => {
+          followingList.innerHTML = '';
+          
+          snapshot.forEach(userDoc => {
+            const user = userDoc.data();
+            const followItem = document.createElement('div');
+            followItem.className = 'follow-user-item';
+            followItem.innerHTML = `
+              <div class="follow-user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+              <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
+              <button class="follow-btn unfollow-btn" data-userid="${user.uid}">Berhenti Mengikuti</button>
+            `;
+            
+            followItem.querySelector('button').addEventListener('click', () => {
+              unfollowUser(user.uid);
+            });
+            
+            followingList.appendChild(followItem);
+          });
+        });
+      }
+    });
+    
+    // Load followers count and list
+    if (unsubscribeFollowers) unsubscribeFollowers();
+    
+    unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), (doc) => {
+      const data = doc.data();
+      const followers = data?.followers || {};
+      const followerIds = Object.keys(followers);
+      
+      followersCount.textContent = followerIds.length;
+      
+      // Load followers list
+      if (followerIds.length === 0) {
+        followersList.innerHTML = '<p>Belum memiliki pengikut</p>';
+      } else {
+        getDocs(query(
+          collection(db, 'users'),
+          where('uid', 'in', followerIds)
+        )).then(snapshot => {
+          followersList.innerHTML = '';
+          
+          snapshot.forEach(userDoc => {
+            const user = userDoc.data();
+            const followItem = document.createElement('div');
+            followItem.className = 'follow-user-item';
+            
+            // Check if current user is following this follower
+            const isFollowing = data?.following?.[user.uid] || false;
+            
+            followItem.innerHTML = `
+              <div class="follow-user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+              <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
+              <button class="follow-btn ${isFollowing ? 'unfollow-btn' : ''}" data-userid="${user.uid}">
+                ${isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
+              </button>
+            `;
+            
+            followItem.querySelector('button').addEventListener('click', () => {
+              if (isFollowing) {
+                unfollowUser(user.uid);
+              } else {
+                followUser(user.uid, user.displayName || user.email.split('@')[0]);
+              }
+            });
+            
+            followersList.appendChild(followItem);
+          });
+        });
+      }
+    });
+  }
+  
+  // Follow a user
+  async function followUser(userId, userName) {
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid === userId) return;
+    
+    try {
+      const batch = writeBatch(db);
+      
+      // Add to current user's following
+      batch.set(doc(db, 'userFollows', currentUser.uid), {
+        following: {
+          [userId]: true
+        }
+      }, { merge: true });
+      
+      // Add to target user's followers
+      batch.set(doc(db, 'userFollows', userId), {
+        followers: {
+          [currentUser.uid]: true
+        }
+      }, { merge: true });
+      
+      await batch.commit();
+      
+      // Send notification
+      await createActivityNotification(
+        userId,
+        'follow',
+        currentUser.uid,
+        currentUser.displayName || currentUser.email.split('@')[0],
+        '',
+        'profile',
+        currentUser.uid
+      );
+      
+      // Add to activity feed
+      await addDoc(collection(db, 'activities'), {
+        userId: currentUser.uid,
+        type: 'follow',
+        targetUserId: userId,
+        targetUserName: userName,
+        timestamp: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error following user:', error);
+      alert('Gagal mengikuti pengguna');
+    }
+  }
+  
+  // Unfollow a user
+  async function unfollowUser(userId) {
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid === userId) return;
+    
+    try {
+      const batch = writeBatch(db);
+      
+      // Remove from current user's following
+      batch.update(doc(db, 'userFollows', currentUser.uid), {
+        [`following.${userId}`]: deleteField()
+      });
+      
+      // Remove from target user's followers
+      batch.update(doc(db, 'userFollows', userId), {
+        [`followers.${currentUser.uid}`]: deleteField()
+      });
+      
+      await batch.commit();
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+      alert('Gagal berhenti mengikuti pengguna');
+    }
+  }
+  
+  // Initialize follow system
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loadFollowData(user.uid);
+      
+      // Initialize user follows if not exists
+      setDoc(doc(db, 'userFollows', user.uid), {
+        following: {},
+        followers: {}
+      }, { merge: true });
+    } else {
+      followingCount.textContent = '0';
+      followersCount.textContent = '0';
+      followingList.innerHTML = '<p>Silakan login untuk melihat daftar</p>';
+      followersList.innerHTML = '<p>Silakan login untuk melihat daftar</p>';
+      
+      if (unsubscribeFollowing) unsubscribeFollowing();
+      if (unsubscribeFollowers) unsubscribeFollowers();
+    }
+  });
+} 
+  
 
 
 
