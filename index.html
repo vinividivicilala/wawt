@@ -8603,11 +8603,6 @@ async function setupFollowSystem() {
 
 
 
-
-
-
-
-// Fungsi render daftar follow
 async function renderFollowList(container, items, listType) {
   if (Object.keys(items).length === 0) {
     container.innerHTML = `<div class="empty-state">${
@@ -8616,25 +8611,46 @@ async function renderFollowList(container, items, listType) {
     return;
   }
 
-  container.innerHTML = '';
+  container.innerHTML = '<div class="loader">Memuat...</div>';
 
-  for (let uid of Object.keys(items)) {
-    try {
-      const userSnap = await getDoc(doc(db, 'users', uid));
+  try {
+    const userDocs = await Promise.all(
+      Object.keys(items).map(uid => getDoc(doc(db, 'users', uid)))
+    );
+
+    container.innerHTML = '';
+    userDocs.forEach((userSnap, idx) => {
       if (userSnap.exists()) {
         const user = userSnap.data();
         const followItem = createFollowItem(user);
         container.appendChild(followItem);
 
-        // ✅ cek status follow agar tombol benar
+        // status tombol pakai cache currentFollowing
         const followBtn = followItem.querySelector('.follow-btn');
-        checkFollowStatus(uid, followBtn);
+        if (currentFollowing[userSnap.id]) {
+          followBtn.textContent = "Berhenti Mengikuti";
+          followBtn.classList.add("unfollow-btn");
+        }
       }
-    } catch (e) {
-      console.error("Error load user:", e);
-    }
+    });
+  } catch (e) {
+    console.error("Error render follow list:", e);
+    container.innerHTML = '<p>Gagal memuat daftar</p>';
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Fungsi follow yang diperbaiki untuk permanen
 async function followUser(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
@@ -8784,22 +8800,15 @@ function createFollowItem(user) {
 
   return followItem;
 }
-// Cek status follow
-async function checkFollowStatus(userId, followBtn) {
-  const currentUser = auth.currentUser;
-  if (!currentUser || !userId || !followBtn) return;
-  
-  try {
-    const followDoc = await getDoc(doc(db, 'userFollows', currentUser.uid));
-    if (followDoc.exists() && followDoc.data().following?.[userId]) {
-      followBtn.textContent = 'Berhenti Mengikuti';
-      followBtn.classList.add('unfollow-btn');
-    } else {
-      followBtn.textContent = 'Ikuti';
-      followBtn.classList.remove('unfollow-btn');
-    }
-  } catch (error) {
-    console.error('Error checking follow status:', error);
+
+
+function checkFollowStatus(userId, followBtn) {
+  if (currentFollowing[userId]) {
+    followBtn.textContent = 'Berhenti Mengikuti';
+    followBtn.classList.add('unfollow-btn');
+  } else {
+    followBtn.textContent = 'Ikuti';
+    followBtn.classList.remove('unfollow-btn');
   }
 }
 
@@ -8815,7 +8824,7 @@ async function checkFollowStatus(userId, followBtn) {
 // Jalankan sistem saat halaman dimuat
 document.addEventListener('DOMContentLoaded', () => {
   setupMessagingSystem();
-  setupFollowSystem();
+ 
  
   
   // Format tanggal bergabung
