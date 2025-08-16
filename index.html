@@ -8528,39 +8528,59 @@ async function loadMessageRecipients(searchTerm = '') {
 
 
 
+// Global cache following
+let currentFollowing = {};
+let unsubscribeFollowingRealtime = null;
 
-// Fungsi yang diperbaiki untuk setup follow system
+// Listener realtime untuk following
+function startFollowingListener() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  if (unsubscribeFollowingRealtime) unsubscribeFollowingRealtime(); // stop listener lama
+
+  const userRef = doc(db, "userFollows", currentUser.uid);
+  unsubscribeFollowingRealtime = onSnapshot(userRef, (snap) => {
+    const data = snap.data() || {};
+    currentFollowing = data.following || {};
+
+    // Update semua tombol follow di halaman
+    document.querySelectorAll(".follow-btn").forEach(btn => {
+      const targetId = btn.getAttribute("data-userid");
+      if (currentFollowing[targetId]) {
+        btn.textContent = "Berhenti Mengikuti";
+        btn.classList.add("unfollow-btn");
+      } else {
+        btn.textContent = "Ikuti";
+        btn.classList.remove("unfollow-btn");
+      }
+    });
+  });
+}
+
+// Setup follow system
 async function setupFollowSystem() {
   const followingCount = document.getElementById('followingCount');
   const followersCount = document.getElementById('followersCount');
   const followingList = document.getElementById('followingList');
   const followersList = document.getElementById('followersList');
-  
-  let unsubscribeFollowing = null;
+
   let unsubscribeFollowers = null;
 
   onAuthStateChanged(auth, async (user) => {
-    if (unsubscribeFollowing) unsubscribeFollowing();
     if (unsubscribeFollowers) unsubscribeFollowers();
 
     if (user) {
-      // Initialize userFollows document if not exists
+      // Initialize jika belum ada
       await setDoc(doc(db, 'userFollows', user.uid), {
         following: {},
         followers: {}
       }, { merge: true });
 
-      // Load following data
-      unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', user.uid), (doc) => {
-        const data = doc.data();
-        const following = data?.following || {};
-        const followingIds = Object.keys(following);
-        
-        followingCount.textContent = followingIds.length;
-        renderFollowList(followingList, following, 'following');
-      });
+      // Hitung following
+      startFollowingListener();
 
-      // Load followers data
+      // Hitung followers
       unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', user.uid), (doc) => {
         const data = doc.data();
         const followers = data?.followers || {};
@@ -8577,6 +8597,15 @@ async function setupFollowSystem() {
     }
   });
 }
+
+
+
+
+
+
+
+
+
 
 // Fungsi render daftar follow
 async function renderFollowList(container, items, listType) {
@@ -8777,43 +8806,6 @@ async function checkFollowStatus(userId, followBtn) {
 
 
 
-// Global cache following
-let currentFollowing = {};
-
-// Listener realtime following current user
-function listenFollowingRealtime() {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
-
-  const userRef = doc(db, "userFollows", currentUser.uid);
-  onSnapshot(userRef, (snap) => {
-    const data = snap.data() || {};
-    currentFollowing = data.following || {};
-
-    // Update semua tombol follow yang ada di halaman
-    document.querySelectorAll(".follow-btn").forEach(btn => {
-      const targetId = btn.getAttribute("data-userid");
-      if (currentFollowing[targetId]) {
-        btn.textContent = "Berhenti Mengikuti";
-        btn.classList.add("unfollow-btn");
-      } else {
-        btn.textContent = "Ikuti";
-        btn.classList.remove("unfollow-btn");
-      }
-    });
-  });
-}
-
-
-
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    listenFollowingRealtime(); // ✅ sync tombol otomatis
-  }
-});
-
-
-
 
 
 
@@ -8824,7 +8816,7 @@ onAuthStateChanged(auth, async (user) => {
 document.addEventListener('DOMContentLoaded', () => {
   setupMessagingSystem();
   setupFollowSystem();
-   listenFollowingRealtime();
+ 
   
   // Format tanggal bergabung
   onAuthStateChanged(auth, async (user) => {
@@ -8858,7 +8850,7 @@ function initializeEnhancedDashboard() {
   trackUserPresence();
    setupMessagingSystem(); // Add this
   setupFollowSystem(); // Add this
-   listenFollowingRealtime();
+ 
       
 	  
 
