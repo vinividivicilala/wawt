@@ -8529,32 +8529,45 @@ async function loadMessageRecipients(searchTerm = '') {
 
 
 
-
-
-
-
-// simpan di global
-let unsubscribeFollowing = null;
-let unsubscribeFollowers = null;
-
-
-
+// Fungsi yang diperbaiki untuk setup follow system
 async function setupFollowSystem() {
   const followingCount = document.getElementById('followingCount');
   const followersCount = document.getElementById('followersCount');
   const followingList = document.getElementById('followingList');
   const followersList = document.getElementById('followersList');
   
-  
-  // Initialize
-  onAuthStateChanged(auth, (user) => {
+  let unsubscribeFollowing = null;
+  let unsubscribeFollowers = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (unsubscribeFollowing) unsubscribeFollowing();
+    if (unsubscribeFollowers) unsubscribeFollowers();
+
     if (user) {
-      // Buat dokumen userFollows jika belum ada
-      setDoc(doc(db, 'userFollows', user.uid), {
+      // Initialize userFollows document if not exists
+      await setDoc(doc(db, 'userFollows', user.uid), {
         following: {},
         followers: {}
-      }, { merge: true }).then(() => {
-        loadFollowData(user.uid);
+      }, { merge: true });
+
+      // Load following data
+      unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', user.uid), (doc) => {
+        const data = doc.data();
+        const following = data?.following || {};
+        const followingIds = Object.keys(following);
+        
+        followingCount.textContent = followingIds.length;
+        renderFollowList(followingList, following, 'following');
+      });
+
+      // Load followers data
+      unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', user.uid), (doc) => {
+        const data = doc.data();
+        const followers = data?.followers || {};
+        const followerIds = Object.keys(followers);
+        
+        followersCount.textContent = followerIds.length;
+        renderFollowList(followersList, followers, 'followers');
       });
     } else {
       followingCount.textContent = '0';
@@ -8563,90 +8576,29 @@ async function setupFollowSystem() {
       followersList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
     }
   });
+}
+
+// Fungsi untuk render daftar follow
+async function renderFollowList(container, items, listType) {
+  if (Object.keys(items).length === 0) {
+    container.innerHTML = `<div class="empty-state">${listType === 'following' ? 'Belum mengikuti siapapun' : 'Belum memiliki pengikut'}</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
   
-  // Cleanup saat komponen unmount
-  return () => {
-    if (unsubscribeFollowing) unsubscribeFollowing();
-    if (unsubscribeFollowers) unsubscribeFollowers();
-  };
-}
-
-
-
-
-
-
-
-
-async function loadFollowData(userId) {
-  if (unsubscribeFollowing) unsubscribeFollowing();
-  if (unsubscribeFollowers) unsubscribeFollowers();
-
-  // Load following
-  unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
-    const data = doc.data();
-    const following = data?.following || {};
-    const followingIds = Object.keys(following);
-    
-    followingCount.textContent = followingIds.length;
-    
-    if (followingIds.length === 0) {
-      followingList.innerHTML = '<div class="empty-state">Belum mengikuti siapapun</div>';
-    } else {
-      // Get user details for all followed users
-      const usersSnapshot = await getDocs(query(
-        collection(db, 'users'),
-        where('uid', 'in', followingIds)
-      ));
-      
-      followingList.innerHTML = '';
-      
-      usersSnapshot.forEach(userDoc => {
-        const user = userDoc.data();
-        const followData = following[user.uid];
-        const followItem = createFollowItem(user, true);
-        followingList.appendChild(followItem);
-      });
-    }
-  });
-
-  // Load followers
-  unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
-    const data = doc.data();
-    const followers = data?.followers || {};
-    const followerIds = Object.keys(followers);
-    
-    followersCount.textContent = followerIds.length;
-    
-    if (followerIds.length === 0) {
-      followersList.innerHTML = '<div class="empty-state">Belum memiliki pengikut</div>';
-    } else {
-      // Get user details for all followers
-      const usersSnapshot = await getDocs(query(
-        collection(db, 'users'),
-        where('uid', 'in', followerIds)
-      ));
-      
-      followersList.innerHTML = '';
-      
-      usersSnapshot.forEach(userDoc => {
-        const user = userDoc.data();
-        const isFollowing = data?.following?.[user.uid] || false;
-        const followItem = createFollowItem(user, isFollowing);
-        followersList.appendChild(followItem);
-      });
-    }
+  // Get user details for all items
+  const usersSnapshot = await getDocs(query(
+    collection(db, 'users'),
+    where('uid', 'in', Object.keys(items))
+  ));
+  
+  usersSnapshot.forEach(userDoc => {
+    const user = userDoc.data();
+    const followItem = createFollowItem(user, listType === 'following');
+    container.appendChild(followItem);
   });
 }
-
-
-
-
-
-
-
-
-
 
 // Fungsi follow yang diperbaiki untuk permanen
 async function followUser(targetUserId, targetUserName) {
@@ -8760,7 +8712,6 @@ async function unfollowUser(targetUserId) {
   }
 }
 
-
 // Fungsi pembuat item follow
 function createFollowItem(user, isFollowing) {
   const followItem = document.createElement('div');
@@ -8797,16 +8748,6 @@ function createFollowItem(user, isFollowing) {
   return followItem;
 }
 
-
-
-
-
-
-
-
-
-
-
 // Cek status follow
 async function checkFollowStatus(userId, followBtn) {
   const currentUser = auth.currentUser;
@@ -8825,6 +8766,17 @@ async function checkFollowStatus(userId, followBtn) {
     console.error('Error checking follow status:', error);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
