@@ -8578,7 +8578,7 @@ async function setupFollowSystem() {
   });
 }
 
-// Fungsi untuk render daftar follow (support >10 user)
+// Fungsi render daftar follow
 async function renderFollowList(container, items, listType) {
   if (Object.keys(items).length === 0) {
     container.innerHTML = `<div class="empty-state">${
@@ -8597,7 +8597,7 @@ async function renderFollowList(container, items, listType) {
         const followItem = createFollowItem(user);
         container.appendChild(followItem);
 
-        // Cek status follow agar tombol sinkron
+        // ✅ cek status follow agar tombol benar
         const followBtn = followItem.querySelector('.follow-btn');
         checkFollowStatus(uid, followBtn);
       }
@@ -8718,7 +8718,7 @@ async function unfollowUser(targetUserId) {
   }
 }
 
-// Fungsi pembuat item follow (selalu dinamis via checkFollowStatus)
+// Fungsi pembuat item follow
 function createFollowItem(user) {
   const followItem = document.createElement('div');
   followItem.className = 'follow-user-item';
@@ -8734,8 +8734,9 @@ function createFollowItem(user) {
     <button class="follow-btn" data-userid="${user.uid}">Ikuti</button>
   `;
 
-  // Event listener tombol follow/unfollow
   const followBtn = followItem.querySelector('.follow-btn');
+
+  // Event listener tombol follow/unfollow
   followBtn.addEventListener('click', async () => {
     try {
       if (followBtn.classList.contains('unfollow-btn')) {
@@ -8743,6 +8744,9 @@ function createFollowItem(user) {
       } else {
         await followUser(user.uid, user.displayName || user.email.split('@')[0]);
       }
+
+      // ✅ update status tombol setelah action
+      checkFollowStatus(user.uid, followBtn);
     } catch (error) {
       console.error('Error in follow operation:', error);
       alert('Operasi gagal: ' + error.message);
@@ -8751,7 +8755,6 @@ function createFollowItem(user) {
 
   return followItem;
 }
-
 // Cek status follow
 async function checkFollowStatus(userId, followBtn) {
   const currentUser = auth.currentUser;
