@@ -8578,28 +8578,34 @@ async function setupFollowSystem() {
   });
 }
 
-// Fungsi untuk render daftar follow
+// Fungsi untuk render daftar follow (support >10 user)
 async function renderFollowList(container, items, listType) {
   if (Object.keys(items).length === 0) {
-    container.innerHTML = `<div class="empty-state">${listType === 'following' ? 'Belum mengikuti siapapun' : 'Belum memiliki pengikut'}</div>`;
+    container.innerHTML = `<div class="empty-state">${
+      listType === 'following' ? 'Belum mengikuti siapapun' : 'Belum memiliki pengikut'
+    }</div>`;
     return;
   }
 
   container.innerHTML = '';
-  
-  // Get user details for all items
-  const usersSnapshot = await getDocs(query(
-    collection(db, 'users'),
-    where('uid', 'in', Object.keys(items))
-  ));
-  
-  usersSnapshot.forEach(userDoc => {
-    const user = userDoc.data();
-    const followItem = createFollowItem(user, listType === 'following');
-    container.appendChild(followItem);
-  });
-}
 
+  for (let uid of Object.keys(items)) {
+    try {
+      const userSnap = await getDoc(doc(db, 'users', uid));
+      if (userSnap.exists()) {
+        const user = userSnap.data();
+        const followItem = createFollowItem(user);
+        container.appendChild(followItem);
+
+        // Cek status follow agar tombol sinkron
+        const followBtn = followItem.querySelector('.follow-btn');
+        checkFollowStatus(uid, followBtn);
+      }
+    } catch (e) {
+      console.error("Error load user:", e);
+    }
+  }
+}
 // Fungsi follow yang diperbaiki untuk permanen
 async function followUser(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
@@ -8712,11 +8718,11 @@ async function unfollowUser(targetUserId) {
   }
 }
 
-// Fungsi pembuat item follow
-function createFollowItem(user, isFollowing) {
+// Fungsi pembuat item follow (selalu dinamis via checkFollowStatus)
+function createFollowItem(user) {
   const followItem = document.createElement('div');
   followItem.className = 'follow-user-item';
-  
+
   followItem.innerHTML = `
     <div class="follow-user-avatar">
       ${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}
@@ -8725,16 +8731,14 @@ function createFollowItem(user, isFollowing) {
       <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
       <div class="follow-user-email">${user.email || ''}</div>
     </div>
-    <button class="follow-btn ${isFollowing ? 'unfollow-btn' : ''}" data-userid="${user.uid}">
-      ${isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
-    </button>
+    <button class="follow-btn" data-userid="${user.uid}">Ikuti</button>
   `;
-  
-  // Tambahkan event listener untuk tombol follow/unfollow
+
+  // Event listener tombol follow/unfollow
   const followBtn = followItem.querySelector('.follow-btn');
   followBtn.addEventListener('click', async () => {
     try {
-      if (isFollowing) {
+      if (followBtn.classList.contains('unfollow-btn')) {
         await unfollowUser(user.uid);
       } else {
         await followUser(user.uid, user.displayName || user.email.split('@')[0]);
@@ -8744,7 +8748,7 @@ function createFollowItem(user, isFollowing) {
       alert('Operasi gagal: ' + error.message);
     }
   });
-  
+
   return followItem;
 }
 
