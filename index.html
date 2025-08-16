@@ -8572,24 +8572,69 @@ async function setupFollowSystem() {
 
 
 
-  
-  // Initialize
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      loadFollowData(user.uid);
-      setDoc(doc(db, 'userFollows', user.uid), {
-        following: {},
-        followers: {}
-      }, { merge: true });
+
+
+
+async function loadFollowData(userId) {
+  if (unsubscribeFollowing) unsubscribeFollowing();
+  if (unsubscribeFollowers) unsubscribeFollowers();
+
+  // Load following
+  unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
+    const data = doc.data();
+    const following = data?.following || {};
+    const followingIds = Object.keys(following);
+    
+    followingCount.textContent = followingIds.length;
+    
+    if (followingIds.length === 0) {
+      followingList.innerHTML = '<div class="empty-state">Belum mengikuti siapapun</div>';
     } else {
-      followingCount.textContent = '0';
-      followersCount.textContent = '0';
-      followingList.innerHTML = '<p>Silakan login untuk melihat daftar</p>';
-      followersList.innerHTML = '<p>Silakan login untuk melihat daftar</p>';
+      // Get user details for all followed users
+      const usersSnapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('uid', 'in', followingIds)
+      ));
+      
+      followingList.innerHTML = '';
+      
+      usersSnapshot.forEach(userDoc => {
+        const user = userDoc.data();
+        const followData = following[user.uid];
+        const followItem = createFollowItem(user, true);
+        followingList.appendChild(followItem);
+      });
     }
   });
 
-
+  // Load followers
+  unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
+    const data = doc.data();
+    const followers = data?.followers || {};
+    const followerIds = Object.keys(followers);
+    
+    followersCount.textContent = followerIds.length;
+    
+    if (followerIds.length === 0) {
+      followersList.innerHTML = '<div class="empty-state">Belum memiliki pengikut</div>';
+    } else {
+      // Get user details for all followers
+      const usersSnapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('uid', 'in', followerIds)
+      ));
+      
+      followersList.innerHTML = '';
+      
+      usersSnapshot.forEach(userDoc => {
+        const user = userDoc.data();
+        const isFollowing = data?.following?.[user.uid] || false;
+        const followItem = createFollowItem(user, isFollowing);
+        followersList.appendChild(followItem);
+      });
+    }
+  });
+}
 
 
 
@@ -8712,70 +8757,6 @@ async function unfollowUser(targetUserId) {
   }
 }
 
-
-
-
-
-async function loadFollowData(userId) {
-  if (unsubscribeFollowing) unsubscribeFollowing();
-  if (unsubscribeFollowers) unsubscribeFollowers();
-
-  // Load following
-  unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
-    const data = doc.data();
-    const following = data?.following || {};
-    const followingIds = Object.keys(following);
-    
-    followingCount.textContent = followingIds.length;
-    
-    if (followingIds.length === 0) {
-      followingList.innerHTML = '<div class="empty-state">Belum mengikuti siapapun</div>';
-    } else {
-      // Get user details for all followed users
-      const usersSnapshot = await getDocs(query(
-        collection(db, 'users'),
-        where('uid', 'in', followingIds)
-      ));
-      
-      followingList.innerHTML = '';
-      
-      usersSnapshot.forEach(userDoc => {
-        const user = userDoc.data();
-        const followData = following[user.uid];
-        const followItem = createFollowItem(user, true);
-        followingList.appendChild(followItem);
-      });
-    }
-  });
-
-  // Load followers
-  unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
-    const data = doc.data();
-    const followers = data?.followers || {};
-    const followerIds = Object.keys(followers);
-    
-    followersCount.textContent = followerIds.length;
-    
-    if (followerIds.length === 0) {
-      followersList.innerHTML = '<div class="empty-state">Belum memiliki pengikut</div>';
-    } else {
-      // Get user details for all followers
-      const usersSnapshot = await getDocs(query(
-        collection(db, 'users'),
-        where('uid', 'in', followerIds)
-      ));
-      
-      followersList.innerHTML = '';
-      
-      usersSnapshot.forEach(userDoc => {
-        const user = userDoc.data();
-        const isFollowing = data?.following?.[user.uid] || false;
-        const followItem = createFollowItem(user, isFollowing);
-        followersList.appendChild(followItem);
-      });
-    }
-  });
-}
 
 // Fungsi pembuat item follow
 function createFollowItem(user, isFollowing) {
