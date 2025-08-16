@@ -8533,48 +8533,6 @@ async function loadMessageRecipients(searchTerm = '') {
 
 
 
-
-async function setupFollowSystem() {
-  const followingCount = document.getElementById('followingCount');
-  const followersCount = document.getElementById('followersCount');
-  const followingList = document.getElementById('followingList');
-  const followersList = document.getElementById('followersList');
-  
-  let unsubscribeFollowing = null;
-  let unsubscribeFollowers = null;
-  
-  // Initialize
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // Buat dokumen userFollows jika belum ada
-      setDoc(doc(db, 'userFollows', user.uid), {
-        following: {},
-        followers: {}
-      }, { merge: true }).then(() => {
-        loadFollowData(user.uid);
-      });
-    } else {
-      followingCount.textContent = '0';
-      followersCount.textContent = '0';
-      followingList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
-      followersList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
-    }
-  });
-  
-  // Cleanup saat komponen unmount
-  return () => {
-    if (unsubscribeFollowing) unsubscribeFollowing();
-    if (unsubscribeFollowers) unsubscribeFollowers();
-  };
-}
-
-
-
-
-
-
-
-
 async function loadFollowData(userId) {
   if (unsubscribeFollowing) unsubscribeFollowing();
   if (unsubscribeFollowers) unsubscribeFollowers();
@@ -8635,6 +8593,48 @@ async function loadFollowData(userId) {
     }
   });
 }
+
+
+
+
+async function setupFollowSystem() {
+  const followingCount = document.getElementById('followingCount');
+  const followersCount = document.getElementById('followersCount');
+  const followingList = document.getElementById('followingList');
+  const followersList = document.getElementById('followersList');
+  
+  let unsubscribeFollowing = null;
+  let unsubscribeFollowers = null;
+  
+  // Initialize
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // Buat dokumen userFollows jika belum ada
+      setDoc(doc(db, 'userFollows', user.uid), {
+        following: {},
+        followers: {}
+      }, { merge: true }).then(() => {
+        loadFollowData(user.uid);
+      });
+    } else {
+      followingCount.textContent = '0';
+      followersCount.textContent = '0';
+      followingList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
+      followersList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
+    }
+  });
+  
+  // Cleanup saat komponen unmount
+  return () => {
+    if (unsubscribeFollowing) unsubscribeFollowing();
+    if (unsubscribeFollowers) unsubscribeFollowers();
+  };
+}
+
+
+
+
+
 
 
 
