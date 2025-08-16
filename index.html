@@ -8777,9 +8777,40 @@ async function checkFollowStatus(userId, followBtn) {
 
 
 
+// Global cache following
+let currentFollowing = {};
+
+// Listener realtime following current user
+function listenFollowingRealtime() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
+  const userRef = doc(db, "userFollows", currentUser.uid);
+  onSnapshot(userRef, (snap) => {
+    const data = snap.data() || {};
+    currentFollowing = data.following || {};
+
+    // Update semua tombol follow yang ada di halaman
+    document.querySelectorAll(".follow-btn").forEach(btn => {
+      const targetId = btn.getAttribute("data-userid");
+      if (currentFollowing[targetId]) {
+        btn.textContent = "Berhenti Mengikuti";
+        btn.classList.add("unfollow-btn");
+      } else {
+        btn.textContent = "Ikuti";
+        btn.classList.remove("unfollow-btn");
+      }
+    });
+  });
+}
 
 
 
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    listenFollowingRealtime(); // ✅ sync tombol otomatis
+  }
+});
 
 
 
