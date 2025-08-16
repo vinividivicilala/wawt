@@ -8729,35 +8729,46 @@ async function loadFollowData(userId) {
 
 
 
-
-
-
 async function followUser(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
-  if (!currentUser || currentUser.uid === targetUserId) return false;
+  if (!currentUser || currentUser.uid === targetUserId) {
+    throw new Error("Invalid operation");
+  }
 
   try {
     const batch = writeBatch(db);
     const timestamp = serverTimestamp();
-
-    // Update following of current user
-    batch.set(doc(db, 'userFollows', currentUser.uid), {
-      [`following.${targetUserId}`]: {
-        userId: targetUserId,
-        userName: targetUserName,
-        timestamp
-      }
-    }, { merge: true });
-
-    // Update followers of target user
-    batch.set(doc(db, 'userFollows', targetUserId), {
-      [`followers.${currentUser.uid}`]: {
-        userId: currentUser.uid,
-        userName: currentUser.displayName || currentUser.email.split('@')[0],
-        timestamp
-      }
-    }, { merge: true });
-
+    
+    // Update following dari current user
+    batch.set(
+      doc(db, 'userFollows', currentUser.uid),
+      {
+        following: {
+          [targetUserId]: {
+            userId: targetUserId,
+            userName: targetUserName,
+            timestamp: timestamp
+          }
+        }
+      },
+      { merge: true }
+    );
+    
+    // Update followers dari target user
+    batch.set(
+      doc(db, 'userFollows', targetUserId),
+      {
+        followers: {
+          [currentUser.uid]: {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || currentUser.email.split('@')[0],
+            timestamp: timestamp
+          }
+        }
+      },
+      { merge: true }
+    );
+    
     await batch.commit();
     return true;
   } catch (error) {
