@@ -8530,16 +8530,17 @@ async function loadMessageRecipients(searchTerm = '') {
 
 
 
-
-
+// simpan di global
+let unsubscribeFollowing = null;
+let unsubscribeFollowers = null;
 
 async function loadFollowData(userId) {
   if (unsubscribeFollowing) unsubscribeFollowing();
   if (unsubscribeFollowers) unsubscribeFollowers();
 
   // Load following
-  unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
-    const data = doc.data();
+  unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), async (docSnap) => {
+    const data = docSnap.data();
     const following = data?.following || {};
     const followingIds = Object.keys(following);
     
@@ -8548,17 +8549,14 @@ async function loadFollowData(userId) {
     if (followingIds.length === 0) {
       followingList.innerHTML = '<div class="empty-state">Belum mengikuti siapapun</div>';
     } else {
-      // Get user details for all followed users
       const usersSnapshot = await getDocs(query(
         collection(db, 'users'),
         where('uid', 'in', followingIds)
       ));
       
       followingList.innerHTML = '';
-      
       usersSnapshot.forEach(userDoc => {
         const user = userDoc.data();
-        const followData = following[user.uid];
         const followItem = createFollowItem(user, true);
         followingList.appendChild(followItem);
       });
@@ -8566,8 +8564,8 @@ async function loadFollowData(userId) {
   });
 
   // Load followers
-  unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
-    const data = doc.data();
+  unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), async (docSnap) => {
+    const data = docSnap.data();
     const followers = data?.followers || {};
     const followerIds = Object.keys(followers);
     
@@ -8576,14 +8574,12 @@ async function loadFollowData(userId) {
     if (followerIds.length === 0) {
       followersList.innerHTML = '<div class="empty-state">Belum memiliki pengikut</div>';
     } else {
-      // Get user details for all followers
       const usersSnapshot = await getDocs(query(
         collection(db, 'users'),
         where('uid', 'in', followerIds)
       ));
       
       followersList.innerHTML = '';
-      
       usersSnapshot.forEach(userDoc => {
         const user = userDoc.data();
         const isFollowing = data?.following?.[user.uid] || false;
@@ -8594,22 +8590,14 @@ async function loadFollowData(userId) {
   });
 }
 
-
-
-
 async function setupFollowSystem() {
   const followingCount = document.getElementById('followingCount');
   const followersCount = document.getElementById('followersCount');
   const followingList = document.getElementById('followingList');
   const followersList = document.getElementById('followersList');
   
-  let unsubscribeFollowing = null;
-  let unsubscribeFollowers = null;
-  
-  // Initialize
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      // Buat dokumen userFollows jika belum ada
       setDoc(doc(db, 'userFollows', user.uid), {
         following: {},
         followers: {}
@@ -8623,18 +8611,12 @@ async function setupFollowSystem() {
       followersList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
     }
   });
-  
-  // Cleanup saat komponen unmount
+
   return () => {
     if (unsubscribeFollowing) unsubscribeFollowing();
     if (unsubscribeFollowers) unsubscribeFollowers();
   };
 }
-
-
-
-
-
 
 
 
