@@ -4356,7 +4356,85 @@ iframe:hover {
 
 
 
+/* Follow System Styles */
+.follow-user-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #333;
+  transition: background-color 0.2s;
+}
 
+.follow-user-item:hover {
+  background-color: #2a2a2a;
+}
+
+.follow-user-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #4a90e2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.follow-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.follow-user-name {
+  font-weight: bold;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.follow-user-email {
+  color: #aaa;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.follow-btn {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.follow-btn:hover {
+  background-color: #3a80d2;
+}
+
+.unfollow-btn {
+  background-color: #e74c3c;
+}
+
+.unfollow-btn:hover {
+  background-color: #d63c2c;
+}
+
+.empty-state {
+  padding: 20px;
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+}
 
 	
 	
@@ -8311,134 +8389,107 @@ async function loadMessageRecipients(searchTerm = '') {
  
  
  
- async function loadContacts() {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
+ 
 
-  if (unsubscribeContacts) unsubscribeContacts();
+  // Fungsi untuk memuat kontak
+  async function loadContacts() {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
-  contactsList.innerHTML = '<div class="loader">Memuat kontak...</div>';
+    if (unsubscribeContacts) unsubscribeContacts();
 
-  try {
-    // Load contacts from userContacts collection
-    const contactsDoc = await getDoc(doc(db, 'userContacts', currentUser.uid));
-    const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
+    contactsList.innerHTML = '<div class="loader">Memuat kontak...</div>';
 
-    // Get all users that have messaged or been messaged by current user
-    const contactedUserIds = Object.keys(contactsData);
-    
-    if (contactedUserIds.length === 0) {
-      contactsList.innerHTML = '<p>Belum ada riwayat pesan</p>';
-      return;
-    }
+    try {
+      const usersSnapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('uid', '!=', currentUser.uid)
+      ));
 
-    // Get user details for all contacted users
-    const usersSnapshot = await getDocs(query(
-      collection(db, 'users'),
-      where('uid', 'in', contactedUserIds)
-    ));
+      const contactsDoc = await getDoc(doc(db, 'userContacts', currentUser.uid));
+      const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
 
-    // Create a map of user data for easy access
-    const usersMap = {};
-    usersSnapshot.forEach(doc => {
-      usersMap[doc.id] = doc.data();
-    });
+      contactsList.innerHTML = '';
 
-    contactsList.innerHTML = '';
+      if (usersSnapshot.empty) {
+        contactsList.innerHTML = '<p>Tidak ada pengguna lain</p>';
+        return;
+      }
 
-    // Sort contacts by last message time (newest first)
-    const sortedContacts = contactedUserIds.sort((a, b) => {
-      const timeA = contactsData[a]?.lastMessageTime?.seconds || 0;
-      const timeB = contactsData[b]?.lastMessageTime?.seconds || 0;
-      return timeB - timeA;
-    });
+      const sortedUsers = usersSnapshot.docs.sort((a, b) => {
+        const nameA = (a.data().displayName || a.data().email).toLowerCase();
+        const nameB = (b.data().displayName || b.data().email).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
 
-    // Display all contacted users permanently
-    sortedContacts.forEach(userId => {
-      const user = usersMap[userId];
-      const contactInfo = contactsData[userId] || {
-        lastMessage: 'Belum ada pesan',
-        lastMessageTime: null,
-        unreadCount: 0
-      };
+      sortedUsers.forEach(userDoc => {
+        const user = userDoc.data();
+        const userId = user.uid;
+        const contactInfo = contactsData[userId] || {
+          lastMessage: 'Belum ada pesan',
+          lastMessageTime: null,
+          unreadCount: 0
+        };
 
-      if (!user) return;
-
-      const contactItem = document.createElement('div');
-      contactItem.className = `contact-item ${currentConversation === userId ? 'active' : ''}`;
-      contactItem.dataset.userId = userId;
-      contactItem.innerHTML = `
-        <div class="contact-info">
-          <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-          <div>
-            <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
-            <div class="contact-last-message">${contactInfo.lastMessage}</div>
+        const contactItem = document.createElement('div');
+        contactItem.className = `contact-item ${currentConversation === userId ? 'active' : ''}`;
+        contactItem.dataset.userId = userId;
+        contactItem.innerHTML = `
+          <div class="contact-info">
+            <div class="contact-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
+            <div>
+              <div class="contact-name">${user.displayName || user.email.split('@')[0]}</div>
+              <div class="contact-last-message">${contactInfo.lastMessage}</div>
+            </div>
+            ${contactInfo.unreadCount > 0 ? `<div class="unread-badge">${contactInfo.unreadCount}</div>` : ''}
           </div>
-          ${contactInfo.unreadCount > 0 ? `<div class="unread-badge">${contactInfo.unreadCount}</div>` : ''}
-        </div>
-      `;
+        `;
 
-      contactItem.addEventListener('click', () => {
-        if (userId) {
-          currentConversation = userId;
-          loadConversation(userId, user.displayName || user.email.split('@')[0]);
-          markMessagesAsRead(userId);
-          
-          document.querySelectorAll('.contact-item').forEach(item => {
-            item.classList.remove('active');
-          });
-          contactItem.classList.add('active');
-        }
+        contactItem.addEventListener('click', () => {
+          if (userId) {
+            currentConversation = userId;
+            loadConversation(userId, user.displayName || user.email.split('@')[0]);
+            markMessagesAsRead(userId);
+            
+            document.querySelectorAll('.contact-item').forEach(item => {
+              item.classList.remove('active');
+            });
+            contactItem.classList.add('active');
+          }
+        });
+
+        contactsList.appendChild(contactItem);
       });
 
-      contactsList.appendChild(contactItem);
-    });
-
-    // Realtime updates for contacts
-    unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (doc) => {
-      const updatedContacts = doc.exists() ? doc.data().contacts || {} : {};
-      
-      document.querySelectorAll('.contact-item').forEach(item => {
-        const userId = item.dataset.userId;
-        if (updatedContacts[userId]) {
-          const lastMessageEl = item.querySelector('.contact-last-message');
-          const unreadBadgeEl = item.querySelector('.unread-badge');
-          
-          if (lastMessageEl) {
-            lastMessageEl.textContent = updatedContacts[userId].lastMessage || 'Belum ada pesan';
+      unsubscribeContacts = onSnapshot(doc(db, 'userContacts', currentUser.uid), (doc) => {
+        const updatedContacts = doc.exists() ? doc.data().contacts || {} : {};
+        
+        document.querySelectorAll('.contact-item').forEach(item => {
+          const userId = item.dataset.userId;
+          if (updatedContacts[userId]) {
+            const lastMessageEl = item.querySelector('.contact-last-message');
+            const unreadBadgeEl = item.querySelector('.unread-badge');
+            
+            if (lastMessageEl) {
+              lastMessageEl.textContent = updatedContacts[userId].lastMessage || 'Belum ada pesan';
+            }
+            
+            if (unreadBadgeEl) {
+              unreadBadgeEl.textContent = updatedContacts[userId].unreadCount;
+              unreadBadgeEl.style.display = updatedContacts[userId].unreadCount > 0 ? 'flex' : 'none';
+            } else if (updatedContacts[userId].unreadCount > 0) {
+              item.querySelector('.contact-info').insertAdjacentHTML('beforeend', 
+                `<div class="unread-badge">${updatedContacts[userId].unreadCount}</div>`);
+            }
           }
-          
-          if (unreadBadgeEl) {
-            unreadBadgeEl.textContent = updatedContacts[userId].unreadCount;
-            unreadBadgeEl.style.display = updatedContacts[userId].unreadCount > 0 ? 'flex' : 'none';
-          } else if (updatedContacts[userId].unreadCount > 0) {
-            item.querySelector('.contact-info').insertAdjacentHTML('beforeend', 
-              `<div class="unread-badge">${updatedContacts[userId].unreadCount}</div>`);
-          }
-        }
+        });
       });
-    });
-  } catch (error) {
-    console.error('Error loading contacts:', error);
-    contactsList.innerHTML = '<p>Gagal memuat daftar kontak</p>';
+    } catch (error) {
+      console.error('Error loading contacts:', error);
+      contactsList.innerHTML = '<p>Gagal memuat daftar kontak</p>';
+    }
   }
-}
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+
   // Tandai pesan sebagai sudah dibaca
   async function markMessagesAsRead(userId) {
     const currentUser = auth.currentUser;
@@ -8482,6 +8533,7 @@ async function loadMessageRecipients(searchTerm = '') {
 
 
 
+
 async function setupFollowSystem() {
   const followingCount = document.getElementById('followingCount');
   const followersCount = document.getElementById('followersCount');
@@ -8490,106 +8542,41 @@ async function setupFollowSystem() {
   
   let unsubscribeFollowing = null;
   let unsubscribeFollowers = null;
-
-  // Load follow data
-  function loadFollowData(userId) {
+  
+  // Initialize
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // Buat dokumen userFollows jika belum ada
+      setDoc(doc(db, 'userFollows', user.uid), {
+        following: {},
+        followers: {}
+      }, { merge: true }).then(() => {
+        loadFollowData(user.uid);
+      });
+    } else {
+      followingCount.textContent = '0';
+      followersCount.textContent = '0';
+      followingList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
+      followersList.innerHTML = '<div class="empty-state">Silakan login untuk melihat daftar</div>';
+    }
+  });
+  
+  // Cleanup saat komponen unmount
+  return () => {
     if (unsubscribeFollowing) unsubscribeFollowing();
     if (unsubscribeFollowers) unsubscribeFollowers();
-    
-    // Following - show permanently
-    unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), (doc) => {
-      const data = doc.data();
-      const following = data?.following || {};
-      const followingIds = Object.keys(following);
-      
-      followingCount.textContent = followingIds.length;
-      
-      if (followingIds.length === 0) {
-        followingList.innerHTML = '<p>Belum mengikuti siapapun</p>';
-      } else {
-        getDocs(query(
-          collection(db, 'users'),
-          where('uid', 'in', followingIds)
-        )).then(snapshot => {
-          followingList.innerHTML = '';
-          
-          snapshot.forEach(userDoc => {
-            const user = userDoc.data();
-            const followItem = document.createElement('div');
-            followItem.className = 'follow-user-item';
-            followItem.innerHTML = `
-              <div class="follow-user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-              <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
-              <button class="follow-btn unfollow-btn" data-userid="${user.uid}">Berhenti Mengikuti</button>
-            `;
-            
-            followItem.querySelector('button').addEventListener('click', () => {
-              unfollowUser(user.uid);
-            });
-            
-            followingList.appendChild(followItem);
-          });
-        });
-      }
-    });
-    
-    // Followers - show permanently
-    unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), (doc) => {
-      const data = doc.data();
-      const followers = data?.followers || {};
-      const followerIds = Object.keys(followers);
-      
-      followersCount.textContent = followerIds.length;
-      
-      if (followerIds.length === 0) {
-        followersList.innerHTML = '<p>Belum memiliki pengikut</p>';
-      } else {
-        getDocs(query(
-          collection(db, 'users'),
-          where('uid', 'in', followerIds)
-        )).then(snapshot => {
-          followersList.innerHTML = '';
-          
-          snapshot.forEach(userDoc => {
-            const user = userDoc.data();
-            const followItem = document.createElement('div');
-            followItem.className = 'follow-user-item';
-            
-            const isFollowing = data?.following?.[user.uid] || false;
-            
-            followItem.innerHTML = `
-              <div class="follow-user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-              <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
-              <button class="follow-btn ${isFollowing ? 'unfollow-btn' : ''}" data-userid="${user.uid}">
-                ${isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
-              </button>
-            `;
-            
-            followItem.querySelector('button').addEventListener('click', async () => {
-              try {
-                if (isFollowing) {
-                  await unfollowUser(user.uid);
-                } else {
-                  await followUser(user.uid, user.displayName || user.email.split('@')[0]);
-                }
-              } catch (error) {
-                console.error('Error in follow operation:', error);
-                alert('Operasi gagal: ' + error.message);
-              }
-            });
-            
-            followersList.appendChild(followItem);
-          });
-        });
-      }
-    });
-  }
+  };
+}
+
+
+
+
+
   
   // Initialize
   onAuthStateChanged(auth, (user) => {
     if (user) {
       loadFollowData(user.uid);
-      // Initialize user's follow document if not exists
       setDoc(doc(db, 'userFollows', user.uid), {
         following: {},
         followers: {}
@@ -8603,7 +8590,17 @@ async function setupFollowSystem() {
   });
 }
 
-// Enhanced follow/unfollow functions
+
+
+
+
+
+
+
+
+
+
+// Fungsi follow yang diperbaiki untuk permanen
 async function followUser(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
   if (!currentUser || currentUser.uid === targetUserId) {
@@ -8618,7 +8615,11 @@ async function followUser(targetUserId, targetUserName) {
       doc(db, 'userFollows', currentUser.uid),
       {
         following: {
-          [targetUserId]: true
+          [targetUserId]: {
+            userId: targetUserId,
+            userName: targetUserName,
+            timestamp: serverTimestamp()
+          }
         }
       },
       { merge: true }
@@ -8629,7 +8630,11 @@ async function followUser(targetUserId, targetUserName) {
       doc(db, 'userFollows', targetUserId),
       {
         followers: {
-          [currentUser.uid]: true
+          [currentUser.uid]: {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || currentUser.email.split('@')[0],
+            timestamp: serverTimestamp()
+          }
         }
       },
       { merge: true }
@@ -8664,6 +8669,7 @@ async function followUser(targetUserId, targetUserName) {
   }
 }
 
+// Fungsi unfollow yang diperbaiki
 async function unfollowUser(targetUserId) {
   const currentUser = auth.currentUser;
   if (!currentUser || currentUser.uid === targetUserId) {
@@ -8704,6 +8710,107 @@ async function unfollowUser(targetUserId) {
     console.error("Error unfollowing user:", error);
     throw error;
   }
+}
+
+
+
+
+
+async function loadFollowData(userId) {
+  if (unsubscribeFollowing) unsubscribeFollowing();
+  if (unsubscribeFollowers) unsubscribeFollowers();
+
+  // Load following
+  unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
+    const data = doc.data();
+    const following = data?.following || {};
+    const followingIds = Object.keys(following);
+    
+    followingCount.textContent = followingIds.length;
+    
+    if (followingIds.length === 0) {
+      followingList.innerHTML = '<div class="empty-state">Belum mengikuti siapapun</div>';
+    } else {
+      // Get user details for all followed users
+      const usersSnapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('uid', 'in', followingIds)
+      ));
+      
+      followingList.innerHTML = '';
+      
+      usersSnapshot.forEach(userDoc => {
+        const user = userDoc.data();
+        const followData = following[user.uid];
+        const followItem = createFollowItem(user, true);
+        followingList.appendChild(followItem);
+      });
+    }
+  });
+
+  // Load followers
+  unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', userId), async (doc) => {
+    const data = doc.data();
+    const followers = data?.followers || {};
+    const followerIds = Object.keys(followers);
+    
+    followersCount.textContent = followerIds.length;
+    
+    if (followerIds.length === 0) {
+      followersList.innerHTML = '<div class="empty-state">Belum memiliki pengikut</div>';
+    } else {
+      // Get user details for all followers
+      const usersSnapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('uid', 'in', followerIds)
+      ));
+      
+      followersList.innerHTML = '';
+      
+      usersSnapshot.forEach(userDoc => {
+        const user = userDoc.data();
+        const isFollowing = data?.following?.[user.uid] || false;
+        const followItem = createFollowItem(user, isFollowing);
+        followersList.appendChild(followItem);
+      });
+    }
+  });
+}
+
+// Fungsi pembuat item follow
+function createFollowItem(user, isFollowing) {
+  const followItem = document.createElement('div');
+  followItem.className = 'follow-user-item';
+  
+  followItem.innerHTML = `
+    <div class="follow-user-avatar">
+      ${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}
+    </div>
+    <div class="follow-user-info">
+      <div class="follow-user-name">${user.displayName || user.email.split('@')[0]}</div>
+      <div class="follow-user-email">${user.email || ''}</div>
+    </div>
+    <button class="follow-btn ${isFollowing ? 'unfollow-btn' : ''}" data-userid="${user.uid}">
+      ${isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
+    </button>
+  `;
+  
+  // Tambahkan event listener untuk tombol follow/unfollow
+  const followBtn = followItem.querySelector('.follow-btn');
+  followBtn.addEventListener('click', async () => {
+    try {
+      if (isFollowing) {
+        await unfollowUser(user.uid);
+      } else {
+        await followUser(user.uid, user.displayName || user.email.split('@')[0]);
+      }
+    } catch (error) {
+      console.error('Error in follow operation:', error);
+      alert('Operasi gagal: ' + error.message);
+    }
+  });
+  
+  return followItem;
 }
 
 
