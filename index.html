@@ -9040,6 +9040,148 @@ async function toggleFollow(targetUserId, targetUserName) {
 
 
 
+async function followUserWithTransaction(targetUserId, targetUserName) {
+  const currentUser = auth.currentUser;
+  if (!currentUser || currentUser.uid === targetUserId) {
+    throw new Error("Invalid operation");
+  }
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      // 1. Reference dokumen
+      const currentUserFollowRef = doc(db, 'userFollows', currentUser.uid);
+      const targetUserFollowRef = doc(db, 'userFollows', targetUserId);
+      
+      // 2. Get dokumen
+      const currentUserDoc = await transaction.get(currentUserFollowRef);
+      const targetUserDoc = await transaction.get(targetUserFollowRef);
+      
+      const timestamp = serverTimestamp();
+      const currentUserName = currentUser.displayName || currentUser.email.split('@')[0];
+
+      // 3. Update data
+      transaction.set(currentUserFollowRef, {
+        following: {
+          ...currentUserDoc.data()?.following,
+          [targetUserId]: {
+            userId: targetUserId,
+            userName: targetUserName,
+            timestamp: timestamp
+          }
+        }
+      }, { merge: true });
+      
+      transaction.set(targetUserFollowRef, {
+        followers: {
+          ...targetUserDoc.data()?.followers,
+          [currentUser.uid]: {
+            userId: currentUser.uid,
+            userName: currentUserName,
+            timestamp: timestamp
+          }
+        }
+      }, { merge: true });
+    });
+    
+    console.log("Follow operation successful");
+    return true;
+  } catch (error) {
+    console.error("Transaction failed:", error);
+    throw error;
+  }
+}
+
+
+
+
+async function setupFollowButton(userId, userName) {
+  const followBtn = document.createElement('button');
+  followBtn.className = 'follow-btn';
+  followBtn.dataset.userId = userId;
+  
+  // Cek status awal
+  const isFollowing = await checkFollowStatus(userId);
+  updateButtonState(followBtn, isFollowing);
+  
+  // Event listener
+  followBtn.addEventListener('click', async () => {
+    try {
+      followBtn.disabled = true;
+      
+      if (isFollowing) {
+        await unfollowUserWithTransaction(userId);
+      } else {
+        await followUserWithTransaction(userId, userName);
+      }
+      
+      // Update UI setelah sukses
+      const newStatus = !isFollowing;
+      updateButtonState(followBtn, newStatus);
+      updateFollowStatusInUI(userId, newStatus);
+      
+    } catch (error) {
+      console.error("Follow operation failed:", error);
+      showErrorToast("Gagal memproses: " + (error.message || "Coba lagi nanti"));
+    } finally {
+      followBtn.disabled = false;
+    }
+  });
+  
+  return followBtn;
+}
+
+// Fungsi pendukung
+function updateButtonState(button, isFollowing) {
+  button.textContent = isFollowing ? 'Berhenti Mengikuti' : 'Ikuti';
+  button.classList.toggle('unfollow-btn', isFollowing);
+}
+
+function updateFollowStatusInUI(userId, isFollowing) {
+  // Update di semua tempat yang menampilkan status follow user ini
+  document.querySelectorAll(`.follow-btn[data-user-id="${userId}"]`).forEach(btn => {
+    updateButtonState(btn, isFollowing);
+  });
+  
+  const statusIndicators = document.querySelectorAll(`.follow-status[data-user-id="${userId}"]`);
+  statusIndicators.forEach(el => {
+    el.textContent = isFollowing ? '✓ Mengikuti' : '';
+  });
+}
+
+function showErrorToast(message) {
+  // Implementasi toast notification
+  const toast = document.createElement('div');
+  toast.className = 'error-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+
+
+
+async function validateBeforeFollow(targetUserId) {
+  if (!auth.currentUser) throw new Error("User not authenticated");
+  if (!targetUserId) throw new Error("Target user ID is required");
+  
+  // Validasi apakah target user ada
+  const targetUserDoc = await getDoc(doc(db, 'users', targetUserId));
+  if (!targetUserDoc.exists()) {
+    throw new Error("Target user not found");
+  }
+  
+  // Validasi tidak follow diri sendiri
+  if (auth.currentUser.uid === targetUserId) {
+    throw new Error("Cannot follow yourself");
+  }
+  
+  return true;
+}
+
+
+
+
+
 
 
 
