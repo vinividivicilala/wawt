@@ -8133,66 +8133,51 @@ async function setupMessagingSystem() {
 
 
 
-// Fungsi untuk memuat daftar penerima pesan
-async function loadMessageRecipients(searchTerm = '') {
+
+
+
+async function loadMessageRecipients() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
-  
-  messageRecipientList.innerHTML = '<div class="loader">Memuat pengguna...</div>';
 
-  try {
-    // Ambil semua pengguna
-    const usersSnapshot = await getDocs(collection(db, 'users'));
+  messageRecipientList.innerHTML = '<div class="loader">Memuat...</div>';
 
-    // Filter: hilangkan user yang sedang login
-    let allUsers = usersSnapshot.docs.filter(doc => doc.id !== currentUser.uid);
+  const q = query(
+    collection(db, "messages"),
+    where("participants", "array-contains", currentUser.uid)
+  );
 
-    const searchLower = searchTerm.toLowerCase();
-    const filteredUsers = allUsers
-      .filter(doc => {
-        const user = doc.data();
-        const userName = (user.displayName || user.email.split('@')[0]).toLowerCase();
-        const userEmail = user.email.toLowerCase();
-        return userName.includes(searchLower) || userEmail.includes(searchLower);
-      })
-      .sort((a, b) => {
-        const nameA = (a.data().displayName || a.data().email).toLowerCase();
-        const nameB = (b.data().displayName || b.data().email).toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-
-    messageRecipientList.innerHTML = '';
-
-    if (filteredUsers.length === 0) {
-      messageRecipientList.innerHTML = '<p>Tidak ada pengguna ditemukan</p>';
+  onSnapshot(q, async (snapshot) => {
+    if (snapshot.empty) {
+      messageRecipientList.innerHTML = "<p>Tidak ada percakapan.</p>";
       return;
     }
 
-    filteredUsers.forEach(doc => {
-      const user = doc.data();
-      const userItem = document.createElement('div');
-      userItem.className = 'user-item';
-      userItem.innerHTML = `
-        <div class="user-avatar">${(user.displayName || user.email.split('@')[0]).substring(0, 2).toUpperCase()}</div>
-        <div>
-          <div class="user-name">${user.displayName || user.email.split('@')[0]}</div>
-          <div class="user-email">${user.email}</div>
-        </div>
-      `;
-
-      userItem.addEventListener('click', () => {
-        newMessageModal.style.display = 'none';
-        startConversation(doc.id, user.displayName || user.email.split('@')[0]);
+    let userIds = new Set();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      data.participants.forEach(uid => {
+        if (uid !== currentUser.uid) userIds.add(uid);
       });
-
-      messageRecipientList.appendChild(userItem);
     });
-  } catch (error) {
-    console.error('Error loading recipients:', error);
-    messageRecipientList.innerHTML = '<p>Gagal memuat daftar pengguna</p>';
-  }
-}
 
+    // Ambil info user dari Firestore
+    let html = "";
+    for (let uid of userIds) {
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists()) {
+        const user = userDoc.data();
+        html += `
+          <div class="recipient-item" onclick="startConversation('${uid}', '${user.displayName}')">
+            <img src="${user.photoURL || 'default.png'}" />
+            <span>${user.displayName}</span>
+          </div>
+        `;
+      }
+    }
+    messageRecipientList.innerHTML = html;
+  });
+}
 
 
 
@@ -8593,30 +8578,43 @@ async function loadContacts() {
 let currentFollowing = {};
 let unsubscribeFollowingRealtime = null;
 
-// Listener realtime untuk following
+
+
+
 function startFollowingListener() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
 
-  if (unsubscribeFollowingRealtime) unsubscribeFollowingRealtime(); // stop listener lama
+  const followingRef = doc(db, "userFollows", currentUser.uid);
+  const followersRef = doc(db, "userFollowers", currentUser.uid);
 
-  const userRef = doc(db, "userFollows", currentUser.uid);
-  unsubscribeFollowingRealtime = onSnapshot(userRef, (snap) => {
-    const data = snap.data() || {};
-    currentFollowing = data.following || {};
-
-    // Update semua tombol follow di halaman
-    document.querySelectorAll(".follow-btn").forEach(btn => {
-      const targetId = btn.getAttribute("data-userid");
-      if (currentFollowing[targetId]) {
-        btn.textContent = "Berhenti Mengikuti";
-        btn.classList.add("unfollow-btn");
-      } else {
-        btn.textContent = "Ikuti";
-        btn.classList.remove("unfollow-btn");
-      }
-    });
+  onSnapshot(followingRef, (snap) => {
+    const following = snap.exists() ? Object.keys(snap.data().following || {}) : [];
+    document.getElementById("followingCount").textContent = following.length;
+    renderUserList("followingList", following);
   });
+
+  onSnapshot(followersRef, (snap) => {
+    const followers = snap.exists() ? Object.keys(snap.data().followers || {}) : [];
+    document.getElementById("followersCount").textContent = followers.length;
+    renderUserList("followersList", followers);
+  });
+}
+
+async function renderUserList(containerId, userIds) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  for (let uid of userIds) {
+    const userDoc = await getDoc(doc(db, "users", uid));
+    if (userDoc.exists()) {
+      const user = userDoc.data();
+      container.innerHTML += `
+        <div class="user-item">
+          <img src="${user.photoURL || 'default.png'}" />
+          <span>${user.displayName}</span>
+        </div>`;
+    }
+  }
 }
 
 
@@ -8889,109 +8887,51 @@ async function unfollowUser(targetUserId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function toggleFollow(targetUserId, targetUserName) {
+// Tombol follow
+async function toggleFollow(targetUserId) {
   const currentUser = auth.currentUser;
-  if (!currentUser || currentUser.uid === targetUserId) return;
+  if (!currentUser) return;
+
+  const followRef = doc(db, "userFollows", currentUser.uid);
+  const targetRef = doc(db, "userFollowers", targetUserId);
 
   try {
     await runTransaction(db, async (transaction) => {
-      // 1. Dapatkan dokumen following current user
-      const userFollowsRef = doc(db, 'userFollows', currentUser.uid);
-      const userFollowsDoc = await transaction.get(userFollowsRef);
-      const isFollowing = userFollowsDoc.exists() && 
-                         userFollowsDoc.data().following?.[targetUserId];
-      
-      // 2. Dapatkan dokumen followers target user
-      const targetFollowsRef = doc(db, 'userFollows', targetUserId);
-      const targetFollowsDoc = await transaction.get(targetFollowsRef);
-      
-      const timestamp = serverTimestamp();
-      const userName = currentUser.displayName || currentUser.email.split('@')[0];
+      const followSnap = await transaction.get(followRef);
+      let following = followSnap.exists() ? followSnap.data().following || {} : {};
 
-      if (isFollowing) {
-        // Unfollow logic
-        transaction.update(userFollowsRef, {
-          [`following.${targetUserId}`]: deleteField()
-        });
-        
-        transaction.update(targetFollowsRef, {
-          [`followers.${currentUser.uid}`]: deleteField()
-        });
+      if (following[targetUserId]) {
+        // Unfollow
+        delete following[targetUserId];
+        transaction.set(followRef, { following }, { merge: true });
+        transaction.set(targetRef, { followers: { [currentUser.uid]: deleteField() } }, { merge: true });
       } else {
-        // Follow logic
-        transaction.set(userFollowsRef, {
-          following: {
-            [targetUserId]: {
-              userId: targetUserId,
-              userName: targetUserName,
-              timestamp: timestamp
-            }
-          }
-        }, { merge: true });
-        
-        transaction.set(targetFollowsRef, {
-          followers: {
-            [currentUser.uid]: {
-              userId: currentUser.uid,
-              userName: userName,
-              timestamp: timestamp
-            }
-          }
-        }, { merge: true });
+        // Follow
+        following[targetUserId] = true;
+        transaction.set(followRef, { following }, { merge: true });
+        transaction.set(targetRef, { followers: { [currentUser.uid]: true } }, { merge: true });
       }
     });
-    
-    // Update UI setelah transaksi berhasil
-    const isFollowing = await checkFollowStatus(targetUserId);
-    const followBtn = document.querySelector(`.follow-btn[data-userid="${targetUserId}"]`);
-    
-    if (followBtn) {
-      followBtn.textContent = isFollowing ? 'Berhenti Mengikuti' : 'Ikuti';
-      followBtn.classList.toggle('unfollow-btn', isFollowing);
-    }
-    
-    // Update status di daftar kontak jika ada
-    const contactItem = document.querySelector(`.contact-item[data-user-id="${targetUserId}"]`);
-    if (contactItem) {
-      const statusEl = contactItem.querySelector('.contact-follow-status');
-      if (statusEl) {
-        statusEl.textContent = isFollowing ? '✓ Mengikuti' : '';
-      }
-    }
-    
-  } catch (error) {
-    console.error("Error in follow transaction:", error);
-    let errorMessage = "Gagal memproses permintaan";
-    
-    if (error.code === 'permission-denied') {
-      errorMessage = "Anda tidak memiliki izin untuk melakukan operasi ini";
-    }
-    
-    alert(errorMessage);
+  } catch (e) {
+    console.error("Follow error:", e);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
