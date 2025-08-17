@@ -8319,8 +8319,6 @@ function loadConversation(userId, userName) {
  
  
  
- 
- 
  async function loadContacts() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
@@ -8351,7 +8349,7 @@ function loadConversation(userId, userName) {
           if (otherUserId) {
             recipientIds.push(otherUserId);
 
-            // 🔹 Ambil pesan terakhir dari subkoleksi messages
+            // 🔹 Ambil pesan terakhir
             const messagesRef = collection(db, `conversations/${convId}/messages`);
             const lastMsgQuery = query(messagesRef, orderBy("timestamp", "desc"), limit(1));
             const lastMsgSnap = await getDocs(lastMsgQuery);
@@ -8360,7 +8358,7 @@ function loadConversation(userId, userName) {
 
             if (!lastMsgSnap.empty) {
               const lastMsg = lastMsgSnap.docs[0].data();
-              contactsData[otherUserId].lastMessage = lastMsg.text || "Pesan media";
+              contactsData[otherUserId].lastMessage = lastMsg.content || "Pesan media";
             }
           }
         }
@@ -8373,40 +8371,43 @@ function loadConversation(userId, userName) {
       return;
     }
 
-    // 🔹 Ambil data user dari daftar kontak
-    const q = query(collection(db, "users"), where("uid", "in", contactIds));
-    const snapshot = await getDocs(q);
+    // 🔹 Firestore where("in") max 10, jadi kita pecah contactIds per 10
+    const chunks = [];
+    while (contactIds.length) {
+      chunks.push(contactIds.splice(0, 10));
+    }
 
-    snapshot.forEach(userDoc => {
-      const user = userDoc.data();
-      const contactInfo = contactsData[user.uid] || {};
-      const contactItem = document.createElement("div");
-      contactItem.className = "contact-item";
-      contactItem.dataset.userId = user.uid;
-      contactItem.innerHTML = `
-        <div class="contact-info">
-          <div class="contact-avatar">${(user.displayName || user.email).substring(0,2).toUpperCase()}</div>
-          <div>
-            <div class="contact-name">${user.displayName || user.email}</div>
-            <div class="contact-last-message">${contactInfo.lastMessage || "Klik untuk membuka percakapan"}</div>
+    for (const chunk of chunks) {
+      const q = query(collection(db, "users"), where("uid", "in", chunk));
+      const snapshot = await getDocs(q);
+
+      snapshot.forEach(userDoc => {
+        const user = userDoc.data();
+        const contactInfo = contactsData[user.uid] || {};
+        const contactItem = document.createElement("div");
+        contactItem.className = "contact-item";
+        contactItem.dataset.userId = user.uid;
+        contactItem.innerHTML = `
+          <div class="contact-info">
+            <div class="contact-avatar">${(user.displayName || user.email).substring(0,2).toUpperCase()}</div>
+            <div>
+              <div class="contact-name">${user.displayName || user.email}</div>
+              <div class="contact-last-message">${contactInfo.lastMessage || "Klik untuk membuka percakapan"}</div>
+            </div>
           </div>
-        </div>
-      `;
-      contactItem.addEventListener("click", () => {
-        startConversation(user.uid, user.displayName || user.email);
+        `;
+        contactItem.addEventListener("click", () => {
+          startConversation(user.uid, user.displayName || user.email);
+        });
+        contactsList.appendChild(contactItem);
       });
-      contactsList.appendChild(contactItem);
-    });
+    }
   } catch (err) {
     console.error("Error loadContacts:", err);
     contactsList.innerHTML = "<p>Gagal memuat kontak</p>";
   }
 }
 
- 
- 
- 
- 
  
  
  
