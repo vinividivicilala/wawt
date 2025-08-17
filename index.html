@@ -8512,6 +8512,8 @@ function startFollowRelationListener(userId) {
   });
 }
 
+
+
 async function renderUserList(containerId, ids, showUnfollow) {
   const container = document.getElementById(containerId);
   container.innerHTML = "";
@@ -8521,11 +8523,13 @@ async function renderUserList(containerId, ids, showUnfollow) {
     return;
   }
 
-  const q = query(collection(db, "users"), where("uid", "in", ids));
-  const snapshot = await getDocs(q);
+  // Ambil user satu per satu biar aman (>10 id juga bisa)
+  const userDocs = await Promise.all(ids.map(uid => getDoc(doc(db, "users", uid))));
 
-  snapshot.forEach(userDoc => {
-    const user = userDoc.data();
+  userDocs.forEach(docSnap => {
+    if (!docSnap.exists()) return;
+    const user = docSnap.data();
+
     const item = document.createElement("div");
     item.className = "follow-user-item";
     item.innerHTML = `
@@ -8533,6 +8537,7 @@ async function renderUserList(containerId, ids, showUnfollow) {
       <div class="follow-user-name">${user.displayName || user.email}</div>
       ${showUnfollow ? `<button class="follow-btn unfollow-btn" data-userid="${user.uid}">Berhenti Mengikuti</button>` : ""}
     `;
+
     if (showUnfollow) {
       item.querySelector("button").addEventListener("click", () => unfollowUser(user.uid));
     }
