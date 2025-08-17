@@ -8632,9 +8632,6 @@ async function setupFollowSystem() {
 
 
 
-
-
-
 async function followUser(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
   if (!currentUser || currentUser.uid === targetUserId) {
@@ -8644,23 +8641,35 @@ async function followUser(targetUserId, targetUserName) {
   try {
     const batch = writeBatch(db);
 
-    // ✅ Tambah target ke daftar following user yang login
+    // Tambah target ke daftar following user login
     batch.set(
       doc(db, "userFollows", currentUser.uid),
-      { following: { [targetUserId]: true } },
+      {
+        [`following.${targetUserId}`]: {
+          userId: targetUserId,
+          userName: targetUserName,
+          timestamp: serverTimestamp()
+        }
+      },
       { merge: true }
     );
 
-    // ✅ Tambah user login ke daftar followers target
+    // Tambah user login ke daftar followers target
     batch.set(
       doc(db, "userFollows", targetUserId),
-      { followers: { [currentUser.uid]: true } },
+      {
+        [`followers.${currentUser.uid}`]: {
+          userId: currentUser.uid,
+          userName: currentUser.displayName || currentUser.email.split("@")[0],
+          timestamp: serverTimestamp()
+        }
+      },
       { merge: true }
     );
 
     await batch.commit();
 
-    // 🔔 Buat notifikasi ke target
+    // Notifikasi + aktivitas
     await addDoc(collection(db, "notifications"), {
       userId: targetUserId,
       type: "follow",
@@ -8670,7 +8679,6 @@ async function followUser(targetUserId, targetUserName) {
       read: false
     });
 
-    // 📌 Catat aktivitas follow
     await addDoc(collection(db, "activities"), {
       userId: currentUser.uid,
       type: "follow",
@@ -8690,7 +8698,6 @@ async function followUser(targetUserId, targetUserName) {
 
 
 
-
 async function unfollowUser(targetUserId) {
   const currentUser = auth.currentUser;
   if (!currentUser || currentUser.uid === targetUserId) {
@@ -8700,12 +8707,10 @@ async function unfollowUser(targetUserId) {
   try {
     const batch = writeBatch(db);
 
-    // ✅ Hapus target dari daftar following user login
     batch.update(doc(db, "userFollows", currentUser.uid), {
       [`following.${targetUserId}`]: deleteField()
     });
 
-    // ✅ Hapus user login dari daftar followers target
     batch.update(doc(db, "userFollows", targetUserId), {
       [`followers.${currentUser.uid}`]: deleteField()
     });
@@ -8717,6 +8722,13 @@ async function unfollowUser(targetUserId) {
     throw error;
   }
 }
+
+
+
+
+
+
+
 
 
 
