@@ -8886,33 +8886,6 @@ async function unfollowUser(targetUserId) {
 
 
 
-function startFollowingListener() {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
-
-  const followingRef = collection(db, "userFollows", currentUser.uid, "following");
-
-  return onSnapshot(followingRef, (snapshot) => {
-    const following = {};
-    snapshot.forEach(docSnap => {
-      following[docSnap.id] = docSnap.data();
-    });
-    currentFollowing = following;
-
-    // Update semua tombol follow
-    document.querySelectorAll(".follow-btn").forEach(btn => {
-      const targetId = btn.getAttribute("data-userid");
-      if (currentFollowing[targetId]) {
-        btn.textContent = "Berhenti Mengikuti";
-        btn.classList.add("unfollow-btn");
-      } else {
-        btn.textContent = "Ikuti";
-        btn.classList.remove("unfollow-btn");
-      }
-    });
-  });
-}
-
 
 
 
