@@ -8558,16 +8558,22 @@ function startFollowingListener() {
   });
 }
 
-// Setup follow system
+
+
+
+
 async function setupFollowSystem() {
   const followingCount = document.getElementById('followingCount');
   const followersCount = document.getElementById('followersCount');
   const followingList = document.getElementById('followingList');
   const followersList = document.getElementById('followersList');
 
+  let unsubscribeFollowing = null;
   let unsubscribeFollowers = null;
 
   onAuthStateChanged(auth, async (user) => {
+    // Bersihkan listener sebelumnya
+    if (unsubscribeFollowing) unsubscribeFollowing();
     if (unsubscribeFollowers) unsubscribeFollowers();
 
     if (user) {
@@ -8577,16 +8583,29 @@ async function setupFollowSystem() {
         followers: {}
       }, { merge: true });
 
-      // Hitung following
-      startFollowingListener();
+      // Realtime listener untuk following
+      unsubscribeFollowing = onSnapshot(doc(db, 'userFollows', user.uid), (doc) => {
+        const data = doc.data() || {};
+        const following = data.following || {};
+        const followingIds = Object.keys(following);
+        
+        // Update count
+        followingCount.textContent = followingIds.length;
+        
+        // Render following list
+        renderFollowList(followingList, following, 'following');
+      });
 
-      // Hitung followers
+      // Realtime listener untuk followers
       unsubscribeFollowers = onSnapshot(doc(db, 'userFollows', user.uid), (doc) => {
-        const data = doc.data();
-        const followers = data?.followers || {};
+        const data = doc.data() || {};
+        const followers = data.followers || {};
         const followerIds = Object.keys(followers);
         
+        // Update count
         followersCount.textContent = followerIds.length;
+        
+        // Render followers list
         renderFollowList(followersList, followers, 'followers');
       });
     } else {
@@ -8597,8 +8616,6 @@ async function setupFollowSystem() {
     }
   });
 }
-
-
 
 
 
@@ -8614,28 +8631,38 @@ async function renderFollowList(container, items, listType) {
   container.innerHTML = '<div class="loader">Memuat...</div>';
 
   try {
-    const userDocs = await Promise.all(
-      Object.keys(items).map(uid => getDoc(doc(db, 'users', uid)))
-    );
+    // Ambil data user dalam batch (untuk menghindari query terlalu besar)
+    const userIds = Object.keys(items);
+    const batches = [];
+    for (let i = 0; i < userIds.length; i += 10) {
+      batches.push(userIds.slice(i, i + 10));
+    }
+
+    let allUsers = [];
+    for (const batch of batches) {
+      const q = query(collection(db, 'users'), where('uid', 'in', batch));
+      const snapshot = await getDocs(q);
+      allUsers = [...allUsers, ...snapshot.docs];
+    }
 
     container.innerHTML = '';
-    userDocs.forEach((userSnap, idx) => {
-      if (userSnap.exists()) {
-        const user = userSnap.data();
-        const followItem = createFollowItem(user);
-        container.appendChild(followItem);
-
-        // status tombol pakai cache currentFollowing
-        const followBtn = followItem.querySelector('.follow-btn');
-        if (currentFollowing[userSnap.id]) {
-          followBtn.textContent = "Berhenti Mengikuti";
-          followBtn.classList.add("unfollow-btn");
-        }
-      }
+    
+    // Urutkan berdasarkan nama
+    allUsers.sort((a, b) => {
+      const nameA = (a.data().displayName || a.data().email).toLowerCase();
+      const nameB = (b.data().displayName || b.data().email).toLowerCase();
+      return nameA.localeCompare(nameB);
     });
-  } catch (e) {
-    console.error("Error render follow list:", e);
-    container.innerHTML = '<p>Gagal memuat daftar</p>';
+
+    // Render setiap user
+    allUsers.forEach(userDoc => {
+      const user = userDoc.data();
+      const followItem = createFollowItem(user);
+      container.appendChild(followItem);
+    });
+  } catch (error) {
+    console.error("Error rendering follow list:", error);
+    container.innerHTML = '<div class="error-message">Gagal memuat daftar</div>';
   }
 }
 
@@ -8728,7 +8755,6 @@ async function loadFollowData(userId) {
 
 
 
-
 async function followUser(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
   if (!currentUser || currentUser.uid === targetUserId) {
@@ -8803,6 +8829,15 @@ async function unfollowUser(targetUserId) {
 }
 
 
+
+
+
+
+
+
+
+
+
 async function toggleFollow(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
@@ -8856,18 +8891,16 @@ async function toggleFollow(targetUserId, targetUserName) {
 }
 
 
-// Untuk mengecek status follow
-async function isFollowing(currentUserId, targetUserId) {
-  const docSnap = await getDoc(doc(db, 'userFollows', currentUserId));
-  return docSnap.exists() && !!docSnap.data().following?.[targetUserId];
-}
 
 
 
-// Fungsi pembuat item follow
+
+
+
 function createFollowItem(user) {
   const followItem = document.createElement('div');
   followItem.className = 'follow-user-item';
+  followItem.dataset.userId = user.uid;
 
   followItem.innerHTML = `
     <div class="follow-user-avatar">
@@ -8881,21 +8914,29 @@ function createFollowItem(user) {
   `;
 
   const followBtn = followItem.querySelector('.follow-btn');
+  
+  // Cek status follow saat ini
+  checkFollowStatus(user.uid, followBtn);
 
-  // Event listener tombol follow/unfollow
+  // Event listener untuk tombol follow
   followBtn.addEventListener('click', async () => {
     try {
-      if (followBtn.classList.contains('unfollow-btn')) {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      
+      const isFollowing = followBtn.textContent === 'Berhenti Mengikuti';
+      
+      if (isFollowing) {
         await unfollowUser(user.uid);
       } else {
         await followUser(user.uid, user.displayName || user.email.split('@')[0]);
       }
-
-      // ✅ update status tombol setelah action
-      checkFollowStatus(user.uid, followBtn);
+      
+      // Update UI langsung tanpa perlu reload
+      followBtn.textContent = isFollowing ? 'Ikuti' : 'Berhenti Mengikuti';
+      followBtn.classList.toggle('unfollow-btn', !isFollowing);
     } catch (error) {
       console.error('Error in follow operation:', error);
-      alert('Operasi gagal: ' + error.message);
     }
   });
 
@@ -8907,16 +8948,18 @@ function createFollowItem(user) {
 
 
 
-// Perbaikan fungsi checkFollowStatus
-async function checkFollowStatus(userId, followBtn) {
+
+
+
+async function checkFollowStatus(targetUserId, followBtn) {
   const currentUser = auth.currentUser;
-  if (!currentUser || !userId || !followBtn) return;
-  
+  if (!currentUser || !targetUserId || !followBtn) return;
+
   try {
     const followDoc = await getDoc(doc(db, 'userFollows', currentUser.uid));
     if (followDoc.exists()) {
       const followingData = followDoc.data().following || {};
-      const isFollowing = !!followingData[userId];
+      const isFollowing = !!followingData[targetUserId];
       
       followBtn.textContent = isFollowing ? 'Berhenti Mengikuti' : 'Ikuti';
       followBtn.classList.toggle('unfollow-btn', isFollowing);
