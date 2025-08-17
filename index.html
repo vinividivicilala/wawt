@@ -8632,96 +8632,93 @@ async function setupFollowSystem() {
 
 
 
-async function followUser(targetUserId, targetUserName) {
+
+
+
+
+
+
+// Follow
+async function followUser(targetUserId, targetUserData) {
   const currentUser = auth.currentUser;
-  if (!currentUser || currentUser.uid === targetUserId) {
-    throw new Error("Operasi follow tidak valid");
-  }
+  if (!currentUser || currentUser.uid === targetUserId) return; // tidak bisa follow diri sendiri
+
+  const currentUserRef = doc(db, "userFollows", currentUser.uid);
+  const targetUserRef = doc(db, "userFollows", targetUserId);
 
   try {
-    const batch = writeBatch(db);
+    await runTransaction(db, async (transaction) => {
+      // ambil snapshot
+      const currentSnap = await transaction.get(currentUserRef);
+      const targetSnap = await transaction.get(targetUserRef);
 
-    // Tambah target ke daftar following user login
-    batch.set(
-      doc(db, "userFollows", currentUser.uid),
-      {
-        [`following.${targetUserId}`]: {
-          userId: targetUserId,
-          userName: targetUserName,
-          timestamp: serverTimestamp()
-        }
-      },
-      { merge: true }
-    );
+      // data default
+      const currentData = currentSnap.exists() ? currentSnap.data() : { following: {}, followers: {} };
+      const targetData = targetSnap.exists() ? targetSnap.data() : { following: {}, followers: {} };
 
-    // Tambah user login ke daftar followers target
-    batch.set(
-      doc(db, "userFollows", targetUserId),
-      {
-        [`followers.${currentUser.uid}`]: {
-          userId: currentUser.uid,
-          userName: currentUser.displayName || currentUser.email.split("@")[0],
-          timestamp: serverTimestamp()
-        }
-      },
-      { merge: true }
-    );
+      // update following user saat ini
+      currentData.following[targetUserId] = {
+        uid: targetUserId,
+        displayName: targetUserData.displayName || "",
+        photoURL: targetUserData.photoURL || "",
+        createdAt: serverTimestamp(),
+      };
 
-    await batch.commit();
+      // update followers user target
+      targetData.followers[currentUser.uid] = {
+        uid: currentUser.uid,
+        displayName: currentUser.displayName || "",
+        photoURL: currentUser.photoURL || "",
+        createdAt: serverTimestamp(),
+      };
 
-    // Notifikasi + aktivitas
-    await addDoc(collection(db, "notifications"), {
-      userId: targetUserId,
-      type: "follow",
-      senderId: currentUser.uid,
-      senderName: currentUser.displayName || currentUser.email.split("@")[0],
-      timestamp: serverTimestamp(),
-      read: false
+      transaction.set(currentUserRef, currentData, { merge: true });
+      transaction.set(targetUserRef, targetData, { merge: true });
     });
 
-    await addDoc(collection(db, "activities"), {
-      userId: currentUser.uid,
-      type: "follow",
-      targetUserId,
-      targetUserName,
-      timestamp: serverTimestamp()
-    });
-
-    return true;
-  } catch (error) {
-    console.error("Error follow user:", error);
-    throw error;
+    console.log("Berhasil mengikuti:", targetUserId);
+  } catch (err) {
+    console.error("Gagal follow:", err);
   }
 }
 
-
-
-
-
+// Unfollow
 async function unfollowUser(targetUserId) {
   const currentUser = auth.currentUser;
-  if (!currentUser || currentUser.uid === targetUserId) {
-    throw new Error("Operasi unfollow tidak valid");
-  }
+  if (!currentUser || currentUser.uid === targetUserId) return;
+
+  const currentUserRef = doc(db, "userFollows", currentUser.uid);
+  const targetUserRef = doc(db, "userFollows", targetUserId);
 
   try {
-    const batch = writeBatch(db);
+    await runTransaction(db, async (transaction) => {
+      const currentSnap = await transaction.get(currentUserRef);
+      const targetSnap = await transaction.get(targetUserRef);
 
-    batch.update(doc(db, "userFollows", currentUser.uid), {
-      [`following.${targetUserId}`]: deleteField()
+      if (!currentSnap.exists() || !targetSnap.exists()) return;
+
+      const currentData = currentSnap.data();
+      const targetData = targetSnap.data();
+
+      // hapus dari following
+      delete currentData.following[targetUserId];
+      // hapus dari followers
+      delete targetData.followers[currentUser.uid];
+
+      transaction.set(currentUserRef, currentData, { merge: true });
+      transaction.set(targetUserRef, targetData, { merge: true });
     });
 
-    batch.update(doc(db, "userFollows", targetUserId), {
-      [`followers.${currentUser.uid}`]: deleteField()
-    });
-
-    await batch.commit();
-    return true;
-  } catch (error) {
-    console.error("Error unfollow user:", error);
-    throw error;
+    console.log("Berhenti mengikuti:", targetUserId);
+  } catch (err) {
+    console.error("Gagal unfollow:", err);
   }
 }
+
+
+
+
+
 
 
 
