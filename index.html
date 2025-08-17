@@ -8394,11 +8394,11 @@ async function loadMessageRecipients(searchTerm = '') {
   }
 }
  
- 
- 
- 
- 
- async function loadContacts() {
+
+
+
+
+async function loadContacts() {
   const currentUser = auth.currentUser;
   if (!currentUser) {
     document.getElementById('contactsList').innerHTML = `
@@ -8413,28 +8413,21 @@ async function loadMessageRecipients(searchTerm = '') {
   contactsList.innerHTML = '<div class="loader">Memuat kontak...</div>';
 
   try {
-    // 1. Ambil daftar kontak dari percakapan yang pernah dilakukan
-    const contactsRef = collection(db, 'userContacts', currentUser.uid, 'contacts');
-    const contactsSnapshot = await getDocs(contactsRef);
-    
+    // 1. Ambil daftar kontak dari userContacts
+    const contactsRef = doc(db, 'userContacts', currentUser.uid);
+    const contactsDoc = await getDoc(contactsRef);
+    const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
+
     // 2. Ambil daftar user yang di-follow
     const followDoc = await getDoc(doc(db, 'userFollows', currentUser.uid));
     const followingData = followDoc.exists() ? followDoc.data().following || {} : {};
-    
-    // Gabungkan semua user yang relevan (kontak + following)
-    const allUserIds = new Set();
-    
-    // Tambahkan user dari kontak
-    contactsSnapshot.forEach(doc => {
-      allUserIds.add(doc.id);
-    });
-    
-    // Tambahkan user dari following
-    Object.keys(followingData).forEach(userId => {
-      allUserIds.add(userId);
-    });
-    
-    // Jika tidak ada kontak sama sekali
+
+    // Gabungkan semua user yang relevan
+    const allUserIds = new Set([
+      ...Object.keys(contactsData),
+      ...Object.keys(followingData)
+    ]);
+
     if (allUserIds.size === 0) {
       contactsList.innerHTML = `
         <div class="no-users-found">
@@ -8443,38 +8436,32 @@ async function loadMessageRecipients(searchTerm = '') {
       `;
       return;
     }
-    
-    // Ambil data detail user dalam batch (untuk menghindari query terlalu besar)
+
+    // Ambil data user dalam batch
     const userIds = Array.from(allUserIds);
-    const batches = [];
+    const userPromises = [];
+    
     for (let i = 0; i < userIds.length; i += 10) {
-      batches.push(userIds.slice(i, i + 10));
+      const batch = userIds.slice(i, i + 10);
+      userPromises.push(getDocs(query(collection(db, 'users'), where('uid', 'in', batch))));
     }
-    
+
+    const userSnapshots = await Promise.all(userPromises);
     let allUsers = [];
-    for (const batch of batches) {
-      const q = query(collection(db, 'users'), where('uid', 'in', batch));
-      const snapshot = await getDocs(q);
+    userSnapshots.forEach(snapshot => {
       allUsers = [...allUsers, ...snapshot.docs];
-    }
-    
-    // Urutkan berdasarkan waktu terakhir berinteraksi (jika ada)
-    allUsers.sort((a, b) => {
-      const aLastMessage = contactsSnapshot.docs.find(doc => doc.id === a.id)?.data().lastMessageTime?.toDate()?.getTime() || 0;
-      const bLastMessage = contactsSnapshot.docs.find(doc => doc.id === b.id)?.data().lastMessageTime?.toDate()?.getTime() || 0;
-      return bLastMessage - aLastMessage; // Terbaru di atas
     });
-    
+
     // Render daftar kontak
     contactsList.innerHTML = '';
     allUsers.forEach(userDoc => {
       const user = userDoc.data();
-      const contactInfo = contactsSnapshot.docs.find(doc => doc.id === user.uid)?.data() || {
+      const contactInfo = contactsData[user.uid] || {
         lastMessage: 'Belum ada pesan',
         lastMessageTime: null,
         unreadCount: 0
       };
-      
+
       const contactItem = document.createElement('div');
       contactItem.className = `contact-item ${currentConversation === user.uid ? 'active' : ''}`;
       contactItem.dataset.userId = user.uid;
@@ -8502,7 +8489,6 @@ async function loadMessageRecipients(searchTerm = '') {
         loadConversation(user.uid, user.displayName || user.email.split('@')[0]);
         markMessagesAsRead(user.uid);
         
-        // Update active state
         document.querySelectorAll('.contact-item').forEach(item => {
           item.classList.remove('active');
         });
@@ -8511,46 +8497,59 @@ async function loadMessageRecipients(searchTerm = '') {
       
       contactsList.appendChild(contactItem);
     });
-    
-    // Setup real-time listener untuk update kontak
-    onSnapshot(collection(db, 'userContacts', currentUser.uid, 'contacts'), (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        const userId = change.doc.id;
-        const contactData = change.doc.data();
-        const contactItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
-        
-        if (contactItem) {
-          // Update existing contact
-          const lastMessageEl = contactItem.querySelector('.contact-last-message');
-          const unreadBadgeEl = contactItem.querySelector('.unread-badge');
+
+    // Setup real-time listener
+    const unsubscribe = onSnapshot(doc(db, 'userContacts', currentUser.uid), (doc) => {
+      const updatedContacts = doc.exists() ? doc.data().contacts || {} : {};
+      
+      document.querySelectorAll('.contact-item').forEach(item => {
+        const userId = item.dataset.userId;
+        if (updatedContacts[userId]) {
+          const lastMessageEl = item.querySelector('.contact-last-message');
+          const unreadBadgeEl = item.querySelector('.unread-badge');
           
           if (lastMessageEl) {
-            lastMessageEl.textContent = contactData.lastMessage || 'Belum ada pesan';
+            lastMessageEl.textContent = updatedContacts[userId].lastMessage || 'Belum ada pesan';
           }
           
           if (unreadBadgeEl) {
-            unreadBadgeEl.textContent = contactData.unreadCount;
-            unreadBadgeEl.style.display = contactData.unreadCount > 0 ? 'flex' : 'none';
-          } else if (contactData.unreadCount > 0) {
-            contactItem.querySelector('.contact-info').insertAdjacentHTML('beforeend', 
-              `<div class="unread-badge">${contactData.unreadCount}</div>`);
+            unreadBadgeEl.textContent = updatedContacts[userId].unreadCount;
+            unreadBadgeEl.style.display = updatedContacts[userId].unreadCount > 0 ? 'flex' : 'none';
+          } else if (updatedContacts[userId].unreadCount > 0) {
+            item.querySelector('.contact-info').insertAdjacentHTML('beforeend', 
+              `<div class="unread-badge">${updatedContacts[userId].unreadCount}</div>`);
           }
-        } else if (change.type === 'added') {
-          // Add new contact (jika ada user baru mengirim pesan)
-          // Implementasi serupa dengan di atas
         }
       });
     });
-    
+
+    return unsubscribe; // Untuk cleanup
+
   } catch (error) {
     console.error('Error loading contacts:', error);
+    let errorMessage = 'Gagal memuat daftar kontak';
+    
+    if (error.code === 'permission-denied') {
+      errorMessage = 'Anda tidak memiliki izin untuk mengakses kontak';
+    }
+    
     contactsList.innerHTML = `
       <div class="error-message">
-        <p>Gagal memuat daftar kontak</p>
+        <p>${errorMessage}</p>
+        <button onclick="loadContacts()">Coba Lagi</button>
       </div>
     `;
   }
 }
+
+
+
+
+
+
+ 
+ 
+
 
   // Tandai pesan sebagai sudah dibaca
   async function markMessagesAsRead(userId) {
@@ -8817,17 +8816,21 @@ async function loadFollowData(userId) {
 
 
 
+
+
+
+
 async function followUser(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
   if (!currentUser || currentUser.uid === targetUserId) {
-    throw new Error("Invalid operation");
+    throw new Error("Operasi tidak valid");
   }
 
   try {
     const batch = writeBatch(db);
     const timestamp = serverTimestamp();
     
-    // Update following dari current user
+    // 1. Update following di current user
     batch.set(
       doc(db, 'userFollows', currentUser.uid),
       {
@@ -8842,7 +8845,7 @@ async function followUser(targetUserId, targetUserName) {
       { merge: true }
     );
     
-    // Update followers dari target user
+    // 2. Update followers di target user
     batch.set(
       doc(db, 'userFollows', targetUserId),
       {
@@ -8858,41 +8861,92 @@ async function followUser(targetUserId, targetUserName) {
     );
     
     await batch.commit();
+    
+    // 3. Update UI secara langsung
+    const followBtn = document.querySelector(`.follow-btn[data-userid="${targetUserId}"]`);
+    if (followBtn) {
+      followBtn.textContent = 'Berhenti Mengikuti';
+      followBtn.classList.add('unfollow-btn');
+    }
+    
+    // 4. Update status di daftar kontak jika ada
+    const contactItem = document.querySelector(`.contact-item[data-user-id="${targetUserId}"]`);
+    if (contactItem) {
+      const statusEl = contactItem.querySelector('.contact-follow-status');
+      if (statusEl) {
+        statusEl.textContent = '✓ Mengikuti';
+      }
+    }
+    
     return true;
   } catch (error) {
     console.error("Error following user:", error);
+    
+    // Tampilkan pesan error spesifik
+    let errorMessage = "Gagal mengikuti pengguna";
+    if (error.code === 'permission-denied') {
+      errorMessage = "Anda tidak memiliki izin untuk melakukan operasi ini";
+    }
+    
+    alert(errorMessage);
     throw error;
   }
 }
 
+
+
+
 async function unfollowUser(targetUserId) {
   const currentUser = auth.currentUser;
-  if (!currentUser || currentUser.uid === targetUserId) return false;
+  if (!currentUser || currentUser.uid === targetUserId) {
+    throw new Error("Operasi tidak valid");
+  }
 
   try {
     const batch = writeBatch(db);
 
-    // Remove from current user's following
+    // 1. Hapus dari following current user
     batch.update(doc(db, 'userFollows', currentUser.uid), {
       [`following.${targetUserId}`]: deleteField()
     });
 
-    // Remove from target user's followers
+    // 2. Hapus dari followers target user
     batch.update(doc(db, 'userFollows', targetUserId), {
       [`followers.${currentUser.uid}`]: deleteField()
     });
 
     await batch.commit();
+    
+    // 3. Update UI secara langsung
+    const followBtn = document.querySelector(`.follow-btn[data-userid="${targetUserId}"]`);
+    if (followBtn) {
+      followBtn.textContent = 'Ikuti';
+      followBtn.classList.remove('unfollow-btn');
+    }
+    
+    // 4. Update status di daftar kontak jika ada
+    const contactItem = document.querySelector(`.contact-item[data-user-id="${targetUserId}"]`);
+    if (contactItem) {
+      const statusEl = contactItem.querySelector('.contact-follow-status');
+      if (statusEl) {
+        statusEl.textContent = '';
+      }
+    }
+    
     return true;
   } catch (error) {
     console.error("Error unfollowing user:", error);
+    
+    // Tampilkan pesan error spesifik
+    let errorMessage = "Gagal berhenti mengikuti pengguna";
+    if (error.code === 'permission-denied') {
+      errorMessage = "Anda tidak memiliki izin untuk melakukan operasi ini";
+    }
+    
+    alert(errorMessage);
     throw error;
   }
 }
-
-
-
-
 
 
 
@@ -8902,55 +8956,93 @@ async function unfollowUser(targetUserId) {
 
 async function toggleFollow(targetUserId, targetUserName) {
   const currentUser = auth.currentUser;
-  if (!currentUser) return;
+  if (!currentUser || currentUser.uid === targetUserId) return;
 
   try {
     await runTransaction(db, async (transaction) => {
+      // 1. Dapatkan dokumen following current user
       const userFollowsRef = doc(db, 'userFollows', currentUser.uid);
-      const targetFollowsRef = doc(db, 'userFollows', targetUserId);
+      const userFollowsDoc = await transaction.get(userFollowsRef);
+      const isFollowing = userFollowsDoc.exists() && 
+                         userFollowsDoc.data().following?.[targetUserId];
       
-      const [userDoc, targetDoc] = await Promise.all([
-        transaction.get(userFollowsRef),
-        transaction.get(targetFollowsRef)
-      ]);
-
-      const isFollowing = userDoc.exists() && userDoc.data().following?.[targetUserId];
+      // 2. Dapatkan dokumen followers target user
+      const targetFollowsRef = doc(db, 'userFollows', targetUserId);
+      const targetFollowsDoc = await transaction.get(targetFollowsRef);
+      
       const timestamp = serverTimestamp();
+      const userName = currentUser.displayName || currentUser.email.split('@')[0];
 
       if (isFollowing) {
         // Unfollow logic
         transaction.update(userFollowsRef, {
           [`following.${targetUserId}`]: deleteField()
         });
+        
         transaction.update(targetFollowsRef, {
           [`followers.${currentUser.uid}`]: deleteField()
         });
       } else {
         // Follow logic
-        const userData = {
-          [`following.${targetUserId}`]: {
-            userId: targetUserId,
-            userName: targetUserName,
-            timestamp
+        transaction.set(userFollowsRef, {
+          following: {
+            [targetUserId]: {
+              userId: targetUserId,
+              userName: targetUserName,
+              timestamp: timestamp
+            }
           }
-        };
+        }, { merge: true });
         
-        const targetData = {
-          [`followers.${currentUser.uid}`]: {
-            userId: currentUser.uid,
-            userName: currentUser.displayName || currentUser.email.split('@')[0],
-            timestamp
+        transaction.set(targetFollowsRef, {
+          followers: {
+            [currentUser.uid]: {
+              userId: currentUser.uid,
+              userName: userName,
+              timestamp: timestamp
+            }
           }
-        };
-        
-        transaction.set(userFollowsRef, userData, { merge: true });
-        transaction.set(targetFollowsRef, targetData, { merge: true });
+        }, { merge: true });
       }
     });
+    
+    // Update UI setelah transaksi berhasil
+    const isFollowing = await checkFollowStatus(targetUserId);
+    const followBtn = document.querySelector(`.follow-btn[data-userid="${targetUserId}"]`);
+    
+    if (followBtn) {
+      followBtn.textContent = isFollowing ? 'Berhenti Mengikuti' : 'Ikuti';
+      followBtn.classList.toggle('unfollow-btn', isFollowing);
+    }
+    
+    // Update status di daftar kontak jika ada
+    const contactItem = document.querySelector(`.contact-item[data-user-id="${targetUserId}"]`);
+    if (contactItem) {
+      const statusEl = contactItem.querySelector('.contact-follow-status');
+      if (statusEl) {
+        statusEl.textContent = isFollowing ? '✓ Mengikuti' : '';
+      }
+    }
+    
   } catch (error) {
     console.error("Error in follow transaction:", error);
+    let errorMessage = "Gagal memproses permintaan";
+    
+    if (error.code === 'permission-denied') {
+      errorMessage = "Anda tidak memiliki izin untuk melakukan operasi ini";
+    }
+    
+    alert(errorMessage);
   }
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -9008,28 +9100,39 @@ function createFollowItem(user) {
 
 
 
-
-
-
-
-
-async function checkFollowStatus(targetUserId, followBtn) {
+async function checkFollowStatus(targetUserId, followBtn = null) {
   const currentUser = auth.currentUser;
-  if (!currentUser || !targetUserId || !followBtn) return;
+  if (!currentUser || !targetUserId) return false;
 
   try {
     const followDoc = await getDoc(doc(db, 'userFollows', currentUser.uid));
-    if (followDoc.exists()) {
-      const followingData = followDoc.data().following || {};
-      const isFollowing = !!followingData[targetUserId];
-      
+    if (!followDoc.exists()) return false;
+    
+    const followingData = followDoc.data().following || {};
+    const isFollowing = !!followingData[targetUserId];
+    
+    // Update tombol jika disediakan
+    if (followBtn) {
       followBtn.textContent = isFollowing ? 'Berhenti Mengikuti' : 'Ikuti';
       followBtn.classList.toggle('unfollow-btn', isFollowing);
     }
+    
+    return isFollowing;
   } catch (error) {
     console.error('Error checking follow status:', error);
+    return false;
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
