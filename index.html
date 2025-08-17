@@ -8124,19 +8124,22 @@ async function loadMessageRecipients(searchTerm = '') {
 
 
 
-// Mulai percakapan baru
-function startConversation(userId, userName) {
-  if (!userId) {
-    console.error('Invalid userId:', userId);
-    return;
-  }
-  
-  currentConversation = userId;
-  loadConversation(userId, userName);
-  markMessagesAsRead(userId);
-}
 
-// Memuat percakapan
+
+
+  // Mulai percakapan baru
+  function startConversation(userId, userName) {
+    if (!userId) {
+      console.error('Invalid userId:', userId);
+      return;
+    }
+    
+    currentConversation = userId;
+    loadConversation(userId, userName);
+    markMessagesAsRead(userId);
+  }
+
+ // Memuat percakapan
 function loadConversation(userId, userName) {
   const currentUser = auth.currentUser;
   if (!currentUser || !userId) return;
@@ -8221,101 +8224,102 @@ function loadConversation(userId, userName) {
     .addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessageHandler();
     });
+
+  async function sendMessageHandler() {
+    const content = document.getElementById("messageInput").value.trim();
+    if (!content) return;
+
+    try {
+      if (!currentConversation) {
+        throw new Error("Silakan pilih percakapan terlebih dahulu");
+      }
+
+      const conversationId = [currentUser.uid, currentConversation].sort().join("_");
+      await sendMessage(conversationId, currentConversation, content);
+      document.getElementById("messageInput").value = "";
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      alert("Gagal mengirim pesan: " + error.message);
+    }
+  }
 }
 
-// === Kirim pesan + simpan riwayat percakapan ===
-async function sendMessageHandler() {
-  const input = document.getElementById("messageInput");
-  const text = input.value.trim();
-  if (!text || !currentConversation) return;
 
+ 
+ 
+ 
+ 
+ 
+ 
+ async function sendMessage(conversationId, recipientId, content) {
   const currentUser = auth.currentUser;
-  const conversationId = [currentUser.uid, currentConversation].sort().join("_");
+  if (!currentUser) {
+    throw new Error("User not authenticated");
+  }
 
-  // 🔹 Simpan pesan ke Firestore
-  await addDoc(collection(db, "conversations", conversationId, "messages"), {
-    senderId: currentUser.uid,
-    recipientId: currentConversation,
-    content: text,
-    timestamp: serverTimestamp(),
-    read: false
-  });
+  // Validasi input
+  if (!conversationId || !recipientId || !content) {
+    throw new Error("Missing required fields");
+  }
 
-  // 🔹 Simpan riwayat percakapan (untuk daftar kontak)
-  await setDoc(
-    doc(db, "userConversations", currentUser.uid, "conversations", conversationId),
-    {
-      with: currentConversation,
-      lastMessage: text,
-      timestamp: serverTimestamp()
-    }
-  );
+  try {
+    const messageData = {
+      content: content,
+      senderId: currentUser.uid,
+      recipientId: recipientId,
+      timestamp: serverTimestamp(),
+      delivered: false,
+      read: false
+    };
 
-  await setDoc(
-    doc(db, "userConversations", currentConversation, "conversations", conversationId),
-    {
-      with: currentUser.uid,
-      lastMessage: text,
-      timestamp: serverTimestamp()
-    }
-  );
+    // Simpan pesan
+    await addDoc(
+      collection(db, 'conversations', conversationId, 'messages'),
+      messageData
+    );
 
-  input.value = "";
+    // Update kontak kedua belah pihak
+    const batch = writeBatch(db);
+    
+    // Update kontak pengirim
+    batch.set(
+      doc(db, 'userContacts', currentUser.uid),
+      {
+        [`contacts.${recipientId}`]: {
+          lastMessage: content,
+          lastMessageTime: serverTimestamp(),
+          unreadCount: 0
+        }
+      },
+      { merge: true }
+    );
+    
+    // Update kontak penerima
+    batch.set(
+      doc(db, 'userContacts', recipientId),
+      {
+        [`contacts.${currentUser.uid}`]: {
+          lastMessage: content,
+          lastMessageTime: serverTimestamp(),
+          unreadCount: increment(1)
+        }
+      },
+      { merge: true }
+    );
+
+    await batch.commit();
+    
+    return true;
+  } catch (error) {
+    console.error("Error sending message:", error);
+    throw error;
+  }
 }
+ 
+ 
+ 
 
 
-
- 
- 
- 
- 
- 
- 
- 
- // === Pesan dengan riwayat otomatis ===
-async function sendMessage(toUserId, text) {
-  const fromUserId = auth.currentUser.uid;
-  const conversationId = [fromUserId, toUserId].sort().join('_');
-
-  // Simpan pesan
-  await addDoc(collection(db, "conversations", conversationId, "messages"), {
-    from: fromUserId,
-    to: toUserId,
-    text,
-    timestamp: serverTimestamp()
-  });
-
-  // Simpan riwayat percakapan untuk kedua user
-  await setDoc(doc(db, "userConversations", fromUserId, "conversations", conversationId), {
-    with: toUserId,
-    lastMessage: text,
-    timestamp: serverTimestamp()
-  });
-  await setDoc(doc(db, "userConversations", toUserId, "conversations", conversationId), {
-    with: fromUserId,
-    lastMessage: text,
-    timestamp: serverTimestamp()
-  });
-
-  // Refresh daftar percakapan
-  loadConversations();
-}
-
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
 async function loadContacts() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
@@ -8330,10 +8334,22 @@ async function loadContacts() {
     const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
 
     contactsList.innerHTML = "";
-    const contactIds = Object.keys(contactsData);
+    let contactIds = Object.keys(contactsData);
+
+    // 🔹 Jika userContacts kosong, fallback ambil dari conversations
+    if (contactIds.length === 0) {
+      const convQuery = query(
+        collectionGroup(db, "messages"),
+        where("senderId", "==", currentUser.uid)
+      );
+      const convSnapshot = await getDocs(convQuery);
+
+      const recipientIds = [...new Set(convSnapshot.docs.map(d => d.data().recipientId))];
+      contactIds = recipientIds;
+    }
 
     if (contactIds.length === 0) {
-      contactsList.innerHTML = "<p>Belum ada percakapan atau kontak</p>";
+      contactsList.innerHTML = "<p>Tidak ada percakapan tersimpan</p>";
       return;
     }
 
@@ -8352,7 +8368,7 @@ async function loadContacts() {
           <div class="contact-avatar">${(user.displayName || user.email).substring(0,2).toUpperCase()}</div>
           <div>
             <div class="contact-name">${user.displayName || user.email}</div>
-            <div class="contact-last-message">${contactInfo.lastMessage || "Belum ada pesan"}</div>
+            <div class="contact-last-message">${contactInfo.lastMessage || "Klik untuk membuka percakapan"}</div>
           </div>
         </div>
       `;
@@ -8366,9 +8382,6 @@ async function loadContacts() {
     contactsList.innerHTML = "<p>Gagal memuat kontak</p>";
   }
 }
-
-
-
 
 
 
@@ -8610,6 +8623,7 @@ async function setupFollowSystem() {
   onAuthStateChanged(auth, (user) => {
     if (user) {
       loadFollowData(user.uid);
+	  startFollowRelationListener(user.uid);
       setDoc(doc(db, 'userFollows', user.uid), {
         following: {},
         followers: {}
@@ -8714,48 +8728,6 @@ async function unfollowUser(targetUserId) {
 
 
 
-async function loadRelations() {
-  const currentUser = auth.currentUser;
-  if (!currentUser) return;
-
-  // Following
-  const followingSnap = await getDocs(collection(db, "following", currentUser.uid, "users"));
-  const followingList = document.getElementById("followingList");
-  const followingCount = document.getElementById("followingCount");
-  followingList.innerHTML = "";
-  followingCount.textContent = followingSnap.size;
-
-  if (followingSnap.empty) {
-    followingList.innerHTML = "<p>Tidak mengikuti siapa pun.</p>";
-  } else {
-    followingSnap.forEach(docSnap => {
-      const data = docSnap.data();
-      const div = document.createElement("div");
-      div.classList.add("follow-item");
-      div.textContent = data.userId;
-      followingList.appendChild(div);
-    });
-  }
-
-  // Followers
-  const followersSnap = await getDocs(collection(db, "followers", currentUser.uid, "users"));
-  const followersList = document.getElementById("followersList");
-  const followersCount = document.getElementById("followersCount");
-  followersList.innerHTML = "";
-  followersCount.textContent = followersSnap.size;
-
-  if (followersSnap.empty) {
-    followersList.innerHTML = "<p>Tidak ada pengikut.</p>";
-  } else {
-    followersSnap.forEach(docSnap => {
-      const data = docSnap.data();
-      const div = document.createElement("div");
-      div.classList.add("follow-item");
-      div.textContent = data.userId;
-      followersList.appendChild(div);
-    });
-  }
-}
 
 
 
