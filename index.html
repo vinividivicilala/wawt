@@ -7999,6 +7999,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
 // Variabel global
 let currentConversation = null;
 let unsubscribeContacts = null;
@@ -8319,7 +8321,8 @@ function loadConversation(userId, userName) {
  
  
  
- async function loadContacts() {
+ 
+function loadContacts() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
 
@@ -8328,54 +8331,27 @@ function loadConversation(userId, userName) {
   const contactsList = document.getElementById("contactsList");
   contactsList.innerHTML = '<div class="loader">Memuat kontak...</div>';
 
-  try {
-    // 🔹 Ambil daftar kontak dari userContacts
-    const contactsDoc = await getDoc(doc(db, "userContacts", currentUser.uid));
-    const contactsData = contactsDoc.exists() ? contactsDoc.data().contacts || {} : {};
-
+  const userContactsRef = doc(db, "userContacts", currentUser.uid);
+  unsubscribeContacts = onSnapshot(userContactsRef, async (docSnap) => {
     contactsList.innerHTML = "";
-    let contactIds = Object.keys(contactsData);
 
-    // 🔹 Jika userContacts kosong, fallback ke conversations
-    if (contactIds.length === 0) {
-      const convRef = collection(db, "conversations");
-      const convSnap = await getDocs(convRef);
-
-      let recipientIds = [];
-      for (const convDoc of convSnap.docs) {
-        const convId = convDoc.id;
-        if (convId.includes(currentUser.uid)) {
-          const otherUserId = convId.split("_").find(id => id !== currentUser.uid);
-          if (otherUserId) {
-            recipientIds.push(otherUserId);
-
-            // 🔹 Ambil pesan terakhir
-            const messagesRef = collection(db, `conversations/${convId}/messages`);
-            const lastMsgQuery = query(messagesRef, orderBy("timestamp", "desc"), limit(1));
-            const lastMsgSnap = await getDocs(lastMsgQuery);
-
-            if (!contactsData[otherUserId]) contactsData[otherUserId] = {};
-
-            if (!lastMsgSnap.empty) {
-              const lastMsg = lastMsgSnap.docs[0].data();
-              contactsData[otherUserId].lastMessage = lastMsg.content || "Pesan media";
-            }
-          }
-        }
-      }
-      contactIds = [...new Set(recipientIds)];
-    }
-
-    if (contactIds.length === 0) {
-      contactsList.innerHTML = "<p>Tidak ada percakapan tersimpan</p>";
+    if (!docSnap.exists()) {
+      contactsList.innerHTML = "<p>Tidak ada kontak</p>";
       return;
     }
 
-    // 🔹 Firestore where("in") max 10, jadi kita pecah contactIds per 10
-    const chunks = [];
-    while (contactIds.length) {
-      chunks.push(contactIds.splice(0, 10));
+    const contactsData = docSnap.data().contacts || {};
+    const contactIds = Object.keys(contactsData);
+
+    if (contactIds.length === 0) {
+      contactsList.innerHTML = "<p>Tidak ada percakapan</p>";
+      return;
     }
+
+    // Pecah per 10 untuk query
+    const chunks = [];
+    let ids = [...contactIds];
+    while (ids.length) chunks.push(ids.splice(0, 10));
 
     for (const chunk of chunks) {
       const q = query(collection(db, "users"), where("uid", "in", chunk));
@@ -8384,9 +8360,9 @@ function loadConversation(userId, userName) {
       snapshot.forEach(userDoc => {
         const user = userDoc.data();
         const contactInfo = contactsData[user.uid] || {};
+
         const contactItem = document.createElement("div");
         contactItem.className = "contact-item";
-        contactItem.dataset.userId = user.uid;
         contactItem.innerHTML = `
           <div class="contact-info">
             <div class="contact-avatar">${(user.displayName || user.email).substring(0,2).toUpperCase()}</div>
@@ -8399,18 +8375,15 @@ function loadConversation(userId, userName) {
         contactItem.addEventListener("click", () => {
           startConversation(user.uid, user.displayName || user.email);
         });
+
         contactsList.appendChild(contactItem);
       });
     }
-  } catch (err) {
-    console.error("Error loadContacts:", err);
+  }, (err) => {
+    console.error("Error listening contacts:", err);
     contactsList.innerHTML = "<p>Gagal memuat kontak</p>";
-  }
+  });
 }
-
- 
- 
- 
 
 
 
