@@ -8250,76 +8250,48 @@ function loadConversation(userId, userName) {
  
  
  
- async function sendMessage(conversationId, recipientId, content) {
+ 
+ 
+ // Saat mengirim pesan
+async function sendMessage(receiverId, messageText) {
   const currentUser = auth.currentUser;
-  if (!currentUser) {
-    throw new Error("User not authenticated");
-  }
+  if (!currentUser) return;
 
-  if (!conversationId || !recipientId || !content) {
-    throw new Error("Missing required fields");
-  }
+  const messageData = {
+    senderId: currentUser.uid,
+    receiverId: receiverId,
+    text: messageText,
+    createdAt: serverTimestamp(),
+    readBy: { [currentUser.uid]: true }
+  };
 
-  try {
-    const now = serverTimestamp();
+  // Simpan pesan di koleksi messages
+  await addDoc(collection(db, "messages"), messageData);
 
-    const messageData = {
-      content,
-      senderId: currentUser.uid,
-      recipientId,
-      timestamp: now,
-      delivered: false,
-      read: false
-    };
+  // 🔹 Update kontak untuk pengirim
+  const senderContactRef = doc(db, "userContacts", currentUser.uid);
+  await setDoc(senderContactRef, {
+    contacts: {
+      [receiverId]: {
+        lastMessage: messageText,
+        lastMessageTime: serverTimestamp(),
+        unreadCount: 0
+      }
+    }
+  }, { merge: true });
 
-    // Simpan pesan
-    await addDoc(
-      collection(db, "conversations", conversationId, "messages"),
-      messageData
-    );
-
-    // Update metadata kontak (batch biar sekali tulis)
-    const batch = writeBatch(db);
-
-    // Update kontak pengirim
-    batch.set(
-      doc(db, "userContacts", currentUser.uid),
-      {
-        [`contacts.${recipientId}`]: {
-          lastMessage: content,
-          lastMessageTime: now,
-          unreadCount: 0
-        }
-      },
-      { merge: true }
-    );
-
-    // Update kontak penerima
-    batch.set(
-      doc(db, "userContacts", recipientId),
-      {
-        [`contacts.${currentUser.uid}`]: {
-          lastMessage: content,
-          lastMessageTime: now,
-          unreadCount: increment(1)
-        }
-      },
-      { merge: true }
-    );
-
-    await batch.commit();
-
-    return true;
-  } catch (error) {
-    console.error("Error sending message:", error);
-    throw error;
-  }
+  // 🔹 Update kontak untuk penerima
+  const receiverContactRef = doc(db, "userContacts", receiverId);
+  await setDoc(receiverContactRef, {
+    contacts: {
+      [currentUser.uid]: {
+        lastMessage: messageText,
+        lastMessageTime: serverTimestamp(),
+        unreadCount: (firebase.firestore.FieldValue.increment(1)) // unread bertambah
+      }
+    }
+  }, { merge: true });
 }
-
- 
- 
- 
- 
  
  
  
