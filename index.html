@@ -8324,7 +8324,10 @@ function loadConversation(userId, userName) {
  
  
  
- async function loadContacts() {
+ 
+ 
+ 
+ function loadContacts() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
 
@@ -8338,7 +8341,7 @@ function loadConversation(userId, userName) {
     contactsList.innerHTML = "";
 
     if (!docSnap.exists()) {
-      contactsList.innerHTML = "<p>Tidak ada kontak</p>";
+      contactsList.innerHTML = "<p>Tidak ada percakapan</p>";
       return;
     }
 
@@ -8350,40 +8353,45 @@ function loadConversation(userId, userName) {
       return;
     }
 
-    for (const userId of contactIds) {
+    // Urutkan kontak berdasarkan lastMessageTime terbaru
+    const sortedContacts = Object.entries(contactsData).sort((a, b) => {
+      const timeA = a[1].lastMessageTime?.toMillis?.() || 0;
+      const timeB = b[1].lastMessageTime?.toMillis?.() || 0;
+      return timeB - timeA; // terbaru di atas
+    });
+
+    for (const [userId, info] of sortedContacts) {
       try {
-        // 🔹 Ambil data user
+        // 🔹 Ambil info user
         const userDoc = await getDoc(doc(db, "users", userId));
         if (!userDoc.exists()) continue;
         const user = userDoc.data();
 
-        // 🔹 Ambil pesan terakhir dari subkoleksi messages
-        const conversationId = [currentUser.uid, userId].sort().join("_");
-        const messagesRef = collection(db, "conversations", conversationId, "messages");
-        const lastMsgQuery = query(messagesRef, orderBy("timestamp", "desc"), limit(1));
-        const lastMsgSnap = await getDocs(lastMsgQuery);
-
-        let lastMessage = "Belum ada pesan";
-        let lastMessageTime = null;
-        if (!lastMsgSnap.empty) {
-          const msgData = lastMsgSnap.docs[0].data();
-          lastMessage = msgData.content;
-          lastMessageTime = msgData.timestamp ? formatTime(msgData.timestamp.toDate()) : "";
-        }
+        const lastMessage = info.lastMessage || "Belum ada pesan";
+        const lastMessageTime = info.lastMessageTime
+          ? formatTime(info.lastMessageTime.toDate())
+          : "";
 
         // 🔹 Render kontak
         const contactItem = document.createElement("div");
         contactItem.className = "contact-item";
         contactItem.innerHTML = `
           <div class="contact-info">
-            <div class="contact-avatar">${(user.displayName || user.email).substring(0,2).toUpperCase()}</div>
+            <div class="contact-avatar">${(user.displayName || user.email)
+              .substring(0, 2)
+              .toUpperCase()}</div>
             <div>
               <div class="contact-name">${user.displayName || user.email}</div>
               <div class="contact-last-message">${lastMessage}</div>
             </div>
           </div>
           <div class="contact-meta">
-            <span class="last-message-time">${lastMessageTime || ""}</span>
+            <span class="last-message-time">${lastMessageTime}</span>
+            ${
+              info.unreadCount > 0
+                ? `<span class="unread-badge">${info.unreadCount}</span>`
+                : ""
+            }
           </div>
         `;
 
@@ -8402,15 +8410,6 @@ function loadConversation(userId, userName) {
   });
 }
 
- 
- 
- 
- 
- 
- 
- 
- 
- 
  
  
  
