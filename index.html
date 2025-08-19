@@ -8250,59 +8250,57 @@ function loadConversation(userId, userName) {
  
  
  
- 
- 
- 
  async function sendMessage(conversationId, recipientId, content) {
   const currentUser = auth.currentUser;
   if (!currentUser) {
     throw new Error("User not authenticated");
   }
 
-  // Validasi input
   if (!conversationId || !recipientId || !content) {
     throw new Error("Missing required fields");
   }
 
   try {
+    const now = serverTimestamp();
+
     const messageData = {
-      content: content,
+      content,
       senderId: currentUser.uid,
-      recipientId: recipientId,
-      timestamp: serverTimestamp(),
+      recipientId,
+      timestamp: now,
       delivered: false,
       read: false
     };
 
     // Simpan pesan
     await addDoc(
-      collection(db, 'conversations', conversationId, 'messages'),
+      collection(db, "conversations", conversationId, "messages"),
       messageData
     );
 
-    // Update kontak kedua belah pihak
+    // Update metadata kontak (batch biar sekali tulis)
     const batch = writeBatch(db);
-    
+
     // Update kontak pengirim
     batch.set(
-      doc(db, 'userContacts', currentUser.uid),
+      doc(db, "userContacts", currentUser.uid),
       {
         [`contacts.${recipientId}`]: {
           lastMessage: content,
-          lastMessageTime: serverTimestamp(),
+          lastMessageTime: now,
           unreadCount: 0
         }
       },
       { merge: true }
     );
-    
+
     // Update kontak penerima
     batch.set(
-      doc(db, 'userContacts', recipientId),
+      doc(db, "userContacts", recipientId),
       {
         [`contacts.${currentUser.uid}`]: {
           lastMessage: content,
-          lastMessageTime: serverTimestamp(),
+          lastMessageTime: now,
           unreadCount: increment(1)
         }
       },
@@ -8310,13 +8308,14 @@ function loadConversation(userId, userName) {
     );
 
     await batch.commit();
-    
+
     return true;
   } catch (error) {
     console.error("Error sending message:", error);
     throw error;
   }
 }
+
  
  
  
