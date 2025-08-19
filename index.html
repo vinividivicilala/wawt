@@ -8322,7 +8322,9 @@ function loadConversation(userId, userName) {
  
  
  
-function loadContacts() {
+ 
+ 
+ async function loadContacts() {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
 
@@ -8348,19 +8350,28 @@ function loadContacts() {
       return;
     }
 
-    // Pecah per 10 untuk query
-    const chunks = [];
-    let ids = [...contactIds];
-    while (ids.length) chunks.push(ids.splice(0, 10));
-
-    for (const chunk of chunks) {
-      const q = query(collection(db, "users"), where("uid", "in", chunk));
-      const snapshot = await getDocs(q);
-
-      snapshot.forEach(userDoc => {
+    for (const userId of contactIds) {
+      try {
+        // 🔹 Ambil data user
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (!userDoc.exists()) continue;
         const user = userDoc.data();
-        const contactInfo = contactsData[user.uid] || {};
 
+        // 🔹 Ambil pesan terakhir dari subkoleksi messages
+        const conversationId = [currentUser.uid, userId].sort().join("_");
+        const messagesRef = collection(db, "conversations", conversationId, "messages");
+        const lastMsgQuery = query(messagesRef, orderBy("timestamp", "desc"), limit(1));
+        const lastMsgSnap = await getDocs(lastMsgQuery);
+
+        let lastMessage = "Belum ada pesan";
+        let lastMessageTime = null;
+        if (!lastMsgSnap.empty) {
+          const msgData = lastMsgSnap.docs[0].data();
+          lastMessage = msgData.content;
+          lastMessageTime = msgData.timestamp ? formatTime(msgData.timestamp.toDate()) : "";
+        }
+
+        // 🔹 Render kontak
         const contactItem = document.createElement("div");
         contactItem.className = "contact-item";
         contactItem.innerHTML = `
@@ -8368,16 +8379,22 @@ function loadContacts() {
             <div class="contact-avatar">${(user.displayName || user.email).substring(0,2).toUpperCase()}</div>
             <div>
               <div class="contact-name">${user.displayName || user.email}</div>
-              <div class="contact-last-message">${contactInfo.lastMessage || "Klik untuk membuka percakapan"}</div>
+              <div class="contact-last-message">${lastMessage}</div>
             </div>
           </div>
+          <div class="contact-meta">
+            <span class="last-message-time">${lastMessageTime || ""}</span>
+          </div>
         `;
+
         contactItem.addEventListener("click", () => {
-          startConversation(user.uid, user.displayName || user.email);
+          startConversation(userId, user.displayName || user.email);
         });
 
         contactsList.appendChild(contactItem);
-      });
+      } catch (error) {
+        console.error("Error loading contact:", error);
+      }
     }
   }, (err) => {
     console.error("Error listening contacts:", err);
@@ -8385,7 +8402,18 @@ function loadContacts() {
   });
 }
 
-
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 
 
