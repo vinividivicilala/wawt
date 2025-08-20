@@ -225,5 +225,3 @@ class DigitalClock {
 document.addEventListener('DOMContentLoaded', () => {
     new DigitalClock();
 });
-// Export for use in other modules if needed
-export default DigitalClock;
