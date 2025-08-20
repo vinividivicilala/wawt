@@ -1,9 +1,19 @@
 {
+  "name": "user-project",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch"
-  },
+  "build:ts": "tsc",
+  "watch:ts": "tsc --watch",
+  "build:css": ".\\node_modules\\.bin\\tailwindcss.cmd -i .\\src\\input.css -o .\\dist\\output.css",
+  "dev:css": ".\\node_modules\\.bin\\tailwindcss.cmd -i .\\src\\input.css -o .\\dist\\output.css --watch",
+  "dev": "npm-run-all --parallel watch:ts dev:css"
+},
   "devDependencies": {
-    "typescript": "^4.9.0"
+    "autoprefixer": "^10.4.21",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^4.9.5"
   }
 }
