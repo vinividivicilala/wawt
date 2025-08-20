@@ -13,3 +13,4 @@ document.addEventListener("DOMContentLoaded", () => {
   // Sisipkan ke body (atau bisa ke section tertentu)
   document.body.appendChild(newText);
 });
+
