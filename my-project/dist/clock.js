@@ -1,13 +1,14 @@
+"use strict";
 function updateClock() {
-    var clockEl = document.getElementById("digitalClock");
+    const clockEl = document.getElementById("digitalClock");
     if (!clockEl)
         return;
-    var now = new Date();
-    var pad = function (num) { return (num < 10 ? "0" + num : num.toString()); };
-    var hours = pad(now.getHours());
-    var minutes = pad(now.getMinutes());
-    var seconds = pad(now.getSeconds());
-    clockEl.textContent = "".concat(hours, ":").concat(minutes, ":").concat(seconds);
+    const now = new Date();
+    const pad = (num) => (num < 10 ? "0" + num : num.toString());
+    const hours = pad(now.getHours());
+    const minutes = pad(now.getMinutes());
+    const seconds = pad(now.getSeconds());
+    clockEl.textContent = `${hours}:${minutes}:${seconds}`;
 }
 // langsung tampil saat pertama load
 updateClock();
