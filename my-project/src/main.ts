@@ -1,9 +1,15 @@
-function showHalo() {
-  const root = document.getElementById("ts-root");
-  if (root) {
-    root.innerHTML = `<h1 style="color:white; text-align:center; margin-top:20px;">Halo</h1>`;
-  }
-}
-
-// jalankan saat halaman selesai load
-document.addEventListener("DOMContentLoaded", showHalo);
+// main.ts
+document.addEventListener("DOMContentLoaded", () => {
+  // Buat elemen baru
+  const newText = document.createElement("h2");
+  newText.innerText = "Halo, teks ini ditambahkan dari TypeScript!";
+  
+  // Styling sederhana
+  newText.style.color = "white";
+  newText.style.textAlign = "center";
+  newText.style.marginTop = "40px";
+  newText.style.fontWeight = "600";
+  
+  // Sisipkan ke body (atau bisa ke section tertentu)
+  document.body.appendChild(newText);
+});
