@@ -2,16 +2,6 @@
   command = "npm run build"
   publish = ".next"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-# Redirect khusus untuk file HTML di public folder
-[[redirects]]
-  from = "/legacy"
-  to = "/index.html"
-  status = 200
-
-# Redirect untuk menangani 404 error - arahkan semua ke index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
