@@ -1,4 +1,6 @@
-echo "/** @type {import('next').NextConfig} */ 
-const nextConfig = {}
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: "export", // <- ini kunci buat next export
+};
 
-module.exports = nextConfig" > next.config.js
+module.exports = nextConfig;
