@@ -4,9 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="./dist/output.css" rel="stylesheet">
+
+ 
   <title>Life Is What It Is Learn</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600&display=swap');
+	
 
    body {
   margin: 0;
@@ -4355,7 +4359,110 @@ iframe:hover {
 }
 
 
+/* Digital Clock Styles */
+.digital-clock-container {
+    background: linear-gradient(135deg, #2c3e50, #1a2530);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
+.clock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.clock-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.clock-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.clock-controls button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.3s;
+}
+
+.clock-controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.digital-clock {
+    font-size: 3.5rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    margin: 10px 0;
+}
+
+.digital-clock span {
+    display: inline-block;
+    min-width: 70px;
+    text-align: center;
+}
+
+.ampm {
+    font-size: 1.5rem;
+    margin-left: 10px;
+    vertical-align: super;
+}
+
+.clock-date {
+    text-align: center;
+    font-size: 1.2rem;
+    opacity: 0.8;
+    margin-top: 5px;
+}
+
+/* Animation for time update */
+.time-update {
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.5; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .digital-clock {
+        font-size: 2.5rem;
+    }
+    
+    .digital-clock span {
+        min-width: 50px;
+    }
+    
+    .ampm {
+        font-size: 1.2rem;
+    }
+    
+    .clock-date {
+        font-size: 1rem;
+    }
+}
 
 
 	
@@ -4367,10 +4474,6 @@ iframe:hover {
     <img src="images/5.jpg" alt="Logo" class="logo" />
 	<div class="title">Life Is What It Is Learn</div>
   </div>
-  
-  
-   <!-- kontainer untuk TypeScript -->
-  <div id="ts-root"></div>
   
   <div id="authArea" style="position: absolute; top: 10px; right: 20px; z-index: 999; display: flex; align-items: center; gap: 15px;">
   <button id="loginBtn" style="display: flex; align-items: center; background: none; border: 2px solid #9fc1d5; color: #9fc1d5; font-weight: bold; font-size: 29px; border-radius: 30px; padding: 10px 20px; cursor: pointer;">
@@ -6584,6 +6687,21 @@ iframe:hover {
 
 
 <div id="page11" style="display: none;">
+<!-- Digital Clock Container -->
+<div class="digital-clock-container">
+    <div class="clock-header">
+        <h3>Jam Digital</h3>
+        <div class="clock-controls">
+            <button id="toggleClockFormat">12/24</button>
+            <button id="toggleClockVisibility">Sembunyikan</button>
+        </div>
+    </div>
+    <div id="digitalClock" class="digital-clock">
+        <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+        <span id="ampm" class="ampm"></span>
+    </div>
+    <div id="clockDate" class="clock-date">Minggu, 1 Januari 2023</div>
+</div>
   <div class="dashboard-container">
     <!-- Header Dashboard -->
     <div class="dashboard-header">
@@ -6596,6 +6714,8 @@ iframe:hover {
         <span class="notification-badge" id="notificationBadge">0</span>
       </div>
     </div>
+	
+	
 
     <!-- Profil Pengguna -->
     <div class="dashboard-profile linebox">
@@ -6940,9 +7060,6 @@ iframe:hover {
     </div>
   </div>
 </div>
-
-
-
 
 
 
@@ -8855,7 +8972,22 @@ function initializeEnhancedDashboard() {
    setupMessagingSystem(); // Add this
   setupFollowSystem(); // Add this
       
-	  
+	 try {
+    // Jika menggunakan modul ES6:
+    // const digitalClock = new DigitalClock();
+    
+    // Jika tidak menggunakan modul, cukup pastikan digitalClock.ts sudah dikompilasi
+    // dan dimuat di halaman sebelum script ini
+    if (typeof DigitalClock !== 'undefined') {
+      const digitalClock = new DigitalClock();
+      
+      // Simpan referensi untuk nanti jika perlu diakses
+      window.digitalClockInstance = digitalClock;
+    }
+  } catch (error) {
+    console.error('Failed to initialize digital clock:', error);
+  }
+  
 
 
   
@@ -9462,7 +9594,12 @@ onAuthStateChanged(auth, (user) => {
 
 
 
-
+document.addEventListener("DOMContentLoaded", () => {
+  const elements = document.querySelectorAll("#page12 .animate-fadeUp");
+  elements.forEach((el, i) => {
+    el.style.animationDelay = `${i * 0.2}s`;
+  });
+});
 
 
 
@@ -14775,11 +14912,9 @@ async function loadAnnouncementById(id) {
     }
 }
 }
-
-<script src="./dist/main.js"></script>
  
-  
-</script>
+</script>  
+<script src="dist/digitalClock.js"></script>
 </body>
 </html>
 
