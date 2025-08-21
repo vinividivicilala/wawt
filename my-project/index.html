@@ -4575,13 +4575,15 @@ iframe:hover {
     </a>
   </div>
     <div>
-    <a href="/tentang-saya" class="tentangSayaLink">
+    <a href="/tentang-saya" class="nextjs-link">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg); margin-left: 8px;">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
       </svg>
       tentang saya
     </a>
+	
+	
   </div>
 </div>
 </div>	
@@ -9614,7 +9616,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+   // Fungsi untuk navigasi ke halaman tentang-saya
+        function navigateToTentangSaya() {
+            // Ganti dengan URL halaman Next.js tentang-saya Anda
+            window.location.href = '/tentang-saya';
+        }
 
+        // Tambahkan event listener untuk button tentang-saya
+        document.getElementById('tentang-saya-btn').addEventListener('click', navigateToTentangSaya);
 
 
 
