@@ -1,14 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Mengizinkan file static di public folder
-  async rewrites() {
-    return [
-      {
-        source: '/legacy',
-        destination: '/index.html',
-      },
-    ];
+  trailingSlash: true,
+  // Pastikan output: 'export' dihapus atau dikomentari
+  // output: 'export',
+  images: {
+    unoptimized: true
+  },
+  // Menonaktifkan static optimization untuk menangani redirects
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
   },
 };
 
