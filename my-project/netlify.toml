@@ -8,7 +8,7 @@
 # Untuk Next.js dengan pages router
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/tentang-saya"
   status = 200
 
 # Untuk Next.js dengan app router
@@ -23,3 +23,4 @@
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
+
