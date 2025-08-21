@@ -11,8 +11,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "declaration": false,
+    "removeComments": true,
+    "sourceMap": false
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "app", "dist"]
+  "exclude": ["node_modules", ".next", "dist"]
 }
