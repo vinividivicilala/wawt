@@ -1,10 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-   "./public/index.html",      // semua file HTML di root project
-    "./src/**/*.{js,ts,jsx,tsx}" // kalau nanti ada JS/TS di folder src
-	
+   content: [
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}"
   ],
+  
   theme: {
     extend: {
       colors: {
