@@ -9,7 +9,7 @@
     "build:next": "next build",
     "build:css": "tailwindcss -i ./src/input.css -o ./public/output.css --minify",
     "build:ts": "tsc",
-    "export": "next export",  // Untuk static export
+    "export": "next export",  
     "start": "next start",
     "lint": "next lint",
     "dev:ts": "tsc --watch",
@@ -31,5 +31,6 @@
     "typescript": "^4.9.5"
   }
 }
+
 
 
