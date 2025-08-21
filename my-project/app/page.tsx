@@ -1,4 +1,4 @@
-import DevPopup from './components/DevPopup'
+import MaintenancePopup from './components/MaintenancePopup'
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
         </p>
       </div>
 
-      <DevPopup />
+      <MaintenancePopup />
     </main>
   )
 }
