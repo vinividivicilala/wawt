@@ -1,11 +1,37 @@
 [build]
-  command = "npm run build && npm run build:css"
-  publish = "out"
+  command = "npm run build && npm run build:css && npm run build:ts"
+  publish = ".next"  # Untuk Next.js
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Redirect semua routes ke index.html untuk SPA behavior
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Khusus untuk Next.js API routes (jika ada)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Untuk file static (CSS, JS, images)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    "X-Frame-Options" = "DENY"
+    "X-XSS-Protection" = "1; mode=block"
+    "X-Content-Type-Options" = "nosniff"
+
+# Cache static assets
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    "Cache-Control" = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    "Cache-Control" = "public, max-age=31536000, immutable"
