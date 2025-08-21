@@ -2,12 +2,27 @@ import MaintenancePopup from './components/MaintenancePopup'
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
+    <main className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
+      {/* Konten utama website */}
+      <div className="container mx-auto px-4 py-16">
+        <h1 className="text-4xl md:text-6xl font-bold text-center mb-8">
+          Selamat Datang di Website Kami
+        </h1>
+        <p className="text-xl text-center text-gray-300 max-w-3xl mx-auto">
+          Kami sedang bekerja keras untuk menyiapkan pengalaman terbaik untuk Anda.
         </p>
+        
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="bg-gray-800 p-6 rounded-lg hover:bg-gray-700 transition-colors">
+              <div className="w-12 h-12 bg-cyan-600 rounded-lg mb-4 flex items-center justify-center">
+                <span className="text-xl font-bold">{item}</span>
+              </div>
+              <h2 className="text-2xl font-semibold mb-4">Fitur {item}</h2>
+              <p className="text-gray-400">Deskripsi fitur yang akan datang...</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <MaintenancePopup />
