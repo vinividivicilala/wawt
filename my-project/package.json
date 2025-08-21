@@ -1,5 +1,5 @@
 {
-  "name": "user-project",
+  "name": ".next",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -20,3 +20,4 @@
     "typescript": "^4.9.5"
   }
 }
+
