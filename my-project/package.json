@@ -2,16 +2,18 @@
   "name": "user-project",
   "version": "1.0.0",
   "private": true,
- {
+{
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run build:css && npm run build:ts",
+    "build:next": "next build",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/output.css --minify",
+    "build:ts": "tsc",
+    "export": "next export",  // Untuk static export
     "start": "next start",
     "lint": "next lint",
     "dev:ts": "tsc --watch",
-    "build:ts": "tsc",
-    "dev:css": "tailwindcss -i ./src/input.css -o ./public/output.css --watch",
-    "build:css": "tailwindcss -i ./src/input.css -o ./public/output.css --minify"
+    "dev:css": "tailwindcss -i ./src/input.css -o ./public/output.css --watch"
   }
 }
   "dependencies": {
@@ -29,4 +31,5 @@
     "typescript": "^4.9.5"
   }
 }
+
 
