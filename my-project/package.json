@@ -2,23 +2,26 @@
   "name": "user-project",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "build:ts": "tsc",
-    "watch:ts": "tsc --watch",
-    "build:css": "tailwindcss -i ./src/input.css -o ./dist/output.css",
-    "dev:css": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
-    "dev:next": "next dev",
-    "build:next": "next build",
-    "start:next": "next start",
-    "lint": "next lint",
-    "dev": "npm-run-all --parallel watch:ts dev:css dev:next"
-  },
+ "scripts": {
+  "build": "next build",
+  "build:ts": "tsc",
+  "watch:ts": "tsc --watch",
+  "build:css": "tailwindcss -i ./src/input.css -o ./dist/output.css",
+  "dev:css": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+  "dev:next": "next dev",
+  "build:next": "next build",
+  "start:next": "next start",
+  "lint": "next lint",
+  "dev": "npm-run-all --parallel watch:ts dev:css dev:next"
+},
+
   "dependencies": {
     "next": "^15.5.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.12.1",
     "autoprefixer": "^10.4.21",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.5.6",
