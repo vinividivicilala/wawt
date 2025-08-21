@@ -6,7 +6,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white text-center p-6 relative">
-      {/* 🚧 Konten Utama */}
+      {/* Konten utama */}
       <h1 className="text-5xl font-bold mb-6">
         🚧 Website Sedang Dalam Perkembangan 🚧
       </h1>
@@ -22,20 +22,18 @@ export default function Home() {
           href="/"
           className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-500 transition"
         >
-          Halaman Utama
+          Halaman Utama (Next.js)
         </a>
 
         <a
           href="/index.html"
-          target="_blank"
-          rel="noopener noreferrer"
           className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-500 transition"
         >
-          Lihat Versi Lama
+          Versi HTML Tradisional
         </a>
       </div>
 
-      {/* 🔹 Pop-up Halaman Penuh */}
+      {/* Pop-up */}
       {showPopup && (
         <div className="fixed inset-0 bg-black/95 text-white z-[9999] flex flex-col items-center justify-center text-center p-6">
           {/* SVG animasi gear */}
