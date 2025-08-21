@@ -1,14 +1,11 @@
 [build]
-  command = "npm run build"
-  publish = ".next"  # folder build Next.js
-  functions = "netlify/functions"  # jika ada serverless
+  command = "npm run build && npm run build:css"
+  publish = "out"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-
 [[redirects]]
-  from = "/__/auth/handler"
-  to = "/"
+  from = "/*"
+  to = "/index.html"
   status = 200
-
