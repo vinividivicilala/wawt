@@ -2,22 +2,32 @@
 
 import { useEffect, useState } from 'react'
 
-interface MaintenancePopupProps {
-  onClose: () => void
-}
-
-export default function MaintenancePopup({ onClose }: MaintenancePopupProps) {
+export default function MaintenancePopup() {
   const [isVisible, setIsVisible] = useState(false)
+  const [showPopup, setShowPopup] = useState(true)
 
   useEffect(() => {
+    // Cek localStorage untuk melihat jika popup sudah ditutup sebelumnya
+    const isDismissed = typeof window !== 'undefined' ? localStorage.getItem('popupDismissed') : null
+    if (isDismissed) {
+      setShowPopup(false)
+      return
+    }
+    
     const timer = setTimeout(() => setIsVisible(true), 100)
     return () => clearTimeout(timer)
   }, [])
 
   const handleClose = () => {
     setIsVisible(false)
-    setTimeout(() => onClose(), 300)
+    // Simpan di localStorage bahwa user sudah menutup popup
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('popupDismissed', 'true')
+    }
+    setTimeout(() => setShowPopup(false), 300)
   }
+
+  if (!showPopup) return null
 
   return (
     <div className={`fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
