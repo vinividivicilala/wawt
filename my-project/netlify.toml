@@ -1,5 +1,5 @@
 [build]
-  command   = "npm run build:next"
+  command   = "npm run build"
   publish   = ".next"
 
 [[plugins]]
@@ -8,9 +8,4 @@
 [[redirects]]
   from = "/__/auth/handler"
   to = "/"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
   status = 200
