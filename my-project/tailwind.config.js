@@ -1,19 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-   content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}"
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  
   theme: {
     extend: {
       colors: {
-        primary: "#4da6ff",  // warna biru custom
-        secondary: "#ff6b6b", // warna merah custom
+        primary: "#4da6ff",
+        secondary: "#ff6b6b",
       },
       fontFamily: {
-        jakarta: ["Plus Jakarta Sans", "sans-serif"], // font sesuai project Anda
+        jakarta: ["Plus Jakarta Sans", "sans-serif"],
       },
       keyframes: {
         fadeUp: {
