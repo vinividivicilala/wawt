@@ -1,25 +1,16 @@
-# =======================
-# Default build: HTML statis dari root (wawt)
-# =======================
-[build]
-  base = "."             # root = wawt
-  publish = "."          # index.html ada di root (wawt)
 
-# =======================
-# Redirect: kalau akses /my-project/* diarahkan ke Next.js
-# =======================
+[build]
+  base = ""             # root repo "wawt"
+  publish = "."         # biar index.html di root tetap jadi homepage
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  # kasih tahu plugin kalau Next.js ada di subfolder
+  [plugins.inputs]
+    baseDirectory = "my-project"
+
+# Routing Next.js ke fungsi serverless
 [[redirects]]
   from = "/my-project/*"
   to = "/.netlify/functions/next"
   status = 200
-
-# =======================
-# Next.js Plugin khusus untuk folder my-project
-# =======================
-[context.next]
-  base = "my-project"
-  command = "npm run build"
-  publish = ".next"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
