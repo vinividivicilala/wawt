@@ -5,14 +5,13 @@
 [build.environment]
   NODE_VERSION = "22"
 
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/next"
   status = 200
-
-  [[plugins]]
-package = "@netlify/plugin-nextjs"
-
 
 [[headers]]
   for = "/*"
@@ -21,4 +20,3 @@ package = "@netlify/plugin-nextjs"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     X-Powered-By = "Next.js"
-
