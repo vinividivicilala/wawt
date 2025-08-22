@@ -9614,18 +9614,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
-
-   // Fungsi untuk navigasi ke halaman tentang-saya
-        function navigateToTentangSaya() {
-            // Ganti dengan URL halaman Next.js tentang-saya Anda
-            window.location.href = '/tentang-saya';
-        }
-
-        // Tambahkan event listener untuk button tentang-saya
-        document.getElementById('/tentang-saya').addEventListener('click', navigateToTentangSaya);
-
-
+ // Untuk navigasi sederhana (jika halaman sudah ada)
+        document.querySelectorAll('a[href="/tentang-saya"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Jika halaman belum ada, tampilkan pesan
+                if (!window.isNextJSReady) {
+                    e.preventDefault();
+                    alert('Halaman "Tentang Saya" sedang dalam pengembangan. Silakan coba lagi nanti.');
+                }
+            });
+        });
 
 
 
