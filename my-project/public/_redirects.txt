@@ -1,2 +1,0 @@
-/tentang-saya   /.netlify/functions/next   200
-/*              /.netlify/functions/next   200
