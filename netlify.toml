@@ -1,3 +1,7 @@
+
+
+# netlify.toml
+
 [build]
   base = "my-project"
   command = "npm run build"
@@ -6,15 +10,21 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Root (/) wajib ambil HTML statis
+# Halaman utama menggunakan HTML statis
 [[redirects]]
   from = "/"
   to = "/index.html"
   status = 200
-  force = true   # <-- tambahin ini
+  force = true
 
-# Semua halaman lain ditangani Next.js
+# Halaman tentang-saya menggunakan Next.js murni
+[[redirects]]
+  from = "/tentang-saya"
+  to = "/.netlify/functions/next/tentang-saya"
+  status = 200
+
+# Semua halaman lainnya menggunakan Next.js
 [[redirects]]
   from = "/*"
-  to = "/.netlify/functions/next"
+  to = "/.netlify/functions/next/:splat"
   status = 200
