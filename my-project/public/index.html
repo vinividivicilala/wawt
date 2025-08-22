@@ -9614,7 +9614,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle klik pada link "tentang saya"
+  const tentangSayaLink = document.querySelector('.tentangSayaLink');
+  if (tentangSayaLink) {
+    tentangSayaLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      window.location.href = '/.netlify/functions/next/tentang-saya';
+    });
+  }
+  
+  // Handle klik pada link lainnya di navigasi
+  const navLinks = document.querySelectorAll('a[href="/tentang-saya"]');
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      window.location.href = '/.netlify/functions/next/tentang-saya';
+    });
+  });
+});
 
 
 
@@ -14926,6 +14944,7 @@ async function loadAnnouncementById(id) {
 <script src="dist/digitalClock.js"></script>
 </body>
 </html>
+
 
 
 
