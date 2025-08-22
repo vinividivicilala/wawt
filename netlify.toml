@@ -1,8 +1,8 @@
 [build]
   base = "my-project"
   command = "npm run build"
-  publish = ".next"
-  
+  publish = "../wawt"   # supaya index.html & file HTML lain tetap jadi halaman utama
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
