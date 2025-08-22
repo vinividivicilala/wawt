@@ -2,7 +2,6 @@
   "name": "my-project",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,11 +11,11 @@
   "dependencies": {
     "next": "15.5.0",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "@netlify/plugin-nextjs": "^5.12.1"   // ⬅️ pindah ke sini
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@netlify/plugin-nextjs": "^5.12.1",
     "postcss": "^8.4.39",
     "autoprefixer": "^10.4.20",
     "tailwindcss": "^3.4.10",
@@ -27,5 +26,8 @@
     "eslint-config-next": "15.5.0",
     "typescript": "^5",
     "critters": "^0.0.22"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
