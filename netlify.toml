@@ -13,12 +13,6 @@
   status = 200
   force = true
 
-# Route Tentang Saya → Next.js
-[[redirects]]
-  from = "/tentang-saya"
-  to = "/.netlify/functions/next/tentang-saya"
-  status = 200
-
 # Semua route lain → Next.js
 [[redirects]]
   from = "/*"
