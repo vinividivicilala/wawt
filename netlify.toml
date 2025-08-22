@@ -28,3 +28,4 @@
   from = "/*"
   to = "/.netlify/functions/next/:splat"
   status = 200
+
