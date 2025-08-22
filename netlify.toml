@@ -1,7 +1,6 @@
 [build]
   base = "my-project"
   command = "npm run build"
-  publish = "my-project/.next"
 
 [build.environment]
   NODE_VERSION = "20"
