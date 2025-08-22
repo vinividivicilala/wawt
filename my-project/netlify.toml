@@ -1,4 +1,6 @@
+
 [build]
+  base = "my-project"
   command = "npm run build"
   publish = ".next"
 
@@ -12,11 +14,3 @@
   from = "/*"
   to = "/.netlify/functions/next"
   status = 200
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    X-Powered-By = "Next.js"
