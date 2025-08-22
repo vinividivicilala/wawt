@@ -6,20 +6,14 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Root (/) ambil HTML statis
+# Root (/) tetap HTML statis
 [[redirects]]
   from = "/"
   to = "/index.html"
   status = 200
 
-# Tentang saya ambil dari Next.js
+# Semua route selain /, handle Next.js
 [[redirects]]
-  from = "/tentang-saya"
-  to = "/.netlify/functions/next"
-  status = 200
-
-# Semua route lain dihandle Next.js
-[[redirects]]
-  from = "/app/*"
+  from = "/*"
   to = "/.netlify/functions/next"
   status = 200
