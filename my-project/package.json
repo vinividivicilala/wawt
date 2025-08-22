@@ -12,7 +12,7 @@
     "next": "15.5.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "@netlify/plugin-nextjs": "^5.12.1"   // ⬅️ pindah ke sini
+    "@netlify/plugin-nextjs": "^5.12.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
