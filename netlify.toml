@@ -6,13 +6,14 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Root (/) tetap HTML statis
+# Root (/) wajib ambil HTML statis
 [[redirects]]
   from = "/"
   to = "/index.html"
   status = 200
+  force = true   # <-- tambahin ini
 
-# Semua route selain /, handle Next.js
+# Semua halaman lain ditangani Next.js
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/next"
