@@ -10,6 +10,10 @@
   to = "/.netlify/functions/next"
   status = 200
 
+  [[plugins]]
+package = "@netlify/plugin-nextjs"
+
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -17,3 +21,4 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     X-Powered-By = "Next.js"
+
