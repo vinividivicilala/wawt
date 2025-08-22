@@ -1,20 +1,20 @@
 # Default: HTML statis
 [build]
-  base = "html-site"      # folder HTML kamu
-  publish = "."           # isinya index.html, style.css dll
+  base = "html-site"
+  publish = "."
 
-# Redirect ke Next.js untuk path tertentu
+# Redirect semua request ke /tentang-saya → Next.js (Serverless Function)
 [[redirects]]
   from = "/tentang-saya/*"
   to = "/.netlify/functions/next"
   status = 200
+  force = true
 
-# Next.js plugin
+# Plugin Next.js aktif di semua build
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Build setting khusus untuk Next.js
-[context.next]
-  base = "my-project"
-  command = "npm run build"
-  publish = ".next"
+# Context khusus untuk Next.js (folder my-project)
+[context.production]
+  command = "cd my-project && npm run build"
+  publish = "my-project/.next"
