@@ -1,11 +1,24 @@
 [build]
   base = "my-project"
   command = "npm run build"
-  publish = "../wawt"   # supaya index.html & file HTML lain tetap jadi halaman utama
+  publish = ".next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Root (/) ambil HTML statis
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+
+# Tentang saya ambil dari Next.js
+[[redirects]]
+  from = "/tentang-saya"
+  to = "/.netlify/functions/next"
+  status = 200
+
+# Semua route lain dihandle Next.js
 [[redirects]]
   from = "/app/*"
   to = "/.netlify/functions/next"
