@@ -1,16 +1,11 @@
-
 [build]
-  base = ""             # root repo "wawt"
-  publish = "."         # biar index.html di root tetap jadi homepage
+  command = "npm run build --prefix my-project"
+  publish = "wawt"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-  # kasih tahu plugin kalau Next.js ada di subfolder
-  [plugins.inputs]
-    baseDirectory = "my-project"
 
-# Routing Next.js ke fungsi serverless
 [[redirects]]
-  from = "/my-project/*"
+  from = "/app/*"
   to = "/.netlify/functions/next"
   status = 200
