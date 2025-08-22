@@ -1,20 +1,20 @@
-# Default: HTML statis
+# Halaman utama dari folder wawt (HTML statis)
 [build]
-  base = "html-site"
-  publish = "."
+  base = "wawt"
+  publish = "."   # karena index.html ada langsung di /wawt
 
-# Redirect semua request ke /tentang-saya → Next.js (Serverless Function)
+# Redirect request Next.js ke function
 [[redirects]]
-  from = "/tentang-saya/*"
+  from = "/next/*"
   to = "/.netlify/functions/next"
   status = 200
-  force = true
 
-# Plugin Next.js aktif di semua build
+# Plugin untuk handle Next.js
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Context khusus untuk Next.js (folder my-project)
-[context.production]
-  command = "cd my-project && npm run build"
-  publish = "my-project/.next"
+# Setting khusus buat Next.js (ada di dalam wawt/my-project)
+[context.next]
+  base = "wawt/my-project"
+  command = "npm run build"
+  publish = ".next"
