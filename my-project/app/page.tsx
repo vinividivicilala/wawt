@@ -77,57 +77,6 @@ export default function Home() {
           </Link>
         </div>
       </div>
-
-      {/* Tambahkan bagian bottom-text di sini */}
-      <div className="bottom-text mt-16">
-        <div className="flex flex-wrap justify-center gap-6 py-8 bg-gray-800 text-white">
-          <div>
-            <Link href="#" className="tentangLink flex items-center hover:text-blue-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform: 'rotate(45deg)', marginRight: '8px'}}>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-              Tentang Kami
-            </Link>
-          </div>
-          <div>
-            <Link href="#" className="masukanLink flex items-center hover:text-blue-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform: 'rotate(45deg)', marginRight: '8px'}}>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-              Masukan
-            </Link>
-          </div>
-          <div>
-            <Link href="#" className="forumLink flex items-center hover:text-blue-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform: 'rotate(45deg)', marginRight: '8px'}}>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-              Forum Diskusi
-            </Link>
-          </div>
-          <div>
-            <Link href="#" className="sponsorLink flex items-center hover:text-blue-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform: 'rotate(45deg)', marginRight: '8px'}}>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-              Sponsor
-            </Link>
-          </div>
-          <div>
-            <Link href="/tentang-saya" className="tentangSayaLink flex items-center hover:text-blue-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform: 'rotate(45deg)', marginRight: '8px'}}>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-              tentang saya
-            </Link>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
