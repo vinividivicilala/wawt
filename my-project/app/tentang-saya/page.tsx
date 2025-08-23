@@ -1,16 +1,57 @@
 "use client"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { initializeApp } from "firebase/app"
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut,
+  User,
+} from "firebase/auth"
+
+// 🔥 Konfigurasi Firebase (dari kamu)
+const firebaseConfig = {
+  apiKey: "AIzaSyAzgMVdqZhrqQ3PqiSWapaCl6oglF3QP64",
+  authDomain: "life-is-what-it-is-learn.firebaseapp.com",
+  projectId: "life-is-what-it-is-learn",
+  storageBucket: "life-is-what-it-is-learn.appspot.com",
+  messagingSenderId: "755474876167",
+  appId: "1:755474876167:web:205fb4ea8c7b8d5b66e7a2",
+}
+
+// Init Firebase
+const app = initializeApp(firebaseConfig)
+const auth = getAuth(app)
+const provider = new GoogleAuthProvider()
 
 export default function TentangSaya() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [user, setUser] = useState<User | null>(null)
 
-  // Simulasi update data, kalau nanti ambil dari database tinggal ganti disini
   useEffect(() => {
     setLastUpdate(new Date())
+
+    // Listener login
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u)
+    })
+    return () => unsubscribe()
   }, [])
 
-  // ✅ Fix TypeScript: kasih tipe Date
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, provider)
+    } catch (error) {
+      console.error("Login gagal:", error)
+    }
+  }
+
+  const handleLogout = async () => {
+    await signOut(auth)
+  }
+
   const formatDate = (date: Date) => {
     return date.toLocaleString("id-ID", {
       weekday: "long",
@@ -23,27 +64,42 @@ export default function TentangSaya() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
-      {/* Header */}
-      <header className="flex justify-between items-center px-6 py-4">
-        <div className="flex items-center space-x-3">
-          <img src="/logo.png" alt="Logo" className="h-8 w-8" />
-          <h1 className="text-lg font-semibold">Life Is What It Is Learn</h1>
-        </div>
-        <button className="flex items-center space-x-2 bg-transparent border border-gray-400 px-4 py-2 rounded-full hover:bg-gray-800 transition">
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            alt="Google"
-            className="h-5 w-5"
-          />
-          <span className="text-sm font-medium">Masuk dengan Google</span>
-        </button>
-      </header>
+    <div className="min-h-screen bg-black text-white font-sans flex flex-col items-center">
+      {/* Nama Website */}
+      <div className="mt-10 text-center">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-wide">
+          Life Is What It Is Learn
+        </h1>
+      </div>
 
-      {/* Content */}
-      <main className="flex justify-center mt-10 px-6">
-        <div className="w-full max-w-4xl border border-gray-700 rounded-2xl p-8 bg-black shadow-lg">
-          <h2 className="text-2xl font-bold mb-6">Tentang Saya</h2>
+      {/* Tombol Google */}
+      <div className="mt-6">
+        {user ? (
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-2 border border-gray-400 px-5 py-2 rounded-full hover:bg-gray-800 transition"
+          >
+            <span className="text-sm">Keluar ({user.displayName})</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleGoogleLogin}
+            className="flex items-center space-x-2 border border-gray-400 px-5 py-2 rounded-full hover:bg-gray-800 transition"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="h-5 w-5"
+            />
+            <span className="text-sm font-medium">Masuk dengan Google</span>
+          </button>
+        )}
+      </div>
+
+      {/* Box Tentang Saya */}
+      <main className="flex justify-center mt-12 px-6 w-full">
+        <div className="w-full max-w-4xl border border-gray-700 rounded-2xl p-8 shadow-lg bg-black">
+          <h2 className="text-3xl font-bold mb-6">Tentang Saya</h2>
           <p className="text-gray-300 leading-relaxed mb-4">
             Halo! Saya seorang developer yang passionate dalam membangun website modern.
             Saya memiliki pengalaman lebih dari 5 tahun dalam Next.js, React, TypeScript, dan Tailwind CSS.
@@ -53,12 +109,12 @@ export default function TentangSaya() {
             mengikuti best practices dalam pengembangan aplikasi web.
           </p>
 
-          {/* Last update otomatis */}
+          {/* Last update */}
           <div className="text-sm text-gray-400">
             Terakhir diperbarui: {formatDate(lastUpdate)}
           </div>
 
-          {/* Tombol Kembali */}
+          {/* Link kembali */}
           <div className="mt-8">
             <Link
               href="/"
