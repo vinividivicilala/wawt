@@ -3,15 +3,15 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 
 export default function TentangSaya() {
-  const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
 
-  // Update waktu otomatis kalau ada perubahan data
+  // Simulasi update data, kalau nanti ambil dari database tinggal ganti disini
   useEffect(() => {
-    // simulasi last update dari database / props
     setLastUpdate(new Date())
   }, [])
 
-  const formatDate = (date) => {
+  // ✅ Fix TypeScript: kasih tipe Date
+  const formatDate = (date: Date) => {
     return date.toLocaleString("id-ID", {
       weekday: "long",
       year: "numeric",
@@ -31,7 +31,11 @@ export default function TentangSaya() {
           <h1 className="text-lg font-semibold">Life Is What It Is Learn</h1>
         </div>
         <button className="flex items-center space-x-2 bg-transparent border border-gray-400 px-4 py-2 rounded-full hover:bg-gray-800 transition">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="h-5 w-5" />
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            alt="Google"
+            className="h-5 w-5"
+          />
           <span className="text-sm font-medium">Masuk dengan Google</span>
         </button>
       </header>
