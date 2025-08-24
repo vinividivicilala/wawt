@@ -41,7 +41,6 @@ export default function TentangSaya() {
     };
 
     updateTime();
-    // Update setiap menit, bukan setiap detik
     const timer = setInterval(updateTime, 60000);
     return () => clearInterval(timer);
   }, []);
@@ -90,7 +89,7 @@ export default function TentangSaya() {
               </div>
               {/* Halo + Nama */}
               <div className="flex flex-col items-end">
-                <span className="text-lg font-medium">Halo,</span>
+                <span className="text-lg">Halo,</span>
                 <span className="text-xl font-bold">{user.displayName}</span>
               </div>
               <button
@@ -118,8 +117,8 @@ export default function TentangSaya() {
       </div>
 
       {/* Judul Tentang Saya di atas box */}
-      <div className="text-center mt-8 mb-6">
-        <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+      <div className="text-left mt-8 mb-6">
+        <h2 className="text-5xl font-bold text-white">
           Tentang Saya
         </h2>
       </div>
@@ -131,26 +130,28 @@ export default function TentangSaya() {
         <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-purple-400 rounded-full opacity-70"></div>
         
         {/* Last Updated */}
-        <p className="text-lg text-gray-400 mb-6 text-right">Diperbarui {lastUpdated}</p>
+        <p className="text-lg mb-6 text-right text-white">
+          Diperbarui {lastUpdated}
+        </p>
 
         {/* Nama Website */}
-        <h1 className="text-5xl font-bold mb-10 text-center bg-gradient-to-r from-blue-300 to-purple-400 bg-clip-text text-transparent">
+        <h1 className="text-5xl font-bold mb-10 text-left text-white">
           Life Is What It Is Learn
         </h1>
 
         {/* Detail Tentang Saya */}
-        <div className="space-y-8 text-2xl leading-relaxed text-justify">
-          <p className="text-gray-200">
+        <div className="space-y-8 text-2xl leading-relaxed text-justify text-white">
+          <p>
             Halo, selamat datang di halaman <b className="text-blue-300">Tentang Saya</b>. Website ini
             dibuat untuk berbagi informasi, pengetahuan, dan pengalaman.
           </p>
-          <p className="text-gray-200">
+          <p>
             Anda bisa menemukan lebih banyak informasi melalui tautan berikut:{" "}
             <a
               href="https://example.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 underline hover:text-blue-300 transition-colors"
+              className="underline hover:text-blue-300 transition-colors"
             >
               Kunjungi Website Saya
             </a>
@@ -158,7 +159,7 @@ export default function TentangSaya() {
           <div className="flex justify-center mt-10">
             <div className="relative group">
               <Image
-                src="/images/6.jpg"
+                src="/images/5.jpg"
                 alt="Tentang Saya"
                 width={500}
                 height={400}
@@ -171,8 +172,8 @@ export default function TentangSaya() {
       </div>
 
       {/* Footer */}
-      <div className="text-center mt-12 pb-8 text-gray-500">
-        <p>© 2023 Life Is What It Is Learn. All rights reserved.</p>
+      <div className="text-center mt-12 pb-8 text-gray-400">
+        <p>© {new Date().getFullYear()} Life Is What It Is Learn</p>
       </div>
     </div>
   );
