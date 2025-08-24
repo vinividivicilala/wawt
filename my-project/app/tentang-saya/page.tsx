@@ -21,7 +21,7 @@ export default function TentangSaya() {
     return () => unsubscribe();
   }, []);
 
-  // Update waktu otomatis (tanggal + jam)
+  // Update waktu tanpa detik berjalan
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -33,12 +33,16 @@ export default function TentangSaya() {
           year: "numeric",
         }) +
         " • " +
-        now.toLocaleTimeString("id-ID");
+        now.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
       setLastUpdated(formatted);
     };
 
     updateTime();
-    const timer = setInterval(updateTime, 1000);
+    // Update setiap menit, bukan setiap detik
+    const timer = setInterval(updateTime, 60000);
     return () => clearInterval(timer);
   }, []);
 
@@ -71,7 +75,7 @@ export default function TentangSaya() {
             height={50}
             className="rounded-full"
           />
-          <span className="text-xl font-bold">Life Is What It Is Learn</span>
+          <span className="text-2xl font-bold">Life Is What It Is Learn</span>
         </div>
 
         {/* Login / Logout */}
@@ -83,16 +87,16 @@ export default function TentangSaya() {
                 <Image
                   src={user.photoURL}
                   alt="User Photo"
-                  width={35}
-                  height={35}
+                  width={40}
+                  height={40}
                   className="rounded-full border border-gray-400"
                 />
               )}
               {/* Halo + Nama */}
-              <span className="text-sm">Halo, {user.displayName}</span>
+              <span className="text-lg">Halo, {user.displayName}</span>
               <button
                 onClick={handleLogout}
-                className="px-5 py-2 border border-red-400 text-red-400 rounded-full hover:bg-red-600 hover:text-white"
+                className="px-5 py-2 text-lg border border-red-400 text-red-400 rounded-full hover:bg-red-600 hover:text-white"
               >
                 Logout
               </button>
@@ -100,7 +104,7 @@ export default function TentangSaya() {
           ) : (
             <button
               onClick={handleLogin}
-              className="flex items-center space-x-2 px-5 py-2 border border-blue-400 text-blue-400 rounded-full hover:bg-blue-600 hover:text-white"
+              className="flex items-center space-x-2 px-5 py-2 text-lg border border-blue-400 text-blue-400 rounded-full hover:bg-blue-600 hover:text-white"
             >
               <Image
                 src="https://www.svgrepo.com/show/355037/google.svg"
@@ -115,20 +119,20 @@ export default function TentangSaya() {
       </div>
 
       {/* Judul Tentang Saya di atas box */}
-      <div className="text-center mt-6">
-        <h2 className="text-3xl font-bold">Tentang Saya</h2>
+      <div className="text-center mt-8">
+        <h2 className="text-4xl font-bold">Tentang Saya</h2>
       </div>
 
       {/* Content Box */}
-      <div className="max-w-4xl mx-auto mt-6 border border-gray-600 rounded-2xl p-10 bg-[#111]">
+      <div className="max-w-5xl mx-auto mt-8 border border-white rounded-2xl p-10 bg-[#111]">
         {/* Last Updated */}
-        <p className="text-sm text-gray-400 mb-4">Diperbarui {lastUpdated}</p>
+        <p className="text-lg text-gray-400 mb-6 text-right">Diperbarui {lastUpdated}</p>
 
         {/* Nama Website */}
-        <h1 className="text-3xl font-bold mb-6">Life Is What It Is Learn</h1>
+        <h1 className="text-4xl font-bold mb-8">Life Is What It Is Learn</h1>
 
         {/* Detail Tentang Saya */}
-        <div className="space-y-4 text-lg leading-relaxed">
+        <div className="space-y-6 text-xl leading-relaxed text-justify">
           <p>
             Halo, selamat datang di halaman <b>Tentang Saya</b>. Website ini
             dibuat untuk berbagi informasi, pengetahuan, dan pengalaman.
@@ -144,12 +148,12 @@ export default function TentangSaya() {
               Kunjungi Website Saya
             </a>
           </p>
-          <div className="flex justify-center mt-6">
+          <div className="flex justify-center mt-8">
             <Image
               src="/images/6.jpg"
               alt="Tentang Saya"
-              width={400}
-              height={300}
+              width={450}
+              height={350}
               className="rounded-xl shadow-lg"
             />
           </div>
