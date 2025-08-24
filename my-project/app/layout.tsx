@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Website Saya',
+  title: 'Life Is What It Is Learn',
   description: 'Website pribadi dengan Next.js',
 }
 
@@ -16,24 +16,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      <body className={inter.className}>
-        <nav className="bg-white shadow-sm">
+      <body className={`${inter.className} bg-black text-white`}>
+        <nav className="bg-black shadow-sm">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex">
                 <div className="flex-shrink-0 flex items-center">
-                  <h1 className="text-xl font-bold text-primary-600">Website Saya</h1>
+                  <h1 className="text-3xl font-bold text-white">
+                    Life Is What It Is Learn
+                  </h1>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                   <a
                     href="/"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    className="border-transparent text-gray-300 hover:border-gray-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-lg font-medium"
                   >
                     Beranda
                   </a>
                   <a
                     href="/tentang-saya"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    className="border-transparent text-gray-300 hover:border-gray-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-lg font-medium"
                   >
                     Tentang Saya
                   </a>
@@ -42,7 +44,7 @@ export default function RootLayout({
             </div>
           </div>
         </nav>
-        <main>{children}</main>
+        <main className="p-6">{children}</main>
       </body>
     </html>
   )
