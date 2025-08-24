@@ -81,22 +81,21 @@ export default function TentangSaya() {
         {/* Login / Logout */}
         <div>
           {user ? (
-            <div className="flex items-center space-x-3">
-              {/* Foto profil */}
-              {user.photoURL && (
-                <Image
-                  src={user.photoURL}
-                  alt="User Photo"
-                  width={40}
-                  height={40}
-                  className="rounded-full border border-gray-400"
-                />
-              )}
+            <div className="flex items-center space-x-4">
+              {/* Icon pengguna */}
+              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
               {/* Halo + Nama */}
-              <span className="text-lg">Halo, {user.displayName}</span>
+              <div className="flex flex-col items-end">
+                <span className="text-lg font-medium">Halo,</span>
+                <span className="text-xl font-bold">{user.displayName}</span>
+              </div>
               <button
                 onClick={handleLogout}
-                className="px-5 py-2 text-lg border border-red-400 text-red-400 rounded-full hover:bg-red-600 hover:text-white"
+                className="px-5 py-2 text-lg bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Logout
               </button>
@@ -104,60 +103,76 @@ export default function TentangSaya() {
           ) : (
             <button
               onClick={handleLogin}
-              className="flex items-center space-x-2 px-5 py-2 text-lg border border-blue-400 text-blue-400 rounded-full hover:bg-blue-600 hover:text-white"
+              className="flex items-center space-x-3 px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Image
                 src="https://www.svgrepo.com/show/355037/google.svg"
                 alt="Google"
-                width={20}
-                height={20}
+                width={24}
+                height={24}
               />
-              <span>Masuk dengan Google</span>
+              <span className="text-xl font-medium">Masuk dengan Google</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Judul Tentang Saya di atas box */}
-      <div className="text-center mt-8">
-        <h2 className="text-4xl font-bold">Tentang Saya</h2>
+      <div className="text-center mt-8 mb-6">
+        <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+          Tentang Saya
+        </h2>
       </div>
 
       {/* Content Box */}
-      <div className="max-w-5xl mx-auto mt-8 border border-white rounded-2xl p-10 bg-[#111]">
+      <div className="w-11/12 mx-auto mt-8 border border-gray-700 rounded-3xl p-12 bg-gradient-to-br from-gray-900 to-black shadow-2xl relative overflow-hidden">
+        {/* Efek cahaya di sudut */}
+        <div className="absolute -top-1 -left-1 w-3 h-3 bg-blue-400 rounded-full opacity-70"></div>
+        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-purple-400 rounded-full opacity-70"></div>
+        
         {/* Last Updated */}
         <p className="text-lg text-gray-400 mb-6 text-right">Diperbarui {lastUpdated}</p>
 
         {/* Nama Website */}
-        <h1 className="text-4xl font-bold mb-8">Life Is What It Is Learn</h1>
+        <h1 className="text-5xl font-bold mb-10 text-center bg-gradient-to-r from-blue-300 to-purple-400 bg-clip-text text-transparent">
+          Life Is What It Is Learn
+        </h1>
 
         {/* Detail Tentang Saya */}
-        <div className="space-y-6 text-xl leading-relaxed text-justify">
-          <p>
-            Halo, selamat datang di halaman <b>Tentang Saya</b>. Website ini
+        <div className="space-y-8 text-2xl leading-relaxed text-justify">
+          <p className="text-gray-200">
+            Halo, selamat datang di halaman <b className="text-blue-300">Tentang Saya</b>. Website ini
             dibuat untuk berbagi informasi, pengetahuan, dan pengalaman.
           </p>
-          <p>
+          <p className="text-gray-200">
             Anda bisa menemukan lebih banyak informasi melalui tautan berikut:{" "}
             <a
               href="https://example.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 underline"
+              className="text-blue-400 underline hover:text-blue-300 transition-colors"
             >
               Kunjungi Website Saya
             </a>
           </p>
-          <div className="flex justify-center mt-8">
-            <Image
-              src="/images/6.jpg"
-              alt="Tentang Saya"
-              width={450}
-              height={350}
-              className="rounded-xl shadow-lg"
-            />
+          <div className="flex justify-center mt-10">
+            <div className="relative group">
+              <Image
+                src="/images/6.jpg"
+                alt="Tentang Saya"
+                width={500}
+                height={400}
+                className="rounded-xl shadow-lg transform group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center mt-12 pb-8 text-gray-500">
+        <p>© 2023 Life Is What It Is Learn. All rights reserved.</p>
       </div>
     </div>
   );
