@@ -1,23 +1,20 @@
 // next.config.mjs
 import createMDX from '@next/mdx'
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: true,
   images: {
     formats: ['image/webp', 'image/avif'],
-    domains: [
-      "www.svgrepo.com" // kalau kamu masih load logo Google dari luar
-    ],
+    domains: ["www.svgrepo.com"],
   },
   experimental: {
     optimizeCss: true,
   },
+  pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'], // ⬅️ WAJIB ada ini
 }
 
-// aktifkan MDX
 const withMDX = createMDX({
   extension: /\.mdx?$/,
 })
