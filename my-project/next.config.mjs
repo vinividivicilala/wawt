@@ -1,4 +1,6 @@
 // next.config.mjs
+import createMDX from '@next/mdx'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -6,11 +8,18 @@ const nextConfig = {
   poweredByHeader: true,
   images: {
     formats: ['image/webp', 'image/avif'],
-    domains: [],
+    domains: [
+      "www.svgrepo.com" // kalau kamu masih load logo Google dari luar
+    ],
   },
   experimental: {
     optimizeCss: true,
   },
 }
 
-export default nextConfig
+// aktifkan MDX
+const withMDX = createMDX({
+  extension: /\.mdx?$/,
+})
+
+export default withMDX(nextConfig)
