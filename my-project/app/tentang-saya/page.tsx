@@ -6,8 +6,8 @@ import { auth, provider } from "@/lib/firebaseConfig";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 import dynamic from "next/dynamic";
 
-// Import MDX (pakai dynamic biar client-side friendly)
-const TentangContent = dynamic(() => import("./tentang.mdx"));
+const TentangContent = dynamic(() => import("../tentang.mdx"));
+
 
 export default function TentangSaya() {
   const [user, setUser] = useState<any>(null);
