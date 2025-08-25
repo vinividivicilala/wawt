@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { auth, provider } from "@/lib/firebaseConfig";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import dynamic from "next/dynamic";
+
+// Import MDX (pakai dynamic biar client-side friendly)
+const TentangContent = dynamic(() => import("./tentang.mdx"));
 
 export default function TentangSaya() {
   const [user, setUser] = useState<any>(null);
@@ -168,6 +172,11 @@ export default function TentangSaya() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
           </div>
+        </div>
+
+        {/* Render isi dari MDX */}
+        <div className="prose prose-invert max-w-none mt-12">
+          <TentangContent />
         </div>
       </div>
 
